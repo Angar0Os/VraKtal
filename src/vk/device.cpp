@@ -3,6 +3,8 @@
 #define VMA_IMPLEMENTATION
 #include <vma/vk_mem_alloc.h>
 
+#pragma comment(lib, "vulkan-1.lib")
+
 using namespace vk::device;
 
 void VulkanDevice::Initialize()
