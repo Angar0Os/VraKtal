@@ -48,6 +48,15 @@
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp">
       <Filter>Source Files\vkb</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\vkEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\rhi\rhi_vulkan.cpp">
+      <Filter>Source Files\rhi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\renderContext.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\vkb\VkBootstrap.h">
@@ -55,6 +64,15 @@
     </ClInclude>
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h">
       <Filter>Source Files\vkb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\vkEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\rhi\rhi.h">
+      <Filter>Header Files\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\core\renderContext.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -135,10 +135,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\core\renderContext.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\rhi\rhi_vulkan.cpp" />
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp" />
+    <ClCompile Include="..\src\vkEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\core\renderContext.h" />
+    <ClInclude Include="..\include\rhi\rhi.h" />
+    <ClInclude Include="..\include\vkEngine.h" />
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h" />
   </ItemGroup>
