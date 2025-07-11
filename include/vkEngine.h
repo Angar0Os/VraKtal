@@ -4,7 +4,10 @@
 
 #include "vkb/VkBootstrap.h"
 
+#include <vk/instance.h>
+
 #include <core/renderContext.h>
+
 
 class VulkanEngine
 {
@@ -16,7 +19,15 @@ public:
 	void run();
 	void cleanup();
 
-	vk::core::RenderContext rCtx;
+	vk::Instance vkInstance;
+	core::RenderContext rCtx;
+
+	VkInstance instance;
+	VkDebugUtilsMessengerEXT debug_messenger;
+	VkAllocationCallbacks* callBacks;
+	VkSurfaceKHR surface;
+
+	bool useValidationLayers = true;
 };
 
 #endif //VRAKTAL_VK_ENGINE_H

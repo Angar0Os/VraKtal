@@ -12,7 +12,8 @@ VulkanEngine::~VulkanEngine() noexcept
 
 void VulkanEngine::init()
 {
-	rCtx = vk::core::RenderContext({ "VraKtalEngine " });
+	rCtx = core::RenderContext({ "VraKtalEngine " });
+	vkInstance.init(instance, rCtx.GetWindow(), callBacks, surface, debug_messenger, useValidationLayers);
 }
 
 void VulkanEngine::run()

@@ -6,7 +6,7 @@
 
 #pragma comment(lib, "glfw3.lib")
 
-using namespace vk::core;
+using namespace core;
 
 RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
 {

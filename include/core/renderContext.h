@@ -6,7 +6,7 @@
 
 struct GLFWwindow;
 
-namespace vk::core
+namespace core
 {
 	struct RenderContextDescriptor
 	{
