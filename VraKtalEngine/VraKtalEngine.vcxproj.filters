@@ -57,6 +57,9 @@
     <ClCompile Include="..\src\vk\device.cpp">
       <Filter>Source Files\vk</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\vk\swapchain.cpp">
+      <Filter>Source Files\vk</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\vkb\VkBootstrap.h">
@@ -78,6 +81,12 @@
       <Filter>Header Files\rhi</Filter>
     </ClInclude>
     <ClInclude Include="..\include\vk\device.h">
+      <Filter>Header Files\vk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\rhi\swapchain.h">
+      <Filter>Header Files\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\vk\swapchain.h">
       <Filter>Header Files\vk</Filter>
     </ClInclude>
   </ItemGroup>

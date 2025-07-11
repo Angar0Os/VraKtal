@@ -141,13 +141,16 @@
     <ClCompile Include="..\src\vkEngine.cpp" />
     <ClCompile Include="..\src\vk\device.cpp" />
     <ClCompile Include="..\src\vk\instance.cpp" />
+    <ClCompile Include="..\src\vk\swapchain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\core\renderContext.h" />
     <ClInclude Include="..\include\rhi\device.h" />
+    <ClInclude Include="..\include\rhi\swapchain.h" />
     <ClInclude Include="..\include\vkEngine.h" />
     <ClInclude Include="..\include\vk\device.h" />
     <ClInclude Include="..\include\vk\instance.h" />
+    <ClInclude Include="..\include\vk\swapchain.h" />
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h" />
   </ItemGroup>
