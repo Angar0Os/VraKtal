@@ -6,9 +6,6 @@
 
 #include <rhi/swapchain.h>
 
-#include <vk/image.h>
-#include <vk/commandBuffer.h>
-
 #include <vma/vk_mem_alloc.h>
 #include <vector>
 
@@ -16,12 +13,16 @@ struct GLFWwindow;
 
 namespace vk
 {
+	class VulkanCommandBuffer;
+	struct AllocatedImage;
+	class VulkanImage;
+
 	class VulkanSwapchain : public rhi::Swapchain
 	{
     public: 
 		VulkanSwapchain() = default;
 
-		VulkanSwapchain(VkPhysicalDevice chosenGPU, VkDevice device, VkSurfaceKHR surface, VulkanCommandBuffer commandBuffer)
+		VulkanSwapchain(VkPhysicalDevice chosenGPU, VkDevice device, VkSurfaceKHR surface, VulkanCommandBuffer* commandBuffer)
 			: _chosenGPU(chosenGPU), _device(device), _surface(surface), _commandBuffer(commandBuffer){
 		}
 
@@ -35,8 +36,13 @@ namespace vk
 
 		VkSwapchainKHR GetSwapchain() { return _swapchain; };
 		VkFormat GetSwapchainImageFormat() { return _swapchainImageFormat; };
+
 		VkExtent2D GetSwapchainExtent() { return _swapchainExtent; };
 		VkExtent2D GetWindowExtent() { return _windowExtent; };
+
+		AllocatedImage* GetDrawImage() { return _drawImage; };
+		AllocatedImage* GetDepthImage() { return _depthImage; };
+
 		std::vector<VkImage> GetSwapchainImages() { return _swapchainImages; };
 		std::vector<VkImageView> GetSwapchainImagesViews() { return _swapchainImageViews; };
 
@@ -46,12 +52,12 @@ namespace vk
 		VkDevice _device;
 		VkSurfaceKHR _surface;
 
-		AllocatedImage _drawImage;
-		AllocatedImage _depthImage;
+		AllocatedImage* _drawImage;
+		AllocatedImage* _depthImage;
 
-		VulkanImage _drawImageHandler;
+		VulkanImage* _drawImageHandler;
 
-		VulkanCommandBuffer _commandBuffer;
+		VulkanCommandBuffer* _commandBuffer;
 
 		VkSwapchainKHR _swapchain;
 		VkFormat _swapchainImageFormat;

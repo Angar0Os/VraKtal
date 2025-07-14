@@ -3,13 +3,13 @@
 #pragma once
 
 #include <rhi/image.h>
-
-#include <vk/commandBuffer.h>
-
 #include <vma/vk_mem_alloc.h>
 
 namespace vk
 {
+	class VulkanCommandBuffer;
+	class VulkanBuffer;
+
 	struct AllocatedImage
 	{
 		VkImage image;
@@ -19,14 +19,12 @@ namespace vk
 		VkFormat imageFormat;
 	};
 
-	class VulkanBuffer;
-
 	class VulkanImage : public rhi::Image
 	{
 	public:
 		explicit VulkanImage() = default;
 
-		explicit VulkanImage(VkDevice device, VmaAllocator allocator, VulkanBuffer* buffer, VulkanCommandBuffer commandBuffer)
+		explicit VulkanImage(VkDevice device, VmaAllocator allocator, VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer)
 			: _device(device), _allocator(allocator), _buffer(buffer), _commandBuffer(commandBuffer) {
 		}
 
@@ -47,7 +45,7 @@ namespace vk
 		VkDevice _device = VK_NULL_HANDLE;
 		VmaAllocator _allocator = VK_NULL_HANDLE;
 		VulkanBuffer* _buffer;
-		VulkanCommandBuffer _commandBuffer;
+		VulkanCommandBuffer* _commandBuffer;
 	};
 }
 

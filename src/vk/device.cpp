@@ -1,4 +1,5 @@
 #include <vk/device.h>
+#include <vk/commandBuffer.h>
 
 #define VMA_IMPLEMENTATION
 #include <vma/vk_mem_alloc.h>
@@ -37,7 +38,7 @@ void VulkanDevice::Initialize()
 	allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
 
-	_commandBuffer.GetDeletionQueue().push_function([&]() {vmaDestroyAllocator(_allocator); });
+	_commandBuffer->GetDeletionQueue().push_function([&]() {vmaDestroyAllocator(_allocator); });
 }
 
 void VulkanDevice::Shutdown()

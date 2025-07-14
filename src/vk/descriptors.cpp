@@ -1,6 +1,56 @@
 #include <vk/descriptors.h>
+#include <vk/commandBuffer.h>
+#include <vk/swapchain.h>
+#include <vk/image.h>
 
 using namespace vk;
+
+void VulkanDescriptor::Init(VkDevice device, VulkanCommandBuffer* commandBuffer, VulkanSwapchain* swapchain)
+{
+	std::vector<DescriptorAllocatorGrowable::PoolSizeRatio> sizes =
+	{
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
+	};
+
+	globalDescriptorAllocator.Init(device, 10, sizes);
+
+	DescriptorLayoutBuilder builder;
+	builder.AddBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+	drawImageDescriptorLayout = builder.Build(device, VK_SHADER_STAGE_COMPUTE_BIT);
+
+
+	drawImageDescriptors = globalDescriptorAllocator.Allocate(device, drawImageDescriptorLayout);
+
+	DescriptorWriter writer;
+	writer.WriteImage(0, swapchain->GetDrawImage()->imageView, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+	writer.UpdateSet(device, drawImageDescriptors);
+
+	DescriptorLayoutBuilder builder2;
+	builder2.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+	drawImageDescriptorLayout = builder2.Build(device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+
+	for (int i = 0; i < FRAME_OVERLAP; i++)
+	{
+		std::vector<DescriptorAllocatorGrowable::PoolSizeRatio> frame_sizes = {
+			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 3 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3 },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4 },
+		};
+
+		commandBuffer->_frames[i]._frameDescriptors = DescriptorAllocatorGrowable{};
+		commandBuffer->_frames[i]._frameDescriptors.Init(device, 1000, frame_sizes);
+
+		commandBuffer->GetDeletionQueue().push_function([&, i]() {
+			commandBuffer->_frames[i]._frameDescriptors.DestroyPools(device);
+			});
+	}
+
+	DescriptorLayoutBuilder builder3;
+	builder3.AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+	singleImageDescriptorLayout = builder.Build(device, VK_SHADER_STAGE_FRAGMENT_BIT);
+}
 
 void DescriptorLayoutBuilder::AddBinding(uint32_t binding, VkDescriptorType type)
 {

@@ -1,4 +1,7 @@
 #include <vk/swapchain.h>
+#include <vk/commandBuffer.h>
+#include <vk/image.h>
+
 #include <GLFW/glfw3.h>
 
 #include "../src/vkb/VkBootstrap.h"
@@ -42,8 +45,8 @@ void VulkanSwapchain::Init()
 		1
 	};
 
-	_drawImage.imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
-	_drawImage.imageExtent = drawImageExtent;
+	_drawImage->imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+	_drawImage->imageExtent = drawImageExtent;
 
 	VkImageUsageFlags drawImageUsages{};
 	drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -51,36 +54,36 @@ void VulkanSwapchain::Init()
 	drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
 	drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	VkImageCreateInfo rimg_info = _drawImageHandler.CreateInfo(_drawImage.imageFormat, drawImageUsages, drawImageExtent);
+	VkImageCreateInfo rimg_info = _drawImageHandler->CreateInfo(_drawImage->imageFormat, drawImageUsages, drawImageExtent);
 
 	VmaAllocationCreateInfo rimg_allocinfo = {};
 	rimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 	rimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	vmaCreateImage(_drawImageHandler.GetAllocator(), &rimg_info, &rimg_allocinfo, &_drawImage.image, &_drawImage.allocation, nullptr);
+	vmaCreateImage(_drawImageHandler->GetAllocator(), &rimg_info, &rimg_allocinfo, &_drawImage->image, &_drawImage->allocation, nullptr);
 
-	VkImageViewCreateInfo rview_info = _drawImageHandler.CreateViewInfo(_drawImage.imageFormat, _drawImage.image, VK_IMAGE_ASPECT_COLOR_BIT);
+	VkImageViewCreateInfo rview_info = _drawImageHandler->CreateViewInfo(_drawImage->imageFormat, _drawImage->image, VK_IMAGE_ASPECT_COLOR_BIT);
 
-	vkCreateImageView(_device, &rview_info, nullptr, &_drawImage.imageView);
+	vkCreateImageView(_device, &rview_info, nullptr, &_drawImage->imageView);
 
-	_depthImage.imageFormat = VK_FORMAT_D32_SFLOAT;
-	_depthImage.imageExtent = drawImageExtent;
+	_depthImage->imageFormat = VK_FORMAT_D32_SFLOAT;
+	_depthImage->imageExtent = drawImageExtent;
 	VkImageUsageFlags depthImageUsages{};
 	depthImageUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-	VkImageCreateInfo dimg_info = _drawImageHandler.CreateInfo(_depthImage.imageFormat, depthImageUsages, drawImageExtent);
+	VkImageCreateInfo dimg_info = _drawImageHandler->CreateInfo(_depthImage->imageFormat, depthImageUsages, drawImageExtent);
 
-	vmaCreateImage(_drawImageHandler.GetAllocator(), &dimg_info, &rimg_allocinfo, &_depthImage.image, &_depthImage.allocation, nullptr);
-	VkImageViewCreateInfo dview_info = _drawImageHandler.CreateViewInfo(_depthImage.imageFormat, _depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT);
+	vmaCreateImage(_drawImageHandler->GetAllocator(), &dimg_info, &rimg_allocinfo, &_depthImage->image, &_depthImage->allocation, nullptr);
+	VkImageViewCreateInfo dview_info = _drawImageHandler->CreateViewInfo(_depthImage->imageFormat, _depthImage->image, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-	vkCreateImageView(_device, &dview_info, nullptr, &_depthImage.imageView);
+	vkCreateImageView(_device, &dview_info, nullptr, &_depthImage->imageView);
 
-	_commandBuffer.GetDeletionQueue().push_function([=]() {
-		vkDestroyImageView(_device, _drawImage.imageView, nullptr);
-		vmaDestroyImage(_drawImageHandler.GetAllocator(), _drawImage.image, _drawImage.allocation);
+	_commandBuffer->GetDeletionQueue().push_function([=]() {
+		vkDestroyImageView(_device, _drawImage->imageView, nullptr);
+		vmaDestroyImage(_drawImageHandler->GetAllocator(), _drawImage->image, _drawImage->allocation);
 
-		vkDestroyImageView(_device, _depthImage.imageView, nullptr);
-		vmaDestroyImage(_drawImageHandler.GetAllocator(), _depthImage.image, _depthImage.allocation);
+		vkDestroyImageView(_device, _depthImage->imageView, nullptr);
+		vmaDestroyImage(_drawImageHandler->GetAllocator(), _depthImage->image, _depthImage->allocation);
 		});
 }
 

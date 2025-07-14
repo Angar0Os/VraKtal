@@ -8,6 +8,8 @@
 #include <vk/device.h>
 #include <vk/swapchain.h>
 #include <vk/commandBuffer.h>
+#include <vk/sync.h>
+#include <vk/descriptors.h>
 
 #include <core/renderContext.h>
 
@@ -26,6 +28,8 @@ public:
 	vk::VulkanSwapchain vkSwapchain;
 	vk::VulkanDevice vkDevice;
 	vk::VulkanCommandBuffer vkCommandBuffer;
+	vk::VulkanSync vkSync;
+	vk::VulkanDescriptor vkDescriptor;
 
 	core::RenderContext rCtx;
 

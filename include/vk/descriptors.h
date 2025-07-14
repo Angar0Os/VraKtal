@@ -4,6 +4,8 @@
 
 #include <rhi/descriptors.h>
 
+#include <vk/device.h>
+
 #include <vector>
 #include <vulkan/vulkan.h>
 
@@ -12,6 +14,9 @@
 
 namespace vk
 {
+	class VulkanCommandBuffer;
+	class VulkanSwapchain;
+
 	struct DescriptorAllocator : public rhi::DescriptorAllocator
 	{
 		struct PoolSizeRatio
@@ -75,6 +80,21 @@ namespace vk
 		std::vector<VkDescriptorPool> fullPools;
 		std::vector<VkDescriptorPool> readyPools;
 		uint32_t setsPerPool;
+	};
+
+	class VulkanDescriptor
+	{
+	public:
+		VulkanDescriptor() = default;
+
+		void Init(VkDevice device, VulkanCommandBuffer* commandBuffer, VulkanSwapchain* swapchain);
+
+	private:
+		DescriptorAllocatorGrowable globalDescriptorAllocator;
+
+		VkDescriptorSet drawImageDescriptors;
+		VkDescriptorSetLayout drawImageDescriptorLayout;
+		VkDescriptorSetLayout singleImageDescriptorLayout;
 	};
 }
 

@@ -1,7 +1,8 @@
-#include <vk/image.h>
 #include <iostream>
 
+#include <vk/image.h>
 #include <vk/buffer.h>
+#include <vk/commandBuffer.h>
 
 using namespace vk;
 
@@ -160,7 +161,7 @@ AllocatedImage VulkanImage::CreateImage(void* data, VkExtent3D size, VkFormat fo
 
 	AllocatedImage new_image = CreateImage(size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipmapped);
 
-	_commandBuffer.ImmediateSubmit([&](VkCommandBuffer cmd) {
+	_commandBuffer->ImmediateSubmit([&](VkCommandBuffer cmd) {
 		TransitionImage(cmd, new_image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 		VkBufferImageCopy copyRegion = {};

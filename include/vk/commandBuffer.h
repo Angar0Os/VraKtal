@@ -4,6 +4,8 @@
 
 #include <rhi/commandBuffer.h>
 
+#include <vk/descriptors.h>
+
 #include <queue>
 #include <functional>
 
@@ -39,7 +41,7 @@ namespace vk
 		VkCommandBuffer _mainCommandBuffer;
 
 		DeletionQueue _deletionQueue;
-		//DescriptorAllocatorGrowable _frameDescriptors; TODO : Implement this
+		DescriptorAllocatorGrowable _frameDescriptors;
 	};
 
 	constexpr unsigned int FRAME_OVERLAP = 2;
@@ -67,12 +69,12 @@ namespace vk
 		VkSubmitInfo2 SubmitInfo(VkCommandBufferSubmitInfo* cmd, VkSemaphoreSubmitInfo* signalSemaphoreInfo, VkSemaphoreSubmitInfo* waitSemaphoreInfo);
 
 		DeletionQueue& GetDeletionQueue() { return _mainDeletionQueue; }
-	private:
-		DeletionQueue _mainDeletionQueue;
 
 		VkFence _immFence;
 		VkCommandBuffer _immCommandBuffer;
 		VkCommandPool _immCommandPool;
+	private:
+		DeletionQueue _mainDeletionQueue;
 
 		VkDevice _device;
 		VkQueue _graphicsQueue;

@@ -1,4 +1,5 @@
 #include <vkEngine.h>
+#include <vk/commandBuffer.h>
 
 VulkanEngine::VulkanEngine()
 {
@@ -17,8 +18,10 @@ void VulkanEngine::init()
 	vkDevice.Initialize();
 
 	vkCommandBuffer = vk::VulkanCommandBuffer(immFence, immCommandBuffer, vkDevice.GetVkDevice(), vkDevice.GetGraphicsQueue());
-	vkSwapchain = vk::VulkanSwapchain(vkDevice.GetVkPhysicalDevice(), vkDevice.GetVkDevice(), surface, vkCommandBuffer);
-	
+	vkSwapchain = vk::VulkanSwapchain(vkDevice.GetVkPhysicalDevice(), vkDevice.GetVkDevice(), surface, &vkCommandBuffer);
+	vkCommandBuffer.Init();
+	vkSync.Init(vkCommandBuffer, vkDevice);
+	vkDescriptor.Init(vkDevice.GetVkDevice(), &vkCommandBuffer, &vkSwapchain);
 }
 
 void VulkanEngine::run()
