@@ -141,6 +141,7 @@
     <ClCompile Include="..\src\vkEngine.cpp" />
     <ClCompile Include="..\src\vk\buffer.cpp" />
     <ClCompile Include="..\src\vk\commandBuffer.cpp" />
+    <ClCompile Include="..\src\vk\descriptors.cpp" />
     <ClCompile Include="..\src\vk\device.cpp" />
     <ClCompile Include="..\src\vk\image.cpp" />
     <ClCompile Include="..\src\vk\instance.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="..\include\vkEngine.h" />
     <ClInclude Include="..\include\vk\buffer.h" />
     <ClInclude Include="..\include\vk\commandBuffer.h" />
+    <ClInclude Include="..\include\vk\descriptors.h" />
     <ClInclude Include="..\include\vk\device.h" />
     <ClInclude Include="..\include\vk\image.h" />
     <ClInclude Include="..\include\vk\instance.h" />

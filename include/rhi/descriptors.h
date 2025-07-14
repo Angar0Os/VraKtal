@@ -2,7 +2,6 @@
 #define VRAKTAL_RHI_DESCRIPTORS_H
 #pragma once
 
-#include <vector>
 #include <vulkan/vulkan.h>
 
 #include <span>
@@ -10,11 +9,8 @@
 
 namespace rhi
 {
-	struct PoolSizeRatio;
-
 	struct DescriptorAllocator
 	{
-		virtual void InitPool(VkDevice device, uint32_t maxSets, std::span<PoolSizeRatio> poolRatios) = 0;
 		virtual void ClearDescriptors(VkDevice device) = 0;
 		virtual void DestroyPool(VkDevice device) = 0;
 
@@ -35,20 +31,18 @@ namespace rhi
 		virtual void WriteBuffer(int binding, VkBuffer buffer, size_t size, size_t offset, VkDescriptorType type) = 0;
 
 		virtual void Clear() = 0;
-		virtual void UpdateSet() = 0;
+		virtual void UpdateSet(VkDevice device, VkDescriptorSet set) = 0;
 	};
 
 	struct DescriptorAllocatorGrowable
 	{
 	public:
-		virtual void Init() = 0;
-		virtual void ClearPools() = 0;
-		virtual void DestroyPools() = 0;
+		virtual void ClearPools(VkDevice device) = 0;
+		virtual void DestroyPools(VkDevice device) = 0;
 
-		virtual VkDescriptorSet Allocate(VkDevice device, VkDescriptorSetLayout layout) = 0;
+		virtual VkDescriptorSet Allocate(VkDevice device, VkDescriptorSetLayout layout, void* pNext = nullptr) = 0;
 		
 		virtual VkDescriptorPool GetPool(VkDevice device) = 0;
-		virtual VkDescriptorPool CreatePool(VkDevice device, uint32_t setCount, std::span<PoolSizeRatio> poolRatios) = 0;
 	};
 }
 
