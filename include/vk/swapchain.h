@@ -5,10 +5,37 @@
 #include "../src/vkb/VkBootstrap.h"
 
 #include <rhi/swapchain.h>
+
+#include <vk/image.h>
+#include <vma/vk_mem_alloc.h>
 #include <vector>
+
+#include <queue>
+#include <functional>
+
 
 namespace vk
 {
+	struct DeletionQueue
+	{
+		std::deque<std::function<void()>> deletors;
+
+		void push_function(std::function<void()>&& function)
+		{
+			deletors.push_back(function);
+		}
+
+		void flush()
+		{
+			for (auto it = deletors.rbegin(); it != deletors.rend(); ++it)
+			{
+				(*it)();
+			}
+
+			deletors.clear();
+		}
+	};  // TODO : Move to Device ? Or command ?
+
 	class VulkanSwapchain : public rhi::Swapchain
 	{
     public:
@@ -34,6 +61,13 @@ namespace vk
 		VkPhysicalDevice _chosenGPU;
 		VkDevice _device;
 		VkSurfaceKHR _surface;
+
+		DeletionQueue _mainDeletionQueue; // TODO : Move to Device ? Or command ?
+
+		AllocatedImage _drawImage;
+		AllocatedImage _depthImage;
+
+		VulkanImage _drawImageHandler;
 
 		VkSwapchainKHR _swapchain;
 		VkFormat _swapchainImageFormat;
