@@ -8,6 +8,7 @@ namespace rhi
 {
 	class Image
 	{
+	public:
 		virtual VkImageCreateInfo CreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent) = 0;
 		virtual VkImageViewCreateInfo CreateViewInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags) = 0;
 		virtual VkImageSubresourceRange CreateInfoSubresourceRange(VkImageAspectFlags aspectMask) = 0;

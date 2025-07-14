@@ -139,6 +139,8 @@
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp" />
     <ClCompile Include="..\src\vkEngine.cpp" />
+    <ClCompile Include="..\src\vk\buffer.cpp" />
+    <ClCompile Include="..\src\vk\commandBuffer.cpp" />
     <ClCompile Include="..\src\vk\device.cpp" />
     <ClCompile Include="..\src\vk\image.cpp" />
     <ClCompile Include="..\src\vk\instance.cpp" />
@@ -146,10 +148,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\core\renderContext.h" />
+    <ClInclude Include="..\include\rhi\commandBuffer.h" />
     <ClInclude Include="..\include\rhi\device.h" />
     <ClInclude Include="..\include\rhi\image.h" />
     <ClInclude Include="..\include\rhi\swapchain.h" />
     <ClInclude Include="..\include\vkEngine.h" />
+    <ClInclude Include="..\include\vk\buffer.h" />
+    <ClInclude Include="..\include\vk\commandBuffer.h" />
     <ClInclude Include="..\include\vk\device.h" />
     <ClInclude Include="..\include\vk\image.h" />
     <ClInclude Include="..\include\vk\instance.h" />

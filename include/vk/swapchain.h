@@ -38,9 +38,12 @@ namespace vk
 
 	class VulkanSwapchain : public rhi::Swapchain
 	{
-    public:
+    public: 
+		VulkanSwapchain() = default;
+
 		VulkanSwapchain(VkExtent2D size, VkPhysicalDevice chosenGPU, VkDevice device, VkSurfaceKHR surface)
-			: _windowExtent(size), _chosenGPU(chosenGPU), _device(device), _surface(surface) {};
+			: _windowExtent(size), _chosenGPU(chosenGPU), _device(device), _surface(surface) {
+		}
 
 		~VulkanSwapchain() noexcept;
 

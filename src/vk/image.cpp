@@ -1,6 +1,8 @@
 #include <vk/image.h>
 #include <iostream>
 
+#include <vk/buffer.h>
+
 using namespace vk;
 
 VkImageCreateInfo VulkanImage::CreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent)
@@ -152,13 +154,13 @@ AllocatedImage VulkanImage::CreateImage(VkExtent3D size, VkFormat format, VkImag
 AllocatedImage VulkanImage::CreateImage(void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped)
 {
 	size_t data_size = size.depth * size.width * size.height * 4;
-	//AllocatedBuffer uploadBuffer = create_buffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+	AllocatedBuffer uploadBuffer = _buffer->CreateBuffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-	//memcpy(uploadBuffer.info.pMappedData, data, data_size);
+	memcpy(uploadBuffer.info.pMappedData, data, data_size);
 
 	AllocatedImage new_image = CreateImage(size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipmapped);
 
-	/*immediate_submit([&](VkCommandBuffer cmd) {
+	_commandBuffer.ImmediateSubmit([&](VkCommandBuffer cmd) {
 		TransitionImage(cmd, new_image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 		VkBufferImageCopy copyRegion = {};
@@ -175,11 +177,9 @@ AllocatedImage VulkanImage::CreateImage(void* data, VkExtent3D size, VkFormat fo
 		vkCmdCopyBufferToImage(cmd, uploadBuffer.buffer, new_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
 		TransitionImage(cmd, new_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		});*/
+		});
 
-	//DestroyBuffer(uploadBuffer);
-
-	// TODO : Implement Buffer
+	_buffer->Destroy(uploadBuffer);
 
 	return new_image;
 }
