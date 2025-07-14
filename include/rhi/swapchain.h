@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+struct GLFWwindow;
+
 namespace rhi
 {
 	class Swapchain
@@ -13,7 +15,7 @@ namespace rhi
 
 		virtual void Create(uint32_t width, uint32_t height) = 0;
 		virtual void Destroy() = 0;
-		virtual void Resize(uint32_t width, uint32_t height) = 0;
+		virtual void Resize(uint32_t width, uint32_t height, bool resizeRequested, GLFWwindow* window) = 0;
 		virtual void Present() = 0;
 		virtual void Init() = 0;
 	};

@@ -6,6 +6,8 @@
 
 #include <vk/instance.h>
 #include <vk/device.h>
+#include <vk/swapchain.h>
+#include <vk/commandBuffer.h>
 
 #include <core/renderContext.h>
 
@@ -21,13 +23,19 @@ public:
 	void cleanup();
 
 	vk::Instance vkInstance;
-	vk::device::VulkanDevice vkDevice;
+	vk::VulkanSwapchain vkSwapchain;
+	vk::VulkanDevice vkDevice;
+	vk::VulkanCommandBuffer vkCommandBuffer;
+
 	core::RenderContext rCtx;
 
 	vkb::Instance instance;
 	VkDebugUtilsMessengerEXT debug_messenger;
 	VkAllocationCallbacks* callBacks;
 	VkSurfaceKHR surface;
+
+	VkFence immFence;
+	VkCommandBuffer immCommandBuffer;
 
 	bool useValidationLayers = true;
 };

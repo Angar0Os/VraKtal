@@ -113,5 +113,8 @@
     <ClInclude Include="..\include\vk\commandBuffer.h">
       <Filter>Header Files\vk</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\rhi\descriptors.h">
+      <Filter>Header Files\vk</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

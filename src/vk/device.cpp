@@ -5,7 +5,7 @@
 
 #pragma comment(lib, "vulkan-1.lib")
 
-using namespace vk::device;
+using namespace vk;
 
 void VulkanDevice::Initialize()
 {
@@ -36,6 +36,8 @@ void VulkanDevice::Initialize()
 	allocatorInfo.instance = _instance;
 	allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
+
+	_commandBuffer.GetDeletionQueue().push_function([&]() {vmaDestroyAllocator(_allocator); });
 }
 
 void VulkanDevice::Shutdown()

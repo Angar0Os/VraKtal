@@ -7,7 +7,9 @@
 
 #include <rhi/device.h>
 
-namespace vk::device
+#include <vk/commandBuffer.h>
+
+namespace vk
 {
 	class VulkanDevice : public rhi::Device
 	{
@@ -26,6 +28,7 @@ namespace vk::device
 		VmaAllocator GetAllocator() const { return _allocator; }
 		VkQueue GetGraphicsQueue() const { return _graphicsQueue; }
 		uint32_t GetGraphicsQueueFamily() const { return _graphicsQueueFamily; }
+		VulkanCommandBuffer& GetCommandBuffer() { return _commandBuffer; }
 	private:
 		vkb::Instance _instance;
 		VkSurfaceKHR _surface;
@@ -35,6 +38,7 @@ namespace vk::device
 		VkQueue _graphicsQueue = VK_NULL_HANDLE;
 		uint32_t _graphicsQueueFamily = 0;
 		VmaAllocator _allocator = VK_NULL_HANDLE;
+		VulkanCommandBuffer _commandBuffer;
 	};
 }
 

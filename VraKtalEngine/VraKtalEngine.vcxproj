@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClInclude Include="..\include\core\renderContext.h" />
     <ClInclude Include="..\include\rhi\commandBuffer.h" />
+    <ClInclude Include="..\include\rhi\descriptors.h" />
     <ClInclude Include="..\include\rhi\device.h" />
     <ClInclude Include="..\include\rhi\image.h" />
     <ClInclude Include="..\include\rhi\swapchain.h" />

@@ -7,55 +7,36 @@
 #include <rhi/swapchain.h>
 
 #include <vk/image.h>
+#include <vk/commandBuffer.h>
+
 #include <vma/vk_mem_alloc.h>
 #include <vector>
 
-#include <queue>
-#include <functional>
-
+struct GLFWwindow;
 
 namespace vk
 {
-	struct DeletionQueue
-	{
-		std::deque<std::function<void()>> deletors;
-
-		void push_function(std::function<void()>&& function)
-		{
-			deletors.push_back(function);
-		}
-
-		void flush()
-		{
-			for (auto it = deletors.rbegin(); it != deletors.rend(); ++it)
-			{
-				(*it)();
-			}
-
-			deletors.clear();
-		}
-	};  // TODO : Move to Device ? Or command ?
-
 	class VulkanSwapchain : public rhi::Swapchain
 	{
     public: 
 		VulkanSwapchain() = default;
 
-		VulkanSwapchain(VkExtent2D size, VkPhysicalDevice chosenGPU, VkDevice device, VkSurfaceKHR surface)
-			: _windowExtent(size), _chosenGPU(chosenGPU), _device(device), _surface(surface) {
+		VulkanSwapchain(VkPhysicalDevice chosenGPU, VkDevice device, VkSurfaceKHR surface, VulkanCommandBuffer commandBuffer)
+			: _chosenGPU(chosenGPU), _device(device), _surface(surface), _commandBuffer(commandBuffer){
 		}
 
 		~VulkanSwapchain() noexcept;
 
 		void Create(uint32_t width, uint32_t height) override;
 		void Destroy() override;
-		void Resize(uint32_t width, uint32_t height) override;
+		void Resize(uint32_t width, uint32_t height, bool resizeRequested, GLFWwindow* window) override;
 		void Present() override;
 		void Init() override;
 
 		VkSwapchainKHR GetSwapchain() { return _swapchain; };
 		VkFormat GetSwapchainImageFormat() { return _swapchainImageFormat; };
 		VkExtent2D GetSwapchainExtent() { return _swapchainExtent; };
+		VkExtent2D GetWindowExtent() { return _windowExtent; };
 		std::vector<VkImage> GetSwapchainImages() { return _swapchainImages; };
 		std::vector<VkImageView> GetSwapchainImagesViews() { return _swapchainImageViews; };
 
@@ -65,12 +46,12 @@ namespace vk
 		VkDevice _device;
 		VkSurfaceKHR _surface;
 
-		DeletionQueue _mainDeletionQueue; // TODO : Move to Device ? Or command ?
-
 		AllocatedImage _drawImage;
 		AllocatedImage _depthImage;
 
 		VulkanImage _drawImageHandler;
+
+		VulkanCommandBuffer _commandBuffer;
 
 		VkSwapchainKHR _swapchain;
 		VkFormat _swapchainImageFormat;

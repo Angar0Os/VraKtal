@@ -3,6 +3,8 @@
 
 #include "../src/vkb/VkBootstrap.h"
 
+#include <GLFW/glfw3.h>
+
 using namespace vk;
 
 VulkanSwapchain::~VulkanSwapchain()
@@ -73,7 +75,7 @@ void VulkanSwapchain::Init()
 
 	vkCreateImageView(_device, &dview_info, nullptr, &_depthImage.imageView);
 
-	_mainDeletionQueue.push_function([=]() {
+	_commandBuffer.GetDeletionQueue().push_function([=]() {
 		vkDestroyImageView(_device, _drawImage.imageView, nullptr);
 		vmaDestroyImage(_drawImageHandler.GetAllocator(), _drawImage.image, _drawImage.allocation);
 
@@ -92,8 +94,20 @@ void VulkanSwapchain::Destroy()
 	}
 }
 
-void VulkanSwapchain::Resize(uint32_t width, uint32_t height)
+void VulkanSwapchain::Resize(uint32_t width, uint32_t height, bool resizeRequested, GLFWwindow* window)
 {
+	vkDeviceWaitIdle(_device);
+
+	Destroy();
+
+	int w, h;
+	glfwGetWindowSize(window, &w, &h);
+	_windowExtent.width = w;
+	_windowExtent.height = h;
+
+	Create(_windowExtent.width, _windowExtent.height);
+
+	resizeRequested = false;
 }
 
 void VulkanSwapchain::Present()

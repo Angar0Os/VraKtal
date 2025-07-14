@@ -85,3 +85,27 @@ VkCommandBufferAllocateInfo VulkanCommandBuffer::AllocateInfo(VkCommandPool pool
 	info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	return info;
 }
+
+void VulkanCommandBuffer::Init()
+{
+	VkCommandPoolCreateInfo commandPoolInfo = CommandPoolCreateInfo(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+
+	for (int i = 0; i < FRAME_OVERLAP; i++)
+	{
+
+		vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_frames[i]._commandPool);
+		VkCommandBufferAllocateInfo cmdAllocInfo = AllocateInfo(_frames[i]._commandPool, 1);
+
+		vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_frames[i]._mainCommandBuffer);
+	}
+
+	vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_immCommandPool);
+
+	VkCommandBufferAllocateInfo cmdAllocInfo = AllocateInfo(_immCommandPool, 1);
+
+	vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_immCommandBuffer);
+
+	_mainDeletionQueue.push_function([=]() {
+		vkDestroyCommandPool(_device, _immCommandPool, nullptr);
+		});
+}
