@@ -155,6 +155,9 @@
     <ClInclude Include="..\include\vk\pipeline.h">
       <Filter>Header Files\vk</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\vk\loader.h">
+      <Filter>Header Files\vk</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\meshes\basicmesh.glb">
