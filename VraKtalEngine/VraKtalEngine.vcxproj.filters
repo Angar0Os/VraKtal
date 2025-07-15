@@ -75,6 +75,9 @@
     <ClCompile Include="..\src\vk\sync.cpp">
       <Filter>Source Files\vk</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\vk\material.cpp">
+      <Filter>Source Files\vk</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\vkb\VkBootstrap.h">
@@ -129,6 +132,12 @@
       <Filter>Header Files\rhi</Filter>
     </ClInclude>
     <ClInclude Include="..\include\vk\sync.h">
+      <Filter>Header Files\vk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\rhi\material.h">
+      <Filter>Header Files\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\vk\material.h">
       <Filter>Header Files\vk</Filter>
     </ClInclude>
   </ItemGroup>

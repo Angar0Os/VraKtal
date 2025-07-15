@@ -42,6 +42,8 @@ public:
 	VkCommandBuffer immCommandBuffer;
 
 	bool useValidationLayers = true;
+
+	static VulkanEngine& Get();
 };
 
 #endif //VRAKTAL_VK_ENGINE_H
