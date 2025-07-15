@@ -37,6 +37,12 @@
     <Filter Include="Header Files\vk">
       <UniqueIdentifier>{56ce8758-77ed-46a6-a2f6-aa1eea4a816e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\shaders">
+      <UniqueIdentifier>{6c54bf2b-42be-4422-9658-c037403a4826}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\meshes">
+      <UniqueIdentifier>{df80981e-bba8-409c-bc71-179f024dfff9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -149,5 +155,85 @@
     <ClInclude Include="..\include\vk\pipeline.h">
       <Filter>Header Files\vk</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\bin\assets\meshes\basicmesh.glb">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\meshes\house.glb">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\meshes\house2.glb">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\meshes\lost_empire.mtl">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\meshes\monkey.glb">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\meshes\monkey_flat.mtl">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\meshes\monkey_smooth.mtl">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\meshes\monkey2.glb">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\meshes\monkeyHD.glb">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\meshes\structure.glb">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\meshes\structure_mat.glb">
+      <Filter>Resource Files\meshes</Filter>
+    </None>
+    <None Include="..\bin\assets\shaders\input_structure.glsl">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\bin\assets\meshes\copyright.txt">
+      <Filter>Resource Files\meshes</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\bin\assets\meshes\lost_empire-Alpha.png">
+      <Filter>Resource Files\meshes</Filter>
+    </Image>
+    <Image Include="..\bin\assets\meshes\lost_empire-RGB.png">
+      <Filter>Resource Files\meshes</Filter>
+    </Image>
+    <Image Include="..\bin\assets\meshes\lost_empire-RGBA.png">
+      <Filter>Resource Files\meshes</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\bin\assets\shaders\colored_triangle.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\colored_triangle.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\colored_triangle_mesh.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\gradient_color.comp">
+      <Filter>Resource Files\shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\mesh.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\mesh.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\sky.comp">
+      <Filter>Resource Files\shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\tex_image.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

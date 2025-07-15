@@ -2,13 +2,15 @@
 #define VRAKTAL_RHI_MATERIAL_H
 #pragma once
 
-namespace vk { class VulkanEngine; class VulkanDevice; class VulkanPipeline; class VulkanSwapchain; }
+namespace vk { class VulkanDevice; class VulkanPipeline; class VulkanSwapchain; }
+
+class VulkanEngine;
 
 namespace rhi
 {
 	struct GLTFMetallic_Roughness
 	{
-		virtual void BuildPipelines(vk::VulkanEngine* engine, vk::VulkanDevice* device, vk::VulkanPipeline* pipeline, vk::VulkanSwapchain* swapchain) = 0;
+		virtual void BuildPipelines(VulkanEngine* engine, vk::VulkanDevice* device, vk::VulkanPipeline* pipeline, vk::VulkanSwapchain* swapchain) = 0;
 	};
 }
 

@@ -32,7 +32,9 @@ void VulkanEngine::init()
 	vkCommandBuffer.Init();
 	vkSync.Init(vkCommandBuffer, vkDevice);
 	vkDescriptor.Init(vkDevice.GetVkDevice(), &vkCommandBuffer, &vkSwapchain);
-
+	vkPipeline = vk::VulkanPipeline();
+	vkPipeline.InitBackgroundPipelines(&vkDescriptor, vkDevice, &vkCommandBuffer);
+	vkMetalRoughMaterial.BuildPipelines(this, &vkDevice, &vkPipeline, &vkSwapchain);
 }
 
 void VulkanEngine::run()

@@ -89,6 +89,9 @@ namespace vk
 
 		void Init(VkDevice device, VulkanCommandBuffer* commandBuffer, VulkanSwapchain* swapchain);
 
+		VkDescriptorSetLayout* GetDrawImageLayout() { return &drawImageDescriptorLayout; }
+		VkDescriptorSet GetDrawImage() { return drawImageDescriptors; }
+
 	private:
 		DescriptorAllocatorGrowable globalDescriptorAllocator;
 

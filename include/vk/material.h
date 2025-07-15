@@ -9,6 +9,8 @@
 
 #include <rhi/material.h>
 
+class VulkanEngine;
+
 namespace vk
 {
 	class AllocatedImage;
@@ -16,7 +18,6 @@ namespace vk
 	class DescriptorAllocatorGrowable;
 	class VulkanDevice;
 	class VulkanPipeline;
-	class VulkanEngine;
 	class VulkanSwapchain;
 
 	enum class MaterialPass : uint8_t

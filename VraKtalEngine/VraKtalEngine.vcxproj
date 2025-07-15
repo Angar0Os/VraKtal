@@ -174,6 +174,68 @@
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\bin\assets\meshes\basicmesh.glb" />
+    <None Include="..\bin\assets\meshes\house.glb" />
+    <None Include="..\bin\assets\meshes\house2.glb" />
+    <None Include="..\bin\assets\meshes\lost_empire.mtl" />
+    <None Include="..\bin\assets\meshes\monkey.glb" />
+    <None Include="..\bin\assets\meshes\monkey2.glb" />
+    <None Include="..\bin\assets\meshes\monkeyHD.glb" />
+    <None Include="..\bin\assets\meshes\monkey_flat.mtl" />
+    <None Include="..\bin\assets\meshes\monkey_smooth.mtl" />
+    <None Include="..\bin\assets\meshes\structure.glb" />
+    <None Include="..\bin\assets\meshes\structure_mat.glb" />
+    <CustomBuild Include="..\bin\assets\shaders\colored_triangle.frag">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\colored_triangle.vert">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\colored_triangle_mesh.vert">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\gradient_color.comp">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+    </CustomBuild>
+    <None Include="..\bin\assets\shaders\input_structure.glsl" />
+    <CustomBuild Include="..\bin\assets\shaders\mesh.frag">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\mesh.vert">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\sky.comp">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\tex_image.frag">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\bin\assets\meshes\copyright.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\bin\assets\meshes\lost_empire-Alpha.png" />
+    <Image Include="..\bin\assets\meshes\lost_empire-RGB.png" />
+    <Image Include="..\bin\assets\meshes\lost_empire-RGBA.png" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

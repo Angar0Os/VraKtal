@@ -10,6 +10,8 @@
 #include <vk/commandBuffer.h>
 #include <vk/sync.h>
 #include <vk/descriptors.h>
+#include <vk/material.h>
+#include <vk/pipeline.h>
 
 #include <core/renderContext.h>
 
@@ -30,6 +32,8 @@ public:
 	vk::VulkanCommandBuffer vkCommandBuffer;
 	vk::VulkanSync vkSync;
 	vk::VulkanDescriptor vkDescriptor;
+	vk::GLTFMetallic_Roughness vkMetalRoughMaterial;
+	vk::VulkanPipeline vkPipeline;
 
 	core::RenderContext rCtx;
 
@@ -40,6 +44,7 @@ public:
 
 	VkFence immFence;
 	VkCommandBuffer immCommandBuffer;
+
 
 	bool useValidationLayers = true;
 

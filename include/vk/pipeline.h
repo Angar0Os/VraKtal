@@ -6,6 +6,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <glm/glm.hpp>
 #include <vector>
 
 namespace vkutils
@@ -38,6 +39,29 @@ namespace vkutils
 
 namespace vk
 {
+	class VulkanDescriptor;
+	class VulkanDevice;
+	class VulkanCommandBuffer;
+
+	struct ComputePushConstants
+	{
+		glm::vec4 data1;
+		glm::vec4 data2;
+		glm::vec4 data3;
+		glm::vec4 data4;
+	};
+
+
+	struct ComputeEffect
+	{
+		const char* name;
+
+		VkPipeline pipeline;
+		VkPipelineLayout layout;
+
+		ComputePushConstants data;
+	};
+
 	class VulkanPipeline : rhi::Pipeline
 	{
 	public:
@@ -51,6 +75,10 @@ namespace vk
 		VkPipelineDepthStencilStateCreateInfo _depthStencil;
 		VkPipelineRenderingCreateInfo _renderInfo;
 		VkFormat _colorAttachmentFormat;
+
+		VkPipeline _gradientPipeline;
+		VkPipelineLayout _gradientPipelineLayout;
+		std::vector<ComputeEffect> backgroundEffects;
 
 		VulkanPipeline() { Clear(); }
 
@@ -73,6 +101,8 @@ namespace vk
 
 		VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule);
 		VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo();
+
+		void InitBackgroundPipelines(VulkanDescriptor* descriptor, VulkanDevice device, VulkanCommandBuffer* commandBuffer);
 	};
 }
 
