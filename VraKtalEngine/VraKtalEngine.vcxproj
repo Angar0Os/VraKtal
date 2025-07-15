@@ -146,6 +146,7 @@
     <ClCompile Include="..\src\vk\image.cpp" />
     <ClCompile Include="..\src\vk\instance.cpp" />
     <ClCompile Include="..\src\vk\material.cpp" />
+    <ClCompile Include="..\src\vk\pipeline.cpp" />
     <ClCompile Include="..\src\vk\swapchain.cpp" />
     <ClCompile Include="..\src\vk\sync.cpp" />
   </ItemGroup>
@@ -156,6 +157,7 @@
     <ClInclude Include="..\include\rhi\device.h" />
     <ClInclude Include="..\include\rhi\image.h" />
     <ClInclude Include="..\include\rhi\material.h" />
+    <ClInclude Include="..\include\rhi\pipeline.h" />
     <ClInclude Include="..\include\rhi\swapchain.h" />
     <ClInclude Include="..\include\rhi\sync.h" />
     <ClInclude Include="..\include\vkEngine.h" />
@@ -166,6 +168,7 @@
     <ClInclude Include="..\include\vk\image.h" />
     <ClInclude Include="..\include\vk\instance.h" />
     <ClInclude Include="..\include\vk\material.h" />
+    <ClInclude Include="..\include\vk\pipeline.h" />
     <ClInclude Include="..\include\vk\swapchain.h" />
     <ClInclude Include="..\include\vk\sync.h" />
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />

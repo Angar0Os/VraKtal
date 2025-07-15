@@ -2,7 +2,7 @@
 #define VRAKTAL_VK_ENGINE_H
 #pragma once
 
-#include "vkb/VkBootstrap.h"
+#include "../../src/vkb/VkBootstrap.h"
 
 #include <vk/instance.h>
 #include <vk/device.h>

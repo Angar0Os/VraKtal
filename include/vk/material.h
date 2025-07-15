@@ -14,6 +14,10 @@ namespace vk
 	class AllocatedImage;
 	class DescriptorWriter;
 	class DescriptorAllocatorGrowable;
+	class VulkanDevice;
+	class VulkanPipeline;
+	class VulkanEngine;
+	class VulkanSwapchain;
 
 	enum class MaterialPass : uint8_t
 	{
@@ -57,12 +61,19 @@ namespace vk
 			uint32_t dataBufferOffset;
 		};
 
+		struct GPUDrawPushConstants
+		{
+			glm::mat4 worldMatrix;
+			VkDeviceAddress vertexBuffer;
+		};
+
 		DescriptorWriter* writer;
+		VkDescriptorSetLayout gpuSceneDataDescriptorLayout;
 
-		void BuildPipelines(VulkanEngine* engine) override;
-		void ClearResources(VkDevice device) override;
+		void BuildPipelines(VulkanEngine* engine, VulkanDevice* device, VulkanPipeline* pipeline, VulkanSwapchain* swapchain) override;
 
-		MaterialInstance write_material(VkDevice device, MaterialPass pass, const MaterialResources& resources, DescriptorAllocatorGrowable& descriptorAllocator);
+		void ClearResources(VkDevice device);
+		MaterialInstance WriteMaterial(VkDevice device, MaterialPass pass, const MaterialResources& resources, DescriptorAllocatorGrowable& descriptorAllocator);
 	};
 
 }

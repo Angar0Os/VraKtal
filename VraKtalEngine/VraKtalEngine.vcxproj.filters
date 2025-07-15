@@ -78,6 +78,9 @@
     <ClCompile Include="..\src\vk\material.cpp">
       <Filter>Source Files\vk</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\vk\pipeline.cpp">
+      <Filter>Source Files\vk</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\vkb\VkBootstrap.h">
@@ -138,6 +141,12 @@
       <Filter>Header Files\rhi</Filter>
     </ClInclude>
     <ClInclude Include="..\include\vk\material.h">
+      <Filter>Header Files\vk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\rhi\pipeline.h">
+      <Filter>Header Files\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\vk\pipeline.h">
       <Filter>Header Files\vk</Filter>
     </ClInclude>
   </ItemGroup>
