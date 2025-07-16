@@ -143,6 +143,7 @@
     <ClCompile Include="..\src\vk\commandBuffer.cpp" />
     <ClCompile Include="..\src\vk\descriptors.cpp" />
     <ClCompile Include="..\src\vk\device.cpp" />
+    <ClCompile Include="..\src\vk\gltfLoader.cpp" />
     <ClCompile Include="..\src\vk\image.cpp" />
     <ClCompile Include="..\src\vk\instance.cpp" />
     <ClCompile Include="..\src\vk\material.cpp" />
@@ -167,7 +168,7 @@
     <ClInclude Include="..\include\vk\device.h" />
     <ClInclude Include="..\include\vk\image.h" />
     <ClInclude Include="..\include\vk\instance.h" />
-    <ClInclude Include="..\include\vk\loader.h" />
+    <ClInclude Include="..\include\vk\gltfLoader.h" />
     <ClInclude Include="..\include\vk\material.h" />
     <ClInclude Include="..\include\vk\pipeline.h" />
     <ClInclude Include="..\include\vk\swapchain.h" />

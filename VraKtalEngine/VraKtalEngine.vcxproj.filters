@@ -87,6 +87,9 @@
     <ClCompile Include="..\src\vk\pipeline.cpp">
       <Filter>Source Files\vk</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\vk\gltfLoader.cpp">
+      <Filter>Source Files\vk</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\vkb\VkBootstrap.h">
@@ -155,7 +158,7 @@
     <ClInclude Include="..\include\vk\pipeline.h">
       <Filter>Header Files\vk</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vk\loader.h">
+    <ClInclude Include="..\include\vk\gltfLoader.h">
       <Filter>Header Files\vk</Filter>
     </ClInclude>
   </ItemGroup>

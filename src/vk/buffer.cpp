@@ -20,7 +20,7 @@ AllocatedBuffer VulkanBuffer::CreateBuffer(size_t allocSize, VkBufferUsageFlags 
 	return newBuffer;
 }
 
-void VulkanBuffer::Destroy(const AllocatedBuffer& buffer)
+void VulkanBuffer::Destroy(AllocatedBuffer& buffer)
 {
 	vmaDestroyBuffer(_vkImage.GetAllocator(), buffer.buffer, buffer.allocation);
 }

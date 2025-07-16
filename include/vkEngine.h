@@ -35,6 +35,11 @@ public:
 	vk::GLTFMetallic_Roughness vkMetalRoughMaterial;
 	vk::VulkanPipeline vkPipeline;
 
+	vk::AllocatedImage* _whiteImage;
+	vk::AllocatedImage* _blackImage;
+	vk::AllocatedImage* _greyImage;
+	vk::AllocatedImage* _errorCheckerboardImage;
+
 	core::RenderContext rCtx;
 
 	vkb::Instance instance;

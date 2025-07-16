@@ -24,7 +24,7 @@ namespace vk
 			: _vkImage(vkImage) {
 		}
 
-		void Destroy(const AllocatedBuffer& buffer);
+		void Destroy(AllocatedBuffer& buffer);
 		AllocatedBuffer CreateBuffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
 	private:

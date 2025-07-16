@@ -19,6 +19,7 @@ namespace vk
 
 	struct DescriptorAllocator : public rhi::DescriptorAllocator
 	{
+	public:
 		struct PoolSizeRatio
 		{
 			VkDescriptorType type;
