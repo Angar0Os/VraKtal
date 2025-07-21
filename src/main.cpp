@@ -1,12 +1,14 @@
-#include <vkEngine.h>
+#include "core/renderContext_impl_glfw_vulkan.h"
 
 int main(int argc, char** argv)
 {
-	VulkanEngine engine;
+	rhi::RenderContext rCtx{
+		{
+			.windowTitle = "Vraktal Engine",
+			.windowSize = { 1280, 720 },
+			.resizeable = true
+		}
+	};
 
-	engine.init();
-	engine.run();
-	engine.cleanup();
 
-	return 0;
 }
