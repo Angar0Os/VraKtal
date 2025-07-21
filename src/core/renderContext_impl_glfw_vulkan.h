@@ -4,11 +4,26 @@
 
 #include <core/renderContext.h>
 
-struct GLFWwindow;
+#include "../vkb/VkBootstrap.h"
+#include <vma/vk_mem_alloc.h>
 
-struct rhi::RenderContext::Internal
+#include <iostream>
+#include <GLFW/glfw3.h>	
+
+struct core::rhi::RenderContext::Internal
 {
-	GLFWwindow* window = nullptr;
+	GLFWwindow* window;
+	vkb::Instance instance;
+	VkSurfaceKHR surface;
+	VkDebugUtilsMessengerEXT debugMessenger;
+
+	bool useValidationLayers = false;
+
+	VkDevice device;
+	VkPhysicalDevice chosenGPU;
+	VmaAllocator allocator;	
+	VkQueue graphicsQueue;
+	uint32_t graphicsQueueFamily;
 };
 
 #endif //VRAKTAL_CORE_RENDER_CONTEXT_IMPL_GLFW_VULKAN_H

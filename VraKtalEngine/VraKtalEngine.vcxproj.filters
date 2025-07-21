@@ -51,6 +51,9 @@
     <ClCompile Include="..\src\core\renderContext_impl_glfw_vulkan.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\core\gpu\commandBuffer_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\vkb\VkBootstrap.h">
@@ -64,6 +67,12 @@
     </ClInclude>
     <ClInclude Include="..\src\core\renderContext_impl_glfw_vulkan.h">
       <Filter>Source Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\core\gpu\commandBuffer.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\gpu\commandBuffer_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

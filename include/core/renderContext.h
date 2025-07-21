@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 
-namespace rhi
+namespace core::rhi
 {
 	struct RenderContextDescriptor
 	{

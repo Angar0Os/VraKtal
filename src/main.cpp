@@ -2,13 +2,11 @@
 
 int main(int argc, char** argv)
 {
-	rhi::RenderContext rCtx{
+	core::rhi::RenderContext rCtx{
 		{
 			.windowTitle = "Vraktal Engine",
 			.windowSize = { 1280, 720 },
 			.resizeable = true
 		}
 	};
-
-
 }
