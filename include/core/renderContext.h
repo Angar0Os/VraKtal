@@ -23,6 +23,8 @@ namespace core::rhi
 		RenderContext() = default;
 		RenderContext(const RenderContextDescriptor& descriptor);
 		~RenderContext() noexcept;
+
+		Internal& GetInternal() { return *m_Internal; }
 	};
 }
 

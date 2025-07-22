@@ -32,9 +32,6 @@ namespace core::gpu::rhi
 	{
 		struct Internal;
 		std::unique_ptr<Internal> m_Internal;
-
-	public:
-		CommandBuffer() = default;
 	};
 }
 
