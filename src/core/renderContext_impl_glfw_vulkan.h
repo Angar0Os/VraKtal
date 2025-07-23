@@ -28,6 +28,14 @@ struct core::rhi::RenderContext::Internal
 	VkFence immFence;
 	VkCommandBuffer immCommandBuffer;
 	VkCommandPool immCommandPool;
+
+	VkSwapchainKHR swapchain;
+	VkFormat swapchainImageFormat;
+	VkExtent2D swapchainExtent;
+	std::vector<VkImage> swapchainImages;
+	std::vector<VkImageView> swapchainImageViews;
+
+	void CreateSwapchain(uint32_t width, uint32_t height);
 };
 
 #endif //VRAKTAL_CORE_RENDER_CONTEXT_IMPL_GLFW_VULKAN_H

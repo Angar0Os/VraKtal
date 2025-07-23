@@ -70,6 +70,26 @@ RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
 	//vmaCreateAllocator(&allocatorInfo, &m_Internal->allocator);
 }
 
+void RenderContext::Internal::CreateSwapchain(uint32_t width, uint32_t height)
+{
+	vkb::SwapchainBuilder swapchainBuilder{ chosenGPU, device, surface };
+
+	swapchainImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+
+	vkb::Swapchain vkbSwapchain = swapchainBuilder
+		.set_desired_format(VkSurfaceFormatKHR{ .format = swapchainImageFormat, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR })
+		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+		.set_desired_extent(width, height)
+		.add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+		.build()
+		.value();
+
+	swapchainExtent = vkbSwapchain.extent;
+	swapchain = vkbSwapchain.swapchain;
+	swapchainImages = vkbSwapchain.get_images().value();
+	swapchainImageViews = vkbSwapchain.get_image_views().value();
+}
+
 RenderContext::~RenderContext()
 {
 	
