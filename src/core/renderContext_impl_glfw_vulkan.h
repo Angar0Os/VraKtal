@@ -24,6 +24,10 @@ struct core::rhi::RenderContext::Internal
 	VmaAllocator allocator;	
 	VkQueue graphicsQueue;
 	uint32_t graphicsQueueFamily;
+
+	VkFence immFence;
+	VkCommandBuffer immCommandBuffer;
+	VkCommandPool immCommandPool;
 };
 
 #endif //VRAKTAL_CORE_RENDER_CONTEXT_IMPL_GLFW_VULKAN_H

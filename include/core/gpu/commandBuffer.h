@@ -6,6 +6,8 @@
 #include <functional>
 #include <queue>
 
+#include <core/renderContext.h>
+
 namespace core::gpu::rhi
 {
 	struct DeletionQueue
@@ -30,6 +32,9 @@ namespace core::gpu::rhi
 
 	class CommandBuffer
 	{
+	public:
+		explicit CommandBuffer(core::rhi::RenderContext& rCtx);
+	private:
 		struct Internal;
 		std::unique_ptr<Internal> m_Internal;
 	};
