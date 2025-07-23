@@ -15,7 +15,10 @@ struct core::gpu::rhi::CommandBuffer::Internal
 	DeletionQueue mainDeletionQueue;
 
 	void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
+	
 	VkCommandBufferBeginInfo CommandBufferBeginInfo(VkCommandBufferUsageFlags flags);
+	VkCommandBufferSubmitInfo CommandBufferSubmitInfo(VkCommandBuffer cmd);
+	VkSubmitInfo2 SubmitInfo(VkCommandBufferSubmitInfo* cmd, VkSemaphoreSubmitInfo* signalSemaphoreInfo, VkSemaphoreSubmitInfo* waitSemaphoreInfo);
 };
 
 #endif //VRAKTAL_CORE_GPU_COMMAND_BUFFER_IMPL_VULKAN_H

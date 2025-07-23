@@ -1,7 +1,9 @@
 #include "renderContext_impl_glfw_vulkan.h"
 
 #include <GLFW/glfw3.h>	
+
 #pragma comment(lib, "glfw3.lib")
+#pragma comment(lib, "vulkan-1.lib")
 
 using namespace core::rhi;
 
