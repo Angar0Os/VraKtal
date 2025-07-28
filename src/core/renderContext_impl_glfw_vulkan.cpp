@@ -10,8 +10,13 @@
 
 using namespace core::rhi;
 
+RenderContext::Internal::Internal(RenderContext* parent)
+	: m_parent(parent)
+{
+}
+
 RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
-	: m_Internal(new Internal)
+	: m_Internal(std::make_unique<Internal>(this))
 {
 	if (!glfwInit())
 	{
@@ -72,6 +77,8 @@ RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
 	allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 	vmaCreateAllocator(&allocatorInfo, &m_Internal->allocator);
 
+	m_Internal->commandBuffer = std::make_unique<core::gpu::rhi::CommandBuffer>(*this);
+
 	m_Internal->CreateSwapchain(m_Internal->windowExtent.width, m_Internal->windowExtent.height);
 
 	VkExtent3D drawImageExtent = {
@@ -103,16 +110,33 @@ RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
 
 	m_Internal->depthImage.imageFormat = VK_FORMAT_D32_SFLOAT;
 	m_Internal->depthImage.imageExtent = drawImageExtent;
-	
+
 	VkImageUsageFlags depthImageUsages{};
 	depthImageUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	
+
 	VkImageCreateInfo dimg_info = m_Internal->ImageCreateInfo(m_Internal->depthImage.imageFormat, depthImageUsages, drawImageExtent);
 
 	vmaCreateImage(m_Internal->allocator, &dimg_info, &rimg_allocinfo, &m_Internal->depthImage.image, &m_Internal->depthImage.allocation, nullptr);
 	VkImageViewCreateInfo dview_info = m_Internal->ImageViewCreateInfo(m_Internal->depthImage.imageFormat, m_Internal->depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	vkCreateImageView(m_Internal->device, &dview_info, nullptr, &m_Internal->depthImage.imageView);
+
+	VkDevice device = m_Internal->device;
+	VmaAllocator allocator = m_Internal->allocator;
+	VkImageView drawImageView = m_Internal->drawImage.imageView;
+	VkImage drawImageHandle = m_Internal->drawImage.image;
+	VmaAllocation drawImageAllocation = m_Internal->drawImage.allocation;
+	VkImageView depthImageView = m_Internal->depthImage.imageView;
+	VkImage depthImageHandle = m_Internal->depthImage.image;
+	VmaAllocation depthImageAllocation = m_Internal->depthImage.allocation;
+
+	m_Internal->commandBuffer->GetInternal().mainDeletionQueue.PushFunction([=]() {
+		vkDestroyImageView(device, drawImageView, nullptr);
+		vmaDestroyImage(allocator, drawImageHandle, drawImageAllocation);
+
+		vkDestroyImageView(device, depthImageView, nullptr);
+		vmaDestroyImage(allocator, depthImageHandle, depthImageAllocation);
+		});
 }
 
 void RenderContext::Internal::CreateSwapchain(uint32_t width, uint32_t height)
@@ -175,7 +199,17 @@ VkImageViewCreateInfo RenderContext::Internal::ImageViewCreateInfo(VkFormat form
 	return info;
 }
 
+FrameData& RenderContext::Internal::GetCurrentFrame()
+{
+	return frames[frameNumber % FRAME_OVERLAP];
+}
+
+FrameData& RenderContext::Internal::GetLastFrame()
+{
+	return frames[(frameNumber - 1) % FRAME_OVERLAP];
+}
+
 RenderContext::~RenderContext()
 {
-	
+
 }
