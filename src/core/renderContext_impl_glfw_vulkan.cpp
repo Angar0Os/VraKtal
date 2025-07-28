@@ -2,6 +2,9 @@
 
 #include <GLFW/glfw3.h>	
 
+#define VMA_IMPLEMENTATION
+#include <vma/vk_mem_alloc.h>
+
 #pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "vulkan-1.lib")
 
@@ -67,7 +70,49 @@ RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
 	allocatorInfo.device = m_Internal->device;
 	allocatorInfo.instance = m_Internal->instance;
 	allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-	//vmaCreateAllocator(&allocatorInfo, &m_Internal->allocator);
+	vmaCreateAllocator(&allocatorInfo, &m_Internal->allocator);
+
+	m_Internal->CreateSwapchain(m_Internal->windowExtent.width, m_Internal->windowExtent.height);
+
+	VkExtent3D drawImageExtent = {
+		m_Internal->windowExtent.width,
+		m_Internal->windowExtent.height,
+		1
+	};
+
+	m_Internal->drawImage.imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+	m_Internal->drawImage.imageExtent = drawImageExtent;
+
+	VkImageUsageFlags drawImageUsages{};
+	drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	drawImageUsages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	drawImageUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
+	drawImageUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+	VkImageCreateInfo rimg_info = m_Internal->ImageCreateInfo(m_Internal->drawImage.imageFormat, drawImageUsages, drawImageExtent);
+
+	VmaAllocationCreateInfo rimg_allocinfo = {};
+	rimg_allocinfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+	rimg_allocinfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	vmaCreateImage(m_Internal->allocator, &rimg_info, &rimg_allocinfo, &m_Internal->drawImage.image, &m_Internal->drawImage.allocation, nullptr);
+
+	VkImageViewCreateInfo rview_info = m_Internal->ImageViewCreateInfo(m_Internal->drawImage.imageFormat, m_Internal->drawImage.image, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	vkCreateImageView(m_Internal->device, &rview_info, nullptr, &m_Internal->drawImage.imageView);
+
+	m_Internal->depthImage.imageFormat = VK_FORMAT_D32_SFLOAT;
+	m_Internal->depthImage.imageExtent = drawImageExtent;
+	
+	VkImageUsageFlags depthImageUsages{};
+	depthImageUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	
+	VkImageCreateInfo dimg_info = m_Internal->ImageCreateInfo(m_Internal->depthImage.imageFormat, depthImageUsages, drawImageExtent);
+
+	vmaCreateImage(m_Internal->allocator, &dimg_info, &rimg_allocinfo, &m_Internal->depthImage.image, &m_Internal->depthImage.allocation, nullptr);
+	VkImageViewCreateInfo dview_info = m_Internal->ImageViewCreateInfo(m_Internal->depthImage.imageFormat, m_Internal->depthImage.image, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+	vkCreateImageView(m_Internal->device, &dview_info, nullptr, &m_Internal->depthImage.imageView);
 }
 
 void RenderContext::Internal::CreateSwapchain(uint32_t width, uint32_t height)
@@ -88,6 +133,46 @@ void RenderContext::Internal::CreateSwapchain(uint32_t width, uint32_t height)
 	swapchain = vkbSwapchain.swapchain;
 	swapchainImages = vkbSwapchain.get_images().value();
 	swapchainImageViews = vkbSwapchain.get_image_views().value();
+}
+
+VkImageCreateInfo RenderContext::Internal::ImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent)
+{
+	VkImageCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	info.pNext = nullptr;
+
+	info.imageType = VK_IMAGE_TYPE_2D;
+
+	info.format = format;
+	info.extent = extent;
+
+	info.mipLevels = 1;
+	info.arrayLayers = 1;
+
+	info.samples = VK_SAMPLE_COUNT_1_BIT;
+
+	info.tiling = VK_IMAGE_TILING_OPTIMAL;
+	info.usage = usageFlags;
+
+	return info;
+}
+
+VkImageViewCreateInfo RenderContext::Internal::ImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags)
+{
+	VkImageViewCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	info.pNext = nullptr;
+
+	info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	info.image = image;
+	info.format = format;
+	info.subresourceRange.baseMipLevel = 0;
+	info.subresourceRange.levelCount = 1;
+	info.subresourceRange.baseArrayLayer = 0;
+	info.subresourceRange.layerCount = 1;
+	info.subresourceRange.aspectMask = aspectFlags;
+
+	return info;
 }
 
 RenderContext::~RenderContext()

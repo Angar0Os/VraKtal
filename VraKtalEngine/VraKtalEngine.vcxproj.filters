@@ -74,6 +74,9 @@
     <ClInclude Include="..\src\core\gpu\commandBuffer_impl_vulkan.h">
       <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\vkTypes.h">
+      <Filter>Source Files\core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\meshes\basicmesh.glb">

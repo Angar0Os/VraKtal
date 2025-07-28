@@ -147,6 +147,7 @@
     <ClInclude Include="..\src\core\renderContext_impl_glfw_vulkan.h" />
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h" />
+    <ClInclude Include="..\src\vkTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\meshes\basicmesh.glb" />
