@@ -73,6 +73,8 @@ struct core::rhi::RenderContext::Internal
 	void CreateSwapchain(uint32_t width, uint32_t height);
 	VkImageCreateInfo ImageCreateInfo(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
 	VkImageViewCreateInfo ImageViewCreateInfo(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
+	VkFenceCreateInfo FenceCreateInfo(VkFenceCreateFlags flags);
+	VkSemaphoreCreateInfo SemaphoreCreateInfo(VkSemaphoreCreateFlags flags = 0);
 
 private:
 	RenderContext* m_parent;

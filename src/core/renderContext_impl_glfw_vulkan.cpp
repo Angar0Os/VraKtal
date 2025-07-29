@@ -137,6 +137,36 @@ RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
 		vkDestroyImageView(device, depthImageView, nullptr);
 		vmaDestroyImage(allocator, depthImageHandle, depthImageAllocation);
 		});
+
+	m_Internal->commandBuffer->GetInternal().InitCommand();
+
+	VkFenceCreateInfo fenceCreateInfo = m_Internal->FenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+	vkCreateFence(m_Internal->device, &fenceCreateInfo, nullptr, &m_Internal->immFence);
+
+	m_Internal->commandBuffer->GetInternal().mainDeletionQueue.PushFunction([=]() { vkDestroyFence(m_Internal->device, m_Internal->immFence, nullptr); });
+
+	for (int i = 0; i < m_Internal->FRAME_OVERLAP; ++i)
+	{
+		vkCreateFence(m_Internal->device, &fenceCreateInfo, nullptr, &m_Internal->frames[i].renderFence);
+
+		VkSemaphoreCreateInfo semaphoreCreateInfo = m_Internal->SemaphoreCreateInfo();
+
+		vkCreateSemaphore(m_Internal->device, &semaphoreCreateInfo, nullptr, &m_Internal->frames[i].swapchainSemaphore);
+		vkCreateSemaphore(m_Internal->device, &semaphoreCreateInfo, nullptr, &m_Internal->frames[i].renderSemaphore);
+
+		m_Internal->commandBuffer->GetInternal().mainDeletionQueue.PushFunction([=]() {
+			vkDestroyFence(m_Internal->device, m_Internal->frames[i].renderFence, nullptr);
+			vkDestroySemaphore(m_Internal->device, m_Internal->frames[i].swapchainSemaphore, nullptr);
+			vkDestroySemaphore(m_Internal->device, m_Internal->frames[i].renderSemaphore, nullptr);
+			});
+	}
+
+	std::vector<vkTypes::DescriptorAllocator::PoolSizeRatio> sizes = 
+	{
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 3 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3},
+	};
 }
 
 void RenderContext::Internal::CreateSwapchain(uint32_t width, uint32_t height)
@@ -212,4 +242,26 @@ FrameData& RenderContext::Internal::GetLastFrame()
 RenderContext::~RenderContext()
 {
 
+}
+
+VkFenceCreateInfo RenderContext::Internal::FenceCreateInfo(VkFenceCreateFlags flags)
+{
+	VkFenceCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	info.pNext = nullptr;
+
+	info.flags = flags;
+
+	return info;
+}
+
+VkSemaphoreCreateInfo RenderContext::Internal::SemaphoreCreateInfo(VkSemaphoreCreateFlags flags)
+{
+	VkSemaphoreCreateInfo info = {};
+	info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	info.pNext = nullptr;
+
+	info.flags = flags;
+
+	return info;
 }
