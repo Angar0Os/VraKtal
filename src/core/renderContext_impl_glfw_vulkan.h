@@ -3,15 +3,22 @@
 #pragma once
 
 #include <core/renderContext.h>
+#include <core/gpu/descriptor.h>
 
 #include "../vkb/VkBootstrap.h"
 #include <vma/vk_mem_alloc.h>
 
 #include "gpu/commandBuffer_impl_vulkan.h"
+
 #include "../vkTypes.h"
 
 #include <iostream>
-#include <GLFW/glfw3.h>	
+#include <GLFW/glfw3.h>
+#include <vulkan/vulkan.h>
+#include <vector>
+#include <memory>
+
+struct DescriptorAllocatorGrowable;
 
 struct FrameData
 {
@@ -22,7 +29,7 @@ struct FrameData
 	VkCommandBuffer mainCommandBuffer;
 
 	vkTypes::DeletionQueue deletionQueue;
-	vkTypes::DescriptorAllocatorGrowable frameDescriptors;
+	std::unique_ptr<DescriptorAllocatorGrowable> frameDescriptors;
 };
 
 struct core::rhi::RenderContext::Internal
@@ -36,7 +43,8 @@ struct core::rhi::RenderContext::Internal
 	VkSurfaceKHR surface;
 	VkDebugUtilsMessengerEXT debugMessenger;
 
-	std::unique_ptr<core::gpu::rhi::CommandBuffer> commandBuffer;
+	std::unique_ptr<core::rhi::gpu::CommandBuffer> commandBuffer;
+	std::unique_ptr<core::rhi::gpu::Descriptor> descriptor;
 
 	bool useValidationLayers = false;
 

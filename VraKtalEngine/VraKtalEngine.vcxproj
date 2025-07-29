@@ -136,14 +136,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\core\gpu\commandBuffer_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\core\gpu\descriptor_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\renderContext_impl_glfw_vulkan.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\core\gpu\commandBuffer.h" />
+    <ClInclude Include="..\include\core\gpu\descriptor.h" />
     <ClInclude Include="..\include\core\renderContext.h" />
     <ClInclude Include="..\src\core\gpu\commandBuffer_impl_vulkan.h" />
+    <ClInclude Include="..\src\core\gpu\descriptor_impl_vulkan.h" />
     <ClInclude Include="..\src\core\renderContext_impl_glfw_vulkan.h" />
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h" />

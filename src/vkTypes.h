@@ -5,7 +5,6 @@
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
 
-#include <span>
 #include <deque>
 #include <functional>
 
@@ -18,39 +17,6 @@ namespace vkTypes
 		VmaAllocation allocation;
 		VkExtent3D imageExtent;
 		VkFormat imageFormat;
-	};
-
-	struct DescriptorAllocator
-	{
-		struct PoolSizeRatio
-		{
-			VkDescriptorType type;
-			float ratio;
-		};
-
-		VkDescriptorPool pool;
-
-		void InitPool(VkDevice device, uint32_t maxSets, std::span<PoolSizeRatio> poolRatios);
-		void ClearDescriptors(VkDevice device);
-		void DestroyPool(VkDevice device);
-
-		VkDescriptorSet Allocate(VkDevice device, VkDescriptorSetLayout layout);
-	};
-
-	struct DescriptorAllocatorGrowable
-	{
-	public:
-		struct PoolSizeRatio
-		{
-			VkDescriptorType type;
-			float ratio;
-		};
-
-		void Init(VkDevice device, uint32_t initialSets, std::span<PoolSizeRatio> poolRatios);
-		void ClearPools(VkDevice device);
-		void DestroyPools(VkDevice device);
-
-		VkDescriptorSet Allocate(VkDevice device, VkDescriptorSetLayout layout);
 	};
 
 	struct DeletionQueue

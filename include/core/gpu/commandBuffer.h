@@ -8,7 +8,7 @@
 
 #include <core/renderContext.h>
 
-namespace core::gpu::rhi
+namespace core::rhi::gpu
 {
 	class CommandBuffer
 	{

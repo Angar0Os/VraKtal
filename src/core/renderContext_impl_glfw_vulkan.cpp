@@ -1,4 +1,5 @@
 #include "renderContext_impl_glfw_vulkan.h"
+#include "gpu/descriptor_impl_vulkan.h"
 
 #include <GLFW/glfw3.h>	
 
@@ -77,7 +78,7 @@ RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
 	allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 	vmaCreateAllocator(&allocatorInfo, &m_Internal->allocator);
 
-	m_Internal->commandBuffer = std::make_unique<core::gpu::rhi::CommandBuffer>(*this);
+	m_Internal->commandBuffer = std::make_unique<core::rhi::gpu::CommandBuffer>(*this);
 
 	m_Internal->CreateSwapchain(m_Internal->windowExtent.width, m_Internal->windowExtent.height);
 
@@ -161,12 +162,7 @@ RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
 			});
 	}
 
-	std::vector<vkTypes::DescriptorAllocator::PoolSizeRatio> sizes = 
-	{
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 3 },
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3 },
-		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3},
-	};
+	m_Internal->descriptor->GetInternal().InitDescriptor(*this);
 }
 
 void RenderContext::Internal::CreateSwapchain(uint32_t width, uint32_t height)

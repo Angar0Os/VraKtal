@@ -9,7 +9,7 @@
 #include "../renderContext_impl_glfw_vulkan.h"
 #include "../../vkb/VkBootstrap.h"
 
-struct core::gpu::rhi::CommandBuffer::Internal
+struct core::rhi::gpu::CommandBuffer::Internal
 {
 	Internal(core::rhi::RenderContext& ctx) : renderContext(ctx) {}
 

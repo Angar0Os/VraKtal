@@ -2,7 +2,7 @@
 
 
 
-using namespace core::gpu::rhi;
+using namespace core::rhi::gpu;
 
 CommandBuffer::CommandBuffer(core::rhi::RenderContext& rCtx)
 	: m_Internal(std::make_unique<Internal>(rCtx))
