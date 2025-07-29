@@ -28,17 +28,11 @@
     <Filter Include="Header Files\core\gpu">
       <UniqueIdentifier>{8e6afdbf-fd19-4dcd-8928-8d3461efc69f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\core\gpu_detail">
-      <UniqueIdentifier>{6ea60a02-31f9-41da-9b41-59f6e358a763}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\core">
       <UniqueIdentifier>{35fbcccd-5089-4ebf-b926-a6f7c6c280f7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\core\gpu">
       <UniqueIdentifier>{37793ba8-ca2a-4921-8106-033bdd5d42ec}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\core\gpu_detail">
-      <UniqueIdentifier>{76d2c07f-262f-451e-b1e5-5490fc43cab7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -55,6 +49,9 @@
       <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\gpu\descriptor_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\gpu\pipeline_impl_vulkan.cpp">
       <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
   </ItemGroup>
@@ -85,6 +82,12 @@
     </ClInclude>
     <ClInclude Include="..\src\core\gpu\descriptor_impl_vulkan.h">
       <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\core\gpu\pipeline.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\gpu\pipeline_impl_vulkan.h">
+      <Filter>Source Files\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
