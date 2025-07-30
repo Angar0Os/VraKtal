@@ -3,9 +3,30 @@
 #pragma once
 
 #include <core/gpu/pipeline.h>
+#include <core/renderContext.h>
 
 #include <vulkan/vulkan.h>
 #include <vector>
+
+#include <glm/glm.hpp>
+
+struct ComputePushConstants
+{
+	glm::vec4 data1;
+	glm::vec4 data2;
+	glm::vec4 data3;
+	glm::vec4 data4;
+};
+
+struct ComputeEffect
+{
+	const char* name;
+
+	VkPipeline pipeline;
+	VkPipelineLayout layout;
+
+	ComputePushConstants data;
+};
 
 namespace utils
 {
@@ -37,8 +58,10 @@ namespace utils
 
 struct core::rhi::gpu::Pipeline::Internal
 {
+	Internal() { Clear(); };
+
 	void Clear();
-	void InitBackgroundPipelines() { Clear(); };
+	void InitBackgroundPipelines(RenderContext& rCtx);
 	void SetShaders(VkShaderModule vertexShader, VkShaderModule fragmentShader);
 	void SetInputTopology(VkPrimitiveTopology topology);
 	void SetPolygonMode(VkPolygonMode mode);
@@ -65,6 +88,11 @@ struct core::rhi::gpu::Pipeline::Internal
 	VkPipelineDepthStencilStateCreateInfo DepthStencil;
 	VkPipelineRenderingCreateInfo RenderInfo;
 	VkFormat ColorAttachmentFormat;
+
+	VkPipeline gradientPipeline;
+	VkPipelineLayout gradientPipelineLayout;
+
+	std::vector<ComputeEffect> backgroundEffects;
 };
 
 #endif //VRAKTAL_CORE_GPU_PIPELINE_IMPL_VULKAN_H

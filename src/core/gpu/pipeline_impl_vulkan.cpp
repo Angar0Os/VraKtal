@@ -1,4 +1,6 @@
 #include "pipeline_impl_vulkan.h"
+#include "../renderContext_impl_glfw_vulkan.h"
+#include "../../core/gpu/descriptor_impl_vulkan.h"
 
 #include <fstream>
 #include <iostream>
@@ -39,6 +41,85 @@ bool utils::LoadShaderModule(const char* filePath, VkDevice device, VkShaderModu
 
 	*outShaderModule = shaderModule;
 	return true;
+}
+
+void Pipeline::Internal::InitBackgroundPipelines(RenderContext& rCtx)
+{
+	VkPipelineLayoutCreateInfo computeLayout{};
+	computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	computeLayout.pNext = nullptr;
+	computeLayout.pSetLayouts = &rCtx.GetInternal().descriptor->GetInternal().drawImageDescriptorLayout;
+	computeLayout.setLayoutCount = 1;
+
+	VkPushConstantRange pushConstant{};
+	pushConstant.offset = 0;
+	pushConstant.size = sizeof(ComputePushConstants);
+	pushConstant.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+	computeLayout.pPushConstantRanges = &pushConstant;
+	computeLayout.pushConstantRangeCount = 1;
+
+	vkCreatePipelineLayout(rCtx.GetInternal().device, &computeLayout, nullptr, &gradientPipelineLayout);
+
+	VkShaderModule gradientShader;
+	if (!utils::LoadShaderModule("assets/shader/sky.comp.spv", rCtx.GetInternal().device, &gradientShader))
+	{
+		std::cout << "Error when building the compute shader" << std::endl;
+	}
+
+	VkShaderModule skyShader;
+	if (!utils::LoadShaderModule("assets/shaders/sky.comp.spv", rCtx.GetInternal().device, &skyShader))
+	{
+		std::cout << "Error when building the compute shader" << std::endl;
+	}
+
+	VkPipelineShaderStageCreateInfo stageinfo{};
+	stageinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	stageinfo.pNext = nullptr;
+	stageinfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+	stageinfo.module = gradientShader;
+	stageinfo.pName = "main";
+
+	VkComputePipelineCreateInfo computePipelineCreateInfo{};
+	computePipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	computePipelineCreateInfo.pNext = nullptr;
+	computePipelineCreateInfo.layout = gradientPipelineLayout;
+	computePipelineCreateInfo.stage = stageinfo;
+
+	ComputeEffect gradient;
+	gradient.layout = gradientPipelineLayout;
+	gradient.name = "gradient";
+	gradient.data = {};
+
+	gradient.data.data1 = glm::vec4(1, 0, 0, 1);
+	gradient.data.data2 = glm::vec4(0, 0, 1, 1);
+
+	vkCreateComputePipelines(rCtx.GetInternal().device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &gradient.pipeline);
+
+	computePipelineCreateInfo.stage.module = skyShader;
+
+	ComputeEffect sky;
+	sky.layout = gradientPipelineLayout;
+	sky.name = "sky";
+	sky.data = {};
+	sky.data.data1 = glm::vec4(0.1, 0.2, 0.4, 0.97);
+
+	vkCreateComputePipelines(rCtx.GetInternal().device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &sky.pipeline);
+
+	backgroundEffects.push_back(gradient);
+	backgroundEffects.push_back(sky);
+
+	vkDestroyShaderModule(rCtx.GetInternal().device, gradientShader, nullptr);
+	vkDestroyShaderModule(rCtx.GetInternal().device, skyShader, nullptr);
+
+	VkDevice deviceHandle = rCtx.GetInternal().device;
+
+	rCtx.GetInternal().commandBuffer->GetInternal().mainDeletionQueue.PushFunction([=]() {
+		vkDestroyPipelineLayout(deviceHandle, gradientPipelineLayout, nullptr);
+		vkDestroyPipeline(deviceHandle, sky.pipeline, nullptr);
+		vkDestroyPipeline(deviceHandle, gradient.pipeline, nullptr);
+		});
+
 }
 
 VkPipelineShaderStageCreateInfo Pipeline::Internal::PipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule)
