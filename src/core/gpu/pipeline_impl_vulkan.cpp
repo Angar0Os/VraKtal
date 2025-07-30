@@ -119,7 +119,6 @@ void Pipeline::Internal::InitBackgroundPipelines(RenderContext& rCtx)
 		vkDestroyPipeline(deviceHandle, sky.pipeline, nullptr);
 		vkDestroyPipeline(deviceHandle, gradient.pipeline, nullptr);
 		});
-
 }
 
 VkPipelineShaderStageCreateInfo Pipeline::Internal::PipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule)
