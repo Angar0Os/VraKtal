@@ -4,6 +4,8 @@
 
 #include <core/renderContext.h>
 #include <core/gpu/descriptor.h>
+#include <core/gpu/pipeline.h>
+#include <graphics/material.h>
 
 #include "../vkb/VkBootstrap.h"
 #include <vma/vk_mem_alloc.h>
@@ -45,6 +47,8 @@ struct core::rhi::RenderContext::Internal
 
 	std::unique_ptr<core::rhi::gpu::CommandBuffer> commandBuffer;
 	std::unique_ptr<core::rhi::gpu::Descriptor> descriptor;
+	std::unique_ptr<core::rhi::gpu::Pipeline> pipeline;
+	std::unique_ptr<graphics::rhi::Material> material;
 
 	bool useValidationLayers = false;
 

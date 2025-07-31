@@ -12,6 +12,7 @@ namespace core::rhi::gpu
 		std::unique_ptr<Internal> m_Internal;
 
 	public:
+		~Pipeline();
 		Internal& GetInternal() { return *m_Internal; }
 	};
 }

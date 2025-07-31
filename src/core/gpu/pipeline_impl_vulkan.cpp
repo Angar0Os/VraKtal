@@ -7,6 +7,12 @@
 
 using namespace core::rhi::gpu;
 
+
+namespace core::rhi::gpu
+{
+	Pipeline::~Pipeline() = default;
+}
+
 bool utils::LoadShaderModule(const char* filePath, VkDevice device, VkShaderModule* outShaderModule)
 {
 	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
@@ -303,4 +309,18 @@ void Pipeline::Internal::EnableBlendingAlphablend()
 	ColorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 	ColorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 	ColorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+}
+
+VkPipelineLayoutCreateInfo Pipeline::Internal::PipelineLayoutCreateInfo()
+{
+	VkPipelineLayoutCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	info.pNext = nullptr;
+
+	info.flags = 0;
+	info.setLayoutCount = 0;
+	info.pSetLayouts = nullptr;
+	info.pushConstantRangeCount = 0;
+	info.pPushConstantRanges = nullptr;
+	return info;
 }

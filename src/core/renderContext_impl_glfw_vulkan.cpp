@@ -1,5 +1,7 @@
 #include "renderContext_impl_glfw_vulkan.h"
 #include "gpu/descriptor_impl_vulkan.h"
+#include "gpu/pipeline_impl_vulkan.h"
+#include "../graphics/material_impl_vulkan.h"
 
 #include <GLFW/glfw3.h>	
 
@@ -163,6 +165,8 @@ RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
 	}
 
 	m_Internal->descriptor->GetInternal().InitDescriptor(*this);
+	m_Internal->pipeline->GetInternal().InitBackgroundPipelines(*this);
+	m_Internal->material->GetInternal().metalRoughMaterial.BuildPipelines(*this);
 }
 
 void RenderContext::Internal::CreateSwapchain(uint32_t width, uint32_t height)

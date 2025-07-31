@@ -34,6 +34,12 @@
     <Filter Include="Source Files\core\gpu">
       <UniqueIdentifier>{37793ba8-ca2a-4921-8106-033bdd5d42ec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\graphics">
+      <UniqueIdentifier>{8ec603b5-5e99-4299-b93f-2f141305a3f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphics">
+      <UniqueIdentifier>{f82bcd5e-36be-4ecb-9c78-17037e49f295}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -53,6 +59,15 @@
     </ClCompile>
     <ClCompile Include="..\src\core\gpu\pipeline_impl_vulkan.cpp">
       <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\graphics\material_impl_vulkan.cpp">
+      <Filter>Source Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\gpu\image_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\graphics\image_impl_vulkan.cpp">
+      <Filter>Source Files\graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -86,8 +101,26 @@
     <ClInclude Include="..\include\core\gpu\pipeline.h">
       <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\graphics\material.h">
+      <Filter>Header Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\graphics\material_impl_vulkan.h">
+      <Filter>Source Files\graphics</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\core\gpu\pipeline_impl_vulkan.h">
-      <Filter>Source Files\core</Filter>
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\core\gpu\image.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\graphics\mesh.h">
+      <Filter>Header Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\gpu\image_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\graphics\mesh_impl_vulkan.h">
+      <Filter>Source Files\graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

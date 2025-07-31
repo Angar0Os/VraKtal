@@ -137,20 +137,29 @@
   <ItemGroup>
     <ClCompile Include="..\src\core\gpu\commandBuffer_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\gpu\descriptor_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\core\gpu\image_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\gpu\pipeline_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\renderContext_impl_glfw_vulkan.cpp" />
+    <ClCompile Include="..\src\graphics\image_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\graphics\material_impl_vulkan.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\core\gpu\commandBuffer.h" />
     <ClInclude Include="..\include\core\gpu\descriptor.h" />
+    <ClInclude Include="..\include\core\gpu\image.h" />
     <ClInclude Include="..\include\core\gpu\pipeline.h" />
     <ClInclude Include="..\include\core\renderContext.h" />
+    <ClInclude Include="..\include\graphics\material.h" />
+    <ClInclude Include="..\include\graphics\mesh.h" />
     <ClInclude Include="..\src\core\gpu\commandBuffer_impl_vulkan.h" />
     <ClInclude Include="..\src\core\gpu\descriptor_impl_vulkan.h" />
+    <ClInclude Include="..\src\core\gpu\image_impl_vulkan.h" />
     <ClInclude Include="..\src\core\gpu\pipeline_impl_vulkan.h" />
     <ClInclude Include="..\src\core\renderContext_impl_glfw_vulkan.h" />
+    <ClInclude Include="..\src\graphics\material_impl_vulkan.h" />
+    <ClInclude Include="..\src\graphics\mesh_impl_vulkan.h" />
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h" />
     <ClInclude Include="..\src\vkTypes.h" />

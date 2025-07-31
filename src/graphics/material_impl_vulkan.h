@@ -31,6 +31,12 @@ struct MaterialInstance
 	MaterialPass passType;
 };
 
+struct GPUDrawPushConstants
+{
+	glm::mat4 worldMatrix;
+	VkDeviceAddress vertexBuffer;
+};
+
 struct GLTFMetallic_Roughness
 {
 	MaterialPipeline opaquePipeline;
@@ -55,7 +61,7 @@ struct GLTFMetallic_Roughness
 
 	DescriptorWriter writer;
 
-	void BuildPipelines(core::rhi::RenderContext* engine);
+	void BuildPipelines(core::rhi::RenderContext& renderContext);
 	void ClearResources(VkDevice device);
 
 	MaterialInstance WriteMaterial(VkDevice device, MaterialPass pass, const MaterialResources& resources, DescriptorAllocatorGrowable& descriptorAllocator);

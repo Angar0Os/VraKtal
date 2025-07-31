@@ -75,6 +75,8 @@ struct core::rhi::gpu::Pipeline::Internal
 	void EnableBlendingAdditive();
 	void EnableBlendingAlphablend();
 
+
+	VkPipelineLayoutCreateInfo PipelineLayoutCreateInfo();
 	VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule shaderModule);
 	VkPipeline BuildPipeline(VkDevice device);
 
