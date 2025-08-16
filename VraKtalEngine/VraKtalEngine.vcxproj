@@ -135,6 +135,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\external\imgui\imgui.cpp" />
+    <ClCompile Include="..\external\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\external\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\external\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="..\external\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\external\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\external\tracy\public\TracyClient.cpp" />
     <ClCompile Include="..\src\core\gpu\commandBuffer_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\gpu\descriptor_impl_vulkan.cpp" />
@@ -149,6 +155,15 @@
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\external\imgui\imconfig - Copy.h" />
+    <ClInclude Include="..\external\imgui\imgui - Copy.h" />
+    <ClInclude Include="..\external\imgui\imgui_impl_glfw - Copy.h" />
+    <ClInclude Include="..\external\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\external\imgui\imgui_impl_vulkan.h" />
+    <ClInclude Include="..\external\imgui\imgui_internal.h" />
+    <ClInclude Include="..\external\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\external\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\external\imgui\imstb_truetype.h" />
     <ClInclude Include="..\external\tracy\public\tracy\Tracy.hpp" />
     <ClInclude Include="..\include\core\gpu\commandBuffer.h" />
     <ClInclude Include="..\include\core\gpu\descriptor.h" />

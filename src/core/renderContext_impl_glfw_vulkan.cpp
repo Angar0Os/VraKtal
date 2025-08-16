@@ -14,6 +14,10 @@
 
 #include <../tracy/public/tracy/Tracy.hpp>
 
+#include <../imgui/imgui.h>
+#include <../imgui/imgui_impl_vulkan.h>
+#include <../imgui/imgui_impl_glfw.h>
+
 #pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "vulkan-1.lib")
 
@@ -213,6 +217,38 @@ RenderContext::RenderContext(const RenderContextDescriptor& descriptor)
 	m_Internal->camera->position = glm::vec3(30.0f, -00.f, -085.f);
 	m_Internal->camera->pitch = 0;
 	m_Internal->camera->yaw = 0;
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; 
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplGlfw_InitForVulkan(m_Internal->window, true);
+
+	ImGui_ImplVulkan_InitInfo init_info = {};
+	init_info.ApiVersion = VK_API_VERSION_1_3;
+	init_info.Instance = m_Internal->instance;
+	init_info.PhysicalDevice = m_Internal->chosenGPU;
+	init_info.Device = m_Internal->device;
+	init_info.QueueFamily = m_Internal->graphicsQueueFamily;
+	init_info.Queue = m_Internal->graphicsQueue;
+	init_info.DescriptorPool = m_Internal->descriptor->GetInternal().globalDescriptorAllocator.pool;
+	init_info.MinImageCount = 2;
+	init_info.ImageCount = 2;
+	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	init_info.UseDynamicRendering = true;
+
+	VkFormat backbufferFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+
+	init_info.PipelineRenderingCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+		.colorAttachmentCount = 1Ui32,
+		.pColorAttachmentFormats = &backbufferFormat
+	};
+	ImGui_ImplVulkan_Init(&init_info);
 }
 
 void RenderContext::Internal::CreateSwapchain(uint32_t width, uint32_t height)
@@ -564,6 +600,18 @@ void RenderContext::Internal::Draw()
 		return;
 	}
 
+
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	ImGui::Begin("Hello, world!");
+
+	ImGui::Text("This is some useful text.");
+	ImGui::End();
+
+	ImGui::Render();
+
 	vkWaitForFences(device, 1, &GetCurrentFrame().renderFence, true, 1000000000);
 
 	GetCurrentFrame().deletionQueue.Flush();
@@ -692,6 +740,8 @@ void RenderContext::Internal::DrawMain(VkCommandBuffer cmd)
 	vkCmdBeginRendering(cmd, &renderInfo);
 	auto start = std::chrono::system_clock::now();
 	DrawGeometry(cmd);
+
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 
 	auto end = std::chrono::system_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
