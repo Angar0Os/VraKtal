@@ -68,13 +68,13 @@ void Pipeline::Internal::InitBackgroundPipelines(RenderContext& rCtx)
 	vkCreatePipelineLayout(rCtx.GetInternal().device, &computeLayout, nullptr, &gradientPipelineLayout);
 
 	VkShaderModule gradientShader;
-	if (!utils::LoadShaderModule("assets/shader/sky.comp.spv", rCtx.GetInternal().device, &gradientShader))
+	if (!utils::LoadShaderModule("../bin/assets/shaders/gradient_color.comp.spv", rCtx.GetInternal().device, &gradientShader))
 	{
 		std::cout << "Error when building the compute shader" << std::endl;
 	}
 
 	VkShaderModule skyShader;
-	if (!utils::LoadShaderModule("assets/shaders/sky.comp.spv", rCtx.GetInternal().device, &skyShader))
+	if (!utils::LoadShaderModule("../bin/assets/shaders/sky.comp.spv", rCtx.GetInternal().device, &skyShader))
 	{
 		std::cout << "Error when building the compute shader" << std::endl;
 	}
@@ -96,6 +96,7 @@ void Pipeline::Internal::InitBackgroundPipelines(RenderContext& rCtx)
 	gradient.layout = gradientPipelineLayout;
 	gradient.name = "gradient";
 	gradient.data = {};
+	gradient.pipeline = VK_NULL_HANDLE;
 
 	gradient.data.data1 = glm::vec4(1, 0, 0, 1);
 	gradient.data.data2 = glm::vec4(0, 0, 1, 1);
@@ -323,4 +324,9 @@ VkPipelineLayoutCreateInfo Pipeline::Internal::PipelineLayoutCreateInfo()
 	info.pushConstantRangeCount = 0;
 	info.pPushConstantRanges = nullptr;
 	return info;
+}
+
+Pipeline::Pipeline()
+	: m_Internal(new Internal)
+{
 }

@@ -9,4 +9,6 @@ int main(int argc, char** argv)
 			.resizeable = true
 		}
 	};
+
+	rCtx.GetInternal().Run();
 }

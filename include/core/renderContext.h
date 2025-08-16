@@ -10,7 +10,7 @@ namespace core::rhi
 	struct RenderContextDescriptor
 	{
 		const char* windowTitle = "Vraktal Engine";
-		glm::ivec2 windowSize = { 1280, 720 };
+		glm::uvec2 windowSize = { 1280, 720 };
 		bool resizeable = true;
 	};
 

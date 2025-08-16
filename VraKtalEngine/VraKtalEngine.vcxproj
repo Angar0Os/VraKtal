@@ -140,8 +140,10 @@
     <ClCompile Include="..\src\core\gpu\image_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\gpu\pipeline_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\renderContext_impl_glfw_vulkan.cpp" />
-    <ClCompile Include="..\src\graphics\image_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\demo\camera.cpp" />
+    <ClCompile Include="..\src\demo\inputManager.cpp" />
     <ClCompile Include="..\src\graphics\material_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\graphics\mesh_impl_vulkan.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp" />
   </ItemGroup>
@@ -158,6 +160,8 @@
     <ClInclude Include="..\src\core\gpu\image_impl_vulkan.h" />
     <ClInclude Include="..\src\core\gpu\pipeline_impl_vulkan.h" />
     <ClInclude Include="..\src\core\renderContext_impl_glfw_vulkan.h" />
+    <ClInclude Include="..\src\demo\camera.h" />
+    <ClInclude Include="..\src\demo\inputManager.h" />
     <ClInclude Include="..\src\graphics\material_impl_vulkan.h" />
     <ClInclude Include="..\src\graphics\mesh_impl_vulkan.h" />
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />

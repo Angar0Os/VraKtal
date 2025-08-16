@@ -92,7 +92,7 @@ struct core::rhi::gpu::Pipeline::Internal
 	VkFormat ColorAttachmentFormat;
 
 	VkPipeline gradientPipeline;
-	VkPipelineLayout gradientPipelineLayout;
+	VkPipelineLayout gradientPipelineLayout = VK_NULL_HANDLE;
 
 	std::vector<ComputeEffect> backgroundEffects;
 };

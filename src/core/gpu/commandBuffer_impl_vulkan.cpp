@@ -114,3 +114,28 @@ VkCommandPoolCreateInfo CommandBuffer::Internal::CommandPoolCreateInfo(uint32_t 
 	info.flags = flags;
 	return info;
 }
+
+vkTypes::AllocatedBuffer CommandBuffer::Internal::CreateBuffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+{
+	VkBufferCreateInfo bufferInfo = { .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.pNext = nullptr;
+	bufferInfo.size = allocSize;
+
+	bufferInfo.usage = usage;
+
+	VmaAllocationCreateInfo vmaallocInfo = {};
+	vmaallocInfo.usage = memoryUsage;
+	vmaallocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+	vkTypes::AllocatedBuffer newBuffer;
+
+	vmaCreateBuffer(renderContext.GetInternal().allocator, &bufferInfo, &vmaallocInfo, &newBuffer.buffer, &newBuffer.allocation, &newBuffer.info);
+
+	return newBuffer;
+}
+
+void CommandBuffer::Internal::DestroyBuffer(const vkTypes::AllocatedBuffer buffer)
+{
+	vmaDestroyBuffer(renderContext.GetInternal().allocator, buffer.buffer, buffer.allocation);
+}
+

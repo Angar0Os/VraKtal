@@ -16,6 +16,9 @@ struct core::rhi::gpu::CommandBuffer::Internal
 	core::rhi::RenderContext& renderContext;
 	vkTypes::DeletionQueue mainDeletionQueue;	
 
+	vkTypes::AllocatedBuffer CreateBuffer(size_t allocSize, VkBufferUsageFlags, VmaMemoryUsage memoryUsage);
+	void DestroyBuffer(const vkTypes::AllocatedBuffer buffer);
+
 	void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
 	void InitCommand();
 

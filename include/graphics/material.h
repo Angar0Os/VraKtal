@@ -12,6 +12,7 @@ namespace graphics::rhi
 		std::unique_ptr<Internal> m_Internal;
 
 	public:
+		Material();
 		Internal& GetInternal() { return *m_Internal; }
 	};
 }

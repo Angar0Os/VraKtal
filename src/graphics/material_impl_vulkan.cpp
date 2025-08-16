@@ -7,13 +7,13 @@
 void GLTFMetallic_Roughness::BuildPipelines(core::rhi::RenderContext& renderContext)
 {
 	VkShaderModule meshFragShader;
-	if (utils::LoadShaderModule("assets/shaders/mesh.frag.spv", renderContext.GetInternal().device, &meshFragShader))
+	if (!utils::LoadShaderModule("../bin/assets/shaders/mesh.frag.spv", renderContext.GetInternal().device, &meshFragShader))
 	{
 		std::cout << "Error when building the triangle fragment shader module" << std::endl;
 	}
 
 	VkShaderModule meshVertexShader;
-	if (utils::LoadShaderModule("assets/shaders/mesh.vert.spv", renderContext.GetInternal().device, &meshVertexShader))
+	if (!utils::LoadShaderModule("../bin/assets/shaders/mesh.vert.spv", renderContext.GetInternal().device, &meshVertexShader))
 	{
 		std::cout << "Error when building the triangle vertex shader module" << std::endl;
 	}
@@ -100,4 +100,9 @@ MaterialInstance GLTFMetallic_Roughness::WriteMaterial(VkDevice device, Material
 	writer.UpdateSet(device, matData.materialSet);
 
 	return matData;
+}
+
+graphics::rhi::Material::Material()
+	: m_Internal(new Internal)
+{
 }

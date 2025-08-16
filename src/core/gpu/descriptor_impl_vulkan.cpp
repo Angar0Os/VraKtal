@@ -113,7 +113,10 @@ void DescriptorAllocator::InitPool(VkDevice device, uint32_t maxSets, std::span<
 	pool_info.poolSizeCount = (uint32_t)poolSizes.size();
 	pool_info.pPoolSizes = poolSizes.data();
 
-	vkCreateDescriptorPool(device, &pool_info, nullptr, &pool);
+	VkResult result = vkCreateDescriptorPool(device, &pool_info, nullptr, &pool);
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create descriptor pool! VkResult: " + std::to_string(result));
+	}
 }
 
 void DescriptorAllocator::ClearDescriptors(VkDevice device)
@@ -312,3 +315,7 @@ void DescriptorWriter::UpdateSet(VkDevice device, VkDescriptorSet set)
 
 	vkUpdateDescriptorSets(device, (uint32_t)writes.size(), writes.data(), 0, nullptr);
 }
+
+Descriptor::Descriptor()
+	: m_Internal(new Internal)
+{}

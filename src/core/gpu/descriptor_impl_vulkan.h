@@ -19,7 +19,7 @@ struct DescriptorAllocator
 		float ratio;
 	};
 
-	VkDescriptorPool pool;
+	VkDescriptorPool pool = VK_NULL_HANDLE;
 
 	void InitPool(VkDevice device, uint32_t maxSets, std::span<PoolSizeRatio> poolRatios);
 	void ClearDescriptors(VkDevice device);

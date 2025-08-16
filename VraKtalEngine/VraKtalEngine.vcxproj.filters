@@ -40,6 +40,9 @@
     <Filter Include="Source Files\graphics">
       <UniqueIdentifier>{f82bcd5e-36be-4ecb-9c78-17037e49f295}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\demo">
+      <UniqueIdentifier>{ae004043-3999-4775-b71f-5ec699c225df}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -66,8 +69,14 @@
     <ClCompile Include="..\src\core\gpu\image_impl_vulkan.cpp">
       <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\graphics\image_impl_vulkan.cpp">
+    <ClCompile Include="..\src\graphics\mesh_impl_vulkan.cpp">
       <Filter>Source Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\demo\camera.cpp">
+      <Filter>Source Files\demo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\demo\inputManager.cpp">
+      <Filter>Source Files\demo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -121,6 +130,12 @@
     </ClInclude>
     <ClInclude Include="..\src\graphics\mesh_impl_vulkan.h">
       <Filter>Source Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\demo\camera.h">
+      <Filter>Source Files\demo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\demo\inputManager.h">
+      <Filter>Source Files\demo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
