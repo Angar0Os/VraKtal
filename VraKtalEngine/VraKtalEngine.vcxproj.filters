@@ -43,6 +43,12 @@
     <Filter Include="Source Files\demo">
       <UniqueIdentifier>{ae004043-3999-4775-b71f-5ec699c225df}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\tracy">
+      <UniqueIdentifier>{043b09be-894f-4526-8556-7326a7500aac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tracy">
+      <UniqueIdentifier>{acf0e72b-d1b5-4470-9435-98ae1861f670}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -77,6 +83,9 @@
     </ClCompile>
     <ClCompile Include="..\src\demo\inputManager.cpp">
       <Filter>Source Files\demo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\tracy\public\TracyClient.cpp">
+      <Filter>Source Files\tracy</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -136,6 +145,9 @@
     </ClInclude>
     <ClInclude Include="..\src\demo\inputManager.h">
       <Filter>Source Files\demo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\tracy\public\tracy\Tracy.hpp">
+      <Filter>Header Files\tracy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

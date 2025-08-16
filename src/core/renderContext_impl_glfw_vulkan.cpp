@@ -12,6 +12,8 @@
 #include <chrono>
 #include <vma/vk_mem_alloc.h>
 
+#include <../tracy/public/tracy/Tracy.hpp>
+
 #pragma comment(lib, "glfw3.lib")
 #pragma comment(lib, "vulkan-1.lib")
 
@@ -647,6 +649,7 @@ void RenderContext::Internal::Draw()
 	}
 
 	frameNumber++;
+	FrameMark;
 }
 
 VkRenderingInfo	RenderContext::Internal::RenderingInfo(VkExtent2D renderExtent, VkRenderingAttachmentInfo* colorAttachment, VkRenderingAttachmentInfo* depthAttachment)
