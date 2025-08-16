@@ -16,32 +16,32 @@
     <Filter Include="Source Files\vkb">
       <UniqueIdentifier>{bd6f4775-ffcb-43b4-a1e7-82a1c3aa66b7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\core">
-      <UniqueIdentifier>{8c69b433-9d60-43b3-92d4-4659fac9c54f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\vk">
-      <UniqueIdentifier>{94985ea9-b4dc-44f3-82cb-1edae08ded63}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\res">
-      <UniqueIdentifier>{a65ef2b2-7f9f-4ef9-8c4e-2a714d6a7dce}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\core">
-      <UniqueIdentifier>{274d69fc-88e3-4c86-b63b-58758833f9a1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\rhi">
-      <UniqueIdentifier>{83f0abfb-76da-483d-9f75-89fd24af28f2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\res">
-      <UniqueIdentifier>{567ceea0-e561-4a79-b8ac-8e5bd2f72b59}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\vk">
-      <UniqueIdentifier>{56ce8758-77ed-46a6-a2f6-aa1eea4a816e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource Files\shaders">
       <UniqueIdentifier>{6c54bf2b-42be-4422-9658-c037403a4826}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resource Files\meshes">
       <UniqueIdentifier>{df80981e-bba8-409c-bc71-179f024dfff9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core">
+      <UniqueIdentifier>{48c7316c-2e0d-473b-b02f-90f71745585f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\gpu">
+      <UniqueIdentifier>{8e6afdbf-fd19-4dcd-8928-8d3461efc69f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core">
+      <UniqueIdentifier>{35fbcccd-5089-4ebf-b926-a6f7c6c280f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\gpu">
+      <UniqueIdentifier>{37793ba8-ca2a-4921-8106-033bdd5d42ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\graphics">
+      <UniqueIdentifier>{8ec603b5-5e99-4299-b93f-2f141305a3f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphics">
+      <UniqueIdentifier>{f82bcd5e-36be-4ecb-9c78-17037e49f295}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\demo">
+      <UniqueIdentifier>{ae004043-3999-4775-b71f-5ec699c225df}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -51,44 +51,32 @@
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp">
       <Filter>Source Files\vkb</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vkEngine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\renderContext.cpp">
+    <ClCompile Include="..\src\core\renderContext_impl_glfw_vulkan.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vk\instance.cpp">
-      <Filter>Source Files\vk</Filter>
+    <ClCompile Include="..\src\core\gpu\commandBuffer_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vk\device.cpp">
-      <Filter>Source Files\vk</Filter>
+    <ClCompile Include="..\src\core\gpu\descriptor_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vk\swapchain.cpp">
-      <Filter>Source Files\vk</Filter>
+    <ClCompile Include="..\src\core\gpu\pipeline_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vk\image.cpp">
-      <Filter>Source Files\vk</Filter>
+    <ClCompile Include="..\src\graphics\material_impl_vulkan.cpp">
+      <Filter>Source Files\graphics</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vk\buffer.cpp">
-      <Filter>Source Files\vk</Filter>
+    <ClCompile Include="..\src\core\gpu\image_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vk\commandBuffer.cpp">
-      <Filter>Source Files\vk</Filter>
+    <ClCompile Include="..\src\graphics\mesh_impl_vulkan.cpp">
+      <Filter>Source Files\graphics</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vk\descriptors.cpp">
-      <Filter>Source Files\vk</Filter>
+    <ClCompile Include="..\src\demo\camera.cpp">
+      <Filter>Source Files\demo</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\vk\sync.cpp">
-      <Filter>Source Files\vk</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\vk\material.cpp">
-      <Filter>Source Files\vk</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\vk\pipeline.cpp">
-      <Filter>Source Files\vk</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\vk\gltfLoader.cpp">
-      <Filter>Source Files\vk</Filter>
+    <ClCompile Include="..\src\demo\inputManager.cpp">
+      <Filter>Source Files\demo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -98,68 +86,56 @@
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h">
       <Filter>Source Files\vkb</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vkEngine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\core\renderContext.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vk\instance.h">
-      <Filter>Header Files\vk</Filter>
+    <ClInclude Include="..\src\core\renderContext_impl_glfw_vulkan.h">
+      <Filter>Source Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\rhi\device.h">
-      <Filter>Header Files\rhi</Filter>
+    <ClInclude Include="..\include\core\gpu\commandBuffer.h">
+      <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vk\device.h">
-      <Filter>Header Files\vk</Filter>
+    <ClInclude Include="..\src\core\gpu\commandBuffer_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\rhi\swapchain.h">
-      <Filter>Header Files\rhi</Filter>
+    <ClInclude Include="..\src\vkTypes.h">
+      <Filter>Source Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vk\swapchain.h">
-      <Filter>Header Files\vk</Filter>
+    <ClInclude Include="..\include\core\gpu\descriptor.h">
+      <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\rhi\image.h">
-      <Filter>Header Files\rhi</Filter>
+    <ClInclude Include="..\src\core\gpu\descriptor_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vk\image.h">
-      <Filter>Header Files\vk</Filter>
+    <ClInclude Include="..\include\core\gpu\pipeline.h">
+      <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vk\buffer.h">
-      <Filter>Header Files\vk</Filter>
+    <ClInclude Include="..\include\graphics\material.h">
+      <Filter>Header Files\graphics</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\rhi\commandBuffer.h">
-      <Filter>Header Files\rhi</Filter>
+    <ClInclude Include="..\src\graphics\material_impl_vulkan.h">
+      <Filter>Source Files\graphics</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vk\commandBuffer.h">
-      <Filter>Header Files\vk</Filter>
+    <ClInclude Include="..\src\core\gpu\pipeline_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\rhi\descriptors.h">
-      <Filter>Header Files\rhi</Filter>
+    <ClInclude Include="..\include\core\gpu\image.h">
+      <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vk\descriptors.h">
-      <Filter>Header Files\vk</Filter>
+    <ClInclude Include="..\include\graphics\mesh.h">
+      <Filter>Header Files\graphics</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\rhi\sync.h">
-      <Filter>Header Files\rhi</Filter>
+    <ClInclude Include="..\src\core\gpu\image_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vk\sync.h">
-      <Filter>Header Files\vk</Filter>
+    <ClInclude Include="..\src\graphics\mesh_impl_vulkan.h">
+      <Filter>Source Files\graphics</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\rhi\material.h">
-      <Filter>Header Files\rhi</Filter>
+    <ClInclude Include="..\src\demo\camera.h">
+      <Filter>Source Files\demo</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\vk\material.h">
-      <Filter>Header Files\vk</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\rhi\pipeline.h">
-      <Filter>Header Files\rhi</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\vk\pipeline.h">
-      <Filter>Header Files\vk</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\vk\gltfLoader.h">
-      <Filter>Header Files\vk</Filter>
+    <ClInclude Include="..\src\demo\inputManager.h">
+      <Filter>Source Files\demo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

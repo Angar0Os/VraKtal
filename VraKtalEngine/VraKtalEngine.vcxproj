@@ -135,46 +135,38 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\core\renderContext.cpp" />
+    <ClCompile Include="..\src\core\gpu\commandBuffer_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\core\gpu\descriptor_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\core\gpu\image_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\core\gpu\pipeline_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\core\renderContext_impl_glfw_vulkan.cpp" />
+    <ClCompile Include="..\src\demo\camera.cpp" />
+    <ClCompile Include="..\src\demo\inputManager.cpp" />
+    <ClCompile Include="..\src\graphics\material_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\graphics\mesh_impl_vulkan.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp" />
-    <ClCompile Include="..\src\vkEngine.cpp" />
-    <ClCompile Include="..\src\vk\buffer.cpp" />
-    <ClCompile Include="..\src\vk\commandBuffer.cpp" />
-    <ClCompile Include="..\src\vk\descriptors.cpp" />
-    <ClCompile Include="..\src\vk\device.cpp" />
-    <ClCompile Include="..\src\vk\gltfLoader.cpp" />
-    <ClCompile Include="..\src\vk\image.cpp" />
-    <ClCompile Include="..\src\vk\instance.cpp" />
-    <ClCompile Include="..\src\vk\material.cpp" />
-    <ClCompile Include="..\src\vk\pipeline.cpp" />
-    <ClCompile Include="..\src\vk\swapchain.cpp" />
-    <ClCompile Include="..\src\vk\sync.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\core\gpu\commandBuffer.h" />
+    <ClInclude Include="..\include\core\gpu\descriptor.h" />
+    <ClInclude Include="..\include\core\gpu\image.h" />
+    <ClInclude Include="..\include\core\gpu\pipeline.h" />
     <ClInclude Include="..\include\core\renderContext.h" />
-    <ClInclude Include="..\include\rhi\commandBuffer.h" />
-    <ClInclude Include="..\include\rhi\descriptors.h" />
-    <ClInclude Include="..\include\rhi\device.h" />
-    <ClInclude Include="..\include\rhi\image.h" />
-    <ClInclude Include="..\include\rhi\material.h" />
-    <ClInclude Include="..\include\rhi\pipeline.h" />
-    <ClInclude Include="..\include\rhi\swapchain.h" />
-    <ClInclude Include="..\include\rhi\sync.h" />
-    <ClInclude Include="..\include\vkEngine.h" />
-    <ClInclude Include="..\include\vk\buffer.h" />
-    <ClInclude Include="..\include\vk\commandBuffer.h" />
-    <ClInclude Include="..\include\vk\descriptors.h" />
-    <ClInclude Include="..\include\vk\device.h" />
-    <ClInclude Include="..\include\vk\image.h" />
-    <ClInclude Include="..\include\vk\instance.h" />
-    <ClInclude Include="..\include\vk\gltfLoader.h" />
-    <ClInclude Include="..\include\vk\material.h" />
-    <ClInclude Include="..\include\vk\pipeline.h" />
-    <ClInclude Include="..\include\vk\swapchain.h" />
-    <ClInclude Include="..\include\vk\sync.h" />
+    <ClInclude Include="..\include\graphics\material.h" />
+    <ClInclude Include="..\include\graphics\mesh.h" />
+    <ClInclude Include="..\src\core\gpu\commandBuffer_impl_vulkan.h" />
+    <ClInclude Include="..\src\core\gpu\descriptor_impl_vulkan.h" />
+    <ClInclude Include="..\src\core\gpu\image_impl_vulkan.h" />
+    <ClInclude Include="..\src\core\gpu\pipeline_impl_vulkan.h" />
+    <ClInclude Include="..\src\core\renderContext_impl_glfw_vulkan.h" />
+    <ClInclude Include="..\src\demo\camera.h" />
+    <ClInclude Include="..\src\demo\inputManager.h" />
+    <ClInclude Include="..\src\graphics\material_impl_vulkan.h" />
+    <ClInclude Include="..\src\graphics\mesh_impl_vulkan.h" />
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h" />
+    <ClInclude Include="..\src\vkTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\meshes\basicmesh.glb" />

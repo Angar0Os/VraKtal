@@ -1,32 +1,32 @@
-#ifndef VRAKTAL_CORE_RENDER_CONTEXT_H
-#define VRAKTAL_CORE_RENDER_CONTEXT_H
+#ifndef VRAKTAL_RHI_RENDER_CONTEXT_H	
+#define VRAKTAL_RHI_RENDER_CONTEXT_H	
 #pragma once
 
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
+#include <memory>
 
-struct GLFWwindow;
-
-namespace core
+namespace core::rhi
 {
 	struct RenderContextDescriptor
 	{
-		const char*	windowTitle = "VrakTal Engine";
-		glm::ivec2	windowSize = { 1280, 720 };
-		bool		resizeable = true;
+		const char* windowTitle = "Vraktal Engine";
+		glm::uvec2 windowSize = { 1280, 720 };
+		bool resizeable = true;
 	};
 
 	class RenderContext
 	{
-	private:
-		GLFWwindow* m_window = nullptr;
+		struct Internal;
+		std::unique_ptr<Internal> m_Internal;
 
 	public:
 		RenderContext() = default;
-		explicit RenderContext(const RenderContextDescriptor& descriptor);
+		RenderContext(const RenderContextDescriptor& descriptor);
 		~RenderContext() noexcept;
 
-		GLFWwindow* GetWindow() const { return m_window; }
+		Internal& GetInternal() { return *m_Internal; }
+		const Internal& GetInternal() const { return *m_Internal; };
 	};
 }
 
-#endif // VRAKTAL_CORE_RENDER_CONTEXT_H
+#endif //VRAKTAL_RHI_RENDER_CONTEXT_H	
