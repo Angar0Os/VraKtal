@@ -11,9 +11,9 @@
 
 struct core::rhi::gpu::CommandBuffer::Internal
 {
-	Internal(core::rhi::RenderContext& ctx) : renderContext(ctx) {}
+	Internal(RenderContext& ctx) : renderContext(ctx) {}
 
-	core::rhi::RenderContext& renderContext;
+	RenderContext& renderContext;
 	vkTypes::DeletionQueue mainDeletionQueue;	
 
 	void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);

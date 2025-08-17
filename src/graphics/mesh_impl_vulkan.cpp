@@ -19,6 +19,7 @@
 
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
