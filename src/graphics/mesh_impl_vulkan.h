@@ -13,7 +13,7 @@
 #include <string>
 
 #include <core/renderContext.h>
-#include "../vkTypes.h"
+#include "../core/gpu-details/vkTypes.h"
 
 struct MaterialInstance;
 struct DescriptorAllocatorGrowable;

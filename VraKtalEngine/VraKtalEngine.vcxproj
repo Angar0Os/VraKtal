@@ -142,6 +142,7 @@
     <ClCompile Include="..\external\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\external\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\external\tracy\public\TracyClient.cpp" />
+    <ClCompile Include="..\src\core\gpu-details\vkInitializers.cpp" />
     <ClCompile Include="..\src\core\gpu\commandBuffer_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\gpu\descriptor_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\gpu\image_impl_vulkan.cpp" />
@@ -149,15 +150,18 @@
     <ClCompile Include="..\src\core\renderContext_impl_glfw_vulkan.cpp" />
     <ClCompile Include="..\src\demo\camera.cpp" />
     <ClCompile Include="..\src\demo\inputManager.cpp" />
+    <ClInclude Include="..\external\imgui\imconfig.h" />
+    <ClInclude Include="..\external\imgui\imgui.h" />
+    <ClInclude Include="..\src\core\gpu-details\vkInitializers.h" />
+    <ClInclude Include="..\src\core\gpu-details\vkTypes.h" />
+    <ClInclude Include="..\src\editor\mainEditor.h" />
+    <ClCompile Include="..\src\editor\mainEditor.cpp" />
     <ClCompile Include="..\src\graphics\material_impl_vulkan.cpp" />
     <ClCompile Include="..\src\graphics\mesh_impl_vulkan.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\external\imgui\imconfig - Copy.h" />
-    <ClInclude Include="..\external\imgui\imgui - Copy.h" />
-    <ClInclude Include="..\external\imgui\imgui_impl_glfw - Copy.h" />
     <ClInclude Include="..\external\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="..\external\imgui\imgui_impl_vulkan.h" />
     <ClInclude Include="..\external\imgui\imgui_internal.h" />
@@ -183,7 +187,6 @@
     <ClInclude Include="..\src\graphics\mesh_impl_vulkan.h" />
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h" />
-    <ClInclude Include="..\src\vkTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\meshes\basicmesh.glb" />

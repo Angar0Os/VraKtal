@@ -4,7 +4,7 @@
 
 #include <core/gpu/image.h>
 #include <core/renderContext.h>
-#include "../src/vkTypes.h"
+#include "../src/core/gpu-details/vkTypes.h"
 
 #include <vulkan/vulkan.h>
 

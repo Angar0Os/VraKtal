@@ -7,6 +7,7 @@
 
 #include <deque>
 #include <functional>
+#include <glm/glm.hpp>
 
 namespace vkTypes
 {

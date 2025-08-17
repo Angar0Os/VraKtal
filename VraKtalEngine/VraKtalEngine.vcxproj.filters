@@ -55,6 +55,15 @@
     <Filter Include="Source Files\imgui">
       <UniqueIdentifier>{0515bb54-713c-45c7-8c7b-0702d120c404}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\editor">
+      <UniqueIdentifier>{39c4a19b-f2ae-49bc-b70c-cf6717a5737e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\editor">
+      <UniqueIdentifier>{3855d78d-2fd9-4a21-86ad-79ee52f86653}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\gpu-detail">
+      <UniqueIdentifier>{e2f47c17-24fc-4f3c-9e93-100bd4a53f56}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -111,6 +120,12 @@
     <ClCompile Include="..\external\imgui\imgui_widgets.cpp">
       <Filter>Source Files\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\editor\mainEditor.cpp">
+      <Filter>Source Files\editor</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\gpu-details\vkInitializers.cpp">
+      <Filter>Source Files\core\gpu-detail</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\vkb\VkBootstrap.h">
@@ -130,9 +145,6 @@
     </ClInclude>
     <ClInclude Include="..\src\core\gpu\commandBuffer_impl_vulkan.h">
       <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\vkTypes.h">
-      <Filter>Source Files\core</Filter>
     </ClInclude>
     <ClInclude Include="..\include\core\gpu\descriptor.h">
       <Filter>Header Files\core\gpu</Filter>
@@ -173,15 +185,6 @@
     <ClInclude Include="..\external\tracy\public\tracy\Tracy.hpp">
       <Filter>Header Files\tracy</Filter>
     </ClInclude>
-    <ClInclude Include="..\external\imgui\imconfig - Copy.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\imgui\imgui - Copy.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\imgui\imgui_impl_glfw - Copy.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="..\external\imgui\imgui_impl_glfw.h">
       <Filter>Header Files\imgui</Filter>
     </ClInclude>
@@ -199,6 +202,21 @@
     </ClInclude>
     <ClInclude Include="..\external\imgui\imstb_truetype.h">
       <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\editor\mainEditor.h">
+      <Filter>Header Files\editor</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imconfig.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\imgui\imgui.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\gpu-details\vkInitializers.h">
+      <Filter>Source Files\core\gpu-detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\gpu-details\vkTypes.h">
+      <Filter>Source Files\core\gpu-detail</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

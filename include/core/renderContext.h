@@ -26,6 +26,9 @@ namespace core::rhi
 
 		Internal& GetInternal() { return *m_Internal; }
 		const Internal& GetInternal() const { return *m_Internal; };
+
+		void BeginFrame();
+		bool Present();
 	};
 }
 

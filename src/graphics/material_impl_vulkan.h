@@ -7,7 +7,7 @@
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 
-#include "../vkTypes.h"
+#include "../core/gpu-details/vkTypes.h"
 #include "../core/gpu/descriptor_impl_vulkan.h"
 #include "../core/renderContext_impl_glfw_vulkan.h"
 
