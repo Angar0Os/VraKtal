@@ -13,7 +13,7 @@ void Descriptor::Internal::InitDescriptor(RenderContext& rCtx)
 	};
 
 	globalDescriptorAllocator.InitPool(rCtx.GetInternal().device, 10, sizes);
-	rCtx.GetInternal().commandBuffer->GetInternal().mainDeletionQueue.PushFunction(
+	rCtx.GetInternal().mainDeletionQueue.PushFunction(
 		[&]() {
 			vkDestroyDescriptorPool(rCtx.GetInternal().device, globalDescriptorAllocator.pool, nullptr);
 		}
@@ -30,7 +30,7 @@ void Descriptor::Internal::InitDescriptor(RenderContext& rCtx)
 		gpuSceneDataDescriptorLayout = builder.Build(rCtx.GetInternal().device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 	}
 
-	rCtx.GetInternal().commandBuffer->GetInternal().mainDeletionQueue.PushFunction([&]() {
+	rCtx.GetInternal().mainDeletionQueue.PushFunction([&]() {
 		vkDestroyDescriptorSetLayout(rCtx.GetInternal().device, drawImageDescriptorLayout, nullptr);
 		vkDestroyDescriptorSetLayout(rCtx.GetInternal().device, gpuSceneDataDescriptorLayout, nullptr);
 		});
@@ -54,7 +54,7 @@ void Descriptor::Internal::InitDescriptor(RenderContext& rCtx)
 		rCtx.GetInternal().frames[i].frameDescriptors = std::make_unique<DescriptorAllocatorGrowable>();
 		rCtx.GetInternal().frames[i].frameDescriptors->Init(rCtx.GetInternal().device, 1000, frame_sizes);
 
-		rCtx.GetInternal().commandBuffer->GetInternal().mainDeletionQueue.PushFunction([&, i]() {
+		rCtx.GetInternal().mainDeletionQueue.PushFunction([&, i]() {
 			rCtx.GetInternal().frames[i].frameDescriptors->DestroyPools(rCtx.GetInternal().device);
 			});
 	}

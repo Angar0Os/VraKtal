@@ -31,25 +31,3 @@ void CommandBuffer::Internal::InitCommand()
 	mainDeletionQueue.PushFunction([=]() {vkDestroyCommandPool(renderContext.GetInternal().device, renderContext.GetInternal().immCommandPool, nullptr); });
 }
 
-void CommandBuffer::Internal::ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function)
-{
-	vkResetFences(renderContext.GetInternal().device, 1, &renderContext.GetInternal().immFence);
-	vkResetCommandBuffer(renderContext.GetInternal().immCommandBuffer, 0);
-
-	VkCommandBuffer cmd = renderContext.GetInternal().immCommandBuffer;
-
-	VkCommandBufferBeginInfo cmdBeginInfo = gpu_detail::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-	vkBeginCommandBuffer(cmd, &cmdBeginInfo);
-
-	function(cmd);
-
-	vkEndCommandBuffer(cmd);
-
-	VkCommandBufferSubmitInfo cmdInfo = gpu_detail::CommandBufferSubmitInfo(cmd);
-	VkSubmitInfo2 submit = gpu_detail::SubmitInfo(&cmdInfo, {}, {});
-
-	vkQueueSubmit2(renderContext.GetInternal().graphicsQueue, 1, &submit, renderContext.GetInternal().immFence);
-	vkWaitForFences(renderContext.GetInternal().device, 1, &renderContext.GetInternal().immFence, true, 9999999999);
-}
-

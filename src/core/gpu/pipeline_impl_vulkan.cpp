@@ -54,7 +54,7 @@ void Pipeline::Internal::InitBackgroundPipelines(RenderContext& rCtx)
 	VkPipelineLayoutCreateInfo computeLayout{};
 	computeLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	computeLayout.pNext = nullptr;
-	computeLayout.pSetLayouts = &rCtx.GetInternal().descriptor->GetInternal().drawImageDescriptorLayout;
+	//computeLayout.pSetLayouts = &rCtx.GetInternal().descriptor->GetInternal().drawImageDescriptorLayout;
 	computeLayout.setLayoutCount = 1;
 
 	VkPushConstantRange pushConstant{};
@@ -121,7 +121,7 @@ void Pipeline::Internal::InitBackgroundPipelines(RenderContext& rCtx)
 
 	VkDevice deviceHandle = rCtx.GetInternal().device;
 
-	rCtx.GetInternal().commandBuffer->GetInternal().mainDeletionQueue.PushFunction([=]() {
+	rCtx.GetInternal().mainDeletionQueue.PushFunction([=]() {
 		vkDestroyPipelineLayout(deviceHandle, gradientPipelineLayout, nullptr);
 		vkDestroyPipeline(deviceHandle, sky.pipeline, nullptr);
 		vkDestroyPipeline(deviceHandle, gradient.pipeline, nullptr);

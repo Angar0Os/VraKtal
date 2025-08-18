@@ -1,8 +1,9 @@
 #include "material_impl_vulkan.h"
 #include "../core/gpu/pipeline_impl_vulkan.h"
+#include "../core/gpu-details/vkInitializers.h"
 
+#include <iostream>
 
-#include <core/renderContext.h>
 
 void GLTFMetallic_Roughness::BuildPipelines(core::rhi::RenderContext& renderContext)
 {
@@ -30,11 +31,13 @@ void GLTFMetallic_Roughness::BuildPipelines(core::rhi::RenderContext& renderCont
 
 	materialLayout = layoutBuilder.Build(renderContext.GetInternal().device, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	VkDescriptorSetLayout layouts[] = { renderContext.GetInternal().descriptor->GetInternal().gpuSceneDataDescriptorLayout, materialLayout};
+	// TODO : Trouver un moyen d'accéder à un de mes descriptors. Je pense que tout comme les pipelines, il doit y avoir un currentDescriptor ?
+	
+	//VkDescriptorSetLayout layouts[] = { renderContext.GetInternal().descriptor->GetInternal().gpuSceneDataDescriptorLayout, materialLayout};
 
-	VkPipelineLayoutCreateInfo meshLayoutInfo = renderContext.GetInternal().pipeline->GetInternal().PipelineLayoutCreateInfo();
+	VkPipelineLayoutCreateInfo meshLayoutInfo = core::gpu_detail::PipelineLayoutCreateInfo();
 	meshLayoutInfo.setLayoutCount = 2;
-	meshLayoutInfo.pSetLayouts = layouts;
+	//meshLayoutInfo.pSetLayouts = layouts;
 	meshLayoutInfo.pPushConstantRanges = &matrixRange;
 	meshLayoutInfo.pushConstantRangeCount = 1;
 
@@ -44,25 +47,28 @@ void GLTFMetallic_Roughness::BuildPipelines(core::rhi::RenderContext& renderCont
 	opaquePipeline.layout = newLayout;
 	transparentPipeline.layout = newLayout;
 
-	renderContext.GetInternal().pipeline->GetInternal().SetShaders(meshVertexShader, meshFragShader);
-	renderContext.GetInternal().pipeline->GetInternal().SetInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-	renderContext.GetInternal().pipeline->GetInternal().SetPolygonMode(VK_POLYGON_MODE_FILL);
-	renderContext.GetInternal().pipeline->GetInternal().SetCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
-	renderContext.GetInternal().pipeline->GetInternal().SetMultisamplingNone();
-	renderContext.GetInternal().pipeline->GetInternal().DisableBlending();
-	renderContext.GetInternal().pipeline->GetInternal().EnableDepthtest(true, VK_COMPARE_OP_LESS_OR_EQUAL);
-
-	renderContext.GetInternal().pipeline->GetInternal().SetColorAttachmentFormat(renderContext.GetInternal().drawImage.imageFormat);
-	renderContext.GetInternal().pipeline->GetInternal().SetDepthFormat(renderContext.GetInternal().depthImage.imageFormat);
-
-	renderContext.GetInternal().pipeline->GetInternal().PipelineLayout = newLayout;
-
-	opaquePipeline.pipeline = renderContext.GetInternal().pipeline->GetInternal().BuildPipeline(renderContext.GetInternal().device);
-
-	renderContext.GetInternal().pipeline->GetInternal().EnableBlendingAdditive();
-	renderContext.GetInternal().pipeline->GetInternal().EnableDepthtest(false, VK_COMPARE_OP_LESS_OR_EQUAL);
-
-	transparentPipeline.pipeline = renderContext.GetInternal().pipeline->GetInternal().BuildPipeline(renderContext.GetInternal().device);
+	// TODO : On peut avoir plusieurs pipeline de rendu ? Si oui, il faut trouver le bon et faire toutes ces actions
+	// TODO : Il doit probablement y avoir un currentPipeline dans ma currentFrame, à creuser 
+	
+	// renderContext.GetInternal().pipeline->GetInternal().SetShaders(meshVertexShader, meshFragShader);
+	// renderContext.GetInternal().pipeline->GetInternal().SetInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+	// renderContext.GetInternal().pipeline->GetInternal().SetPolygonMode(VK_POLYGON_MODE_FILL);
+	// renderContext.GetInternal().pipeline->GetInternal().SetCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_CLOCKWISE);
+	// renderContext.GetInternal().pipeline->GetInternal().SetMultisamplingNone();
+	// renderContext.GetInternal().pipeline->GetInternal().DisableBlending();
+	// renderContext.GetInternal().pipeline->GetInternal().EnableDepthtest(true, VK_COMPARE_OP_LESS_OR_EQUAL);
+	//
+	// renderContext.GetInternal().pipeline->GetInternal().SetColorAttachmentFormat(renderContext.GetInternal().drawImage.imageFormat);
+	// renderContext.GetInternal().pipeline->GetInternal().SetDepthFormat(renderContext.GetInternal().depthImage.imageFormat);
+	//
+	// renderContext.GetInternal().pipeline->GetInternal().PipelineLayout = newLayout;
+	//
+	// opaquePipeline.pipeline = renderContext.GetInternal().pipeline->GetInternal().BuildPipeline(renderContext.GetInternal().device);
+	//
+	// renderContext.GetInternal().pipeline->GetInternal().EnableBlendingAdditive();
+	// renderContext.GetInternal().pipeline->GetInternal().EnableDepthtest(false, VK_COMPARE_OP_LESS_OR_EQUAL);
+	//
+	// transparentPipeline.pipeline = renderContext.GetInternal().pipeline->GetInternal().BuildPipeline(renderContext.GetInternal().device);
 
 	vkDestroyShaderModule(renderContext.GetInternal().device, meshFragShader, nullptr);
 	vkDestroyShaderModule(renderContext.GetInternal().device, meshVertexShader, nullptr);

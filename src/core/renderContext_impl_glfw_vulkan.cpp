@@ -303,3 +303,25 @@ void RenderContext::Internal::DestroyBuffer(const vkTypes::AllocatedBuffer buffe
 {
 	vmaDestroyBuffer(allocator, buffer.buffer, buffer.allocation);
 }
+
+void RenderContext::Internal::ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function)
+{
+	vkResetFences(device, 1, &immFence);
+	vkResetCommandBuffer(immCommandBuffer, 0);
+
+	VkCommandBuffer cmd = immCommandBuffer;
+
+	VkCommandBufferBeginInfo cmdBeginInfo = gpu_detail::CommandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	vkBeginCommandBuffer(cmd, &cmdBeginInfo);
+
+	function(cmd);
+
+	vkEndCommandBuffer(cmd);
+
+	VkCommandBufferSubmitInfo cmdInfo = gpu_detail::CommandBufferSubmitInfo(cmd);
+	VkSubmitInfo2 submit = gpu_detail::SubmitInfo(&cmdInfo, {}, {});
+
+	vkQueueSubmit2(graphicsQueue, 1, &submit, immFence);
+	vkWaitForFences(device, 1, &immFence, true, 9999999999);
+}

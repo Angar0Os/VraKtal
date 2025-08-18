@@ -29,7 +29,7 @@ MainEditor::MainEditor(core::rhi::RenderContext& rCtx)
 	init_info.Device = rCtx.GetInternal().device;
 	init_info.QueueFamily = rCtx.GetInternal().graphicsQueueFamily;
 	init_info.Queue = rCtx.GetInternal().graphicsQueue;
-	init_info.DescriptorPool = rCtx.GetInternal().descriptor->GetInternal().globalDescriptorAllocator.pool;
+	//init_info.DescriptorPool = rCtx.GetInternal().descriptor->GetInternal().globalDescriptorAllocator.pool;
 	init_info.MinImageCount = 2;
 	init_info.ImageCount = 2;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;

@@ -153,13 +153,13 @@ vkTypes::AllocatedImage Image::Internal::CreateImage(VkExtent3D size, VkFormat f
 vkTypes::AllocatedImage Image::Internal::CreateImage(void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, RenderContext& rCtx, bool mipmapped)
 {
 	size_t data_size = size.depth * size.width * size.height * 4;
-	vkTypes::AllocatedBuffer uploadBuffer = rCtx.GetInternal().commandBuffer->GetInternal().CreateBuffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+	vkTypes::AllocatedBuffer uploadBuffer = rCtx.GetInternal().CreateBuffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 	memcpy(uploadBuffer.info.pMappedData, data, data_size);
 
 	vkTypes::AllocatedImage new_image = CreateImage(size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, rCtx, mipmapped);
 
-	rCtx.GetInternal().commandBuffer->GetInternal().ImmediateSubmit([&](VkCommandBuffer cmd) 
+	rCtx.GetInternal().ImmediateSubmit([&](VkCommandBuffer cmd) 
 		{
 		TransitionImage(cmd, new_image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -179,7 +179,7 @@ vkTypes::AllocatedImage Image::Internal::CreateImage(void* data, VkExtent3D size
 		TransitionImage(cmd, new_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		});
 
-	rCtx.GetInternal().commandBuffer->GetInternal().DestroyBuffer(uploadBuffer);
+	rCtx.GetInternal().DestroyBuffer(uploadBuffer);
 	return new_image;
 }
 

@@ -62,23 +62,25 @@ vkTypes::GPUMeshBuffers graphics::rhi::Mesh::Internal::UploadMesh(std::span<uint
 
     vkTypes::GPUMeshBuffers newSurface;
 
-    newSurface.vertexBuffer = rCtx.GetInternal().commandBuffer->GetInternal().CreateBuffer(vertexBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+    newSurface.vertexBuffer = rCtx.GetInternal().CreateBuffer(vertexBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY);
 
     VkBufferDeviceAddressInfo deviceAdressInfo{ .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,.buffer = newSurface.vertexBuffer.buffer };
     newSurface.vertexBufferAddress = vkGetBufferDeviceAddress(rCtx.GetInternal().device, &deviceAdressInfo);
 
-    newSurface.indexBuffer = rCtx.GetInternal().commandBuffer->GetInternal().CreateBuffer(indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    newSurface.indexBuffer = rCtx.GetInternal().CreateBuffer(indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY);
 
-    vkTypes::AllocatedBuffer staging = rCtx.GetInternal().commandBuffer->GetInternal().CreateBuffer(vertexBufferSize + indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    vkTypes::AllocatedBuffer staging = rCtx.GetInternal().CreateBuffer(vertexBufferSize + indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
     void* data = staging.info.pMappedData;
 
     memcpy(data, vertices.data(), vertexBufferSize);
     memcpy((char*)data + vertexBufferSize, indices.data(), indexBufferSize);
 
-    rCtx.GetInternal().commandBuffer->GetInternal().ImmediateSubmit([&](VkCommandBuffer cmd)
+    // TODO : Demander si c'est une bonne chose d'avoir mis le ImmediateSubmit dans mon renderContext.
+    
+    rCtx.GetInternal().ImmediateSubmit([&](VkCommandBuffer cmd)
         {
             VkBufferCopy vertexCopy{ 0 };
             vertexCopy.dstOffset = 0;
@@ -95,7 +97,7 @@ vkTypes::GPUMeshBuffers graphics::rhi::Mesh::Internal::UploadMesh(std::span<uint
             vkCmdCopyBuffer(cmd, staging.buffer, newSurface.indexBuffer.buffer, 1, &indexCopy);
         });
 
-    rCtx.GetInternal().commandBuffer->GetInternal().DestroyBuffer(staging);
+    rCtx.GetInternal().DestroyBuffer(staging);
     return newSurface;
 }
 
@@ -200,12 +202,14 @@ std::expected<std::shared_ptr<LoadedGLTF>, std::string> graphics::rhi::Mesh::Int
     std::vector<vkTypes::AllocatedImage> images;
     std::vector<std::shared_ptr<GLTFMaterial>> materials;
 
-    for (fastgltf::Image& image : gltf.images)
-    {
-        images.push_back(rCtx->GetInternal().errorCheckerboardImage);
-    }
+    // TODO : Le errorCheckBoard doit probablement aller dans images, à creuser.
+    
+    // for (fastgltf::Image& image : gltf.images)
+    // {
+    //     images.push_back(rCtx->GetInternal().errorCheckerboardImage);
+    // }
 
-    file.materialDataBuffer = rCtx->GetInternal().commandBuffer->GetInternal().CreateBuffer(sizeof(GLTFMetallic_Roughness::MaterialConstants) * gltf.materials.size(),
+    file.materialDataBuffer = rCtx->GetInternal().CreateBuffer(sizeof(GLTFMetallic_Roughness::MaterialConstants) * gltf.materials.size(),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     int data_index = 0;
     GLTFMetallic_Roughness::MaterialConstants* sceneMaterialConstants = (GLTFMetallic_Roughness::MaterialConstants*)file.materialDataBuffer.info.pMappedData;
@@ -235,10 +239,12 @@ std::expected<std::shared_ptr<LoadedGLTF>, std::string> graphics::rhi::Mesh::Int
 
         GLTFMetallic_Roughness::MaterialResources materialResources;
 
-        materialResources.colorImage = rCtx->GetInternal().whiteImage;
-        materialResources.colorSampler = rCtx->GetInternal().defaultSamplerLinear;
-        materialResources.metalRoughImage = rCtx->GetInternal().whiteImage;
-        materialResources.metalRoughSampler = rCtx->GetInternal().defaultSamplerLinear;
+        // TODO : Trouver ou ranger ces images, probablement dans image aussi.
+        
+        // materialResources.colorImage = rCtx->GetInternal().whiteImage;
+        // materialResources.colorSampler = rCtx->GetInternal().defaultSamplerLinear;
+        // materialResources.metalRoughImage = rCtx->GetInternal().whiteImage;
+        // materialResources.metalRoughSampler = rCtx->GetInternal().defaultSamplerLinear;
 
         materialResources.dataBuffer = file.materialDataBuffer.buffer;
         materialResources.dataBufferOffset = data_index * sizeof(GLTFMetallic_Roughness::MaterialConstants);
@@ -252,10 +258,12 @@ std::expected<std::shared_ptr<LoadedGLTF>, std::string> graphics::rhi::Mesh::Int
             materialResources.colorSampler = file.samplers[sampler];
         }
 
-        MaterialInstance instance = rCtx->GetInternal().material->GetInternal().metalRoughMaterial.WriteMaterial(
-            rCtx->GetInternal().device, passType, materialResources, *file.descriptorPool
-        );
-        newMat->data = new MaterialInstance(instance);
+        // TODO : Le material doit être dans son propre fichier, aucun sens de le mettre dans le renderContext
+        
+        // MaterialInstance instance = rCtx->GetInternal().material->GetInternal().metalRoughMaterial.WriteMaterial(
+        //     rCtx->GetInternal().device, passType, materialResources, *file.descriptorPool
+        // );
+        //newMat->data = new MaterialInstance(instance);
     	data_index++;
     }
 
@@ -425,18 +433,18 @@ void LoadedGLTF::ClearAll()
     for (auto& [k, v] : meshes)
     {
 
-        owner->GetInternal().commandBuffer->GetInternal().DestroyBuffer(v->meshBuffers.indexBuffer);
-		owner->GetInternal().commandBuffer->GetInternal().DestroyBuffer(v->meshBuffers.vertexBuffer);
+        owner->GetInternal().DestroyBuffer(v->meshBuffers.indexBuffer);
+		owner->GetInternal().DestroyBuffer(v->meshBuffers.vertexBuffer);
     }
 
-    for (auto& [k, v] : images)
-    {
-
-        if (v.image == owner->GetInternal().errorCheckerboardImage.image)
-        {
-            continue;
-        };
-    }
+    // for (auto& [k, v] : images)
+    // {
+    //
+    //     if (v.image == owner->GetInternal().errorCheckerboardImage.image)
+    //     {
+    //         continue;
+    //     };
+    // }
 
     for (auto& sampler : samplers)
     {
@@ -448,7 +456,7 @@ void LoadedGLTF::ClearAll()
 
     descriptorPool->DestroyPools(device);
 
-    owner->GetInternal().commandBuffer->GetInternal().DestroyBuffer(materialBuffer);
+    owner->GetInternal().DestroyBuffer(materialBuffer);
 }
 
 graphics::rhi::Mesh::Mesh()

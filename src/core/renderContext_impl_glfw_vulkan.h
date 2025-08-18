@@ -86,6 +86,7 @@ struct core::rhi::RenderContext::Internal
 
 	vkTypes::AllocatedBuffer CreateBuffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 	void DestroyBuffer(const vkTypes::AllocatedBuffer buffer);
+	void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
 
 	bool IsInitialized{ false };
 	bool ResizeRequested{ false };
