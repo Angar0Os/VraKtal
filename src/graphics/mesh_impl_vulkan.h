@@ -3,10 +3,8 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <glm/vec3.hpp>
 #include <graphics/mesh.h>
 #include <unordered_map>
-#include <optional>
 #include <string_view>
 #include <span>
 #include <expected>
@@ -15,48 +13,18 @@
 #include <core/renderContext.h>
 #include "../core/gpu-details/vkTypes.h"
 
-struct MaterialInstance;
 struct DescriptorAllocatorGrowable;
-
-struct Bounds
-{
-	glm::vec3 origin;
-	float sphereRadius;
-	glm::vec3 extents;
-};
-
-struct Vertex
-{
-	glm::vec3 position;
-	float uv_x;
-	glm::vec3 normal;
-	float uv_y;
-	glm::vec4 color;
-};
-
-struct RenderObject
-{
-	uint32_t indexCount;
-	uint32_t firstIndex;
-	VkBuffer indexBuffer;
-
-	MaterialInstance* material;
-
-	Bounds bounds;
-	glm::mat4 transform;
-	VkDeviceAddress vertexBufferAddress;
-};
 
 struct GLTFMaterial
 {
-	MaterialInstance* data;
+	vkTypes::MaterialInstance* data;
 };
 
 struct GeoSurface
 {
 	uint32_t startIndex;
 	uint32_t count;
-	Bounds bounds;
+	vkTypes::Bounds bounds;
 	std::shared_ptr<GLTFMaterial> material;
 };
 
@@ -68,15 +36,9 @@ struct MeshAsset
 	vkTypes::GPUMeshBuffers meshBuffers;
 };
 
-struct DrawContext
-{
-	std::vector<RenderObject> OpaqueSurfaces;
-	std::vector<RenderObject> TransparentSurfaces;
-};
-
 class IRenderable
 {
-	virtual void Draw(const glm::mat4& topMatrix, DrawContext& ctx) = 0;
+	virtual void Draw(const glm::mat4& topMatrix, vkTypes::DrawContext& ctx) = 0;
 };
 
 struct Node : public IRenderable
@@ -96,7 +58,7 @@ struct Node : public IRenderable
 		}
 	}
 
-	virtual void Draw(const glm::mat4& topMatrix, DrawContext& ctx)
+	virtual void Draw(const glm::mat4& topMatrix, vkTypes::DrawContext& ctx)
 	{
 		for (auto& c : children)
 		{
@@ -109,7 +71,7 @@ struct MeshNode : Node
 {
 	std::shared_ptr<MeshAsset> mesh;
 
-	virtual void Draw(const glm::mat4& topMatrix, DrawContext& ctx) override;
+	virtual void Draw(const glm::mat4& topMatrix, vkTypes::DrawContext& ctx) override;
 };
 
 struct LoadedGLTF : public IRenderable
@@ -131,7 +93,7 @@ struct LoadedGLTF : public IRenderable
 
 	~LoadedGLTF() { ClearAll(); }
 
-	virtual void Draw(const glm::mat4& topMatrix, DrawContext& ctx);
+	virtual void Draw(const glm::mat4& topMatrix, vkTypes::DrawContext& ctx);
 
 private:
 
@@ -141,7 +103,7 @@ private:
 struct graphics::rhi::Mesh::Internal
 {
 	std::expected<std::shared_ptr<LoadedGLTF>, std::string> LoadGLTF(core::rhi::RenderContext* rCtx, std::string_view filePath);
-	vkTypes::GPUMeshBuffers UploadMesh(std::span<uint32_t> indices, std::span<Vertex> vertices, core::rhi::RenderContext& rCtx);
+	vkTypes::GPUMeshBuffers UploadMesh(std::span<uint32_t> indices, std::span<vkTypes::Vertex> vertices, core::rhi::RenderContext& rCtx);
 };
 
 #endif //VRAKTAL_CORE_GRAPHICS_MESH_IMPL_VULKAN_H

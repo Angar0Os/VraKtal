@@ -33,7 +33,7 @@ void GLTFMetallic_Roughness::BuildPipelines(core::rhi::RenderContext& renderCont
 
 	// TODO : Trouver un moyen d'accéder à un de mes descriptors. Je pense que tout comme les pipelines, il doit y avoir un currentDescriptor ?
 	
-	//VkDescriptorSetLayout layouts[] = { renderContext.GetInternal().descriptor->GetInternal().gpuSceneDataDescriptorLayout, materialLayout};
+	//std::vector<VkDescriptorSetLayout> layouts = { renderContext.GetInternal().d};
 
 	VkPipelineLayoutCreateInfo meshLayoutInfo = core::gpu_detail::PipelineLayoutCreateInfo();
 	meshLayoutInfo.setLayoutCount = 2;
@@ -83,11 +83,11 @@ void GLTFMetallic_Roughness::ClearResources(VkDevice device)
 	vkDestroyPipeline(device, opaquePipeline.pipeline, nullptr);
 }
 
-MaterialInstance GLTFMetallic_Roughness::WriteMaterial(VkDevice device, MaterialPass pass, const MaterialResources& resources, DescriptorAllocatorGrowable& descriptorAllocator)
+MaterialInstance GLTFMetallic_Roughness::WriteMaterial(VkDevice device, vkTypes::MaterialPass pass, const MaterialResources& resources, DescriptorAllocatorGrowable& descriptorAllocator)
 {
 	MaterialInstance matData;
 	matData.passType = pass;
-	if (pass == MaterialPass::Transparent)
+	if (pass == vkTypes::MaterialPass::Transparent)
 	{
 		matData.pipeline = &transparentPipeline;
 	}

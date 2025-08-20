@@ -6,8 +6,9 @@
 
 #include <core/renderContext.h>
 
-#include "../graphics/mesh_impl_vulkan.h"
+#include "../core/gpu/image_impl_vulkan.h"
 #include "../core/gpu-details/vkTypes.h"
+#include "../graphics/material_impl_vulkan.h"
 
 #include <vma/vk_mem_alloc.h>
 
@@ -29,6 +30,14 @@ struct FrameData
 
 	vkTypes::DeletionQueue deletionQueue;
 	std::unique_ptr<DescriptorAllocatorGrowable> frameDescriptors;
+
+	VkDescriptorSet currentMaterialDescriptor;
+	VkDescriptorSet currentSceneDescriptor;
+	VkDescriptorSetLayout currentDescriptorLayout;
+
+	VkPipeline currentPipeline = VK_NULL_HANDLE;
+	VkPipelineLayout currentPipelineLayout = VK_NULL_HANDLE;
+	vkTypes::MaterialPass currentPass = vkTypes::MaterialPass::MainColor;
 };
 
 struct core::rhi::RenderContext::Internal
@@ -78,6 +87,8 @@ struct core::rhi::RenderContext::Internal
 
 	FrameData& GetCurrentFrame();
 	FrameData& GetLastFrame();
+
+	DefaultImages defaultImages;
 
 	void CreateSwapchain(uint32_t width, uint32_t height);
 

@@ -9,24 +9,22 @@
 #include "../core/gpu/descriptor_impl_vulkan.h"
 #include "../core/renderContext_impl_glfw_vulkan.h"
 
-enum class MaterialPass : uint8_t
-{
-	MainColor,
-	Transparent,
-	Other
-};
+
+struct MaterialInstance;
 
 struct MaterialPipeline
 {
 	VkPipeline pipeline;
 	VkPipelineLayout layout;
+	std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 };
 
 struct MaterialInstance
 {
 	MaterialPipeline* pipeline;
 	VkDescriptorSet materialSet;
-	MaterialPass passType;
+	vkTypes::MaterialPass passType;
 };
 
 struct GPUDrawPushConstants
@@ -62,7 +60,7 @@ struct GLTFMetallic_Roughness
 	void BuildPipelines(core::rhi::RenderContext& renderContext);
 	void ClearResources(VkDevice device);
 
-	MaterialInstance WriteMaterial(VkDevice device, MaterialPass pass, const MaterialResources& resources, DescriptorAllocatorGrowable& descriptorAllocator);
+	MaterialInstance WriteMaterial(VkDevice device, vkTypes::MaterialPass pass, const MaterialResources& resources, DescriptorAllocatorGrowable& descriptorAllocator);
 };
 
 struct graphics::rhi::Material::Internal

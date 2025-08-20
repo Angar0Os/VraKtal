@@ -5,12 +5,16 @@
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
 
+#include "../../graphics/material_impl_vulkan.h"
+
 #include <deque>
 #include <functional>
 #include <glm/glm.hpp>
 
 namespace vkTypes
 {
+	struct MaterialInstance;
+	
 	struct AllocatedImage
 	{
 		VkImage image;
@@ -68,6 +72,50 @@ namespace vkTypes
 		glm::vec4 ambientColor;
 		glm::vec4 sunlightDirection;
 		glm::vec4 sunlightColor;
+	};
+
+	enum class MaterialPass : uint8_t
+	{
+		MainColor,
+		Transparent,
+		Other
+	};
+
+	struct Bounds
+	{
+		glm::vec3 origin;
+		float sphereRadius;
+		glm::vec3 extents;
+	};
+
+	struct Vertex
+	{
+		glm::vec3 position;
+		float uv_x;
+		glm::vec3 normal;
+		float uv_y;
+		glm::vec4 color;
+	};
+
+	struct RenderObject
+	{
+		uint32_t indexCount;
+		uint32_t firstIndex;
+		VkBuffer indexBuffer;
+
+		MaterialInstance* material;
+
+		Bounds bounds;
+		glm::mat4 transform;
+		VkDeviceAddress vertexBufferAddress;
+	};
+	
+	struct DrawContext
+	{
+		std::vector<RenderObject> OpaqueSurfaces;
+		std::vector<RenderObject> TransparentSurfaces;
+		std::unordered_map<MaterialPass, VkPipeline> pipelines;
+		MaterialPass activePass = MaterialPass::MainColor;
 	};
 }
 

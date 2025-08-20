@@ -6,7 +6,13 @@
 #include <core/renderContext.h>
 #include "../src/core/gpu-details/vkTypes.h"
 
-#include <vulkan/vulkan.h>
+struct DefaultImages
+{
+	vkTypes::AllocatedImage whiteImage;
+	vkTypes::AllocatedImage blackImage;
+	vkTypes::AllocatedImage greyImage;
+	vkTypes::AllocatedImage errorImage;
+};
 
 struct core::rhi::Image::Internal
 {
