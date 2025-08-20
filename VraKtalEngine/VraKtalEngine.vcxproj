@@ -144,6 +144,7 @@
     <ClCompile Include="..\external\tracy\public\TracyClient.cpp" />
     <ClInclude Include="..\external\imgui\imconfig.h" />
     <ClInclude Include="..\external\imgui\imgui.h" />
+    <ClCompile Include="..\src\core\gpu-details\vkInitializers.cpp" />
     <ClCompile Include="..\src\core\gpu\gpuDevice_impl_glfw_vulkan.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp" />
@@ -157,6 +158,8 @@
     <ClInclude Include="..\external\imgui\imstb_truetype.h" />
     <ClInclude Include="..\external\tracy\public\tracy\Tracy.hpp" />
     <ClInclude Include="..\include\core\gpu\gpuDevice.h" />
+    <ClInclude Include="..\src\core\gpu-details\vkInitializers.h" />
+    <ClInclude Include="..\src\core\gpu-details\vkTypes.h" />
     <ClInclude Include="..\src\core\gpu\gpuDevice_impl_glfw_vulkan.h" />
     <ClInclude Include="..\src\vkb\VkBootstrap.h" />
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h" />
@@ -225,7 +228,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="..\include\graphics\" />
-    <Folder Include="..\src\core\gpu-details\" />
     <Folder Include="..\src\demo\" />
     <Folder Include="..\src\editor\" />
     <Folder Include="..\src\graphics\" />
