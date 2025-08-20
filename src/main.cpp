@@ -1,28 +1,19 @@
-#include "core/renderContext_impl_glfw_vulkan.h"
-
-#include "editor/mainEditor.h"
+#include "core/gpu/gpuDevice_impl_glfw_vulkan.h"
 
 int main(int argc, char** argv)
 {
-	bool initEditor = true;
-
-	core::rhi::RenderContext rCtx{
-{
-		.windowTitle = "Vraktal Engine",
-		.windowSize = { 1280, 720 },
-		.resizeable = true
+	rhi::core::gpu::GpuDevice gpuDevice{
+		{
+			.windowTitle = "VraKtal Engine",
+			.windowSize = { 1280, 720 },
+			.resizable = true
 		}
 	};
 
-	editor::MainEditor mainEditor(rCtx);
-
-	do
-	{
-		if (initEditor)
-			mainEditor.RunImgui();
-	} while (rCtx.Present());
-
-	mainEditor.ClearImgui();
+	// do
+	// {
+	//
+	// } while (gpuDevice.Present());
 
 	return 0;
 }
