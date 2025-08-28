@@ -91,7 +91,7 @@ void GpuDeviceVulkan::CreateSurface(const WindowVulkan& _window)
 
 void GpuDeviceVulkan::PickPhysicalDevice()
 {
-    VkPhysicalDeviceVulkan13Features f13 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
+    VkPhysicalDeviceVulkan13Features f13 { .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
     f13.dynamicRendering = VK_TRUE;
     f13.synchronization2 = VK_TRUE;
 
