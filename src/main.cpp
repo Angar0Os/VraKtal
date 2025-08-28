@@ -1,19 +1,24 @@
+#include "core/gpu/window_impl_vulkan.h"
 #include "core/gpu/gpuDevice_impl_glfw_vulkan.h"
+#include "core/gpu/commandBuffer_impl_vulkan.h"
+
+#pragma comment(lib, "glfw3.lib")
+#pragma comment(lib, "vulkan-1.lib")
 
 int main(int argc, char** argv)
 {
-	rhi::core::gpu::GpuDevice gpuDevice{
-		{
-			.windowTitle = "VraKtal Engine",
-			.windowSize = { 1280, 720 },
-			.resizable = true
-		}
-	};
+	rhi::vulkan::WindowVulkan window(1280, 720, "Vulkan Window");
+	rhi::vulkan::GpuDeviceVulkan device(window);
 
-	// do
-	// {
-	//
-	// } while (gpuDevice.Present());
+	rhi::core::gpu::CommandBuffer* commandBuffer = device.CreateCommandBuffer();
+	commandBuffer->Begin();
+	commandBuffer->End();
 
-	return 0;
+	while (!window.ShouldClose())
+	{
+		window.PollEvents();
+	}
+
+	device.DestroyCommandBuffer(commandBuffer);
+	device.WaitIdle();
 }

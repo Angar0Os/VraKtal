@@ -2,7 +2,8 @@
 #define VRAKTAL_CORE_VKTYPES_H
 #pragma once 
 
-#include <vulkan/vulkan.h>
+#include <deque>
+#include <functional>
 #include <vma/vk_mem_alloc.h>
 
 namespace vkTypes
@@ -14,6 +15,26 @@ namespace vkTypes
         VmaAllocation allocation;
         VkExtent3D imageExtent;
         VkFormat imageFormat;
+    };
+
+    struct DeletionQueue
+    {
+        std::deque<std::function<void()>> deletors;
+
+        void PushFunction(std::function<void()>&& function)
+        {
+            deletors.push_back(function);
+        }
+
+        void Flush()
+        {
+            for (auto it = deletors.rbegin(); it != deletors.rend(); ++it)
+            {
+                (*it)();
+            }
+
+            deletors.clear();
+        }
     };
 
 }

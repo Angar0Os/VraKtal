@@ -2,30 +2,21 @@
 #define VRAKTAL_RHI_CORE_GPU_GPUDEVICE_H
 #pragma once
 
-#include <glm/glm.hpp>
-#include <memory>
-
 namespace rhi::core::gpu
 {
-    struct WindowDescriptor
-    {
-        const char* windowTitle = "VraKtalEngine";
-        glm::uvec2 windowSize = { 1280, 720 };
-        bool resizable = false;
-    };
-
+    class Window;
+    class CommandBuffer;
+    
     class GpuDevice
     {
-    private:
-        struct Internal;
-        std::unique_ptr<Internal> m_Internal;
     public:
-        GpuDevice() = default;
-        GpuDevice(const WindowDescriptor& windowDesc);
-        
-        ~GpuDevice() noexcept;
+        virtual ~GpuDevice() = default;
 
-        Internal& GetInternal() { return *m_Internal;}
+        virtual CommandBuffer* CreateCommandBuffer() = 0;
+        virtual void DestroyCommandBuffer(CommandBuffer* _commandBuffer) = 0;
+
+        virtual void RecreateSwapchain() = 0;
+    private:
     };
 }
 
