@@ -61,43 +61,19 @@
     <Filter Include="Source Files\editor">
       <UniqueIdentifier>{3855d78d-2fd9-4a21-86ad-79ee52f86653}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\core\gpu-detail">
-      <UniqueIdentifier>{e2f47c17-24fc-4f3c-9e93-100bd4a53f56}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\vkb\VkBootstrap.cpp">
       <Filter>Source Files\vkb</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\core\renderContext_impl_glfw_vulkan.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\core\gpu\commandBuffer_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\gpu\descriptor_impl_vulkan.cpp">
       <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
     <ClCompile Include="..\src\core\gpu\pipeline_impl_vulkan.cpp">
       <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\graphics\material_impl_vulkan.cpp">
-      <Filter>Source Files\graphics</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\core\gpu\image_impl_vulkan.cpp">
       <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\graphics\mesh_impl_vulkan.cpp">
-      <Filter>Source Files\graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\demo\camera.cpp">
-      <Filter>Source Files\demo</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\demo\inputManager.cpp">
-      <Filter>Source Files\demo</Filter>
     </ClCompile>
     <ClCompile Include="..\external\tracy\public\TracyClient.cpp">
       <Filter>Source Files\tracy</Filter>
@@ -120,11 +96,20 @@
     <ClCompile Include="..\external\imgui\imgui_widgets.cpp">
       <Filter>Source Files\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\editor\mainEditor.cpp">
-      <Filter>Source Files\editor</Filter>
+    <ClCompile Include="..\src\core\gpu\createTrianglePipeline_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\core\gpu-details\vkInitializers.cpp">
-      <Filter>Source Files\core\gpu-detail</Filter>
+    <ClCompile Include="..\src\core\gpu\gpuDevice_impl_glfw_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\main.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\gpu\renderer_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\core\gpu\window_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -134,32 +119,14 @@
     <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h">
       <Filter>Source Files\vkb</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\core\renderContext.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\renderContext_impl_glfw_vulkan.h">
-      <Filter>Source Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\core\gpu\commandBuffer.h">
       <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\gpu\commandBuffer_impl_vulkan.h">
       <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\core\gpu\descriptor.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\gpu\descriptor_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\core\gpu\pipeline.h">
       <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\graphics\material.h">
-      <Filter>Header Files\graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\graphics\material_impl_vulkan.h">
-      <Filter>Source Files\graphics</Filter>
     </ClInclude>
     <ClInclude Include="..\src\core\gpu\pipeline_impl_vulkan.h">
       <Filter>Source Files\core\gpu</Filter>
@@ -167,20 +134,8 @@
     <ClInclude Include="..\include\core\gpu\image.h">
       <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\graphics\mesh.h">
-      <Filter>Header Files\graphics</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\core\gpu\image_impl_vulkan.h">
       <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\graphics\mesh_impl_vulkan.h">
-      <Filter>Source Files\graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\demo\camera.h">
-      <Filter>Source Files\demo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\demo\inputManager.h">
-      <Filter>Source Files\demo</Filter>
     </ClInclude>
     <ClInclude Include="..\external\tracy\public\tracy\Tracy.hpp">
       <Filter>Header Files\tracy</Filter>
@@ -203,20 +158,35 @@
     <ClInclude Include="..\external\imgui\imstb_truetype.h">
       <Filter>Header Files\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\editor\mainEditor.h">
-      <Filter>Header Files\editor</Filter>
-    </ClInclude>
     <ClInclude Include="..\external\imgui\imconfig.h">
       <Filter>Header Files\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\external\imgui\imgui.h">
       <Filter>Header Files\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\core\gpu-details\vkInitializers.h">
-      <Filter>Source Files\core\gpu-detail</Filter>
+    <ClInclude Include="..\include\core\gpu\gpuDevice.h">
+      <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\core\gpu-details\vkTypes.h">
-      <Filter>Source Files\core\gpu-detail</Filter>
+    <ClInclude Include="..\include\core\gpu\renderer.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\core\gpu\renderingInfo.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\core\gpu\window.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\gpu\window_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\gpu\renderer_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\gpu\gpuDevice_impl_glfw_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\core\gpu\createTrianglePipeline_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -253,9 +223,6 @@
     <None Include="..\bin\assets\meshes\structure_mat.glb">
       <Filter>Resource Files\meshes</Filter>
     </None>
-    <None Include="..\bin\assets\shaders\input_structure.glsl">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\bin\assets\meshes\copyright.txt">
@@ -274,28 +241,10 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\bin\assets\shaders\colored_triangle.frag">
+    <CustomBuild Include="..\bin\assets\shaders\triangle.frag">
       <Filter>Resource Files\shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\colored_triangle.vert">
-      <Filter>Resource Files\shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\colored_triangle_mesh.vert">
-      <Filter>Resource Files\shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\gradient_color.comp">
-      <Filter>Resource Files\shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\mesh.frag">
-      <Filter>Resource Files\shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\mesh.vert">
-      <Filter>Resource Files\shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\sky.comp">
-      <Filter>Resource Files\shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\tex_image.frag">
+    <CustomBuild Include="..\bin\assets\shaders\triangle.vert">
       <Filter>Resource Files\shaders</Filter>
     </CustomBuild>
   </ItemGroup>

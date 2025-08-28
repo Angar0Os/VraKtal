@@ -1,4 +1,4 @@
-﻿#ifndef VRAKTAL_RHI_CORE_GPU_RENDERER.H
+﻿#ifndef VRAKTAL_RHI_CORE_GPU_RENDERER_H
 #define VRAKTAL_RHI_CORE_GPU_RENDERER_H
 #pragma once
 
@@ -11,7 +11,7 @@ namespace rhi::core::gpu
     {
     public:
         virtual ~Renderer() = default;
-        virtual void Render(gpu::CommandBuffer& cmd, const gpu::RenderingInfo& info) = 0;
+        virtual void Render(CommandBuffer& cmd, const RenderingInfo& info) = 0;
     };
 }
 

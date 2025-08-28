@@ -144,8 +144,8 @@
     <ClCompile Include="..\external\tracy\public\TracyClient.cpp" />
     <ClInclude Include="..\external\imgui\imconfig.h" />
     <ClInclude Include="..\external\imgui\imgui.h" />
-    <ClCompile Include="..\src\core\gpu-details\vkInitializers.cpp" />
     <ClCompile Include="..\src\core\gpu\commandBuffer_impl_vulkan.cpp" />
+    <ClCompile Include="..\src\core\gpu\createTrianglePipeline_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\gpu\gpuDevice_impl_glfw_vulkan.cpp" />
     <ClCompile Include="..\src\core\gpu\image_impl_vulkan.cpp" />
     <ClCompile Include="..\src\core\gpu\pipeline_impl_vulkan.cpp" />
@@ -169,9 +169,8 @@
     <ClInclude Include="..\include\core\gpu\renderer.h" />
     <ClInclude Include="..\include\core\gpu\renderingInfo.h" />
     <ClInclude Include="..\include\core\gpu\window.h" />
-    <ClInclude Include="..\src\core\gpu-details\vkInitializers.h" />
-    <ClInclude Include="..\src\core\gpu-details\vkTypes.h" />
     <ClInclude Include="..\src\core\gpu\commandBuffer_impl_vulkan.h" />
+    <ClInclude Include="..\src\core\gpu\createTrianglePipeline_impl_vulkan.h" />
     <ClInclude Include="..\src\core\gpu\gpuDevice_impl_glfw_vulkan.h" />
     <ClInclude Include="..\src\core\gpu\image_impl_vulkan.h" />
     <ClInclude Include="..\src\core\gpu\pipeline_impl_vulkan.h" />
@@ -192,43 +191,12 @@
     <None Include="..\bin\assets\meshes\monkey_smooth.mtl" />
     <None Include="..\bin\assets\meshes\structure.glb" />
     <None Include="..\bin\assets\meshes\structure_mat.glb" />
-    <CustomBuild Include="..\bin\assets\shaders\colored_triangle.frag">
+    <CustomBuild Include="..\bin\assets\shaders\triangle.frag">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\colored_triangle.vert">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\colored_triangle_mesh.vert">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\gradient_color.comp">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
-    </CustomBuild>
-    <None Include="..\bin\assets\shaders\input_structure.glsl" />
-    <CustomBuild Include="..\bin\assets\shaders\mesh.frag">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\mesh.vert">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\sky.comp">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\tex_image.frag">
+    <CustomBuild Include="..\bin\assets\shaders\triangle.vert">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
@@ -247,6 +215,27 @@
     <Folder Include="..\src\demo\" />
     <Folder Include="..\src\editor\" />
     <Folder Include="..\src\graphics\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\bin\assets\meshes\basicmesh.glb" />
+    <Content Include="..\bin\assets\meshes\copyright.txt" />
+    <Content Include="..\bin\assets\meshes\house.glb" />
+    <Content Include="..\bin\assets\meshes\house2.glb" />
+    <Content Include="..\bin\assets\meshes\lost_empire-Alpha.png" />
+    <Content Include="..\bin\assets\meshes\lost_empire-RGB.png" />
+    <Content Include="..\bin\assets\meshes\lost_empire-RGBA.png" />
+    <Content Include="..\bin\assets\meshes\lost_empire.mtl" />
+    <Content Include="..\bin\assets\meshes\monkey.glb" />
+    <Content Include="..\bin\assets\meshes\monkey2.glb" />
+    <Content Include="..\bin\assets\meshes\monkeyHD.glb" />
+    <Content Include="..\bin\assets\meshes\monkey_flat.mtl" />
+    <Content Include="..\bin\assets\meshes\monkey_smooth.mtl" />
+    <Content Include="..\bin\assets\meshes\structure.glb" />
+    <Content Include="..\bin\assets\meshes\structure_mat.glb" />
+    <Content Include="..\bin\assets\shaders\triangle.frag" />
+    <Content Include="..\bin\assets\shaders\triangle.vert" />
+    <Content Include="..\bin\VraKtalEngine_Debug.exe" />
+    <Content Include="..\bin\VraKtalEngine_Debug.pdb" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

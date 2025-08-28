@@ -1,22 +1,22 @@
 ﻿#ifndef VRAKTAL_RHI_CORE_GPU_RENDERER_VULKAN_H
 #define VRAKTAL_RHI_CORE_GPU_RENDERER_VULKAN_H
-#pragma comment
+#pragma once
 
 #include <core/gpu/renderer.h>
 #include <core/gpu/pipeline.h>
 
-using namespace rhi::core;
-using namespace rhi::core::gpu;
-
-class TriangleRenderer final : public Renderer
+namespace rhi::core::gpu
 {
-public:
-    TriangleRenderer(Pipeline* pipeline);
+    class TriangleRenderer final : public Renderer
+    {
+    public:
+        TriangleRenderer(Pipeline* pipeline);
 
-    void Render(CommandBuffer& commandBuffer, const RenderingInfo& info) override;
+        void Render(CommandBuffer& commandBuffer, const RenderingInfo& info) override;
 
-private:
-    Pipeline* m_pipeline;
-};
+    private:
+        Pipeline* m_pipeline;
+    }; 
+}
 
 #endif //VRAKTAL_RHI_CORE_GPU_RENDERER_VULKAN_H
