@@ -19,7 +19,13 @@ namespace rhi::vulkan
         void End() override;
         void Reset() override;
 
-        VkCommandBuffer CommandBuffer() const { return m_commandBuffer; }
+        void BeginRendering(const core::gpu::RenderingInfo& info) override;
+        void EndRendering() override;
+        
+        void BindPipeline(rhi::core::gpu::Pipeline* pipeline) override;
+        void Draw(uint32_t vertexCount) override;
+
+        VkCommandBuffer GetNative() const { return m_commandBuffer; }
     
     private:
         GpuDeviceVulkan& m_device;

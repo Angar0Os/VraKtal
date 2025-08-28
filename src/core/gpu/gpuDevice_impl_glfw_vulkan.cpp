@@ -131,7 +131,8 @@ void GpuDeviceVulkan::CreateAllocator()
     }
 }
 
-void GpuDeviceVulkan::CreateSwapchain(uint32_t _width, uint32_t _height) {
+void GpuDeviceVulkan::CreateSwapchain(uint32_t _width, uint32_t _height)
+{
     vkb::SwapchainBuilder swapchainBuilder { m_physicalDevice, m_device, m_surface };
     auto swapchain = swapchainBuilder
         .set_desired_extent(_width, _height)
