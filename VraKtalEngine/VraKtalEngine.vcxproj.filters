@@ -25,168 +25,90 @@
     <Filter Include="Header Files\core">
       <UniqueIdentifier>{48c7316c-2e0d-473b-b02f-90f71745585f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\core\gpu">
-      <UniqueIdentifier>{8e6afdbf-fd19-4dcd-8928-8d3461efc69f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\core">
       <UniqueIdentifier>{35fbcccd-5089-4ebf-b926-a6f7c6c280f7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\core\gpu">
       <UniqueIdentifier>{37793ba8-ca2a-4921-8106-033bdd5d42ec}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\graphics">
-      <UniqueIdentifier>{8ec603b5-5e99-4299-b93f-2f141305a3f4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\graphics">
-      <UniqueIdentifier>{f82bcd5e-36be-4ecb-9c78-17037e49f295}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\demo">
-      <UniqueIdentifier>{ae004043-3999-4775-b71f-5ec699c225df}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\tracy">
-      <UniqueIdentifier>{043b09be-894f-4526-8556-7326a7500aac}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\tracy">
-      <UniqueIdentifier>{acf0e72b-d1b5-4470-9435-98ae1861f670}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\imgui">
-      <UniqueIdentifier>{a62bd421-07eb-401d-84be-d58c1b0eb38c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\imgui">
-      <UniqueIdentifier>{0515bb54-713c-45c7-8c7b-0702d120c404}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\editor">
-      <UniqueIdentifier>{39c4a19b-f2ae-49bc-b70c-cf6717a5737e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\editor">
-      <UniqueIdentifier>{3855d78d-2fd9-4a21-86ad-79ee52f86653}</UniqueIdentifier>
+    <Filter Include="Header Files\core\gpu">
+      <UniqueIdentifier>{31028c06-3391-4d8c-826c-1bfe0e1568c4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\vkb\VkBootstrap.cpp">
+    <ClCompile Include="src\core\gpu\commandBuffer_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\createTrianglePipeline_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\image_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\pipeline_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\renderer_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\window_impl_vulkan.cpp">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vkb\VkBootstrap.cpp">
       <Filter>Source Files\vkb</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\gpu\commandBuffer_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\gpu\pipeline_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\gpu\image_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\tracy\public\TracyClient.cpp">
-      <Filter>Source Files\tracy</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\imgui\imgui.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\imgui\imgui_draw.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\imgui\imgui_impl_glfw.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\imgui\imgui_impl_vulkan.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\imgui\imgui_tables.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\imgui\imgui_widgets.cpp">
-      <Filter>Source Files\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\gpu\createTrianglePipeline_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\gpu\gpuDevice_impl_glfw_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\main.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\gpu\renderer_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\core\gpu\window_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\vkb\VkBootstrap.h">
+    <ClInclude Include="include\core\gpu\commandBuffer.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\gpuDevice.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\image.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\pipeline.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\renderer.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\renderingInfo.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\window.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\commandBuffer_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\createTrianglePipeline_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\image_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\pipeline_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\renderer_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\window_impl_vulkan.h">
+      <Filter>Source Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vkb\VkBootstrap.h">
       <Filter>Source Files\vkb</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\vkb\VkBootstrapDispatch.h">
+    <ClInclude Include="src\vkb\VkBootstrapDispatch.h">
       <Filter>Source Files\vkb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\core\gpu\commandBuffer.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\gpu\commandBuffer_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\core\gpu\pipeline.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\gpu\pipeline_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\core\gpu\image.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\gpu\image_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\tracy\public\tracy\Tracy.hpp">
-      <Filter>Header Files\tracy</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\imgui\imgui_impl_glfw.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\imgui\imgui_impl_vulkan.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\imgui\imgui_internal.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\imgui\imstb_rectpack.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\imgui\imstb_textedit.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\imgui\imstb_truetype.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\imgui\imconfig.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\imgui\imgui.h">
-      <Filter>Header Files\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\core\gpu\gpuDevice.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\core\gpu\renderer.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\core\gpu\renderingInfo.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\core\gpu\window.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\gpu\window_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\gpu\renderer_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\gpu\gpuDevice_impl_glfw_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\core\gpu\createTrianglePipeline_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

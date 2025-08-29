@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{22dc4128-bc54-4070-bf38-3e57d9eb6d27}</ProjectGuid>
-    <RootNamespace>VraKtalEngine</RootNamespace>
+    <ProjectGuid>{670236c9-26b2-4010-b43b-50d68b93c073}</ProjectGuid>
+    <RootNamespace>VraKtalEditor</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)lib\</OutDir>
+    <OutDir>$(SolutionDir)bin\</OutDir>
     <IntDir>$(SolutionDir)build\$(ProjectName)\$(Platform)_$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)_$(Configuration)</TargetName>
   </PropertyGroup>
@@ -79,7 +79,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>TRACY_ENABLE;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -93,7 +93,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>TRACY_ENABLE;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -107,15 +107,15 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>TRACY_ENABLE;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)external\include\;$(ProjectDir)include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)VraKtalEngine\include;$(ProjectDir)include;$(SolutionDir)external\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)external\lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)external\lib;$(SolutionDir)lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -124,7 +124,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>TRACY_ENABLE;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -135,88 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\gpu\commandBuffer_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\gpu\createTrianglePipeline_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.cpp" />
-    <ClCompile Include="src\core\gpu\image_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\gpu\pipeline_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\gpu\renderer_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\gpu\window_impl_vulkan.cpp" />
-    <ClCompile Include="src\vkb\VkBootstrap.cpp" />
-    <ClInclude Include="include\core\gpu\commandBuffer.h" />
-    <ClInclude Include="include\core\gpu\gpuDevice.h" />
-    <ClInclude Include="include\core\gpu\image.h" />
-    <ClInclude Include="include\core\gpu\pipeline.h" />
-    <ClInclude Include="include\core\gpu\renderer.h" />
-    <ClInclude Include="include\core\gpu\renderingInfo.h" />
-    <ClInclude Include="include\core\gpu\window.h" />
-    <ClInclude Include="src\core\gpu\commandBuffer_impl_vulkan.h" />
-    <ClInclude Include="src\core\gpu\createTrianglePipeline_impl_vulkan.h" />
-    <ClInclude Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.h" />
-    <ClInclude Include="src\core\gpu\image_impl_vulkan.h" />
-    <ClInclude Include="src\core\gpu\pipeline_impl_vulkan.h" />
-    <ClInclude Include="src\core\gpu\renderer_impl_vulkan.h" />
-    <ClInclude Include="src\core\gpu\window_impl_vulkan.h" />
-    <ClInclude Include="src\vkb\VkBootstrap.h" />
-    <ClInclude Include="src\vkb\VkBootstrapDispatch.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\bin\assets\meshes\basicmesh.glb" />
-    <None Include="..\bin\assets\meshes\house.glb" />
-    <None Include="..\bin\assets\meshes\house2.glb" />
-    <None Include="..\bin\assets\meshes\lost_empire.mtl" />
-    <None Include="..\bin\assets\meshes\monkey.glb" />
-    <None Include="..\bin\assets\meshes\monkey2.glb" />
-    <None Include="..\bin\assets\meshes\monkeyHD.glb" />
-    <None Include="..\bin\assets\meshes\monkey_flat.mtl" />
-    <None Include="..\bin\assets\meshes\monkey_smooth.mtl" />
-    <None Include="..\bin\assets\meshes\structure.glb" />
-    <None Include="..\bin\assets\meshes\structure_mat.glb" />
-    <CustomBuild Include="..\bin\assets\shaders\triangle.frag">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\bin\assets\shaders\triangle.vert">
-      <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\bin\assets\meshes\copyright.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\bin\assets\meshes\lost_empire-Alpha.png" />
-    <Image Include="..\bin\assets\meshes\lost_empire-RGB.png" />
-    <Image Include="..\bin\assets\meshes\lost_empire-RGBA.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="..\include\graphics\" />
-    <Folder Include="..\src\demo\" />
-    <Folder Include="..\src\editor\" />
-    <Folder Include="..\src\graphics\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="..\bin\assets\meshes\basicmesh.glb" />
-    <Content Include="..\bin\assets\meshes\copyright.txt" />
-    <Content Include="..\bin\assets\meshes\house.glb" />
-    <Content Include="..\bin\assets\meshes\house2.glb" />
-    <Content Include="..\bin\assets\meshes\lost_empire-Alpha.png" />
-    <Content Include="..\bin\assets\meshes\lost_empire-RGB.png" />
-    <Content Include="..\bin\assets\meshes\lost_empire-RGBA.png" />
-    <Content Include="..\bin\assets\meshes\lost_empire.mtl" />
-    <Content Include="..\bin\assets\meshes\monkey.glb" />
-    <Content Include="..\bin\assets\meshes\monkey2.glb" />
-    <Content Include="..\bin\assets\meshes\monkeyHD.glb" />
-    <Content Include="..\bin\assets\meshes\monkey_flat.mtl" />
-    <Content Include="..\bin\assets\meshes\monkey_smooth.mtl" />
-    <Content Include="..\bin\assets\meshes\structure.glb" />
-    <Content Include="..\bin\assets\meshes\structure_mat.glb" />
-    <Content Include="..\bin\assets\shaders\triangle.frag" />
-    <Content Include="..\bin\assets\shaders\triangle.vert" />
-    <Content Include="..\bin\VraKtalEngine_Debug.exe" />
-    <Content Include="..\bin\VraKtalEngine_Debug.pdb" />
+    <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

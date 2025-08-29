@@ -7,8 +7,7 @@
 #include <core/gpu/renderingInfo.h>
 #include <vector>
 
-#pragma comment(lib, "glfw3.lib")
-#pragma comment(lib, "vulkan-1.lib")
+#pragma comment(lib, "VraKtalEngine_Debug.lib")
 
 using namespace rhi::vulkan;
 using namespace rhi::core::gpu;

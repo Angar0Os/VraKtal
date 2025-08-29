@@ -6,6 +6,8 @@
 #include <GLFW/glfw3.h>
 #include <string>
 
+struct GLFWwindow;
+
 namespace rhi::vulkan
 {
     class WindowVulkan final : public rhi::core::gpu::Window

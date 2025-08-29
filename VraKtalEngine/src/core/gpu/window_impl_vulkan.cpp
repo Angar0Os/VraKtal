@@ -1,6 +1,8 @@
 ﻿#include "../src/core/gpu/window_impl_vulkan.h"
 #include <stdexcept>
 
+#pragma comment(lib, "glfw3.lib")
+
 using namespace rhi::vulkan;
 
 WindowVulkan::WindowVulkan(uint32_t _width, uint32_t _height, const char* _title, bool _resizable)
