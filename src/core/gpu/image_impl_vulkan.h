@@ -1,6 +1,6 @@
 ﻿#ifndef VRAKTAL_RHI_CORE_GPU_IMAGE_VULKAN_H
 #define VRAKTAL_RHI_CORE_GPU_IMAGE_VULKAN_H
-#pragma comment
+#pragma once
 
 #include <vulkan/vulkan.h>
 #include <core/gpu/image.h>

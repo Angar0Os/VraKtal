@@ -49,7 +49,7 @@ int main()
         color.storeOp = StoreOp::Store;
         info.colorAttachments.push_back(color);
 
-        triangleRenderer.Render(commandBuffer, info);
+        triangleRenderer.Render(commandBuffer, info, imageIndex);
 
         commandBuffer.End();
 

@@ -8,10 +8,10 @@ TriangleRenderer::TriangleRenderer(Pipeline* pipeline)
 {
 }
 
-void TriangleRenderer::Render(CommandBuffer& commandBuffer, const RenderingInfo& info)
+void TriangleRenderer::Render(CommandBuffer& commandBuffer, const RenderingInfo& info, uint32_t imageIndex)
 {
-    commandBuffer.BeginRendering(info);
+    commandBuffer.BeginRendering(info, imageIndex);
     commandBuffer.BindPipeline(m_pipeline);
-    commandBuffer.Draw(3);
+    commandBuffer.Draw(3, info.width, info.height);
     commandBuffer.EndRendering();
 }

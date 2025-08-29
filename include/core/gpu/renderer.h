@@ -11,7 +11,7 @@ namespace rhi::core::gpu
     {
     public:
         virtual ~Renderer() = default;
-        virtual void Render(CommandBuffer& cmd, const RenderingInfo& info) = 0;
+        virtual void Render(CommandBuffer& cmd, const RenderingInfo& info, uint32_t imageIndex) = 0;
     };
 }
 

@@ -12,7 +12,7 @@ namespace rhi::core::gpu
     public:
         TriangleRenderer(Pipeline* pipeline);
 
-        void Render(CommandBuffer& commandBuffer, const RenderingInfo& info) override;
+        void Render(CommandBuffer& commandBuffer, const RenderingInfo& info, uint32_t imageIndex) override;
 
     private:
         Pipeline* m_pipeline;
