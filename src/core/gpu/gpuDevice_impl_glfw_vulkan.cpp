@@ -237,7 +237,7 @@ void GpuDeviceVulkan::WrapSwapchainImages()
     m_swapchainImageWrappers.reserve(m_swapImages.size());
     for (size_t i = 0; i < m_swapImages.size(); ++i)
     {
-        auto* wrapper = new ImageVulkan(*this, m_swapImages[i], m_swapImageViews[i], m_swapExtent.width, m_swapExtent.height);
+        auto* wrapper = new ImageVulkan(*this, m_swapImages[i], m_swapImageViews[i], m_swapFormat ,m_swapExtent.width, m_swapExtent.height);
         m_swapchainImageWrappers.push_back(wrapper);
     }
 }

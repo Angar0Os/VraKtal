@@ -17,13 +17,14 @@ namespace rhi::vulkan
 
         void Begin() override;
         void End() override;
-        void Reset() override;
 
         void BeginRendering(const core::gpu::RenderingInfo& info, uint32_t imageIndex) override;
-        void EndRendering() override;
+        void EndRendering(uint32_t imageIndex) override;
         
         void BindPipeline(rhi::core::gpu::Pipeline* pipeline) override;
         void Draw(uint32_t vertexCount, uint32_t width, uint32_t height) override;
+
+        void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
         VkCommandBuffer GetNative() const { return m_commandBuffer; }
     

@@ -42,6 +42,8 @@ namespace rhi::vulkan
         VkFormat SwapFormat() const { return m_swapFormat; }
         VkExtent2D SwapExtent() const { return m_swapExtent; }
 
+        uint32_t CurrentFrame() const { return m_currentFrame; }
+
         core::gpu::Image* GetSwapchainImage(uint32_t index) const;
 
     private:

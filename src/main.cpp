@@ -23,7 +23,13 @@ int main()
     Pipeline* pipeline = CreateTrianglePipeline(device);
     TriangleRenderer triangleRenderer(pipeline);
 
-    CommandBufferVulkan commandBuffer(device);
+    std::vector<CommandBufferVulkan*> commandBuffers;
+    for (int i = 0; i < 2; ++i)
+    {
+        commandBuffers.push_back(new CommandBufferVulkan(device));
+    }
+
+    uint32_t currentFrame = 0;
 
     while (!window.ShouldClose())
     {
@@ -35,7 +41,8 @@ int main()
             continue;
         }
 
-        commandBuffer.Reset();
+        CommandBufferVulkan& commandBuffer = *commandBuffers[currentFrame];
+
         commandBuffer.Begin();
 
         RenderingInfo info;
@@ -52,12 +59,18 @@ int main()
         triangleRenderer.Render(commandBuffer, info, imageIndex);
 
         commandBuffer.End();
-
         device.EndFrame(imageIndex, commandBuffer.GetNative());
+
+        currentFrame = (currentFrame + 1) % 2;
     }
 
     device.WaitIdle();
-    delete pipeline;
     
+    for (auto* cmd : commandBuffers)
+    {
+        delete cmd;
+    }
+    delete pipeline;
+
     return 0;
 }

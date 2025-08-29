@@ -13,5 +13,5 @@ void TriangleRenderer::Render(CommandBuffer& commandBuffer, const RenderingInfo&
     commandBuffer.BeginRendering(info, imageIndex);
     commandBuffer.BindPipeline(m_pipeline);
     commandBuffer.Draw(3, info.width, info.height);
-    commandBuffer.EndRendering();
+    commandBuffer.EndRendering(imageIndex);
 }
