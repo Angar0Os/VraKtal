@@ -140,8 +140,13 @@
     <ClCompile Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.cpp" />
     <ClCompile Include="src\core\gpu\image_impl_vulkan.cpp" />
     <ClCompile Include="src\core\gpu\pipeline_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\gpu\renderer_impl_vulkan.cpp" />
     <ClCompile Include="src\core\gpu\window_impl_vulkan.cpp" />
+    <ClCompile Include="src\graphics\loaders\gltfLoader.cpp" />
+    <ClCompile Include="src\graphics\meshRenderer.cpp" />
+    <ClCompile Include="src\graphics\renderer_impl_vulkan.cpp" />
+    <ClCompile Include="src\graphics\resources\material.cpp" />
+    <ClCompile Include="src\graphics\resources\mesh.cpp" />
+    <ClCompile Include="src\graphics\scene\scene.cpp" />
     <ClCompile Include="src\vkb\VkBootstrap.cpp" />
     <ClInclude Include="include\core\gpu\commandBuffer.h" />
     <ClInclude Include="include\core\gpu\gpuDevice.h" />
@@ -155,8 +160,13 @@
     <ClInclude Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.h" />
     <ClInclude Include="src\core\gpu\image_impl_vulkan.h" />
     <ClInclude Include="src\core\gpu\pipeline_impl_vulkan.h" />
-    <ClInclude Include="src\core\gpu\renderer_impl_vulkan.h" />
     <ClInclude Include="src\core\gpu\window_impl_vulkan.h" />
+    <ClInclude Include="src\graphics\loaders\gltfLoader.h" />
+    <ClInclude Include="src\graphics\meshRenderer.h" />
+    <ClInclude Include="src\graphics\renderer_impl_vulkan.h" />
+    <ClInclude Include="src\graphics\resources\material.h" />
+    <ClInclude Include="src\graphics\resources\mesh.h" />
+    <ClInclude Include="src\graphics\scene\scene.h" />
     <ClInclude Include="src\vkb\VkBootstrap.h" />
     <ClInclude Include="src\vkb\VkBootstrapDispatch.h" />
   </ItemGroup>

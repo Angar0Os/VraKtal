@@ -1,14 +1,14 @@
-﻿#include "../src/core/gpu/renderer_impl_vulkan.h"
+﻿#include "renderer_impl_vulkan.h"
 
 using namespace rhi::core;
 using namespace rhi::core::gpu;
 
-TriangleRenderer::TriangleRenderer(Pipeline* pipeline)
+RendererVulkan::RendererVulkan(Pipeline* pipeline)
     : m_pipeline(pipeline)
 {
 }
 
-void TriangleRenderer::Render(CommandBuffer& commandBuffer, const RenderingInfo& info, uint32_t imageIndex)
+void RendererVulkan::Render(CommandBuffer& commandBuffer, const RenderingInfo& info, uint32_t imageIndex)
 {
     commandBuffer.BeginRendering(info, imageIndex);
     commandBuffer.BindPipeline(m_pipeline);
