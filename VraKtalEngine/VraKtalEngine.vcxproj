@@ -136,12 +136,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\core\gpu\commandBuffer_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\gpu\createTrianglePipeline_impl_vulkan.cpp" />
     <ClCompile Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.cpp" />
     <ClCompile Include="src\core\gpu\image_impl_vulkan.cpp" />
     <ClCompile Include="src\core\gpu\pipeline_impl_vulkan.cpp" />
     <ClCompile Include="src\core\gpu\window_impl_vulkan.cpp" />
     <ClCompile Include="src\graphics\loaders\gltfLoader.cpp" />
+    <ClCompile Include="src\graphics\loaders\shaderLoader.cpp" />
     <ClCompile Include="src\graphics\meshRenderer.cpp" />
     <ClCompile Include="src\graphics\renderer_impl_vulkan.cpp" />
     <ClCompile Include="src\graphics\resources\material.cpp" />
@@ -156,12 +156,12 @@
     <ClInclude Include="include\core\gpu\renderingInfo.h" />
     <ClInclude Include="include\core\gpu\window.h" />
     <ClInclude Include="src\core\gpu\commandBuffer_impl_vulkan.h" />
-    <ClInclude Include="src\core\gpu\createTrianglePipeline_impl_vulkan.h" />
     <ClInclude Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.h" />
     <ClInclude Include="src\core\gpu\image_impl_vulkan.h" />
     <ClInclude Include="src\core\gpu\pipeline_impl_vulkan.h" />
     <ClInclude Include="src\core\gpu\window_impl_vulkan.h" />
     <ClInclude Include="src\graphics\loaders\gltfLoader.h" />
+    <ClInclude Include="src\graphics\loaders\shaderLoader.h" />
     <ClInclude Include="src\graphics\meshRenderer.h" />
     <ClInclude Include="src\graphics\renderer_impl_vulkan.h" />
     <ClInclude Include="src\graphics\resources\material.h" />
@@ -191,6 +191,16 @@
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\mesh.frag">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\mesh.vert">
+      <FileType>Document</FileType>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)bin\%(Identity).spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslc.exe -o $(SolutionDir)bin\%(Identity).spv %(FullPath)</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

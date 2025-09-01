@@ -30,11 +30,15 @@ namespace graphics
         GpuMesh UploadMesh(const Mesh& mesh);
         void DestroyMesh(GpuMesh& mesh);
 
-        void Draw(rhi::vulkan::CommandBufferVulkan& cmd, const GpuMesh& mesh);
+        void Draw(rhi::vulkan::CommandBufferVulkan& cmd, const GpuMesh& mesh,
+                 const glm::mat4& model = glm::mat4(1.0f),
+                 const glm::mat4& view = glm::mat4(1.0f),
+                 const glm::mat4& projection = glm::mat4(1.0f));
 
     private:
-        rhi::vulkan::GpuDeviceVulkan& m_device;
+        void CreatePipeline();
 
+        rhi::vulkan::GpuDeviceVulkan& m_device;
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
         VkPipeline m_pipeline = VK_NULL_HANDLE;
     };

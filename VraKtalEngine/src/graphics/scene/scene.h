@@ -16,6 +16,12 @@ namespace graphics::scene
         int meshIndex;
         std::vector<int> children;
     };
+
+    struct Camera
+    {
+        glm::mat4 view{ 1.0f };
+        glm::mat4 proj{ 1.0f };
+    };
     
     class Scene
     {
@@ -23,6 +29,9 @@ namespace graphics::scene
         std::vector<resources::Mesh> meshes;
         std::vector<resources::Material> materials;
         std::vector<Node> nodes;
+
+        std::vector<std::string> textures;
+        Camera defaultCamera;
     };
 }
 
