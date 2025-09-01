@@ -45,7 +45,8 @@ namespace rhi::vulkan
         uint32_t CurrentFrame() const { return m_currentFrame; }
 
         core::gpu::Image* GetSwapchainImage(uint32_t index) const;
-
+        void UploadToBuffer(VkBuffer dst, const void* data, VkDeviceSize size);
+        
     private:
         void CreateInstance();
         void CreateSurface(const WindowVulkan& window);

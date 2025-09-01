@@ -34,12 +34,21 @@
     <Filter Include="Header Files\core\gpu">
       <UniqueIdentifier>{31028c06-3391-4d8c-826c-1bfe0e1568c4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\graphics">
+      <UniqueIdentifier>{e7857660-aa32-4544-923f-dd03448b715e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphics\loaders">
+      <UniqueIdentifier>{9101aa7a-8d4a-47c5-9425-387ba459b153}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphics\resources">
+      <UniqueIdentifier>{c32cc89c-bd47-49b8-a07d-2b3fe1fd7151}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphics\scene">
+      <UniqueIdentifier>{d65c7bc6-8622-4b4e-a3cf-c7aee40d454a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\gpu\commandBuffer_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\createTrianglePipeline_impl_vulkan.cpp">
       <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.cpp">
@@ -51,14 +60,32 @@
     <ClCompile Include="src\core\gpu\pipeline_impl_vulkan.cpp">
       <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\gpu\renderer_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\gpu\window_impl_vulkan.cpp">
       <Filter>Source Files\core\gpu</Filter>
     </ClCompile>
     <ClCompile Include="src\vkb\VkBootstrap.cpp">
       <Filter>Source Files\vkb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\loaders\gltfLoader.cpp">
+      <Filter>Source Files\graphics\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\loaders\shaderLoader.cpp">
+      <Filter>Source Files\graphics\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\resources\material.cpp">
+      <Filter>Source Files\graphics\resources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\resources\mesh.cpp">
+      <Filter>Source Files\graphics\resources</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\scene\scene.cpp">
+      <Filter>Source Files\graphics\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\renderer_impl_vulkan.cpp">
+      <Filter>Source Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\meshRenderer.cpp">
+      <Filter>Source Files\graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -86,9 +113,6 @@
     <ClInclude Include="src\core\gpu\commandBuffer_impl_vulkan.h">
       <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\gpu\createTrianglePipeline_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.h">
       <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
@@ -96,9 +120,6 @@
       <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
     <ClInclude Include="src\core\gpu\pipeline_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\renderer_impl_vulkan.h">
       <Filter>Source Files\core\gpu</Filter>
     </ClInclude>
     <ClInclude Include="src\core\gpu\window_impl_vulkan.h">
@@ -109,6 +130,27 @@
     </ClInclude>
     <ClInclude Include="src\vkb\VkBootstrapDispatch.h">
       <Filter>Source Files\vkb</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\loaders\gltfLoader.h">
+      <Filter>Source Files\graphics\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\loaders\shaderLoader.h">
+      <Filter>Source Files\graphics\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\resources\material.h">
+      <Filter>Source Files\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\resources\mesh.h">
+      <Filter>Source Files\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\scene\scene.h">
+      <Filter>Source Files\graphics\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\renderer_impl_vulkan.h">
+      <Filter>Source Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\meshRenderer.h">
+      <Filter>Source Files\graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -167,6 +209,12 @@
       <Filter>Resource Files\shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="..\bin\assets\shaders\triangle.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\mesh.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\bin\assets\shaders\mesh.vert">
       <Filter>Resource Files\shaders</Filter>
     </CustomBuild>
   </ItemGroup>
