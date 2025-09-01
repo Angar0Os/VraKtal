@@ -135,7 +135,7 @@ void GpuDeviceVulkan::CreateAllocator()
     alloc_info.instance = m_instance;
     alloc_info.physicalDevice = m_physicalDevice;
     alloc_info.device = m_device;
-    alloc_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+   // alloc_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     if (vmaCreateAllocator(&alloc_info, &m_allocator) != VK_SUCCESS)
     {
