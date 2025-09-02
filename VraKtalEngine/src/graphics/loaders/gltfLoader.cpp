@@ -146,7 +146,8 @@ Scene graphics::loaders::LoadScene(const std::string& path)
         std::string texPath;
         if (!img.uri.empty())
         {
-            texPath = (baseDir / img.uri).string();
+            std::filesystem::path texturePath = baseDir / img.uri;
+            texPath = texturePath.lexically_normal().string();
         }
         else if (!img.image.empty())
         {

@@ -7,7 +7,9 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-namespace rhi::vulkan { class GpuDeviceVulkan; class CommandBufferVulkan; }
+#include "../src/core/gpu/gpuDevice_impl_glfw_vulkan.h"
+
+namespace rhi::vulkan { class CommandBufferVulkan; }
 namespace graphics::resources { struct Vertex; struct Material; class Mesh; }
 
 namespace graphics
@@ -42,6 +44,9 @@ namespace graphics
         VkDescriptorSet CreateDescriptorSet(VkImageView view, VkSampler sampler);
 
         void CreateDescriptorPool(uint32_t maxSets);
+
+        void SetMaterialDescriptorSets(const std::vector<VkDescriptorSet>& sets);
+        void CreateDescriptorSetLayout();
 
     private:
         void CreatePipeline();

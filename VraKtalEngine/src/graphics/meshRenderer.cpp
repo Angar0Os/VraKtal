@@ -28,6 +28,34 @@ MeshRenderer::~MeshRenderer()
     DestroyDescriptors();
 }
 
+void MeshRenderer::SetMaterialDescriptorSets(const std::vector<VkDescriptorSet>& sets)
+{
+    m_materialDescriptorSets = sets;
+}
+
+void MeshRenderer::CreateDescriptorSetLayout()
+{
+    if (m_descriptorSetLayout) 
+    {
+        return;
+    }
+
+    VkDescriptorSetLayoutBinding binding{};
+    binding.binding = 0;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    binding.descriptorCount = 1;
+    binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutCreateInfo info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+    info.bindingCount = 1;
+    info.pBindings = &binding;
+
+    if (vkCreateDescriptorSetLayout(m_device.Device(), &info, nullptr, &m_descriptorSetLayout) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create descriptor set layout");
+    }
+}
+
 void MeshRenderer::DestroyDescriptors() 
 {
     VkDevice dev = m_device.Device();
@@ -214,9 +242,13 @@ void graphics::MeshRenderer::CreatePipeline()
     pushConstantRange.offset = 0;
     pushConstantRange.size = sizeof(glm::mat4) * 3;
 
+    CreateDescriptorSetLayout();
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
 
     if (vkCreatePipelineLayout(m_device.Device(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
     {
@@ -319,6 +351,13 @@ void graphics::MeshRenderer::Draw(CommandBufferVulkan& cmd, const GpuMesh& mesh,
     VkBuffer vertexBuffers[] = { mesh.vertexBuffer };
 
     vkCmdBindPipeline(nativeCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+
+    if (mesh.materialIndex >= 0 && mesh.materialIndex < m_materialDescriptorSets.size())
+    {
+        vkCmdBindDescriptorSets(nativeCmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            m_pipelineLayout, 0, 1,
+            &m_materialDescriptorSets[mesh.materialIndex], 0, nullptr);
+    }
 
     struct PushConstants 
     {

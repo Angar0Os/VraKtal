@@ -2,7 +2,6 @@
 #include "gltfLoader.h"
 #include "../../core/gpu/gpuDevice_impl_glfw_vulkan.h"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include <stdexcept>
@@ -38,7 +37,7 @@ TextureGpu TextureLoader::CreateWhiteFallback()
 	VkImageCreateInfo imgInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 	imgInfo.imageType = VK_IMAGE_TYPE_2D;
 	imgInfo.format = format;
-	imgInfo.extent = { tex.width, tex.height };
+	imgInfo.extent = { tex.width, tex.height, 1 };
 	imgInfo.mipLevels = 1;
 	imgInfo.arrayLayers = 1;
 	imgInfo.samples = VK_SAMPLE_COUNT_1_BIT;
