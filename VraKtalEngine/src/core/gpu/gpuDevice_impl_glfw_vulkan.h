@@ -47,7 +47,14 @@ namespace rhi::vulkan
 
         core::gpu::Image* GetSwapchainImage(uint32_t index) const;
         void UploadToBuffer(VkBuffer dst, const void* data, VkDeviceSize size);
-        
+
+        VkFormat DepthFormat() const { return m_depthFormat; }
+        VkImageView DepthImageView() const { return m_depthImageView; }
+        VkFormat FindDepthFormat();
+
+        void CreateDepthBuffer();
+		void DestroyDepthBuffer();
+
     private:
         void CreateInstance();
         void CreateSurface(const WindowVulkan& window);
@@ -91,6 +98,11 @@ namespace rhi::vulkan
         std::vector<FrameSync> m_frames;
         uint32_t m_currentFrame = 0;
         bool m_framebufferResized = false;
+
+        VkImage m_depthImage = VK_NULL_HANDLE;
+        VmaAllocation m_depthAllocation = VK_NULL_HANDLE;
+		VkImageView m_depthImageView = VK_NULL_HANDLE;
+		VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
     };
 }
 

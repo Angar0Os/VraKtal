@@ -75,12 +75,20 @@ void CommandBufferVulkan::BeginRendering(const RenderingInfo& info, uint32_t ima
         attachments.push_back(vkAttachmentInfo);
     }
 
+    VkRenderingAttachmentInfo depthAttachment{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    depthAttachment.imageView = m_device.DepthImageView();
+    depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.clearValue.depthStencil = { 1.0f, 0 };
+
     VkRenderingInfo vkInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO };
     vkInfo.renderArea.extent.width = info.width;
     vkInfo.renderArea.extent.height = info.height;
     vkInfo.layerCount = 1;
     vkInfo.colorAttachmentCount = static_cast<uint32_t>(attachments.size());
     vkInfo.pColorAttachments = attachments.data();
+    vkInfo.pDepthAttachment = &depthAttachment;
 
     TransitionImageLayout(
         swapImg->GetNative(),

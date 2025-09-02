@@ -13,5 +13,5 @@ void main()
     float light = max(dot(N, normalize(vec3(0.5, 1.0, 0.3))), 0.0);
 
     vec4 texColor = texture(tex, fragUV);
-    outColor = vec4(texColor.rgb * light, texColor.a);
+    outColor = texColor;
 }

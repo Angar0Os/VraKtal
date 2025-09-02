@@ -24,6 +24,7 @@ GpuDeviceVulkan::GpuDeviceVulkan(const WindowVulkan& _window)
     CreateLogicalDevice();
     CreateAllocator();
     CreateSwapchain(_window.Size().first, _window.Size().second);
+    CreateDepthBuffer();
     CreateCommandPool();
     CreateSyncObjects();
 }
@@ -34,6 +35,7 @@ GpuDeviceVulkan::~GpuDeviceVulkan()
     DestroySyncObjects();
     DeleteWrappedImages();
     DestroyCommandPool();
+    DestroyDepthBuffer();
     DestroySwapchain();
     if (m_allocator) vmaDestroyAllocator(m_allocator);
     if (m_device) vkDestroyDevice(m_device, nullptr);
@@ -371,3 +373,79 @@ void GpuDeviceVulkan::UploadToBuffer(VkBuffer dst, const void* data, VkDeviceSiz
     vmaDestroyBuffer(m_allocator, stagingBuffer, stagingAlloc);
 }
 
+VkFormat GpuDeviceVulkan::FindDepthFormat()
+{
+    std::vector<VkFormat> candidates = {
+        VK_FORMAT_D32_SFLOAT,
+        VK_FORMAT_D32_SFLOAT_S8_UINT,
+        VK_FORMAT_D24_UNORM_S8_UINT
+    };
+
+    for (VkFormat format : candidates) 
+    {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, &props);
+
+        if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) 
+        {
+            return format;
+        }
+    }
+
+    throw std::runtime_error("Failed to find supported depth format");
+}
+
+void GpuDeviceVulkan::CreateDepthBuffer()
+{
+    m_depthFormat = FindDepthFormat();
+
+    VkImageCreateInfo imageInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = m_swapExtent.width;
+    imageInfo.extent.height = m_swapExtent.height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = m_depthFormat;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    if (vmaCreateImage(m_allocator, &imageInfo, &allocInfo, &m_depthImage, &m_depthAllocation, nullptr) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("Failed to create depth image");
+    }
+
+    VkImageViewCreateInfo viewInfo{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+    viewInfo.image = m_depthImage;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = m_depthFormat;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    if (vkCreateImageView(m_device, &viewInfo, nullptr, &m_depthImageView) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("Failed to create depth image view");
+    }
+}
+
+void GpuDeviceVulkan::DestroyDepthBuffer()
+{
+    if (m_depthImageView) 
+    {
+        vkDestroyImageView(m_device, m_depthImageView, nullptr);
+        m_depthImageView = VK_NULL_HANDLE;
+    }
+    if (m_depthImage) 
+    {
+        vmaDestroyImage(m_allocator, m_depthImage, m_depthAllocation);
+        m_depthImage = VK_NULL_HANDLE;
+    }
+}
