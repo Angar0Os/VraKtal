@@ -135,7 +135,7 @@ void GpuDeviceVulkan::CreateAllocator()
     alloc_info.instance = m_instance;
     alloc_info.physicalDevice = m_physicalDevice;
     alloc_info.device = m_device;
-    alloc_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+   // alloc_info.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     if (vmaCreateAllocator(&alloc_info, &m_allocator) != VK_SUCCESS)
     {
@@ -314,7 +314,60 @@ void GpuDeviceVulkan::EndFrame(uint32_t imageIndex, VkCommandBuffer cmd)
     m_currentFrame = (m_currentFrame + 1) % OVERLAPPED_FRAMES;
 }
 
-rhi::core::gpu::Image* GpuDeviceVulkan::GetSwapchainImage(uint32_t index) const
+Image* GpuDeviceVulkan::GetSwapchainImage(uint32_t index) const
 {
     return m_swapchainImageWrappers[index];
 }
+
+void GpuDeviceVulkan::UploadToBuffer(VkBuffer dst, const void* data, VkDeviceSize size)
+{
+    VkBuffer stagingBuffer;
+    VmaAllocation stagingAlloc;
+
+    VkBufferCreateInfo bufferInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+    bufferInfo.size = size;
+    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+    if (vmaCreateBuffer(m_allocator, &bufferInfo, &allocInfo, &stagingBuffer, &stagingAlloc, VK_NULL_HANDLE) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create buffer");
+    }
+
+    void* mapped;
+    vmaMapMemory(m_allocator, stagingAlloc, &mapped);
+    memcpy(mapped, data, static_cast<size_t>(size));
+    vmaUnmapMemory(m_allocator, stagingAlloc);
+
+    VkCommandBufferAllocateInfo allocInfoCmd{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+    allocInfoCmd.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfoCmd.commandBufferCount = 1;
+    allocInfoCmd.commandPool = m_cmdPool;
+
+    VkCommandBuffer cmd;
+    vkAllocateCommandBuffers(m_device, &allocInfoCmd, &cmd);
+
+    VkCommandBufferBeginInfo beginInfo{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cmd, &beginInfo);
+
+    VkBufferCopy copyRegion{};
+    copyRegion.size = size;
+    vkCmdCopyBuffer(cmd, stagingBuffer, dst, 1, &copyRegion);
+
+    vkEndCommandBuffer(cmd);
+
+    VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmd;
+
+    vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_graphicsQueue);
+
+    vkFreeCommandBuffers(m_device,  m_cmdPool, 1, &cmd);
+
+    vmaDestroyBuffer(m_allocator, stagingBuffer, stagingAlloc);
+}
+
