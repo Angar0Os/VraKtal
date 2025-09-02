@@ -1,33 +1,105 @@
 ﻿#include "meshRenderer.h"
 #include "../graphics/loaders/shaderLoader.h"
+#include "../core/gpu/commandBuffer_impl_vulkan.h"
+#include "../core/gpu/gpuDevice_impl_glfw_vulkan.h"
+#include "../graphics/resources/material.h"
+#include "../graphics/resources/mesh.h"
 
 #include <stdexcept>
 #include <array>
-
-#include "../core/gpu/commandBuffer_impl_vulkan.h"
 
 using namespace rhi::core::gpu;
 using namespace rhi::vulkan;
 using namespace graphics::loaders;
 
+using graphics::MeshRenderer;
 
-graphics::MeshRenderer::MeshRenderer(GpuDeviceVulkan& device)
+MeshRenderer::MeshRenderer(GpuDeviceVulkan& device)
     : m_device(device)
 {
     CreatePipeline();
 }
 
-graphics::MeshRenderer::~MeshRenderer()
+MeshRenderer::~MeshRenderer()
 {
     VkDevice dev = m_device.Device();
-    if (m_pipeline)
+    if (m_pipeline)         vkDestroyPipeline(dev, m_pipeline, nullptr);
+    if (m_pipelineLayout)   vkDestroyPipelineLayout(dev, m_pipelineLayout, nullptr);
+    DestroyDescriptors();
+}
+
+void MeshRenderer::DestroyDescriptors() 
+{
+    VkDevice dev = m_device.Device();
+    if (m_descriptorPool) 
     {
-        vkDestroyPipeline(dev, m_pipeline, nullptr);
+        vkDestroyDescriptorPool(dev, m_descriptorPool, nullptr);
+        m_descriptorPool = VK_NULL_HANDLE;
     }
-    if (m_pipelineLayout)
+    if (m_descriptorSetLayout) 
     {
-        vkDestroyPipelineLayout(dev, m_pipelineLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, m_descriptorSetLayout, nullptr);
+        m_descriptorSetLayout = VK_NULL_HANDLE;
     }
+}
+
+void MeshRenderer::CreateDescriptorPool(uint32_t maxSets) 
+{
+    if (m_descriptorPool)
+    {
+        return;
+    }
+
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize.descriptorCount = maxSets;
+
+    VkDescriptorPoolCreateInfo info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+    info.poolSizeCount = 1;
+    info.pPoolSizes = &poolSize;
+    info.maxSets = maxSets;
+
+    if (vkCreateDescriptorPool(m_device.Device(), &info, nullptr, &m_descriptorPool) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create descriptor pool");
+    }
+}
+
+VkDescriptorSet MeshRenderer::CreateDescriptorSet(VkImageView view, VkSampler sampler) {
+    if (!m_descriptorSetLayout)
+    {
+        throw std::runtime_error("Descriptor set layout not created");
+    }
+    if (!m_descriptorPool) 
+    {
+        throw std::runtime_error("Descriptor pool not created");
+    }
+
+    VkDescriptorSetAllocateInfo alloc{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+    alloc.descriptorPool = m_descriptorPool;
+    alloc.descriptorSetCount = 1;
+    alloc.pSetLayouts = &m_descriptorSetLayout;
+
+    VkDescriptorSet set;
+    if (vkAllocateDescriptorSets(m_device.Device(), &alloc, &set) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to allocate descriptor set");
+    }
+
+    VkDescriptorImageInfo imgInfo{};
+    imgInfo.imageView = view;
+    imgInfo.sampler = sampler;
+    imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkWriteDescriptorSet write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+    write.dstSet = set;
+    write.dstBinding = 0;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write.pImageInfo = &imgInfo;
+
+    vkUpdateDescriptorSets(m_device.Device(), 1, &write, 0, nullptr);
+    return set;
 }
 
 void graphics::MeshRenderer::CreatePipeline()
@@ -179,11 +251,11 @@ void graphics::MeshRenderer::CreatePipeline()
     ShaderLoader::DestroyShaderModule(m_device.Device(), vertShaderModule);
 }
 
-graphics::GpuMesh graphics::MeshRenderer::UploadMesh(const Mesh& mesh)
+graphics::GpuMesh graphics::MeshRenderer::UploadMesh(const resources::Mesh& mesh)
 {
     GpuMesh gpuMesh{};
 
-    VkDeviceSize vertexBufferSize = mesh.vertices.size() * sizeof(Vertex);
+    VkDeviceSize vertexBufferSize = mesh.vertices.size() * sizeof(resources::Vertex);
     VkDeviceSize indexBufferSize  = mesh.indices.size() * sizeof(uint32_t);
 
     {

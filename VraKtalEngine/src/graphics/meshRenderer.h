@@ -4,11 +4,11 @@
 
 #include <vulkan/vulkan.h>
 #include <vma/vk_mem_alloc.h>
+#include <glm/glm.hpp>
+#include <vector>
 
-#include "resources/mesh.h"
-#include "../core/gpu/gpuDevice_impl_glfw_vulkan.h"
-
-using namespace graphics::resources;
+namespace rhi::vulkan { class GpuDeviceVulkan; class CommandBufferVulkan; }
+namespace graphics::resources { struct Vertex; struct Material; class Mesh; }
 
 namespace graphics
 {
@@ -19,6 +19,7 @@ namespace graphics
         VkBuffer indexBuffer = VK_NULL_HANDLE;
         VmaAllocation indexAlloc = VK_NULL_HANDLE;
         uint32_t indexCount = 0;
+        int materialIndex = -1;
     };
 
     class MeshRenderer
@@ -27,7 +28,7 @@ namespace graphics
         MeshRenderer(rhi::vulkan::GpuDeviceVulkan& device);
         ~MeshRenderer();
 
-        GpuMesh UploadMesh(const Mesh& mesh);
+        GpuMesh UploadMesh(const resources::Mesh& mesh);
         void DestroyMesh(GpuMesh& mesh);
 
         void Draw(rhi::vulkan::CommandBufferVulkan& cmd, const GpuMesh& mesh,
@@ -35,12 +36,25 @@ namespace graphics
                  const glm::mat4& view = glm::mat4(1.0f),
                  const glm::mat4& projection = glm::mat4(1.0f));
 
+        VkDescriptorSetLayout DescriptorSetLayout() const { return m_descriptorSetLayout; }
+        VkDevice Device() const { return m_device.Device(); }
+
+        VkDescriptorSet CreateDescriptorSet(VkImageView view, VkSampler sampler);
+
+        void CreateDescriptorPool(uint32_t maxSets);
+
     private:
         void CreatePipeline();
+        void DestroyDescriptors();
 
         rhi::vulkan::GpuDeviceVulkan& m_device;
-        VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
-        VkPipeline m_pipeline = VK_NULL_HANDLE;
+        VkPipeline          m_pipeline = VK_NULL_HANDLE;
+        VkPipelineLayout    m_pipelineLayout = VK_NULL_HANDLE;
+
+        VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
+        VkDescriptorPool      m_descriptorPool = VK_NULL_HANDLE;
+
+        std::vector<VkDescriptorSet> m_materialDescriptorSets;
     };
 }
 

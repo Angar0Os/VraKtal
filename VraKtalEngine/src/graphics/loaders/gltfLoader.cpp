@@ -8,6 +8,7 @@
 #include <iostream>
 #include <filesystem>
 #include <glm/gtc/type_ptr.hpp>
+#include <cfloat>
 
 using namespace graphics::scene;
 using namespace graphics::resources;
@@ -58,6 +59,21 @@ Scene graphics::loaders::LoadScene(const std::string& path)
         {
             material.roughnessFactor = (float)mat.values.at("roughnessFactor").Factor();
         }
+
+        if (mat.pbrMetallicRoughness.baseColorTexture.index >= 0)
+        {
+			int texIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
+            if (texIndex < (int)model.textures.size())
+            {
+				int imgIdx = model.textures[texIndex].source;
+                material.baseColorTexture = imgIdx;
+            }
+        }
+        else
+        {
+            material.baseColorTexture = -1;
+        }
+
         scene.materials.push_back(material);
     }
 
@@ -129,9 +145,17 @@ Scene graphics::loaders::LoadScene(const std::string& path)
     {
         std::string texPath;
         if (!img.uri.empty())
+        {
             texPath = (baseDir / img.uri).string();
+        }
         else if (!img.image.empty())
+        {
             texPath = "<embedded>"; 
+        }
+        else
+        {
+            texPath = "<invalid>";
+        }
 
         scene.textures.push_back(texPath);
     }

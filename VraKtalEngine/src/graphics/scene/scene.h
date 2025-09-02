@@ -4,6 +4,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <string>
 
 #include "../resources/mesh.h"
 #include "../resources/material.h"

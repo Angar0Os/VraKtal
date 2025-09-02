@@ -6,8 +6,6 @@
 #include <vector>
 #include <string>
 
-struct stbi_uc;
-
 namespace rhi::vulkan { class GpuDeviceVulkan; }
 namespace graphics::scene { class Scene; }
 

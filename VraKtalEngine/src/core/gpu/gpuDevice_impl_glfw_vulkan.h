@@ -36,6 +36,7 @@ namespace rhi::vulkan
         VkDevice Device() const { return m_device; }
         VkPhysicalDevice PhysicalDevice() const { return m_physicalDevice; }
         VkQueue GraphicsQueue() const { return m_graphicsQueue; }
+		VkCommandPool CommandPool() const { return m_cmdPool; }
         uint32_t GraphicsQueueFamily() const { return m_graphicsQueueFamily; }
         VmaAllocator Allocator() const { return m_allocator; }
 

@@ -72,9 +72,6 @@
     <ClCompile Include="src\graphics\loaders\shaderLoader.cpp">
       <Filter>Source Files\graphics\loaders</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\resources\material.cpp">
-      <Filter>Source Files\graphics\resources</Filter>
-    </ClCompile>
     <ClCompile Include="src\graphics\resources\mesh.cpp">
       <Filter>Source Files\graphics\resources</Filter>
     </ClCompile>
@@ -86,6 +83,9 @@
     </ClCompile>
     <ClCompile Include="src\graphics\meshRenderer.cpp">
       <Filter>Source Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\loaders\textureLoader.cpp">
+      <Filter>Source Files\graphics\loaders</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -151,6 +151,12 @@
     </ClInclude>
     <ClInclude Include="src\graphics\meshRenderer.h">
       <Filter>Source Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\resources\texture.h">
+      <Filter>Source Files\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\loaders\textureLoader.h">
+      <Filter>Source Files\graphics\loaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
