@@ -78,6 +78,11 @@ void MeshRenderer::CreateDescriptorPool(uint32_t maxSets)
         return;
     }
 
+    if (maxSets == 0)
+    {
+        maxSets = 1;
+    }
+
     VkDescriptorPoolSize poolSize{};
     poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     poolSize.descriptorCount = maxSets;
@@ -245,6 +250,7 @@ void graphics::MeshRenderer::CreatePipeline()
     CreateDescriptorSetLayout();
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+    pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
@@ -325,6 +331,7 @@ graphics::GpuMesh graphics::MeshRenderer::UploadMesh(const resources::Mesh& mesh
     }
 
     gpuMesh.indexCount = static_cast<uint32_t>(mesh.indices.size());
+    gpuMesh.materialIndex = mesh.materialIndex;
     return gpuMesh;
 }
 

@@ -33,20 +33,38 @@ int main()
     MeshRenderer meshRenderer(device);
     RendererVulkan renderer(&meshRenderer);
 
-    Scene scene = LoadScene("../bin/assets/meshes/house.glb");
+    Scene scene = LoadScene("../bin/assets/meshes/traffic_cone/traffic_cone.gltf");
 
     TextureLoader texLoader(device);
     std::vector<TextureGpu> gpuTextures;
     texLoader.LoadSceneTextures(scene, gpuTextures);
+
+    if (scene.materials.empty()) 
+    {
+        graphics::resources::Material defMat;
+        defMat.baseColorTexture = gpuTextures.empty() ? -1 : 0;
+        scene.materials.push_back(defMat);
+        std::cout << "Added fallback material" << std::endl;
+    }
+
+    for (auto& m : scene.meshes) 
+    {
+        if ((int)m.materialIndex < 0) 
+        {
+            m.materialIndex = 0;
+        }
+    }
 
     meshRenderer.CreateDescriptorPool((uint32_t)scene.materials.size());
 
     std::vector<VkDescriptorSet> materialSets;
     materialSets.reserve(scene.materials.size());
 
-    for (auto& mat : scene.materials) {
+    for (auto& mat : scene.materials) 
+    {
         int texIndex = mat.baseColorTexture;
-        if (texIndex < 0 || texIndex >= (int)gpuTextures.size()) {
+        if (texIndex < 0 || texIndex >= (int)gpuTextures.size()) 
+        {
             texIndex = 0;
         }
         auto& t = gpuTextures[texIndex];
@@ -57,18 +75,20 @@ int main()
 
     std::vector<GpuMesh> gpuMeshes;
     gpuMeshes.reserve(scene.meshes.size());
-    for (auto& m : scene.meshes) {
+    for (auto& m : scene.meshes) 
+    {
         gpuMeshes.push_back(meshRenderer.UploadMesh(m));
     }
 
     std::vector<CommandBufferVulkan*> commandBuffers;
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 2; ++i) 
+    {
         commandBuffers.push_back(new CommandBufferVulkan(device));
     }
 
     uint32_t currentFrame = 0;
 
-    glm::mat4 view = glm::lookAt(glm::vec3(-10, 20, 20), glm::vec3(0, 10, 0), glm::vec3(0, 1, 0));
+    glm::mat4 view = glm::lookAt(glm::vec3(-30, -30, 20), glm::vec3(0, 10, 0), glm::vec3(0, 1, 0));
 
     auto size = window.Size();
     float aspect = static_cast<float>(size.first) / static_cast<float>(size.second);

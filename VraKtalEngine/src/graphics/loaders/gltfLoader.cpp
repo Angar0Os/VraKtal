@@ -136,6 +136,12 @@ Scene graphics::loaders::LoadScene(const std::string& path)
             }
 
             mesh.materialIndex = prim.material;
+
+            if ((int)mesh.materialIndex < 0)
+            {
+                mesh.materialIndex = 0;
+            }
+
             scene.meshes.push_back(mesh);
         }
     }
