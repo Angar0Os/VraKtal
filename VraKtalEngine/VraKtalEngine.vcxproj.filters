@@ -46,6 +46,9 @@
     <Filter Include="Source Files\graphics\scene">
       <UniqueIdentifier>{d65c7bc6-8622-4b4e-a3cf-c7aee40d454a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\graphics\pbr">
+      <UniqueIdentifier>{cdf6f944-54b4-434f-a926-2a6c3e137a23}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\core\gpu\commandBuffer_impl_vulkan.cpp">
@@ -86,6 +89,9 @@
     </ClCompile>
     <ClCompile Include="src\graphics\loaders\textureLoader.cpp">
       <Filter>Source Files\graphics\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\pbr\pbrPipeline.cpp">
+      <Filter>Source Files\graphics\pbr</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +163,12 @@
     </ClInclude>
     <ClInclude Include="src\graphics\loaders\textureLoader.h">
       <Filter>Source Files\graphics\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\pbr\pbrMaterial.h">
+      <Filter>Source Files\graphics\pbr</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\pbr\pbrPipeline.h">
+      <Filter>Source Files\graphics\pbr</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

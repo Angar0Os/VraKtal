@@ -144,6 +144,7 @@
     <ClCompile Include="src\graphics\loaders\shaderLoader.cpp" />
     <ClCompile Include="src\graphics\loaders\textureLoader.cpp" />
     <ClCompile Include="src\graphics\meshRenderer.cpp" />
+    <ClCompile Include="src\graphics\pbr\pbrPipeline.cpp" />
     <ClCompile Include="src\graphics\renderer_impl_vulkan.cpp" />
     <ClCompile Include="src\graphics\resources\mesh.cpp" />
     <ClCompile Include="src\graphics\scene\scene.cpp" />
@@ -164,6 +165,8 @@
     <ClInclude Include="src\graphics\loaders\shaderLoader.h" />
     <ClInclude Include="src\graphics\loaders\textureLoader.h" />
     <ClInclude Include="src\graphics\meshRenderer.h" />
+    <ClInclude Include="src\graphics\pbr\pbrMaterial.h" />
+    <ClInclude Include="src\graphics\pbr\pbrPipeline.h" />
     <ClInclude Include="src\graphics\renderer_impl_vulkan.h" />
     <ClInclude Include="src\graphics\resources\material.h" />
     <ClInclude Include="src\graphics\resources\mesh.h" />
