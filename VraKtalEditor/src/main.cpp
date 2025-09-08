@@ -139,5 +139,6 @@ int main()
         delete cmd;
     }
 
+    std::cout << "Done\n";
     return 0;
 }
