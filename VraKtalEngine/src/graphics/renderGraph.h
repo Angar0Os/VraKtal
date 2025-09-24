@@ -56,7 +56,6 @@ namespace graphics
 		~RenderGraph();
 
 		void AddTexture(const std::string& name, const RGTextureDesc& desc);
-		RGTexture* GetTexture(const std::string& name);
 		void AddPass(const RenderPassNode& node);
 		void Compile();
 		void Execute(VkCommandBuffer cmd);

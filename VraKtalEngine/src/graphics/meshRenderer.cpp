@@ -23,22 +23,19 @@ MeshRenderer::MeshRenderer(GpuDeviceVulkan& device)
 MeshRenderer::~MeshRenderer()
 {
     vkDeviceWaitIdle(m_device.Device());
-
+    
     DestroyDescriptors();
 
     if (m_pipeline)
     {
         vkDestroyPipeline(m_device.Device(), m_pipeline, nullptr);
-        m_pipeline = VK_NULL_HANDLE;
     }
 
     if (m_pipelineLayout)
     {
         vkDestroyPipelineLayout(m_device.Device(), m_pipelineLayout, nullptr);
-        m_pipelineLayout = VK_NULL_HANDLE;
     }
 }
-
 
 void MeshRenderer::SetMaterialDescriptorSets(const std::vector<VkDescriptorSet>& sets)
 {
@@ -77,7 +74,6 @@ void MeshRenderer::DestroyDescriptors()
         vkDestroyDescriptorPool(m_device.Device(), m_descriptorPool, nullptr);
         m_descriptorPool = VK_NULL_HANDLE;
     }
-
     if (m_descriptorSetLayout)
     {
         vkDestroyDescriptorSetLayout(m_device.Device(), m_descriptorSetLayout, nullptr);

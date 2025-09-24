@@ -34,12 +34,12 @@ namespace graphics
         void DestroyMesh(GpuMesh& mesh);
 
         void Draw(rhi::vulkan::CommandBufferVulkan& cmd, const GpuMesh& mesh,
-            const glm::mat4& model = glm::mat4(1.0f),
-            const glm::mat4& view = glm::mat4(1.0f),
-            const glm::mat4& projection = glm::mat4(1.0f));
+                 const glm::mat4& model = glm::mat4(1.0f),
+                 const glm::mat4& view = glm::mat4(1.0f),
+                 const glm::mat4& projection = glm::mat4(1.0f));
 
         VkDescriptorSetLayout DescriptorSetLayout() const { return m_descriptorSetLayout; }
-        rhi::vulkan::GpuDeviceVulkan& GetGpuDevice() const { return m_device; }
+        rhi::vulkan::GpuDeviceVulkan GetGpuDevice() const { return m_device; }
 
         VkDescriptorSet CreateDescriptorSet(VkImageView view, VkSampler sampler);
 

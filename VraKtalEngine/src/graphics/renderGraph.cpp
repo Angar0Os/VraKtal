@@ -160,13 +160,3 @@ void RenderGraph::CreateTextureIfNeeded(RGTexture& texture)
         CreateImageAndView(m_device, m_allocator, texture.desc, texture.image, texture.view, texture.allocation);
     }
 }
-
-RGTexture* RenderGraph::GetTexture(const std::string& name)
-{
-    auto it = m_textures.find(name);
-    if (it != m_textures.end())
-    {
-        return &it->second;
-    }
-    return nullptr;
-}
