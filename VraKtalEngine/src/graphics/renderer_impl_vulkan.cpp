@@ -1,6 +1,5 @@
 ﻿#include "renderer_impl_vulkan.h"
 #include "meshRenderer.h"
-#include "renderGraph.h"
 
 using namespace rhi::core::gpu;
 using namespace rhi::vulkan;
@@ -18,7 +17,7 @@ void RendererVulkan::Render(CommandBufferVulkan& commandBuffer,
     const glm::mat4& view,
     const glm::mat4& proj)
 {
-  /*  commandBuffer.BeginRendering(info, imageIndex);
+    commandBuffer.BeginRendering(info, imageIndex);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -42,5 +41,5 @@ void RendererVulkan::Render(CommandBufferVulkan& commandBuffer,
         m_meshRenderer->Draw(commandBuffer, mesh, model, view, proj);
     }
 
-    commandBuffer.EndRendering(imageIndex);*/
+    commandBuffer.EndRendering(imageIndex);
 }
