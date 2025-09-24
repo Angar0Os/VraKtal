@@ -39,7 +39,7 @@ namespace graphics
                  const glm::mat4& projection = glm::mat4(1.0f));
 
         VkDescriptorSetLayout DescriptorSetLayout() const { return m_descriptorSetLayout; }
-        rhi::vulkan::GpuDeviceVulkan GetGpuDevice() const { return m_device; }
+        VkDevice Device() const { return m_device.Device(); }
 
         VkDescriptorSet CreateDescriptorSet(VkImageView view, VkSampler sampler);
 

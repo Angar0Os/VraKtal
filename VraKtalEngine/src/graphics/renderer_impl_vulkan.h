@@ -4,11 +4,8 @@
 
 #include "../core/gpu/commandBuffer_impl_vulkan.h"
 #include "../graphics/meshRenderer.h"
+
 #include <core/gpu/renderingInfo.h>
-
-#include "renderGraph.h"
-
-#include <memory>
 
 namespace rhi::core::gpu
 {
@@ -16,7 +13,6 @@ namespace rhi::core::gpu
     {
     public:
         explicit RendererVulkan(graphics::MeshRenderer* meshRenderer);
-        ~RendererVulkan();
 
         void Render(rhi::vulkan::CommandBufferVulkan& commandBuffer,
             const RenderingInfo& info,
@@ -27,7 +23,6 @@ namespace rhi::core::gpu
 
     private:
         graphics::MeshRenderer* m_meshRenderer;
-        std::unique_ptr<graphics::RenderGraph> m_renderGraph;
     };
 };
 
