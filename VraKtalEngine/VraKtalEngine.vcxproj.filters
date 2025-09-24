@@ -87,6 +87,9 @@
     <ClCompile Include="src\graphics\loaders\textureLoader.cpp">
       <Filter>Source Files\graphics\loaders</Filter>
     </ClCompile>
+    <ClCompile Include="src\graphics\renderGraph.cpp">
+      <Filter>Source Files\graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\gpu\commandBuffer.h">
@@ -157,6 +160,9 @@
     </ClInclude>
     <ClInclude Include="src\graphics\loaders\textureLoader.h">
       <Filter>Source Files\graphics\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\renderGraph.h">
+      <Filter>Source Files\graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

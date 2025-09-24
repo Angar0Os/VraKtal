@@ -22,10 +22,19 @@ MeshRenderer::MeshRenderer(GpuDeviceVulkan& device)
 
 MeshRenderer::~MeshRenderer()
 {
-    VkDevice dev = m_device.Device();
-    if (m_pipeline)         vkDestroyPipeline(dev, m_pipeline, nullptr);
-    if (m_pipelineLayout)   vkDestroyPipelineLayout(dev, m_pipelineLayout, nullptr);
+    vkDeviceWaitIdle(m_device.Device());
+    
     DestroyDescriptors();
+
+    if (m_pipeline)
+    {
+        vkDestroyPipeline(m_device.Device(), m_pipeline, nullptr);
+    }
+
+    if (m_pipelineLayout)
+    {
+        vkDestroyPipelineLayout(m_device.Device(), m_pipelineLayout, nullptr);
+    }
 }
 
 void MeshRenderer::SetMaterialDescriptorSets(const std::vector<VkDescriptorSet>& sets)
@@ -58,15 +67,16 @@ void MeshRenderer::CreateDescriptorSetLayout()
 
 void MeshRenderer::DestroyDescriptors() 
 {
-    VkDevice dev = m_device.Device();
-    if (m_descriptorPool) 
+    m_materialDescriptorSets.clear();
+
+    if (m_descriptorPool)
     {
-        vkDestroyDescriptorPool(dev, m_descriptorPool, nullptr);
+        vkDestroyDescriptorPool(m_device.Device(), m_descriptorPool, nullptr);
         m_descriptorPool = VK_NULL_HANDLE;
     }
-    if (m_descriptorSetLayout) 
+    if (m_descriptorSetLayout)
     {
-        vkDestroyDescriptorSetLayout(dev, m_descriptorSetLayout, nullptr);
+        vkDestroyDescriptorSetLayout(m_device.Device(), m_descriptorSetLayout, nullptr);
         m_descriptorSetLayout = VK_NULL_HANDLE;
     }
 }
@@ -253,7 +263,6 @@ void graphics::MeshRenderer::CreatePipeline()
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-    pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
 
     if (vkCreatePipelineLayout(m_device.Device(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)

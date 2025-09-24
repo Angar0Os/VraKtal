@@ -40,7 +40,20 @@ GpuDeviceVulkan::~GpuDeviceVulkan()
     if (m_allocator) vmaDestroyAllocator(m_allocator);
     if (m_device) vkDestroyDevice(m_device, nullptr);
     if (m_surface) vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-    if (m_instance) vkDestroyInstance(m_instance, nullptr);
+
+    if (m_instance.instance != VK_NULL_HANDLE) 
+    {
+        if (m_instance.debug_messenger) 
+        {
+            auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
+                vkGetInstanceProcAddr(m_instance.instance, "vkDestroyDebugUtilsMessengerEXT");
+            if (func) 
+            {
+                func(m_instance.instance, m_instance.debug_messenger, nullptr);
+            }
+        }
+        vkDestroyInstance(m_instance.instance, nullptr);
+    }
 }
 
 void GpuDeviceVulkan::WaitIdle()
