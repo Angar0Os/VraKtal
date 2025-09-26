@@ -1,14 +1,16 @@
-#include "../src/core/gpu/window_impl_vulkan.h"
-#include "../src/core/gpu/gpuDevice_impl_glfw_vulkan.h"
-#include "../src/core/gpu/commandBuffer_impl_vulkan.h"
+#include "../src/core/rhi/window_impl_vulkan.h"
+#include "../src/core/rhi/gpuDevice_impl_glfw_vulkan.h"
+#include "../src/core/rhi/commandBuffer_impl_vulkan.h"
+#include "../src/core/rhi/renderer_impl_vulkan.h"
 
-#include "../src/graphics/renderer_impl_vulkan.h"
-#include "../src/graphics/meshRenderer.h"
-#include "../src/graphics/loaders/gltfLoader.h"
-#include "../src/graphics/loaders/textureLoader.h"
-#include "../src/graphics/resources/material.h"
+#include <core/graphics/meshRenderer.h>
 
-#include <core/gpu/renderingInfo.h>
+#include <core/loaders/gltfLoader.h>
+#include <core/loaders/textureLoader.h>
+#include <core/loaders/shaderLoader.h>
+
+#include <core/rhi/renderingInfo.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
@@ -16,12 +18,11 @@
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 
-using namespace rhi::vulkan;
-using namespace rhi::core::gpu;
-using namespace graphics;
-using namespace graphics::scene;
-using namespace graphics::loaders;
-using namespace graphics::resources;
+using namespace core::rhi::vulkan;
+using namespace core::rhi;
+using namespace core::loaders;
+using namespace core::graphics;
+using namespace core::graphics::resources;
 
 int main()
 {
@@ -41,7 +42,7 @@ int main()
 
     if (scene.materials.empty()) 
     {
-        graphics::resources::Material defMat;
+        resources::Material defMat;
         defMat.baseColorTexture = gpuTextures.empty() ? -1 : 0;
         scene.materials.push_back(defMat);
         std::cout << "Added fallback material" << std::endl;
