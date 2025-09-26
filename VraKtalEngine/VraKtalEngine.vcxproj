@@ -153,6 +153,7 @@
     <ClInclude Include="include\core\gpu\image.h" />
     <ClInclude Include="include\core\gpu\pipeline.h" />
     <ClInclude Include="include\core\gpu\renderer.h" />
+    <ClInclude Include="include\core\gpu\renderGraph.h" />
     <ClInclude Include="include\core\gpu\renderingInfo.h" />
     <ClInclude Include="include\core\gpu\window.h" />
     <ClInclude Include="src\core\gpu\commandBuffer_impl_vulkan.h" />

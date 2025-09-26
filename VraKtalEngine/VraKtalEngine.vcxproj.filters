@@ -158,6 +158,9 @@
     <ClInclude Include="src\graphics\loaders\textureLoader.h">
       <Filter>Source Files\graphics\loaders</Filter>
     </ClInclude>
+    <ClInclude Include="include\core\gpu\renderGraph.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\meshes\basicmesh.glb">
