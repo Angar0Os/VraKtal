@@ -23,134 +23,140 @@
       <UniqueIdentifier>{df80981e-bba8-409c-bc71-179f024dfff9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\core">
-      <UniqueIdentifier>{48c7316c-2e0d-473b-b02f-90f71745585f}</UniqueIdentifier>
+      <UniqueIdentifier>{d86f51c9-6202-439a-8645-d62cf2a353c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\loaders">
+      <UniqueIdentifier>{addc3c38-f9ef-4e7f-b1dd-bfe16a24d16b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\graphics">
+      <UniqueIdentifier>{c7ed57c1-ad62-4118-b7eb-e05ddae80273}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\graphics\resources">
+      <UniqueIdentifier>{e9da1944-8147-4e7b-a241-4d3ae1b38cdd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\rhi">
+      <UniqueIdentifier>{468baa75-b4d4-4308-b524-774279764fe3}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\core">
-      <UniqueIdentifier>{35fbcccd-5089-4ebf-b926-a6f7c6c280f7}</UniqueIdentifier>
+      <UniqueIdentifier>{846b439f-6f48-4cad-96cf-0d2ca60e5db1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\core\gpu">
-      <UniqueIdentifier>{37793ba8-ca2a-4921-8106-033bdd5d42ec}</UniqueIdentifier>
+    <Filter Include="Source Files\core\loaders">
+      <UniqueIdentifier>{73a1fdcf-8258-476d-b008-0b7e08c49c56}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\core\gpu">
-      <UniqueIdentifier>{31028c06-3391-4d8c-826c-1bfe0e1568c4}</UniqueIdentifier>
+    <Filter Include="Source Files\core\graphics">
+      <UniqueIdentifier>{d9ee44c9-4ace-4a7c-b1d1-f4d1ad3167e0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\graphics">
-      <UniqueIdentifier>{e7857660-aa32-4544-923f-dd03448b715e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\graphics\loaders">
-      <UniqueIdentifier>{9101aa7a-8d4a-47c5-9425-387ba459b153}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\graphics\resources">
-      <UniqueIdentifier>{c32cc89c-bd47-49b8-a07d-2b3fe1fd7151}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\graphics\scene">
-      <UniqueIdentifier>{d65c7bc6-8622-4b4e-a3cf-c7aee40d454a}</UniqueIdentifier>
+    <Filter Include="Source Files\core\rhi">
+      <UniqueIdentifier>{69b3d59b-2b82-4b4f-987e-d0a9f7e29cf5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\gpu\commandBuffer_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\image_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\pipeline_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\window_impl_vulkan.cpp">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClCompile>
     <ClCompile Include="src\vkb\VkBootstrap.cpp">
       <Filter>Source Files\vkb</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\loaders\gltfLoader.cpp">
-      <Filter>Source Files\graphics\loaders</Filter>
+    <ClCompile Include="src\core\loaders\gltfLoader.cpp">
+      <Filter>Source Files\core\loaders</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\loaders\shaderLoader.cpp">
-      <Filter>Source Files\graphics\loaders</Filter>
+    <ClCompile Include="src\core\loaders\shaderLoader.cpp">
+      <Filter>Source Files\core\loaders</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\resources\material.cpp">
-      <Filter>Source Files\graphics\resources</Filter>
+    <ClCompile Include="src\core\loaders\textureLoader.cpp">
+      <Filter>Source Files\core\loaders</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\resources\mesh.cpp">
-      <Filter>Source Files\graphics\resources</Filter>
+    <ClCompile Include="src\core\graphics\meshRenderer.cpp">
+      <Filter>Source Files\core\graphics</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\scene\scene.cpp">
-      <Filter>Source Files\graphics\scene</Filter>
+    <ClCompile Include="src\core\rhi\commandBuffer_impl_vulkan.cpp">
+      <Filter>Source Files\core\rhi</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\renderer_impl_vulkan.cpp">
-      <Filter>Source Files\graphics</Filter>
+    <ClCompile Include="src\core\rhi\gpuDevice_impl_glfw_vulkan.cpp">
+      <Filter>Source Files\core\rhi</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\meshRenderer.cpp">
-      <Filter>Source Files\graphics</Filter>
+    <ClCompile Include="src\core\rhi\image_impl_vulkan.cpp">
+      <Filter>Source Files\core\rhi</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\rhi\pipeline_impl_vulkan.cpp">
+      <Filter>Source Files\core\rhi</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\rhi\renderer_impl_vulkan.cpp">
+      <Filter>Source Files\core\rhi</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\rhi\window_impl_vulkan.cpp">
+      <Filter>Source Files\core\rhi</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\core\gpu\commandBuffer.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\gpuDevice.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\image.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\pipeline.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\renderer.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\renderingInfo.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\window.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\commandBuffer_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\gpuDevice_impl_glfw_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\image_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\pipeline_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\window_impl_vulkan.h">
-      <Filter>Source Files\core\gpu</Filter>
-    </ClInclude>
     <ClInclude Include="src\vkb\VkBootstrap.h">
       <Filter>Source Files\vkb</Filter>
     </ClInclude>
     <ClInclude Include="src\vkb\VkBootstrapDispatch.h">
       <Filter>Source Files\vkb</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics\loaders\gltfLoader.h">
-      <Filter>Source Files\graphics\loaders</Filter>
+    <ClInclude Include="include\core\loaders\gltfLoader.h">
+      <Filter>Header Files\core\loaders</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics\loaders\shaderLoader.h">
-      <Filter>Source Files\graphics\loaders</Filter>
+    <ClInclude Include="include\core\loaders\shaderLoader.h">
+      <Filter>Header Files\core\loaders</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics\resources\material.h">
-      <Filter>Source Files\graphics\resources</Filter>
+    <ClInclude Include="include\core\loaders\textureLoader.h">
+      <Filter>Header Files\core\loaders</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics\resources\mesh.h">
-      <Filter>Source Files\graphics\resources</Filter>
+    <ClInclude Include="include\core\graphics\renderGraph.h">
+      <Filter>Header Files\core\graphics</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics\scene\scene.h">
-      <Filter>Source Files\graphics\scene</Filter>
+    <ClInclude Include="include\core\graphics\resources\material.h">
+      <Filter>Header Files\core\graphics\resources</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics\renderer_impl_vulkan.h">
-      <Filter>Source Files\graphics</Filter>
+    <ClInclude Include="include\core\graphics\resources\mesh.h">
+      <Filter>Header Files\core\graphics\resources</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics\meshRenderer.h">
-      <Filter>Source Files\graphics</Filter>
+    <ClInclude Include="include\core\graphics\resources\scene.h">
+      <Filter>Header Files\core\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\graphics\resources\texture.h">
+      <Filter>Header Files\core\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\rhi\commandBuffer.h">
+      <Filter>Header Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\rhi\gpuDevice.h">
+      <Filter>Header Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\rhi\image.h">
+      <Filter>Header Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\rhi\pipeline.h">
+      <Filter>Header Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\rhi\renderer.h">
+      <Filter>Header Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\rhi\renderingInfo.h">
+      <Filter>Header Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\rhi\window.h">
+      <Filter>Header Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\rhi\commandBuffer_impl_vulkan.h">
+      <Filter>Source Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\rhi\gpuDevice_impl_glfw_vulkan.h">
+      <Filter>Source Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\rhi\image_impl_vulkan.h">
+      <Filter>Source Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\rhi\pipeline_impl_vulkan.h">
+      <Filter>Source Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\rhi\renderer_impl_vulkan.h">
+      <Filter>Source Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\rhi\window_impl_vulkan.h">
+      <Filter>Source Files\core\rhi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\graphics\meshRenderer.h">
+      <Filter>Header Files\core\graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
