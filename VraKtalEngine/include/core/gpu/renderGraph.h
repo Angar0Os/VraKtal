@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <functional>
+#include <unordered_map>
 #include <core/gpu/commandBuffer.h>
 #include <core/gpu/image.h>
 
@@ -11,25 +12,6 @@ using namespace rhi::core::gpu;
 
 namespace core::gpu
 {
-	// A pass defines resources it reads (inputs) and writes (outputs).
-	// Each pass has a callback to record commands into a CommandBuffer.
-	struct Pass
-	{
-		std::vector<Resource*> inputs;
-		std::vector<Resource*> outputs;
-		std::function<void(CommandBuffer&)> callback;
-	};
-
-	// Wraps a GPU resource (Image) with logical state:
-	// layout, last access flags, and resource usage status.
-	struct Resource
-	{
-		Image* image;
-		Layout currentLayout = Layout::Undefined;
-		AccessFlags lastAccess = AccessFlags::None;
-		ResourceStatus status = ResourceStatus::Unused;
-	};
-
 	enum class Layout
 	{
 		Undefined,
@@ -42,24 +24,48 @@ namespace core::gpu
 
 	enum class AccessFlags
 	{
-		None, 
+		None,
 		Read,
 		Write,
 		ReadWrite,
 		Transfer
 	};
 
-	enum class ResourceStatus
+	// Used descriptor when creating new resource
+	struct ResourceDescriptor
 	{
-		Unused,
-		InUse,
-		Released,
-		Freed
+		enum class Type { Image, Buffer } type;
+
+		uint32_t width = 0;   
+		uint32_t height = 0;  
+		uint32_t size = 0;    
+	};
+
+	struct Resource
+	{
+		uint32_t id;
+		Layout currentLayout;
+		AccessFlags lastAccess;
+		Image* image = nullptr;
+		ResourceDescriptor descriptor; //--> if fresh resource
+	};
+
+	struct Pass
+	{
+		std::vector<Resource*> inputs;
+		std::vector<Resource*> outputs;
+		std::function<void(CommandBuffer&)> callback;
 	};
 
 	class RenderGraph
 	{
 	public:
+		// Creating fresh resource and returns it.
+		Resource AddResource(const ResourceDescriptor& desc, Layout initialLayout);
+
+		// Using existing resource by its id.
+		void AddResourceReference(uint32_t existingId, Layout initialLayout);
+
 		// AddPass: add a rendering pass to the graph.
 		void AddPass(const Pass& pass);
 
@@ -72,6 +78,8 @@ namespace core::gpu
 	private:
 		std::vector<Pass> m_passes;
 		std::vector<Pass*> m_executionOrder;
+		std::unordered_map<uint32_t, Resource> m_resources;
+		uint32_t m_nextResourcesId = 0;
 	};
 }
 
