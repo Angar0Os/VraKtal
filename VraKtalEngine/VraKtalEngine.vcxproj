@@ -81,6 +81,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>TRACY_ENABLE;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -95,6 +97,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>TRACY_ENABLE;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -109,8 +113,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>TRACY_ENABLE;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp23</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)external\include\;$(ProjectDir)include;</AdditionalIncludeDirectories>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -126,6 +131,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>TRACY_ENABLE;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -134,43 +141,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="src\core\graphics\meshRenderer.cpp" />
-    <ClCompile Include="src\core\loaders\gltfLoader.cpp" />
-    <ClCompile Include="src\core\loaders\shaderLoader.cpp" />
-    <ClCompile Include="src\core\loaders\textureLoader.cpp" />
-    <ClCompile Include="src\core\rhi\commandBuffer_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\rhi\gpuDevice_impl_glfw_vulkan.cpp" />
-    <ClCompile Include="src\core\rhi\image_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\rhi\pipeline_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\rhi\renderer_impl_vulkan.cpp" />
-    <ClCompile Include="src\core\rhi\window_impl_vulkan.cpp" />
-    <ClCompile Include="src\vkb\VkBootstrap.cpp" />
-    <ClInclude Include="include\core\graphics\meshRenderer.h" />
-    <ClInclude Include="include\core\graphics\renderGraph.h" />
-    <ClInclude Include="include\core\graphics\resources\material.h" />
-    <ClInclude Include="include\core\graphics\resources\mesh.h" />
-    <ClInclude Include="include\core\graphics\resources\scene.h" />
-    <ClInclude Include="include\core\graphics\resources\texture.h" />
-    <ClInclude Include="include\core\loaders\gltfLoader.h" />
-    <ClInclude Include="include\core\loaders\shaderLoader.h" />
-    <ClInclude Include="include\core\loaders\textureLoader.h" />
-    <ClInclude Include="include\core\rhi\commandBuffer.h" />
-    <ClInclude Include="include\core\rhi\gpuDevice.h" />
-    <ClInclude Include="include\core\rhi\image.h" />
-    <ClInclude Include="include\core\rhi\pipeline.h" />
-    <ClInclude Include="include\core\rhi\renderer.h" />
-    <ClInclude Include="include\core\rhi\renderingInfo.h" />
-    <ClInclude Include="include\core\rhi\window.h" />
-    <ClInclude Include="src\core\rhi\commandBuffer_impl_vulkan.h" />
-    <ClInclude Include="src\core\rhi\gpuDevice_impl_glfw_vulkan.h" />
-    <ClInclude Include="src\core\rhi\image_impl_vulkan.h" />
-    <ClInclude Include="src\core\rhi\pipeline_impl_vulkan.h" />
-    <ClInclude Include="src\core\rhi\renderer_impl_vulkan.h" />
-    <ClInclude Include="src\core\rhi\window_impl_vulkan.h" />
-    <ClInclude Include="src\vkb\VkBootstrap.h" />
-    <ClInclude Include="src\vkb\VkBootstrapDispatch.h" />
-  </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\meshes\basicmesh.glb" />
     <None Include="..\bin\assets\meshes\house.glb" />
@@ -238,6 +208,19 @@
     <Content Include="..\bin\assets\shaders\triangle.vert" />
     <Content Include="..\bin\VraKtalEngine_Debug.exe" />
     <Content Include="..\bin\VraKtalEngine_Debug.pdb" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\core\enum.h" />
+    <ClInclude Include="include\core\gpu\descriptorSet.h" />
+    <ClInclude Include="include\core\gpu\device.h" />
+    <ClInclude Include="include\core\window.h" />
+    <ClInclude Include="src\core\gpu\vulkan\descriptorSet_impl.h" />
+    <ClInclude Include="src\core\gpu\vulkan\device_impl.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\core\gpu\vulkan\descriptorSet_impl.cpp" />
+    <ClCompile Include="src\core\gpu\vulkan\device_impl.cpp" />
+    <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
