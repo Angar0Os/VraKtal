@@ -11,6 +11,13 @@ import vulkan_hpp;
 #endif
 
 #include <core/gpu/device.h>
+#include <core/window.h>
+#include <core/gpu/descriptorSet.h>
+#include <core/gpu/buffer.h>
+#include <core/gpu/sampler.h>
+#include <core/gpu/image.h>
+#include <core/gpu/commandBuffer.h>
+#include <core/gpu/texture.h>
 
 // Enable validation layers in debug builds
 #ifdef NDEBUG
@@ -45,6 +52,32 @@ namespace core::gpu
 		// Note : We will do an abstract of commandPools
 		vk::raii::CommandPool commandPool = nullptr;
 
+		// Descriptor resources
+		vk::raii::DescriptorSetLayout descriptorSetLayout = nullptr;
+		vk::raii::DescriptorPool descriptorPool = nullptr;
+		std::vector<vk::raii::DescriptorSet> descriptorSets;
+		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
+
+		// Samplers
+		std::unique_ptr<Sampler> textureSampler;
+		std::unique_ptr<Sampler> shadowSampler;
+
+		// Default textures
+		std::unique_ptr<Texture> defaultWhiteTexture;
+		std::unique_ptr<Texture> defaultBlackTexture;
+		std::unique_ptr<Texture> defaultNormalTexture;
+
+		// Material textures
+		std::unique_ptr<Texture> albedoTexture;
+		std::unique_ptr<Texture> normalTexture;
+		std::unique_ptr<Texture> metallicTexture;
+		std::unique_ptr<Texture> roughnessTexture;
+		std::unique_ptr<Texture> aoTexture;
+		std::unique_ptr<Texture> emissiveTexture;
+
+		// Shadow map
+		std::unique_ptr<Image> shadowMapImage;
+
 		const Window& m_window;
 
 		vk::Extent2D ChooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
@@ -59,6 +92,15 @@ namespace core::gpu
 		void CreateLogicalDevice();
 		void CreateSwapchain();
 		void CreateImageViews();
+
+		void CreateDescriptorSetLayout();
+		void CreateDescriptorPool();
+		void AllocateDescriptorSets();
+		void CreateUniformBuffers();
+		void CreateSamplers();
+		void CreateDefaultTextures();
+		void LoadMaterialTextures();
+		void CreateShadowMap();
 		void CreateDescriptorSets();
 
 		std::vector<const char*> requiredDeviceExtension = {
