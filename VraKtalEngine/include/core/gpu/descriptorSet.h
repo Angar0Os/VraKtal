@@ -4,12 +4,14 @@
 
 #include <memory>
 #include <vector>
+
 #include <core/enum.h>
 
 namespace core::gpu
 {
     class Buffer;      
     class Sampler;     
+    class Texture;
 
     class DescriptorSet
     {
@@ -22,8 +24,8 @@ namespace core::gpu
         ~DescriptorSet();
 
         DescriptorSet& BindBuffer(const Buffer& buffer, size_t offset, size_t range);
-        DescriptorSet& BindImage(const Sampler& sampler, const core::TextureSet* texture,
-            const core::TextureSet& defaultTexture, ImageLayout layout = ImageLayout::ShaderReadOnly);
+        DescriptorSet& BindImage(const Sampler& sampler, const Texture* texture,
+            const Texture& defaultTexture, ImageLayout layout = ImageLayout::ShaderReadOnly);
 
         void Update();
 

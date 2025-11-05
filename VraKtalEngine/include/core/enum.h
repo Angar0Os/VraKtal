@@ -30,28 +30,35 @@ namespace core
         ClampToBorder
     };
 
-
-    // Note : We will move these probably on something like resources ? or image should be fine tbh.
-    struct TextureSet
+    enum class TextureFormat
     {
-        void* image = nullptr;      
-        void* memory = nullptr;     
-        void* view = nullptr;       
-        uint32_t mipLevels = 1;
+        Undefined,
 
-        bool isValid() const { return view != nullptr; }
+        R8_UNorm,
+        RG8_UNorm,
+        RGB8_UNorm,
+        RGBA8_UNorm,
+        RGBA8_SRGB,
+
+        R16_Float,
+        RG16_Float,
+        RGBA16_Float,
+
+        R32_Float,
+        RG32_Float,
+        RGB32_Float,
+        RGBA32_Float,
+
+        Depth16,
+        Depth24,
+        Depth32F,
+        Depth24Stencil8,
+        Depth32FStencil8,
+       
+        BC1_RGB_UNorm,      
+        BC3_RGBA_UNorm,     
+        BC7_RGBA_UNorm,
     };
-
-    struct SamplerHandle
-    {
-        void* handle = nullptr;     
-    };
-
-    struct BufferHandle
-    {
-        void* handle = nullptr;     
-    };
-
 }
 
 #endif //VRAKTAL_CORE_ENUMS_H

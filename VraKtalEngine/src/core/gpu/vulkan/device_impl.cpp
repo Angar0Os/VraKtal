@@ -3,6 +3,9 @@
 #include "../src/core/gpu/vulkan/device_impl.h"
 
 #include <core/window.h>
+#include <core/gpu/descriptorSet.h>
+#include <core/gpu/buffer.h>
+#include <core/gpu/sampler.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -119,7 +122,7 @@ void core::gpu::Device::Impl::CreateInstance()
 }
 
 // Note : This function must be above SetupDebugMessenger() because we did not declared it on .h file
-static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
+static VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
 	vk::DebugUtilsMessageTypeFlagsEXT type,
 	const vk::DebugUtilsMessengerCallbackDataEXT*
 	pCallbackData, void*)
@@ -144,7 +147,7 @@ void core::gpu::Device::Impl::SetupDebugMessenger()
 	{
 		.messageSeverity = severityFlags,
 		.messageType = messageTypeFlags,
-		.pfnUserCallback = &debugCallback
+		.pfnUserCallback = &DebugCallback
 	};
 
 	debugMessenger = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
@@ -350,5 +353,44 @@ void core::gpu::Device::Impl::CreateImageViews()
 	{
 		imageViewCreateInfo.image = image;
 		swapChainImageViews.emplace_back(device, imageViewCreateInfo);
+	}
+}
+
+void core::gpu::Device::Impl::CreateDescriptorSets()
+{
+	// Note : I don't know if all this code go here but anyway i will let it here for now.
+	std::vector<vk::raii::DescriptorSet> descriptorSets;
+	vk::raii::DescriptorSetLayout descriptorSetLayout = nullptr;
+	vk::raii::DescriptorPool descriptorPool = nullptr;
+
+	std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, *descriptorSetLayout);
+	vk::DescriptorSetAllocateInfo allocInfo{
+		.descriptorPool = descriptorPool,
+		.descriptorSetCount = static_cast<uint32_t>(layouts.size()),
+		.pSetLayouts = layouts.data()
+	};
+
+	descriptorSets.clear();
+	descriptorSets = device.allocateDescriptorSets(allocInfo);
+
+
+	// Note : This code will be in other functions like CreateBuffer() / CreateSampler() and CreateTexture() once these astracts will be created.
+	std::vector<Buffer> uniformBuffers;
+	Sampler textureSampler;
+	Sampler shadowSampler;
+	TextureSet albedoTexture;
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		DescriptorSet(device, descriptorSets, i)
+			.BindBuffer(uniformBuffers[i], 0, sizeof(UniformBufferObject))
+			.BindImage(textureSampler, albedoTexture, defaultWhiteTexture)
+			.BindImage(textureSampler, normalTexture, defaultNormalTexture)
+			.BindImage(textureSampler, metallicTexture, defaultWhiteTexture)
+			.BindImage(textureSampler, roughnessTexture, defaultWhiteTexture)
+			.BindImage(textureSampler, aoTexture, defaultWhiteTexture)
+			.BindImage(textureSampler, emissiveTexture, defaultBlackTexture)
+			.BindImage(shadowSampler, &shadowMapTexture, defaultWhiteTexture)
+			.Update();
 	}
 }

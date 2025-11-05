@@ -9,9 +9,7 @@ namespace core::gpu
 {
     class Buffer;
     class Sampler;
-
-    vk::ImageLayout ToVulkan(ImageLayout layout);
-    vk::Filter ToVulkan(Filter filter);
+    class Texture;
 
     struct DescriptorSet::Impl
     {
@@ -32,8 +30,8 @@ namespace core::gpu
         ~Impl();
 
         DescriptorSet& BindBuffer(const Buffer& buffer, size_t offset, size_t range);
-        DescriptorSet& BindImage(const Sampler& sampler, const core::TextureSet* texture,
-            const core::TextureSet& defaultTexture, ImageLayout layout);
+        DescriptorSet& BindImage(const Sampler& sampler, const Texture* texture,
+            const Texture& defaultTexture, ImageLayout layout);
 
         void Update();
     };

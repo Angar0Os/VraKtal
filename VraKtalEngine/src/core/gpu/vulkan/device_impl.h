@@ -19,6 +19,9 @@ constexpr bool enableValidationLayers = false;
 constexpr bool enableValidationLayers = true;
 #endif
 
+// Number of frames the application will use for in-flight frames
+constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
 namespace core::gpu
 {
 	struct Device::Impl
@@ -53,6 +56,7 @@ namespace core::gpu
 		void CreateLogicalDevice();
 		void CreateSwapchain();
 		void CreateImageViews();
+		void CreateDescriptorSets();
 
 		std::vector<const char*> requiredDeviceExtension = {
 			vk::KHRSwapchainExtensionName,
