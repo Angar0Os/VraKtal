@@ -34,6 +34,9 @@
     <Filter Include="Source Files\core\gpu\vulkan">
       <UniqueIdentifier>{ffc1c797-0dcd-4aef-8f9f-bb4d9de3c139}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\gpu\gpu_detail">
+      <UniqueIdentifier>{ca948e10-1622-4fe6-b81d-cef25a9a37e7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\meshes\basicmesh.glb">
@@ -125,6 +128,30 @@
     <ClInclude Include="include\core\gpu\sampler.h">
       <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
+    <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\vulkan\sampler_impl.h">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu_detail\converters.h">
+      <Filter>Source Files\core\gpu\gpu_detail</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\image.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\vulkan\image_impl.h">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\commandBuffer.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\vulkan\commandBuffer_impl.h">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\vulkan\texture_impl.h">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -134,6 +161,27 @@
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\descriptorSet_impl.cpp">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\vulkan\buffer_impl.cpp">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\vulkan\sampler_impl.cpp">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu_detail\converters.cpp">
+      <Filter>Source Files\core\gpu\gpu_detail</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\vulkan\image_impl.cpp">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\vulkan\commandBuffer_impl.cpp">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="include\core\gpu\texture.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
   </ItemGroup>
