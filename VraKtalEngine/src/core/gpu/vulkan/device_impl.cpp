@@ -18,6 +18,14 @@ const std::vector<char const*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
 
+// Note : We will maybe move this, but this is here to make uniform buffers work properly.
+struct UniformBufferObject
+{
+	alignas(16) float model[16];
+	alignas(16) float view[16];
+	alignas(16) float projection[16];
+};
+
 std::vector<const char*> GetRequiredExtensions()
 {
 	uint32_t glfwExtensionCount = 0;
@@ -356,6 +364,25 @@ void core::gpu::Device::Impl::CreateImageViews()
 	}
 }
 
+// Note : I don't really know if i will let this here, but for now il let this here.
+void CreateUniformBuffers(void* device, void* physicalDevice,
+	std::vector<core::gpu::Buffer>& uniformBuffers,
+	size_t framesInFlight)
+{
+	uniformBuffers.clear();
+
+	core::gpu::BufferCreateInfo info{
+		.size = sizeof(UniformBufferObject),
+		.usage = core::BufferUsage::UniformBuffer,
+		.memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+	};
+
+	for (size_t i = 0; i < framesInFlight; ++i)
+	{
+		uniformBuffers.emplace_back(device, physicalDevice, info);
+	}
+}
+
 void core::gpu::Device::Impl::CreateDescriptorSets()
 {
 	// Note : I don't know if all this code go here but anyway i will let it here for now.
@@ -375,9 +402,28 @@ void core::gpu::Device::Impl::CreateDescriptorSets()
 
 
 	// Note : This code will be in other functions like CreateBuffer() / CreateSampler() and CreateTexture() once these astracts will be created.
+	// CreateSampler() --> done.
 	std::vector<Buffer> uniformBuffers;
-	Sampler textureSampler;
-	Sampler shadowSampler;
+	CreateUniformBuffers(&device, &physicalDevice, uniformBuffers, MAX_FRAMES_IN_FLIGHT);
+	
+	SamplerCreateInfo info
+	{
+		.minFilter = Filter::Linear,
+		.magFilter =  Filter::Linear,
+		.mipmapMode = SamplerMipmapMode::Linear,
+		.addressModeU = SamplerAddressMode::Repeat,
+		.addressModeV = SamplerAddressMode::Repeat,
+		.addressModeW = SamplerAddressMode::Repeat,
+		.mipLodBias = 0.0f,
+		.enableAnisotropy = true,
+		.maxAnisotropy = 8.0f,
+		.enableCompare = false,
+		.compareOp = CompareOp::Always,
+	};
+
+	Sampler textureSampler(&device, info);
+	Sampler shadowSampler(&device, info);
+
 	TextureSet albedoTexture;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)

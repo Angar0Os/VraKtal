@@ -7,8 +7,13 @@
 
 namespace core::gpu_detail
 {
-	vk::ImageLayout ToVulkan(ImageLayout layout);
-	vk::Filter		ToVulkan(Filter filter);
+    vk::Filter              ToVulkan(core::Filter filter);
+    vk::SamplerAddressMode  ToVulkan(core::SamplerAddressMode mode);
+    vk::SamplerMipmapMode   ToVulkan(core::SamplerMipmapMode mode);
+    vk::CompareOp           ToVulkan(core::CompareOp op);
+    vk::ImageLayout         ToVulkan(core::ImageLayout layout);
+    vk::BufferUsageFlags    ToVulkan(core::BufferUsage usage);
+    vk::MemoryPropertyFlags ToVulkan(core::MemoryProperty properties);
 }
 
 #endif //VRAKTAL_CORE_GPU_DETAIL_CONVERTERS_H
