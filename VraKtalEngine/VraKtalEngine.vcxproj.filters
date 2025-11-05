@@ -119,6 +119,12 @@
     <ClInclude Include="include\core\enum.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
+    <ClInclude Include="include\core\gpu\buffer.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\sampler.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">

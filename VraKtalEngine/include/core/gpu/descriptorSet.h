@@ -4,26 +4,31 @@
 
 #include <memory>
 #include <vector>
-
 #include <core/enum.h>
 
 namespace core::gpu
 {
-	class DescriptorSet
-	{
-	private:
-		struct Impl;
-		std::unique_ptr<Impl> m_pImpl;
-	public:
-		DescriptorSet(void* device, std::vector<void*>& sets, size_t frame);
+    class Buffer;      
+    class Sampler;     
 
-		DescriptorSet& BindBuffer(BufferHandle buffer, size_t offset, size_t range);
+    class DescriptorSet
+    {
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> m_impl;
 
-		DescriptorSet& BindImage(SamplerHandle sampler, const TextureSet* texture,
-			const TextureSet& defaultTexture, ImageLayout layout = ImageLayout::ShaderReadOnly);
+    public:
+        DescriptorSet(void* device, std::vector<void*>& sets, size_t frame);
+        ~DescriptorSet();
 
-		void Update();
-	};
+        DescriptorSet& BindBuffer(const Buffer& buffer, size_t offset, size_t range);
+        DescriptorSet& BindImage(const Sampler& sampler, const core::TextureSet* texture,
+            const core::TextureSet& defaultTexture, ImageLayout layout = ImageLayout::ShaderReadOnly);
+
+        void Update();
+
+        Impl& GetImpl();
+    };
 }
 
 #endif //VRAKTAL_CORE_VULKAN_DESCRIPTORSET_H

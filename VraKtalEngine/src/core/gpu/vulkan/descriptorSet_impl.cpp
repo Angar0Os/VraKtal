@@ -1,127 +1,143 @@
 #include "../src/core/gpu/vulkan/descriptorSet_impl.h"
 
-core::gpu::DescriptorSet::Impl::Impl(vk::raii::Device& dev, std::vector<vk::raii::DescriptorSet>& sets, size_t frame)
-	: device(dev), descriptorSets(sets), currentFrame(frame)
-{
+#include <core/gpu/buffer.h>
+#include <core/gpu/sampler.h>
+#include <core/enum.h>
 
+// Note : I need to move the converters into a utils file.
+vk::ImageLayout core::gpu::ToVulkan(ImageLayout layout)
+{
+    switch (layout)
+    {
+    case ImageLayout::ShaderReadOnly: return vk::ImageLayout::eShaderReadOnlyOptimal;
+    case ImageLayout::ColorAttachment: return vk::ImageLayout::eColorAttachmentOptimal;
+    case ImageLayout::DepthStencilAttachment: return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+    case ImageLayout::TransferSrc: return vk::ImageLayout::eTransferSrcOptimal;
+    case ImageLayout::TransferDst: return vk::ImageLayout::eTransferDstOptimal;
+    case ImageLayout::Present: return vk::ImageLayout::ePresentSrcKHR;
+    default: return vk::ImageLayout::eUndefined;
+    }
 }
 
-//core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindBuffer(core::BufferHandle buffer, size_t offset, size_t range)
-//{
-//
-//}
-//
-//core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindImage(core::SamplerHandle samplerHandle, const core::TextureSet* texture, const core::TextureSet& defaultTexture, core::ImageLayout layout)
-//{
-//
-//}
+vk::Filter core::gpu::ToVulkan(Filter filter)
+{
+    switch (filter)
+    {
+    case Filter::Nearest: return vk::Filter::eNearest;
+    case Filter::Linear: return vk::Filter::eLinear;
+    default: return vk::Filter::eNearest;
+    }
+}
 
-//
-//struct TextureSet
-//{
-//    vk::raii::Image image = nullptr;
-//    vk::raii::DeviceMemory memory = nullptr;
-//    vk::raii::ImageView view = nullptr;
-//    uint32_t mipLevels = 1;
-//
-//    bool isValid() const { return view != nullptr; }
-//};
-//
-//class DescriptorSetBuilder
-//{
-//private:
-//    vk::raii::Device& device;
-//    std::vector<vk::raii::DescriptorSet>& descriptorSets;
-//    size_t currentFrame;
-//    uint32_t currentBinding = 0;
-//    std::vector<vk::DescriptorBufferInfo> bufferInfos;
-//    std::vector<vk::DescriptorImageInfo> imageInfos;
-//    std::vector<vk::WriteDescriptorSet> writes;
-//
-//public:
-//    DescriptorSetBuilder(vk::raii::Device& dev,
-//        std::vector<vk::raii::DescriptorSet>& sets,
-//        size_t frame)
-//        : device(dev), descriptorSets(sets), currentFrame(frame)
-//    {
-//    }
-//
-//    DescriptorSetBuilder& BindBuffer(vk::Buffer buffer, vk::DeviceSize offset, vk::DeviceSize range)
-//    {
-//        bufferInfos.push_back(vk::DescriptorBufferInfo{
-//            .buffer = buffer,
-//            .offset = offset,
-//            .range = range
-//            });
-//
-//        writes.push_back(vk::WriteDescriptorSet{
-//            .dstSet = descriptorSets[currentFrame],
-//            .dstBinding = currentBinding++,
-//            .dstArrayElement = 0,
-//            .descriptorCount = 1,
-//            .descriptorType = vk::DescriptorType::eUniformBuffer,
-//            .pBufferInfo = &bufferInfos.back()
-//            });
-//
-//        return *this;
-//    }
-//
-//    DescriptorSetBuilder& BindImage(vk::Sampler sampler,
-//        const TextureSet* texture,
-//        const TextureSet& defaultTexture,
-//        vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal)
-//    {
-//        imageInfos.push_back(vk::DescriptorImageInfo{
-//            .sampler = sampler,
-//            .imageView = (texture && texture->isValid()) ? *texture->view : *defaultTexture.view,
-//            .imageLayout = layout
-//            });
-//
-//        writes.push_back(vk::WriteDescriptorSet{
-//            .dstSet = descriptorSets[currentFrame],
-//            .dstBinding = currentBinding++,
-//            .dstArrayElement = 0,
-//            .descriptorCount = 1,
-//            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-//            .pImageInfo = &imageInfos.back()
-//            });
-//
-//        return *this;
-//    }
-//
-//    void Update()
-//    {
-//        if (!writes.empty())
-//        {
-//            device.updateDescriptorSets(writes, {});
-//        }
-//        currentBinding = 0;
-//    }
-//};
-//
-//void CreateDescriptorSets()
-//{
-//    std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, *descriptorSetLayout);
-//    vk::DescriptorSetAllocateInfo allocInfo{
-//        .descriptorPool = descriptorPool,
-//        .descriptorSetCount = static_cast<uint32_t>(layouts.size()),
-//        .pSetLayouts = layouts.data()
-//    };
-//
-//    descriptorSets.clear();
-//    descriptorSets = device.allocateDescriptorSets(allocInfo);
-//
-//    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-//    {
-//        DescriptorSetBuilder(device, descriptorSets, i)
-//            .BindBuffer(uniformBuffers[i], 0, sizeof(UniformBufferObject))
-//            .BindImage(textureSampler, albedoTexture, defaultWhiteTexture)
-//            .BindImage(textureSampler, normalTexture, defaultNormalTexture)
-//            .BindImage(textureSampler, metallicTexture, defaultWhiteTexture)
-//            .BindImage(textureSampler, roughnessTexture, defaultWhiteTexture)
-//            .BindImage(textureSampler, aoTexture, defaultWhiteTexture)
-//            .BindImage(textureSampler, emissiveTexture, defaultBlackTexture)
-//            .BindImage(shadowSampler, &shadowMapTexture, defaultWhiteTexture)
-//            .Update();
-//    }
-//}
+core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, vk::raii::Device& dev, std::vector<vk::raii::DescriptorSet>& sets, size_t frame)
+	: parent(p), device(dev), descriptorSets(sets), currentFrame(frame)
+{
+    bufferInfos.reserve(8);
+    imageInfos.reserve(8);
+    writes.reserve(8);
+}
+
+core::gpu::DescriptorSet::Impl::~Impl() = default;
+
+// Note : Buffer Handle is the buffer type we will create soon
+// TODO : Implement Buffer type.
+core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindBuffer(const Buffer& buffer, size_t offset, size_t range)
+{
+    vk::Buffer vkBuffer = *static_cast<vk::Buffer*>(buffer.GetHandle());
+
+    bufferInfos.emplace_back(
+        vkBuffer,
+        static_cast<vk::DeviceSize>(offset),
+        static_cast<vk::DeviceSize>(range)
+    );
+
+    writes.emplace_back(
+        descriptorSets[currentFrame],
+        currentBinding++,
+        0,
+        1,
+        vk::DescriptorType::eUniformBuffer,
+        nullptr,
+        &bufferInfos.back(),
+        nullptr
+    );
+
+    return parent;
+}
+
+core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindImage(const Sampler& sampler,const core::TextureSet *texture,
+    const core::TextureSet& defaultTexture, ImageLayout layout)
+{
+    auto* vkSampler = static_cast<vk::raii::Sampler*>(sampler.GetHandle());
+
+    const TextureSet* selectedTexture = (texture && texture->isValid())
+        ? texture
+        : &defaultTexture;
+
+    auto* vkImageView = static_cast<vk::raii::ImageView*>(selectedTexture->view);
+
+    imageInfos.emplace_back(
+        **vkSampler,
+        **vkImageView,
+        ToVulkan(layout)
+    );
+
+    writes.emplace_back(
+        descriptorSets[currentFrame],
+        currentBinding++,
+        0,
+        1,
+        vk::DescriptorType::eCombinedImageSampler,
+        &imageInfos.back(),
+        nullptr,
+        nullptr
+    );
+
+    return parent;
+}
+
+void core::gpu::DescriptorSet::Impl::Update()
+{
+    if (!writes.empty())
+    {
+        device.updateDescriptorSets(writes, {});
+    }
+
+    currentBinding = 0;
+    bufferInfos.clear();
+    imageInfos.clear();
+    writes.clear();
+}
+
+core::gpu::DescriptorSet::DescriptorSet(void* device, std::vector<void*>& sets, size_t frame)
+{
+    auto& vkDevice = *static_cast<vk::raii::Device*>(device);
+    auto& vkSets = *reinterpret_cast<std::vector<vk::raii::DescriptorSet>*>(&sets);
+
+    m_impl = std::make_unique<Impl>(*this, vkDevice, vkSets, frame);
+}
+
+core::gpu::DescriptorSet::~DescriptorSet() = default;
+
+core::gpu::DescriptorSet& core::gpu::DescriptorSet::BindBuffer(const Buffer& buffer, size_t offset, size_t range)
+{
+    m_impl->BindBuffer(buffer, offset, range);
+    return *this;
+}
+
+core::gpu::DescriptorSet& core::gpu::DescriptorSet::BindImage(const Sampler& sampler, const core::TextureSet* texture,
+    const core::TextureSet& defaultTexture, core::ImageLayout layout)
+{
+    m_impl->BindImage(sampler, texture, defaultTexture, layout);
+    return *this;
+}
+
+void core::gpu::DescriptorSet::Update()
+{
+    m_impl->Update();
+}
+
+core::gpu::DescriptorSet::Impl& core::gpu::DescriptorSet::GetImpl()
+{
+    return *m_impl;
+}
