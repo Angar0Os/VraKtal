@@ -108,3 +108,85 @@ vk::MemoryPropertyFlags core::gpu_detail::ToVulkan(core::MemoryProperty properti
 
     return flags;
 }
+
+vk::ImageUsageFlags core::gpu_detail::ToVulkan(core::ImageUsage usage)
+{
+    vk::ImageUsageFlags flags;
+
+    if ((usage & core::ImageUsage::TransferSrc) != core::ImageUsage::None)
+        flags |= vk::ImageUsageFlagBits::eTransferSrc;
+
+    if ((usage & core::ImageUsage::TransferDst) != core::ImageUsage::None)
+        flags |= vk::ImageUsageFlagBits::eTransferDst;
+
+    if ((usage & core::ImageUsage::Sampled) != core::ImageUsage::None)
+        flags |= vk::ImageUsageFlagBits::eSampled;
+
+    if ((usage & core::ImageUsage::Storage) != core::ImageUsage::None)
+        flags |= vk::ImageUsageFlagBits::eStorage;
+
+    if ((usage & core::ImageUsage::ColorAttachment) != core::ImageUsage::None)
+        flags |= vk::ImageUsageFlagBits::eColorAttachment;
+
+    if ((usage & core::ImageUsage::DepthStencilAttachment) != core::ImageUsage::None)
+        flags |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+
+    if ((usage & core::ImageUsage::InputAttachment) != core::ImageUsage::None)
+        flags |= vk::ImageUsageFlagBits::eInputAttachment;
+
+    return flags;
+}
+
+vk::ImageTiling core::gpu_detail::ToVulkan(core::ImageTiling tiling)
+{
+    switch (tiling)
+    {
+        case core::ImageTiling::Optimal: return vk::ImageTiling::eOptimal;
+        case core::ImageTiling::Linear:  return vk::ImageTiling::eLinear;
+        default: return vk::ImageTiling::eOptimal;
+    }
+}
+
+vk::SampleCountFlagBits core::gpu_detail::ToVulkan(core::SampleCount samples)
+{
+    switch (samples)
+    {
+        case core::SampleCount::e1:  return vk::SampleCountFlagBits::e1;
+        case core::SampleCount::e2:  return vk::SampleCountFlagBits::e2;
+        case core::SampleCount::e4:  return vk::SampleCountFlagBits::e4;
+        case core::SampleCount::e8:  return vk::SampleCountFlagBits::e8;
+        case core::SampleCount::e16: return vk::SampleCountFlagBits::e16;
+        case core::SampleCount::e32: return vk::SampleCountFlagBits::e32;
+        case core::SampleCount::e64: return vk::SampleCountFlagBits::e64;
+        default: return vk::SampleCountFlagBits::e1;
+    }
+}
+
+vk::Format core::gpu_detail::ToVulkan(core::TextureFormat format)
+{
+    switch (format)
+    {
+        case core::TextureFormat::Undefined:       return vk::Format::eUndefined;
+        case core::TextureFormat::R8_UNorm:        return vk::Format::eR8Unorm;
+        case core::TextureFormat::RG8_UNorm:       return vk::Format::eR8G8Unorm;
+        case core::TextureFormat::RGB8_UNorm:      return vk::Format::eR8G8B8Unorm;
+        case core::TextureFormat::RGBA8_UNorm:     return vk::Format::eR8G8B8A8Unorm;
+        case core::TextureFormat::RGBA8_SRGB:      return vk::Format::eR8G8B8A8Srgb;
+        case core::TextureFormat::R16_Float:       return vk::Format::eR16Sfloat;
+        case core::TextureFormat::RG16_Float:      return vk::Format::eR16G16Sfloat;
+        case core::TextureFormat::RGBA16_Float:    return vk::Format::eR16G16B16A16Sfloat;
+        case core::TextureFormat::R32_Float:       return vk::Format::eR32Sfloat;
+        case core::TextureFormat::RG32_Float:      return vk::Format::eR32G32Sfloat;
+        case core::TextureFormat::RGB32_Float:     return vk::Format::eR32G32B32Sfloat;
+        case core::TextureFormat::RGBA32_Float:    return vk::Format::eR32G32B32A32Sfloat;
+        case core::TextureFormat::Depth16:         return vk::Format::eD16Unorm;
+        case core::TextureFormat::Depth24:         return vk::Format::eX8D24UnormPack32;
+        case core::TextureFormat::Depth32F:        return vk::Format::eD32Sfloat;
+        case core::TextureFormat::Depth24Stencil8: return vk::Format::eD24UnormS8Uint;
+        case core::TextureFormat::Depth32FStencil8:return vk::Format::eD32SfloatS8Uint;
+        case core::TextureFormat::BC1_RGB_UNorm:   return vk::Format::eBc1RgbUnormBlock;
+        case core::TextureFormat::BC3_RGBA_UNorm:  return vk::Format::eBc3UnormBlock;
+        case core::TextureFormat::BC7_RGBA_UNorm:  return vk::Format::eBc7UnormBlock;
+        default: return vk::Format::eR8G8B8A8Srgb;
+    }
+}

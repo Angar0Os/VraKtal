@@ -46,11 +46,11 @@ core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindImage(const Sample
 {
     auto* vkSampler = static_cast<vk::raii::Sampler*>(sampler.GetHandle());
 
-    const Texture* selectedTexture = (texture && texture->IsValid())
+    const Texture* selectedTexture = (texture && texture->isValid())
         ? texture
         : &defaultTexture;
 
-    auto* vkImageView = static_cast<vk::raii::ImageView*>(selectedTexture->GetViewHandle());
+    auto* vkImageView = static_cast<vk::raii::ImageView*>(selectedTexture->GetImageView());
 
     imageInfos.emplace_back(
         **vkSampler,

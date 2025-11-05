@@ -6,6 +6,9 @@
 #include <core/gpu/descriptorSet.h>
 #include <core/gpu/buffer.h>
 #include <core/gpu/sampler.h>
+#include <core/gpu/image.h>
+#include <core/gpu/commandBuffer.h>
+#include <core/gpu/texture.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -64,6 +67,7 @@ core::gpu::Device::Impl::Impl(const core::Window& window)
 	PickPhysicalDevice();
 	CreateLogicalDevice();
 	CreateSwapchain();
+	CreateDescriptorSets();
 }
 
 core::gpu::Device::Impl::~Impl()
@@ -339,6 +343,7 @@ void core::gpu::Device::Impl::CreateSwapchain()
 	swapChainImages = swapChain.getImages();
 }
 
+// Note : We need to make this viable with our images probably ?
 void core::gpu::Device::Impl::CreateImageViews()
 {
 	swapChainImageViews.clear();
@@ -364,52 +369,124 @@ void core::gpu::Device::Impl::CreateImageViews()
 	}
 }
 
-// Note : I don't really know if i will let this here, but for now il let this here.
-void CreateUniformBuffers(void* device, void* physicalDevice,
-	std::vector<core::gpu::Buffer>& uniformBuffers,
-	size_t framesInFlight)
-{
-	uniformBuffers.clear();
-
-	core::gpu::BufferCreateInfo info{
-		.size = sizeof(UniformBufferObject),
-		.usage = core::BufferUsage::UniformBuffer,
-		.memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
-	};
-
-	for (size_t i = 0; i < framesInFlight; ++i)
-	{
-		uniformBuffers.emplace_back(device, physicalDevice, info);
-	}
-}
-
 void core::gpu::Device::Impl::CreateDescriptorSets()
 {
-	// Note : I don't know if all this code go here but anyway i will let it here for now.
-	std::vector<vk::raii::DescriptorSet> descriptorSets;
 	vk::raii::DescriptorSetLayout descriptorSetLayout = nullptr;
 	vk::raii::DescriptorPool descriptorPool = nullptr;
+	std::vector<vk::raii::DescriptorSet> descriptorSets;
+
+	std::vector<vk::DescriptorSetLayoutBinding> bindings
+	{
+		vk::DescriptorSetLayoutBinding{
+			.binding = 0,
+			.descriptorType = vk::DescriptorType::eUniformBuffer,
+			.descriptorCount = 1,
+			.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
+			.pImmutableSamplers = nullptr
+		},
+		vk::DescriptorSetLayoutBinding{
+			.binding = 1,
+			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+			.descriptorCount = 1,
+			.stageFlags = vk::ShaderStageFlagBits::eFragment,
+			.pImmutableSamplers = nullptr
+		},
+		vk::DescriptorSetLayoutBinding{
+			.binding = 2,
+			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+			.descriptorCount = 1,
+			.stageFlags = vk::ShaderStageFlagBits::eFragment,
+			.pImmutableSamplers = nullptr
+		},
+		vk::DescriptorSetLayoutBinding{
+			.binding = 3,
+			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+			.descriptorCount = 1,
+			.stageFlags = vk::ShaderStageFlagBits::eFragment,
+			.pImmutableSamplers = nullptr
+		},
+		vk::DescriptorSetLayoutBinding{
+			.binding = 4,
+			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+			.descriptorCount = 1,
+			.stageFlags = vk::ShaderStageFlagBits::eFragment,
+			.pImmutableSamplers = nullptr
+		},
+		vk::DescriptorSetLayoutBinding{
+			.binding = 5,
+			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+			.descriptorCount = 1,
+			.stageFlags = vk::ShaderStageFlagBits::eFragment,
+			.pImmutableSamplers = nullptr
+		},
+		vk::DescriptorSetLayoutBinding{
+			.binding = 6,
+			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+			.descriptorCount = 1,
+			.stageFlags = vk::ShaderStageFlagBits::eFragment,
+			.pImmutableSamplers = nullptr
+		},
+		vk::DescriptorSetLayoutBinding{
+			.binding = 7,
+			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+			.descriptorCount = 1,
+			.stageFlags = vk::ShaderStageFlagBits::eFragment,
+			.pImmutableSamplers = nullptr
+		}
+	};
+
+	vk::DescriptorSetLayoutCreateInfo layoutInfo{
+		.bindingCount = static_cast<uint32_t>(bindings.size()),
+		.pBindings = bindings.data()
+	};
+
+	descriptorSetLayout = vk::raii::DescriptorSetLayout(device, layoutInfo);
+
+	std::vector<vk::DescriptorPoolSize> poolSizes{
+		vk::DescriptorPoolSize{
+			.type = vk::DescriptorType::eUniformBuffer,
+			.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)
+		},
+		vk::DescriptorPoolSize{
+			.type = vk::DescriptorType::eCombinedImageSampler,
+			.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * 7)
+		}
+	};
+
+	vk::DescriptorPoolCreateInfo poolInfo{
+		.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT),
+		.poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
+		.pPoolSizes = poolSizes.data()
+	};
+
+	descriptorPool = vk::raii::DescriptorPool(device, poolInfo);
 
 	std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, *descriptorSetLayout);
+
 	vk::DescriptorSetAllocateInfo allocInfo{
-		.descriptorPool = descriptorPool,
+		.descriptorPool = *descriptorPool,
 		.descriptorSetCount = static_cast<uint32_t>(layouts.size()),
 		.pSetLayouts = layouts.data()
 	};
 
-	descriptorSets.clear();
 	descriptorSets = device.allocateDescriptorSets(allocInfo);
 
+	std::vector<std::unique_ptr<Buffer>> uniformBuffers;
+	uniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
 
-	// Note : This code will be in other functions like CreateBuffer() / CreateSampler() and CreateTexture() once these astracts will be created.
-	// CreateSampler() --> done.
-	std::vector<Buffer> uniformBuffers;
-	CreateUniformBuffers(&device, &physicalDevice, uniformBuffers, MAX_FRAMES_IN_FLIGHT);
-	
-	SamplerCreateInfo info
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
+		BufferCreateInfo bufferInfo{
+			.size = sizeof(UniformBufferObject),
+			.usage = BufferUsage::UniformBuffer,
+			.memoryProperties = MemoryProperty::HostVisible | MemoryProperty::HostCoherent
+		};		
+		uniformBuffers.push_back(std::make_unique<Buffer>(&device, &physicalDevice, bufferInfo));
+	}
+
+	SamplerCreateInfo samplerInfo{
 		.minFilter = Filter::Linear,
-		.magFilter =  Filter::Linear,
+		.magFilter = Filter::Linear,
 		.mipmapMode = SamplerMipmapMode::Linear,
 		.addressModeU = SamplerAddressMode::Repeat,
 		.addressModeV = SamplerAddressMode::Repeat,
@@ -419,24 +496,75 @@ void core::gpu::Device::Impl::CreateDescriptorSets()
 		.maxAnisotropy = 8.0f,
 		.enableCompare = false,
 		.compareOp = CompareOp::Always,
+		.minLod = 0.0f,
+		.maxLod = 1000.0f
 	};
+	Sampler textureSampler(&device, samplerInfo);
 
-	Sampler textureSampler(&device, info);
-	Sampler shadowSampler(&device, info);
+	SamplerCreateInfo shadowSamplerInfo{
+		.minFilter = Filter::Linear,
+		.magFilter = Filter::Linear,
+		.addressModeU = SamplerAddressMode::ClampToBorder,
+		.addressModeV = SamplerAddressMode::ClampToBorder,
+		.addressModeW = SamplerAddressMode::ClampToBorder,
+		.enableCompare = true,
+		.compareOp = CompareOp::LessOrEqual
+	};
+	Sampler shadowSampler(&device, shadowSamplerInfo);
 
-	TextureSet albedoTexture;
+	Texture defaultWhiteTexture(&device, &physicalDevice, &graphicsQueue, &commandPool, 1.0f, 1.0f, 1.0f, 1.0f);
+	Texture defaultBlackTexture(&device, &physicalDevice, &graphicsQueue, &commandPool, 0.0f, 0.0f, 0.0f, 1.0f);
+	Texture defaultNormalTexture(&device, &physicalDevice, &graphicsQueue, &commandPool, 0.5f, 0.5f, 1.0f, 1.0f);
+
+	Texture* albedoTexture = nullptr;
+	albedoTexture->LoadTextureIfExists("assets/textures/albedo.png");
+	Texture* normalTexture = nullptr;
+	normalTexture->LoadTextureIfExists("assets/textures/normal.png");
+	Texture* metallicTexture = nullptr; 
+	metallicTexture->LoadTextureIfExists("assets/textures/metallic.png");
+	Texture* roughnessTexture = nullptr;
+	roughnessTexture->LoadTextureIfExists("assets/textures/roughness.png");
+	Texture* aoTexture = nullptr;
+	aoTexture->LoadTextureIfExists("assets/textures/ao.png");
+	Texture* emissiveTexture = nullptr;
+	emissiveTexture->LoadTextureIfExists("assets/textures/emissive.png");
+
+	ImageCreateInfo shadowMapInfo{
+		.width = 2048,
+		.height = 2048,
+		.mipLevels = 1,
+		.format = TextureFormat::Depth32F,
+		.tiling = ImageTiling::Optimal,
+		.usage = ImageUsage::DepthStencilAttachment | ImageUsage::Sampled,
+		.memoryProperties = MemoryProperty::DeviceLocal,
+		.samples = SampleCount::e1
+	};
+	Image shadowMapImage(&device, &physicalDevice, shadowMapInfo);
+
+	ImageViewCreateInfo shadowViewInfo{
+		.format = TextureFormat::Depth32F,
+		.isDepth = true
+	};
+	shadowMapImage.CreateView(shadowViewInfo);
+
+	std::vector<void*> descriptorSetHandles;
+	descriptorSetHandles.reserve(descriptorSets.size());
+	for (auto& set : descriptorSets)
+	{
+		descriptorSetHandles.push_back(&set);
+	}
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		DescriptorSet(device, descriptorSets, i)
-			.BindBuffer(uniformBuffers[i], 0, sizeof(UniformBufferObject))
+		DescriptorSet(&device, descriptorSetHandles, i)
+			.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
 			.BindImage(textureSampler, albedoTexture, defaultWhiteTexture)
 			.BindImage(textureSampler, normalTexture, defaultNormalTexture)
 			.BindImage(textureSampler, metallicTexture, defaultWhiteTexture)
 			.BindImage(textureSampler, roughnessTexture, defaultWhiteTexture)
 			.BindImage(textureSampler, aoTexture, defaultWhiteTexture)
 			.BindImage(textureSampler, emissiveTexture, defaultBlackTexture)
-			.BindImage(shadowSampler, &shadowMapTexture, defaultWhiteTexture)
+			.BindImage(shadowSampler, nullptr, defaultWhiteTexture, ImageLayout::DepthStencilAttachment)
 			.Update();
 	}
 }

@@ -42,6 +42,9 @@ namespace core::gpu
 		vk::SurfaceFormatKHR				swapChainSurfaceFormat;
 		vk::Extent2D						swapChainExtent;
 
+		// Note : We will do an abstract of commandPools
+		vk::raii::CommandPool commandPool = nullptr;
+
 		const Window& m_window;
 
 		vk::Extent2D ChooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);

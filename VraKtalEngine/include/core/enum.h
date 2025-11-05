@@ -6,8 +6,53 @@
 
 namespace core
 {
+    enum class ImageUsage : uint32_t
+    {
+        None = 0,
+        TransferSrc = 1 << 0,
+        TransferDst = 1 << 1,
+        Sampled = 1 << 2,
+        Storage = 1 << 3,
+        ColorAttachment = 1 << 4,
+        DepthStencilAttachment = 1 << 5,
+        InputAttachment = 1 << 6
+    };
+
+    inline ImageUsage operator|(ImageUsage a, ImageUsage b)
+    {
+        return static_cast<ImageUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+    }
+
+    inline ImageUsage operator&(ImageUsage a, ImageUsage b)
+    {
+        return static_cast<ImageUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+    }
+
+    inline bool operator!=(ImageUsage a, ImageUsage b)
+    {
+        return static_cast<uint32_t>(a) != static_cast<uint32_t>(b);
+    }
+
+    enum class ImageTiling
+    {
+        Optimal,
+        Linear
+    };
+
+    enum class SampleCount
+    {
+        e1 = 1,
+        e2 = 2,
+        e4 = 4,
+        e8 = 8,
+        e16 = 16,
+        e32 = 32,
+        e64 = 64
+    };
+
     enum class ImageLayout
     {
+        Undefined,
         ShaderReadOnly,
         ColorAttachment,
         DepthStencilAttachment,
@@ -114,6 +159,12 @@ namespace core
     {
         return static_cast<MemoryProperty>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
     }
+
+    enum class CommandBufferLevel
+    {
+        Primary,
+        Secondary
+    };
 }
 
 #endif //VRAKTAL_CORE_ENUMS_H

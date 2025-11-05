@@ -25,6 +25,7 @@ namespace core::gpu
     public:
         explicit Impl(Buffer& p, vk::raii::Device& dev, vk::raii::PhysicalDevice& physDev,
             const BufferCreateInfo& info);
+
         ~Impl();
 
         vk::raii::Buffer& GetBuffer();

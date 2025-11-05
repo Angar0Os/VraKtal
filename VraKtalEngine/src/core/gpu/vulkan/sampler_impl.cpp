@@ -6,21 +6,20 @@
 core::gpu::Sampler::Impl::Impl(core::gpu::Sampler& p, vk::raii::Device& dev, const SamplerCreateInfo& info)
     : parent(p), device(dev), sampler(nullptr)
 {
-    vk::SamplerCreateInfo samplerInfo{
-        .magFilter = core::gpu_detail::ToVulkan(info.magFilter),
-        .minFilter = core::gpu_detail::ToVulkan(info.minFilter),
-        .mipmapMode = core::gpu_detail::ToVulkan(info.mipmapMode),
-        .addressModeU = core::gpu_detail::ToVulkan(info.addressModeU),
-        .addressModeV = core::gpu_detail::ToVulkan(info.addressModeV),
-        .addressModeW = core::gpu_detail::ToVulkan(info.addressModeW),
-        .mipLodBias = info.mipLodBias,
-        .anisotropyEnable = info.enableAnisotropy ? vk::True : vk::False,
-        .maxAnisotropy = info.maxAnisotropy,
-        .compareEnable = info.enableCompare ? vk::True : vk::False,
-        .compareOp = core::gpu_detail::ToVulkan(info.compareOp),
-        .minLod = info.minLod,
-        .maxLod = info.maxLod
-    };
+    vk::SamplerCreateInfo samplerInfo{};
+    samplerInfo.minFilter = core::gpu_detail::ToVulkan(info.minFilter);
+    samplerInfo.magFilter = core::gpu_detail::ToVulkan(info.magFilter);
+    samplerInfo.mipmapMode = core::gpu_detail::ToVulkan(info.mipmapMode);
+    samplerInfo.addressModeU = core::gpu_detail::ToVulkan(info.addressModeU);
+    samplerInfo.addressModeV = core::gpu_detail::ToVulkan(info.addressModeV);
+    samplerInfo.addressModeW = core::gpu_detail::ToVulkan(info.addressModeW);
+    samplerInfo.mipLodBias = info.mipLodBias;
+    samplerInfo.anisotropyEnable = info.enableAnisotropy ? vk::True : vk::False;
+    samplerInfo.maxAnisotropy = info.maxAnisotropy;
+    samplerInfo.compareEnable = info.enableCompare ? vk::True : vk::False;
+    samplerInfo.compareOp = core::gpu_detail::ToVulkan(info.compareOp);
+    samplerInfo.minLod = info.minLod;
+    samplerInfo.maxLod = info.maxLod;
 
     sampler = vk::raii::Sampler(device, samplerInfo);
 }

@@ -14,6 +14,10 @@ namespace core::gpu_detail
     vk::ImageLayout         ToVulkan(core::ImageLayout layout);
     vk::BufferUsageFlags    ToVulkan(core::BufferUsage usage);
     vk::MemoryPropertyFlags ToVulkan(core::MemoryProperty properties);
+    vk::ImageUsageFlags     ToVulkan(core::ImageUsage usage);
+    vk::ImageTiling         ToVulkan(core::ImageTiling tiling);
+    vk::SampleCountFlagBits ToVulkan(core::SampleCount samples);
+    vk::Format              ToVulkan(core::TextureFormat format);
 }
 
 #endif //VRAKTAL_CORE_GPU_DETAIL_CONVERTERS_H
