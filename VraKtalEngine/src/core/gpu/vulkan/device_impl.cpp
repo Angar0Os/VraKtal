@@ -64,6 +64,7 @@ core::gpu::Device::Impl::Impl(const core::Window& window)
 	CreateDescriptorPool();
 	AllocateDescriptorSets();
 	CreateUniformBuffers();
+	CreateCommandPool();
 	CreateSamplers();
 	CreateDefaultTextures();
 	LoadMaterialTextures();
@@ -465,31 +466,42 @@ void core::gpu::Device::Impl::CreateSamplers()
 	shadowSampler = std::make_unique<Sampler>(&device, shadowSamplerInfo);
 }
 
+void core::gpu::Device::Impl::CreateCommandPool()
+{
+	CommandPoolCreateInfo poolInfo{
+		.queueFamilyIndex = queueIndex,
+		.flags = CommandPoolCreateFlags::ResetCommandBuffer
+	};
+
+	commandPool = std::make_unique<CommandPool>(*device, poolInfo);
+}
+
+
 void core::gpu::Device::Impl::CreateDefaultTextures()
 {
-	defaultWhiteTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, *commandPool, 1.0f, 1.0f, 1.0f, 1.0f);
-	defaultBlackTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, *commandPool, 0.0f, 0.0f, 0.0f, 1.0f);
-	defaultNormalTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, *commandPool, 0.5f, 0.5f, 1.0f, 1.0f);
+	defaultWhiteTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
+	defaultBlackTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
+	defaultNormalTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 0.5f, 0.5f, 1.0f, 1.0f);
 }
 
 void core::gpu::Device::Impl::LoadMaterialTextures()
 {
-	albedoTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, *commandPool, 1.0f, 1.0f, 1.0f, 1.0f);
+	albedoTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	albedoTexture->LoadTextureIfExists("assets/textures/albedo.png");
 
-	normalTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, *commandPool, 0.5f, 0.5f, 1.0f, 1.0f);
+	normalTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 0.5f, 0.5f, 1.0f, 1.0f);
 	normalTexture->LoadTextureIfExists("assets/textures/normal.png");
 
-	metallicTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, *commandPool, 1.0f, 1.0f, 1.0f, 1.0f);
+	metallicTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	metallicTexture->LoadTextureIfExists("assets/textures/metallic.png");
 
-	roughnessTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, *commandPool, 1.0f, 1.0f, 1.0f, 1.0f);
+	roughnessTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	roughnessTexture->LoadTextureIfExists("assets/textures/roughness.png");
 
-	aoTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, *commandPool, 1.0f, 1.0f, 1.0f, 1.0f);
+	aoTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	aoTexture->LoadTextureIfExists("assets/textures/ao.png");
 
-	emissiveTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, *commandPool, 0.0f, 0.0f, 0.0f, 1.0f);
+	emissiveTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
 	emissiveTexture->LoadTextureIfExists("assets/textures/emissive.png");
 }
 

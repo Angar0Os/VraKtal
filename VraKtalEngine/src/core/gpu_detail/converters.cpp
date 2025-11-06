@@ -223,3 +223,19 @@ vk::ShaderStageFlags core::gpu_detail::ToVulkan(core::ShaderStage stage)
 
     return flags;
 }
+
+vk::CommandPoolCreateFlags ToVulkanCommandPoolFlags(core::CommandPoolCreateFlags flags)
+{
+    vk::CommandPoolCreateFlags vkFlags;
+
+    if (static_cast<int>(flags) & static_cast<int>(core::CommandPoolCreateFlags::Transient))
+        vkFlags |= vk::CommandPoolCreateFlagBits::eTransient;
+
+    if (static_cast<int>(flags) & static_cast<int>(core::CommandPoolCreateFlags::ResetCommandBuffer))
+        vkFlags |= vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+
+    if (static_cast<int>(flags) & static_cast<int>(core::CommandPoolCreateFlags::Protected))
+        vkFlags |= vk::CommandPoolCreateFlagBits::eProtected;
+
+    return vkFlags;
+}

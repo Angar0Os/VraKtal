@@ -20,6 +20,7 @@ import vulkan_hpp;
 #include <core/gpu/commandBuffer.h>
 #include <core/gpu/texture.h>
 #include <core/gpu/descriptorPool.h>
+#include <core/gpu/commandPool.h>
 
 // Enable validation layers in debug builds
 #ifdef NDEBUG
@@ -51,8 +52,7 @@ namespace core::gpu
 		vk::SurfaceFormatKHR				swapChainSurfaceFormat;
 		vk::Extent2D						swapChainExtent;
 
-		// Note : We will do an abstract of commandPools
-		vk::raii::CommandPool commandPool = nullptr;
+		std::unique_ptr<CommandPool> commandPool;
 
 		std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
 		std::unique_ptr<DescriptorPool> descriptorPool;
@@ -91,6 +91,7 @@ namespace core::gpu
 		void CreateImageViews();
 
 		void CreateDescriptorSetLayout();
+		void CreateCommandPool();
 		void CreateDescriptorPool();
 		void AllocateDescriptorSets();
 		void CreateUniformBuffers();

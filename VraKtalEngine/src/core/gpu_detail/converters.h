@@ -7,19 +7,20 @@
 
 namespace core::gpu_detail
 {
-    vk::Filter              ToVulkan(core::Filter filter);
-    vk::SamplerAddressMode  ToVulkan(core::SamplerAddressMode mode);
-    vk::SamplerMipmapMode   ToVulkan(core::SamplerMipmapMode mode);
-    vk::CompareOp           ToVulkan(core::CompareOp op);
-    vk::ImageLayout         ToVulkan(core::ImageLayout layout);
-    vk::BufferUsageFlags    ToVulkan(core::BufferUsage usage);
-    vk::MemoryPropertyFlags ToVulkan(core::MemoryProperty properties);
-    vk::ImageUsageFlags     ToVulkan(core::ImageUsage usage);
-    vk::ImageTiling         ToVulkan(core::ImageTiling tiling);
-    vk::SampleCountFlagBits ToVulkan(core::SampleCount samples);
-    vk::Format              ToVulkan(core::TextureFormat format);
-    vk::DescriptorType      ToVulkan(core::DescriptorType type);
-    vk::ShaderStageFlags    ToVulkan(core::ShaderStage stage);
+    vk::Filter                  ToVulkan(core::Filter filter);
+    vk::SamplerAddressMode      ToVulkan(core::SamplerAddressMode mode);
+    vk::SamplerMipmapMode       ToVulkan(core::SamplerMipmapMode mode);
+    vk::CompareOp               ToVulkan(core::CompareOp op);
+    vk::ImageLayout             ToVulkan(core::ImageLayout layout);
+    vk::BufferUsageFlags        ToVulkan(core::BufferUsage usage);
+    vk::MemoryPropertyFlags     ToVulkan(core::MemoryProperty properties);
+    vk::ImageUsageFlags         ToVulkan(core::ImageUsage usage);
+    vk::ImageTiling             ToVulkan(core::ImageTiling tiling);
+    vk::SampleCountFlagBits     ToVulkan(core::SampleCount samples);
+    vk::Format                  ToVulkan(core::TextureFormat format);
+    vk::DescriptorType          ToVulkan(core::DescriptorType type);
+    vk::ShaderStageFlags        ToVulkan(core::ShaderStage stage);
+    vk::CommandPoolCreateFlags  ToVulkan(core::CommandPoolCreateFlags flags);
 }
 
 #endif //VRAKTAL_CORE_GPU_DETAIL_CONVERTERS_H

@@ -213,6 +213,7 @@
     <ClInclude Include="include\core\enum.h" />
     <ClInclude Include="include\core\gpu\buffer.h" />
     <ClInclude Include="include\core\gpu\commandBuffer.h" />
+    <ClInclude Include="include\core\gpu\commandPool.h" />
     <ClInclude Include="include\core\gpu\descriptorPool.h" />
     <ClInclude Include="include\core\gpu\descriptorSet.h" />
     <ClInclude Include="include\core\gpu\descriptorSetLayout.h" />
@@ -222,6 +223,7 @@
     <ClInclude Include="include\core\window.h" />
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\commandBuffer_impl.h" />
+    <ClInclude Include="src\core\gpu\vulkan\commandPool_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\descriptorPool_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\descriptorSetLayout_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\descriptorSet_impl.h" />
@@ -235,6 +237,7 @@
     <ClCompile Include="include\core\gpu\texture.h" />
     <ClCompile Include="src\core\gpu\vulkan\buffer_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\commandBuffer_impl.cpp" />
+    <ClCompile Include="src\core\gpu\vulkan\commandPool_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\descriptorPool_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\descriptorSetLayout_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\descriptorSet_impl.cpp" />

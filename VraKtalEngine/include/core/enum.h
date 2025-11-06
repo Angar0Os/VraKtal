@@ -187,6 +187,24 @@ namespace core
         return static_cast<ShaderStage>(static_cast<int>(a) | static_cast<int>(b));
     }
 
+    enum class CommandPoolCreateFlags
+    {
+        None = 0,
+        Transient = 0x01,          
+        ResetCommandBuffer = 0x02, 
+        Protected = 0x04           
+    };
+
+    inline CommandPoolCreateFlags operator|(CommandPoolCreateFlags a, CommandPoolCreateFlags b)
+    {
+        return static_cast<CommandPoolCreateFlags>(static_cast<int>(a) | static_cast<int>(b));
+    }
+
+    inline CommandPoolCreateFlags operator&(CommandPoolCreateFlags a, CommandPoolCreateFlags b)
+    {
+        return static_cast<CommandPoolCreateFlags>(static_cast<int>(a) & static_cast<int>(b));
+    }
+
 }
 
 #endif //VRAKTAL_CORE_ENUMS_H
