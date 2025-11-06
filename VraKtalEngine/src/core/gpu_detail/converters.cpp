@@ -190,3 +190,36 @@ vk::Format core::gpu_detail::ToVulkan(core::TextureFormat format)
         default: return vk::Format::eR8G8B8A8Srgb;
     }
 }
+
+vk::DescriptorType core::gpu_detail::ToVulkan(core::DescriptorType type)
+{
+    switch (type)
+    {
+    case core::DescriptorType::UniformBuffer:
+        return vk::DescriptorType::eUniformBuffer;
+    case core::DescriptorType::CombinedImageSampler:
+        return vk::DescriptorType::eCombinedImageSampler;
+    case core::DescriptorType::StorageBuffer:
+        return vk::DescriptorType::eStorageBuffer;
+    case core::DescriptorType::StorageImage:
+        return vk::DescriptorType::eStorageImage;
+    default:
+        throw std::runtime_error("Unknown descriptor type");
+    }
+}
+
+vk::ShaderStageFlags core::gpu_detail::ToVulkan(core::ShaderStage stage)
+{
+    vk::ShaderStageFlags flags;
+
+    if (static_cast<int>(stage) & static_cast<int>(core::ShaderStage::Vertex))
+        flags |= vk::ShaderStageFlagBits::eVertex;
+    if (static_cast<int>(stage) & static_cast<int>(core::ShaderStage::Fragment))
+        flags |= vk::ShaderStageFlagBits::eFragment;
+    if (static_cast<int>(stage) & static_cast<int>(core::ShaderStage::Compute))
+        flags |= vk::ShaderStageFlagBits::eCompute;
+    if (static_cast<int>(stage) == static_cast<int>(core::ShaderStage::All))
+        flags = vk::ShaderStageFlagBits::eAll;
+
+    return flags;
+}

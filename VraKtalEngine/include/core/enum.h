@@ -165,6 +165,28 @@ namespace core
         Primary,
         Secondary
     };
+
+    enum class DescriptorType
+    {
+        UniformBuffer,
+        CombinedImageSampler,
+        StorageBuffer,
+        StorageImage
+    };
+
+    enum class ShaderStage
+    {
+        Vertex = 0x01,
+        Fragment = 0x02,
+        Compute = 0x04,
+        All = 0xFF
+    };
+
+    inline ShaderStage operator|(ShaderStage a, ShaderStage b)
+    {
+        return static_cast<ShaderStage>(static_cast<int>(a) | static_cast<int>(b));
+    }
+
 }
 
 #endif //VRAKTAL_CORE_ENUMS_H

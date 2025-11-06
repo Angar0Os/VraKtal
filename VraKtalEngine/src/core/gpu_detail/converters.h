@@ -18,6 +18,8 @@ namespace core::gpu_detail
     vk::ImageTiling         ToVulkan(core::ImageTiling tiling);
     vk::SampleCountFlagBits ToVulkan(core::SampleCount samples);
     vk::Format              ToVulkan(core::TextureFormat format);
+    vk::DescriptorType      ToVulkan(core::DescriptorType type);
+    vk::ShaderStageFlags    ToVulkan(core::ShaderStage stage);
 }
 
 #endif //VRAKTAL_CORE_GPU_DETAIL_CONVERTERS_H

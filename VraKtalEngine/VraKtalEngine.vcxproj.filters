@@ -152,6 +152,18 @@
     <ClInclude Include="src\core\gpu\vulkan\texture_impl.h">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="include\core\gpu\descriptorPool.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\descriptorSetLayout.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\vulkan\descriptorSetLayout_impl.h">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\vulkan\descriptorPool_impl.h">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -182,6 +194,12 @@
       <Filter>Header Files\core\gpu</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\vulkan\descriptorSetLayout_impl.cpp">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\vulkan\descriptorPool_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
   </ItemGroup>

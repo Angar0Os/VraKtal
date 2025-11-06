@@ -372,107 +372,50 @@ void core::gpu::Device::Impl::CreateImageViews()
 
 void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 {
-	std::vector<vk::DescriptorSetLayoutBinding> bindings
+	DescriptorSetLayoutCreateInfo layoutInfo;
+	layoutInfo.bindings = 
 	{
-		vk::DescriptorSetLayoutBinding{
-			.binding = 0,
-			.descriptorType = vk::DescriptorType::eUniformBuffer,
-			.descriptorCount = 1,
-			.stageFlags = vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment,
-			.pImmutableSamplers = nullptr
-		},
-		vk::DescriptorSetLayoutBinding{
-			.binding = 1,
-			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
-			.descriptorCount = 1,
-			.stageFlags = vk::ShaderStageFlagBits::eFragment,
-			.pImmutableSamplers = nullptr
-		},
-		vk::DescriptorSetLayoutBinding{
-			.binding = 2,
-			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
-			.descriptorCount = 1,
-			.stageFlags = vk::ShaderStageFlagBits::eFragment,
-			.pImmutableSamplers = nullptr
-		},
-		vk::DescriptorSetLayoutBinding{
-			.binding = 3,
-			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
-			.descriptorCount = 1,
-			.stageFlags = vk::ShaderStageFlagBits::eFragment,
-			.pImmutableSamplers = nullptr
-		},
-		vk::DescriptorSetLayoutBinding{
-			.binding = 4,
-			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
-			.descriptorCount = 1,
-			.stageFlags = vk::ShaderStageFlagBits::eFragment,
-			.pImmutableSamplers = nullptr
-		},
-		vk::DescriptorSetLayoutBinding{
-			.binding = 5,
-			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
-			.descriptorCount = 1,
-			.stageFlags = vk::ShaderStageFlagBits::eFragment,
-			.pImmutableSamplers = nullptr
-		},
-		vk::DescriptorSetLayoutBinding{
-			.binding = 6,
-			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
-			.descriptorCount = 1,
-			.stageFlags = vk::ShaderStageFlagBits::eFragment,
-			.pImmutableSamplers = nullptr
-		},
-		vk::DescriptorSetLayoutBinding{
-			.binding = 7,
-			.descriptorType = vk::DescriptorType::eCombinedImageSampler,
-			.descriptorCount = 1,
-			.stageFlags = vk::ShaderStageFlagBits::eFragment,
-			.pImmutableSamplers = nullptr
-		}
+		{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex | ShaderStage::Fragment},
+
+		{1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
+		{2, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
+		{3, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
+		{4, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
+		{5, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
+		{6, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
+		{7, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}  
 	};
 
-	vk::DescriptorSetLayoutCreateInfo layoutInfo{
-		.bindingCount = static_cast<uint32_t>(bindings.size()),
-		.pBindings = bindings.data()
-	};
-
-	descriptorSetLayout = vk::raii::DescriptorSetLayout(device, layoutInfo);
+	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(*device, layoutInfo);
 }
 
 void core::gpu::Device::Impl::CreateDescriptorPool()
 {
-	std::vector<vk::DescriptorPoolSize> poolSizes{
-		vk::DescriptorPoolSize{
-			.type = vk::DescriptorType::eUniformBuffer,
-			.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT)
-		},
-		vk::DescriptorPoolSize{
-			.type = vk::DescriptorType::eCombinedImageSampler,
-			.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * 7)
-		}
+	DescriptorPoolCreateInfo poolInfo;
+	poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
+	poolInfo.poolSizes = 
+	{
+		{DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT},
+		{DescriptorType::CombinedImageSampler, MAX_FRAMES_IN_FLIGHT * 7}
 	};
+	poolInfo.allowFreeDescriptorSet = false;
 
-	vk::DescriptorPoolCreateInfo poolInfo{
-		.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT),
-		.poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
-		.pPoolSizes = poolSizes.data()
-	};
-
-	descriptorPool = vk::raii::DescriptorPool(device, poolInfo);
+	descriptorPool = std::make_unique<DescriptorPool>(*device, poolInfo);
 }
 
 void core::gpu::Device::Impl::AllocateDescriptorSets()
 {
-	std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, *descriptorSetLayout);
+	std::vector<void*> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout->GetHandle());
 
-	vk::DescriptorSetAllocateInfo allocInfo{
-		.descriptorPool = *descriptorPool,
-		.descriptorSetCount = static_cast<uint32_t>(layouts.size()),
-		.pSetLayouts = layouts.data()
-	};
+	auto allocatedSets = descriptorPool->AllocateDescriptorSets(layouts, MAX_FRAMES_IN_FLIGHT);
 
-	descriptorSets = device.allocateDescriptorSets(allocInfo);
+	descriptorSets.clear();
+	descriptorSets.reserve(allocatedSets.size());
+
+	for (auto* setHandle : allocatedSets)
+	{
+		descriptorSets.push_back(setHandle);
+	}
 }
 
 void core::gpu::Device::Impl::CreateUniformBuffers()
