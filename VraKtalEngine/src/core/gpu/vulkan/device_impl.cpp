@@ -6,6 +6,10 @@
 #include <stdexcept>
 #include <GLFW/glfw3.h>
 
+#include <core/enum.h>
+
+#include <fstream>
+
 #pragma comment(lib, "vulkan-1.lib")
 
 // Validation layers used in debug
@@ -58,18 +62,28 @@ core::gpu::Device::Impl::Impl(const core::Window& window)
 	CreateSurface();
 	PickPhysicalDevice();
 	CreateLogicalDevice();
+
 	CreateSwapchain();
 
 	CreateDescriptorSetLayout();
+	CreateShadowDescriptorSetLayout();
+
 	CreateDescriptorPool();
 	AllocateDescriptorSets();
+
 	CreateUniformBuffers();
 	CreateCommandPool();
 	CreateSamplers();
+
 	CreateDefaultTextures();
 	LoadMaterialTextures();
 	CreateShadowMap();
+
+	CreateGraphicsPipeline();
+	CreateShadowPipeline();
+
 	CreateDescriptorSets();
+	CreateShadowDescriptorSets();
 }
 
 core::gpu::Device::Impl::~Impl()
@@ -260,131 +274,20 @@ void core::gpu::Device::Impl::CreateLogicalDevice()
 	graphicsQueue = vk::raii::Queue(device, queueIndex, 0);
 }
 
-// Choose a surface format that matches desired srgb format if available
-vk::SurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)
-{
-	for (const auto& availableFormat : availableFormats)
-	{
-		if (availableFormat.format == vk::Format::eB8G8R8A8Srgb && availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
-		{
-			return availableFormat;
-		}
-	}
-	
-	// Fallback to the first supported format
-	return availableFormats[0];
-}
-
-// Prefer mailbox present mode when available for low-latency
-vk::PresentModeKHR ChooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes)
-{
-	for (const auto& availablePresentMode : availablePresentModes)
-	{
-		if (availablePresentMode == vk::PresentModeKHR::eMailbox)
-		{
-			return availablePresentMode;
-		}
-	}
-
-	// FIFO is guaranteed to be available
-	return vk::PresentModeKHR::eFifo;
-}
-
-// Compute swap extent (framebuffer size) choosing sensible defaults
-vk::Extent2D core::gpu::Device::Impl::ChooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities)
-{
-	if (capabilities.currentExtent.width != 0xFFFFFFFF)
-	{
-		return capabilities.currentExtent;
-	}
-
-	int width, height;
-	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
-
-	return
-	{
-		std::clamp<uint32_t>(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-		std::clamp<uint32_t>(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
-	};
-}
-
-// Choose min image count for the swapchain with a small guard for max supported
-static uint32_t ChooseSwapMinImageCount(vk::SurfaceCapabilitiesKHR const& surfaceCapabilities)
-{
-	auto minImageCount = std::max(3u, surfaceCapabilities.minImageCount);
-	if ((0 < surfaceCapabilities.maxImageCount) && (surfaceCapabilities.maxImageCount < minImageCount))
-	{
-		minImageCount = surfaceCapabilities.maxImageCount;
-	}
-	return minImageCount;
-}
-
-void core::gpu::Device::Impl::CreateSwapchain()
-{
-	auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
-	swapChainSurfaceFormat = ChooseSwapSurfaceFormat(physicalDevice.getSurfaceFormatsKHR(surface));
-	swapChainExtent = ChooseSwapExtent(surfaceCapabilities);
-
-	vk::SwapchainCreateInfoKHR swapChainCreateInfo
-	{ 
-		.surface = *surface,
-		.minImageCount = ChooseSwapMinImageCount(surfaceCapabilities),
-		.imageFormat = swapChainSurfaceFormat.format,
-		.imageColorSpace = swapChainSurfaceFormat.colorSpace,
-		.imageExtent = swapChainExtent,
-		.imageArrayLayers = 1,
-		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
-		.imageSharingMode = vk::SharingMode::eExclusive,
-		.preTransform = surfaceCapabilities.currentTransform,
-		.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
-		.presentMode = ChooseSwapPresentMode(physicalDevice.getSurfacePresentModesKHR(*surface)),
-		.clipped = true 
-	};
-
-	swapChain = vk::raii::SwapchainKHR(device, swapChainCreateInfo);
-	swapChainImages = swapChain.getImages();
-}
-
-// Note : We need to make this viable with our images probably ?
-void core::gpu::Device::Impl::CreateImageViews()
-{
-	swapChainImageViews.clear();
-
-	vk::ImageViewCreateInfo imageViewCreateInfo
-	{
-		.viewType = vk::ImageViewType::e2D,
-		.format = swapChainSurfaceFormat.format,
-		.subresourceRange =
-		{
-			vk::ImageAspectFlagBits::eColor,
-			0,
-			1,
-			0,
-			1
-		}
-	};
-
-	for (auto image : swapChainImages)
-	{
-		imageViewCreateInfo.image = image;
-		swapChainImageViews.emplace_back(device, imageViewCreateInfo);
-	}
-}
-
 void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 {
 	DescriptorSetLayoutCreateInfo layoutInfo;
 	layoutInfo.bindings = 
 	{
-		{0, DescriptorType::UniformBuffer, 1, ShaderStage::Vertex | ShaderStage::Fragment},
+		{0, DescriptorType::UniformBuffer, 1, core::ShaderStage::Vertex | core::ShaderStage::Fragment},
 
-		{1, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
-		{2, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
-		{3, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
-		{4, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
-		{5, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
-		{6, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}, 
-		{7, DescriptorType::CombinedImageSampler, 1, ShaderStage::Fragment}  
+		{1, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{2, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{3, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{4, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{5, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{6, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{7, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment}
 	};
 
 	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(*device, layoutInfo);
@@ -393,10 +296,10 @@ void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 void core::gpu::Device::Impl::CreateDescriptorPool()
 {
 	DescriptorPoolCreateInfo poolInfo;
-	poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
-	poolInfo.poolSizes = 
+	poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 2; 
+	poolInfo.poolSizes =
 	{
-		{DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT},
+		{DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT * 2},
 		{DescriptorType::CombinedImageSampler, MAX_FRAMES_IN_FLIGHT * 7}
 	};
 	poolInfo.allowFreeDescriptorSet = false;
@@ -407,15 +310,23 @@ void core::gpu::Device::Impl::CreateDescriptorPool()
 void core::gpu::Device::Impl::AllocateDescriptorSets()
 {
 	std::vector<void*> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout->GetHandle());
-
 	auto allocatedSets = descriptorPool->AllocateDescriptorSets(layouts, MAX_FRAMES_IN_FLIGHT);
 
 	descriptorSets.clear();
 	descriptorSets.reserve(allocatedSets.size());
-
 	for (auto* setHandle : allocatedSets)
 	{
 		descriptorSets.push_back(setHandle);
+	}
+
+	std::vector<void*> shadowLayouts(MAX_FRAMES_IN_FLIGHT, shadowDescriptorSetLayout->GetHandle());
+	auto allocatedShadowSets = descriptorPool->AllocateDescriptorSets(shadowLayouts, MAX_FRAMES_IN_FLIGHT);
+
+	shadowDescriptorSets.clear();
+	shadowDescriptorSets.reserve(allocatedShadowSets.size());
+	for (auto* setHandle : allocatedShadowSets)
+	{
+		shadowDescriptorSets.push_back(setHandle);
 	}
 }
 
@@ -526,6 +437,159 @@ void core::gpu::Device::Impl::CreateShadowMap()
 	shadowMapImage->CreateView(shadowViewInfo);
 }
 
+void core::gpu::Device::Impl::CreateSwapchain()
+{
+	int width, height;
+	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
+
+	SwapchainCreateInfo swapchainInfo{
+		.surface = &surface,
+		.width = static_cast<uint32_t>(width),
+		.height = static_cast<uint32_t>(height),
+		.preferredFormat = TextureFormat::RGBA8_SRGB,
+		.presentMode = PresentMode::Mailbox,
+		.minImageCount = 3,
+		.oldSwapchain = nullptr
+	};
+
+	swapchain = std::make_unique<Swapchain>(&device, &physicalDevice, swapchainInfo);
+}
+
+void core::gpu::Device::Impl::CreateGraphicsPipeline()
+{
+	auto shaderCode = ReadFile("../bin/assets/shaders/slang.spv");
+
+	VertexInputBinding vertexBinding{
+		.binding = 0,
+		.stride = sizeof(Vertex),  
+		.inputRate = VertexInputRate::Vertex
+	};
+
+	std::vector<VertexInputAttribute> vertexAttributes = {
+		{0, 0, TextureFormat::RGB32_Float, offsetof(Vertex, pos)},
+		{1, 0, TextureFormat::RGB32_Float, offsetof(Vertex, color)},
+		{2, 0, TextureFormat::RG32_Float, offsetof(Vertex, texCoord)},
+		{3, 0, TextureFormat::RGB32_Float, offsetof(Vertex, normal)}
+	};
+
+	std::vector<ShaderStage> shaderStages = {
+		{ShaderStageFlags::Vertex, shaderCode, "vertMain"},
+		{ShaderStageFlags::Fragment, shaderCode, "fragMain"}
+	};
+	
+	PipelineCreateInfo pipelineInfo{
+		.shaderStages = shaderStages,
+		.vertexBindings = {vertexBinding},
+		.vertexAttributes = vertexAttributes,
+		.topology = PrimitiveTopology::TriangleList,
+		.polygonMode = PolygonMode::Fill,
+		.cullMode = CullMode::Back,
+		.frontFace = FrontFace::CounterClockwise,
+		.depthTestEnable = true,
+		.depthWriteEnable = true,
+		.depthCompareOp = CompareOp::Less,
+		.blendEnable = false,
+		.samples = SampleCount::e4,  
+		.colorAttachmentFormats = {swapchain->GetFormat()},
+		.depthAttachmentFormat = TextureFormat::Depth32F,
+		.descriptorSetLayouts = {descriptorSetLayout.get()},
+		.dynamicStates = {DynamicState::Viewport, DynamicState::Scissor}
+	};
+
+	graphicsPipeline = std::make_unique<Pipeline>(&device, pipelineInfo);
+}
+
+void core::gpu::Device::Impl::CreateShadowPipeline()
+{
+	auto shaderCode = ReadFile("../bin/assets/shaders/slang.spv");
+
+	VertexInputBinding vertexBinding{
+		.binding = 0,
+		.stride = sizeof(Vertex),
+		.inputRate = VertexInputRate::Vertex
+	};
+
+	std::vector<VertexInputAttribute> vertexAttributes = {
+		{0, 0, TextureFormat::RGB32_Float, offsetof(Vertex, pos)}
+	};
+
+	std::vector<ShaderStage> shaderStages = {
+		{ShaderStageFlags::Vertex, shaderCode, "shadowMain"}
+	};
+
+	PipelineCreateInfo shadowInfo{
+		.shaderStages = shaderStages,
+		.vertexBindings = {vertexBinding},
+		.vertexAttributes = vertexAttributes,
+		.topology = PrimitiveTopology::TriangleList,
+		.polygonMode = PolygonMode::Fill,
+		.cullMode = CullMode::Back,
+		.frontFace = FrontFace::CounterClockwise,
+		.depthTestEnable = true,
+		.depthWriteEnable = true,
+		.depthCompareOp = CompareOp::LessOrEqual,
+		.blendEnable = false,
+		.samples = SampleCount::e1,
+		.colorAttachmentFormats = {}, 
+		.depthAttachmentFormat = TextureFormat::Depth32F,
+		.descriptorSetLayouts = {shadowDescriptorSetLayout.get()},
+		.dynamicStates = {
+			DynamicState::Viewport,
+			DynamicState::Scissor,
+			DynamicState::DepthBias
+		}
+	};
+
+	shadowPipeline = std::make_unique<Pipeline>(&device, shadowInfo);
+}
+
+std::vector<char> core::gpu::Device::Impl::ReadFile(const std::string& filename)
+{
+	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+	if (!file.is_open())
+	{
+		throw std::runtime_error("Failed to open shader file: " + filename);
+	}
+
+	size_t fileSize = static_cast<size_t>(file.tellg());
+	std::vector<char> buffer(fileSize);
+
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+	file.close();
+
+	return buffer;
+}
+
+void core::gpu::Device::Impl::RecreateSwapchain()
+{
+	device.waitIdle();
+
+	int width, height;
+	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
+
+	while (width == 0 || height == 0)
+	{
+		glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
+		glfwWaitEvents();
+	}
+
+	void* oldSwapchain = swapchain->GetHandle();
+
+	SwapchainCreateInfo swapchainInfo{
+		.surface = &surface,
+		.width = static_cast<uint32_t>(width),
+		.height = static_cast<uint32_t>(height),
+		.preferredFormat = TextureFormat::RGBA8_SRGB,
+		.presentMode = PresentMode::Mailbox,
+		.minImageCount = 3,
+		.oldSwapchain = oldSwapchain
+	};
+
+	swapchain = std::make_unique<Swapchain>(&device, &physicalDevice, swapchainInfo);
+}
+
 void core::gpu::Device::Impl::CreateDescriptorSets()
 {
 	std::vector<void*> descriptorSetHandles;
@@ -546,6 +610,34 @@ void core::gpu::Device::Impl::CreateDescriptorSets()
 			.BindImage(*textureSampler, aoTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, emissiveTexture.get(), *defaultBlackTexture)
 			.BindImage(*shadowSampler, nullptr, *defaultWhiteTexture, ImageLayout::DepthStencilAttachment)
+			.Update();
+	}
+}
+
+void core::gpu::Device::Impl::CreateShadowDescriptorSetLayout()
+{
+	DescriptorSetLayoutCreateInfo shadowLayoutInfo;
+	shadowLayoutInfo.bindings =
+	{
+		{0, DescriptorType::UniformBuffer, 1, core::ShaderStage::Vertex}
+	};
+
+	shadowDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(*device, shadowLayoutInfo);
+}
+
+void core::gpu::Device::Impl::CreateShadowDescriptorSets()
+{
+	std::vector<void*> descriptorSetHandles;
+	descriptorSetHandles.reserve(shadowDescriptorSets.size());
+	for (auto& set : shadowDescriptorSets)
+	{
+		descriptorSetHandles.push_back(&set);
+	}
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		DescriptorSet(&device, descriptorSetHandles, i)
+			.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
 			.Update();
 	}
 }

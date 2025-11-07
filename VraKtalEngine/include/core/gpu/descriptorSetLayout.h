@@ -13,7 +13,7 @@ namespace core::gpu
         uint32_t binding;
         DescriptorType descriptorType;
         uint32_t descriptorCount = 1;
-        ShaderStage stageFlags;
+        core::ShaderStage stageFlags;
     };
 
     struct DescriptorSetLayoutCreateInfo

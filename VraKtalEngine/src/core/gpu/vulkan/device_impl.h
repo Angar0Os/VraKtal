@@ -21,6 +21,11 @@ import vulkan_hpp;
 #include <core/gpu/texture.h>
 #include <core/gpu/descriptorPool.h>
 #include <core/gpu/commandPool.h>
+#include <core/gpu/swapchain.h>
+#include <core/gpu/pipeline.h>
+
+#include <glm/glm.hpp>
+
 
 // Enable validation layers in debug builds
 #ifdef NDEBUG
@@ -34,6 +39,35 @@ constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 namespace core::gpu
 {
+	struct Vertex
+	{
+		glm::vec3 pos;
+		glm::vec3 color;
+		glm::vec2 texCoord;
+		glm::vec3 normal;
+
+		static vk::VertexInputBindingDescription GetBindingDescription()
+		{
+			return { 0, sizeof(Vertex), vk::VertexInputRate::eVertex };
+		}
+
+		static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescriptions()
+		{
+			return
+			{
+				vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)),
+				vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)),
+				vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord)),
+				vk::VertexInputAttributeDescription(3, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, normal))
+			};
+		}
+
+		bool operator==(const Vertex& other) const
+		{
+			return pos == other.pos && color == other.color && texCoord == other.texCoord;
+		}
+	};
+
 	struct Device::Impl
 	{
 	private:
@@ -46,17 +80,16 @@ namespace core::gpu
 		vk::raii::Queue						graphicsQueue = nullptr;
 		uint32_t							queueIndex = ~0;
 
-		vk::raii::SwapchainKHR				swapChain = nullptr;
-		std::vector<vk::Image>				swapChainImages;
-		std::vector<vk::raii::ImageView>	swapChainImageViews;
-		vk::SurfaceFormatKHR				swapChainSurfaceFormat;
-		vk::Extent2D						swapChainExtent;
-
 		std::unique_ptr<CommandPool> commandPool;
 
 		std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
+		std::unique_ptr<DescriptorSetLayout> shadowDescriptorSetLayout;
+		
 		std::unique_ptr<DescriptorPool> descriptorPool;
+		
 		std::vector<void*> descriptorSets;
+		std::vector<void*> shadowDescriptorSets;
+
 		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
 
 		std::unique_ptr<Sampler> textureSampler;
@@ -75,9 +108,13 @@ namespace core::gpu
 
 		std::unique_ptr<Image> shadowMapImage;
 
+		std::unique_ptr<Swapchain> swapchain;
+		std::unique_ptr<Pipeline> graphicsPipeline;
+		std::unique_ptr<Pipeline> shadowPipeline;
+
 		const Window& m_window;
 
-		vk::Extent2D ChooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
+		std::vector<char> ReadFile(const std::string& filename);
 	public:
 		explicit Impl(const Window& window);
 		~Impl();
@@ -88,9 +125,12 @@ namespace core::gpu
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void CreateSwapchain();
-		void CreateImageViews();
+		void CreateGraphicsPipeline();
+		void CreateShadowPipeline();
+		void RecreateSwapchain();
 
 		void CreateDescriptorSetLayout();
+		void CreateShadowDescriptorSetLayout();
 		void CreateCommandPool();
 		void CreateDescriptorPool();
 		void AllocateDescriptorSets();
@@ -100,6 +140,7 @@ namespace core::gpu
 		void LoadMaterialTextures();
 		void CreateShadowMap();
 		void CreateDescriptorSets();
+		void CreateShadowDescriptorSets();
 
 		std::vector<const char*> requiredDeviceExtension = {
 			vk::KHRSwapchainExtensionName,
