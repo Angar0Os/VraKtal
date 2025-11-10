@@ -4,6 +4,7 @@
 #include <thread>
 #include <chrono>
 #include <stdexcept>
+#include <iostream>
 
 using namespace graphics;
 
@@ -11,7 +12,6 @@ Renderer::Renderer(core::Window& window, core::gpu::Device& device)
     : m_window(window),
     m_device(device),
     m_frameManager(device),
-    m_frameCallback(nullptr),
     m_running(true),
     m_currentFrame(0)
 {
@@ -20,11 +20,6 @@ Renderer::Renderer(core::Window& window, core::gpu::Device& device)
 Renderer::~Renderer()
 {
     Cleanup();
-}
-
-void Renderer::SetFrameCallback(FrameCallback cb)
-{
-    m_frameCallback = std::move(cb);
 }
 
 void Renderer::DrawFrame()
@@ -37,22 +32,12 @@ void Renderer::DrawFrame()
     m_frameManager.BeginFrame(m_currentFrame);
 
     uint32_t imageIndex = m_frameManager.AcquireNextImage(m_currentFrame);
-    if (imageIndex == UINT32_MAX) return;
-
-    void* imageAvailable = m_frameManager.GetImageAvailableSemaphore(m_currentFrame);
-    void* renderFinished = m_frameManager.GetRenderFinishedSemaphore(imageIndex);
-    void* inFlightFence = m_frameManager.GetInFlightFence(m_currentFrame);
-
-    bool submittedByCallback = false;
-    if (m_frameCallback)
+    if (imageIndex == UINT32_MAX)
     {
-        submittedByCallback = m_frameCallback(imageIndex, imageAvailable, renderFinished, inFlightFence);
+        return;
     }
 
-    if (!submittedByCallback)
-    {
-        m_frameManager.SubmitDefaultTransitionIfNeeded(m_currentFrame, imageIndex);
-    }
+    m_frameManager.SubmitDefaultTransitionIfNeeded(m_currentFrame, imageIndex);
 
     m_frameManager.Present(imageIndex);
 
