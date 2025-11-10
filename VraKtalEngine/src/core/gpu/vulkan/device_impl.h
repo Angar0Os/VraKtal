@@ -87,8 +87,8 @@ namespace core::gpu
 		
 		std::unique_ptr<DescriptorPool> descriptorPool;
 		
-		std::vector<void*> descriptorSets;
-		std::vector<void*> shadowDescriptorSets;
+		std::vector<vk::raii::DescriptorSet*> descriptorSets;
+		std::vector<vk::raii::DescriptorSet*> shadowDescriptorSets;
 
 		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
 
@@ -116,7 +116,7 @@ namespace core::gpu
 
 		std::vector<char> ReadFile(const std::string& filename);
 	public:
-		explicit Impl(const Window& window);
+		explicit Impl(Window& window);
 		~Impl();
 
 		void CreateInstance();

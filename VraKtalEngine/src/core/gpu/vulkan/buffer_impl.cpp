@@ -121,7 +121,7 @@ core::gpu::Buffer::~Buffer() = default;
 
 void* core::gpu::Buffer::GetHandle() const
 {
-    return static_cast<void*>(const_cast<vk::Buffer*>(&(*m_impl->GetBuffer())));
+    return reinterpret_cast<void*>(static_cast<VkBuffer>(*m_impl->GetBuffer()));
 }
 
 size_t core::gpu::Buffer::GetSize() const

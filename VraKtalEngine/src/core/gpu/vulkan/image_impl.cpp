@@ -273,7 +273,7 @@ void* core::gpu::Image::GetHandle() const
 
 void* core::gpu::Image::GetViewHandle() const
 {
-    return static_cast<void*>(const_cast<vk::ImageView*>(&(*m_impl->GetView())));
+    return reinterpret_cast<void*>(static_cast<VkImageView>(*m_impl->GetView()));
 }
 
 uint32_t core::gpu::Image::GetWidth() const

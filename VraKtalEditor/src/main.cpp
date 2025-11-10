@@ -7,7 +7,7 @@
 int main()
 {
     core::Window window(800, 600, "Texture Mesh");
-    core::gpu::Device device();
+    core::gpu::Device device(window);
  /*   core::gpu::Renderer(device) renderer;
     
 

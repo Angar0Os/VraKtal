@@ -20,7 +20,7 @@ namespace core::gpu
         std::unique_ptr<Impl> m_impl;
 
     public:
-        DescriptorSet(void* device, std::vector<void*>& sets, size_t frame);
+        DescriptorSet(void* device, void* setsVector, size_t frame);
         ~DescriptorSet();
 
         DescriptorSet& BindBuffer(const Buffer& buffer, size_t offset, size_t range);

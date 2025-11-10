@@ -54,7 +54,7 @@ core::gpu::DescriptorSetLayout& core::gpu::DescriptorSetLayout::operator=(Descri
 
 void* core::gpu::DescriptorSetLayout::GetHandle() const
 {
-    return static_cast<void*>(&m_impl->GetLayout());
+    return reinterpret_cast<void*>(static_cast<VkDescriptorSetLayout>(*m_impl->GetLayout()));
 }
 
 core::gpu::DescriptorSetLayout::Impl& core::gpu::DescriptorSetLayout::GetImpl()

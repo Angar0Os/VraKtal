@@ -54,7 +54,7 @@ core::gpu::Device::~Device()
 
 }
 
-core::gpu::Device::Impl::Impl(const core::Window& window)
+core::gpu::Device::Impl::Impl(core::Window& window)
 	: m_window(window)
 {
 	CreateInstance();
@@ -183,10 +183,16 @@ void core::gpu::Device::Impl::SetupDebugMessenger()
 
 void core::gpu::Device::Impl::CreateSurface()
 {
+	GLFWwindow* glfwWindow = m_window.GlfwHandle();
+	if (!glfwWindow) {
+		throw std::runtime_error("Invalid GLFW window handle!");
+	}
+
 	VkSurfaceKHR _surface;
-	if (glfwCreateWindowSurface(*instance, m_window.GlfwHandle(), nullptr, &_surface) != 0)
+	VkResult result = glfwCreateWindowSurface(*instance, glfwWindow, nullptr, &_surface);
+	if (result != VK_SUCCESS) 
 	{
-		throw std::runtime_error("Failed to create window surface.");
+		throw std::runtime_error("Failed to create window surface. Error code: " + std::to_string(result));
 	}
 	surface = vk::raii::SurfaceKHR(instance, _surface);
 }
@@ -290,7 +296,7 @@ void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 		{7, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment}
 	};
 
-	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(*device, layoutInfo);
+	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(&device, layoutInfo);
 }
 
 void core::gpu::Device::Impl::CreateDescriptorPool()
@@ -302,31 +308,31 @@ void core::gpu::Device::Impl::CreateDescriptorPool()
 		{DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT * 2},
 		{DescriptorType::CombinedImageSampler, MAX_FRAMES_IN_FLIGHT * 7}
 	};
-	poolInfo.allowFreeDescriptorSet = false;
+	poolInfo.allowFreeDescriptorSet = true;
 
-	descriptorPool = std::make_unique<DescriptorPool>(*device, poolInfo);
+	descriptorPool = std::make_unique<DescriptorPool>(&device, poolInfo);
 }
 
 void core::gpu::Device::Impl::AllocateDescriptorSets()
 {
-	std::vector<void*> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout->GetHandle());
+	std::vector<DescriptorSetLayout*> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout.get());
 	auto allocatedSets = descriptorPool->AllocateDescriptorSets(layouts, MAX_FRAMES_IN_FLIGHT);
 
 	descriptorSets.clear();
 	descriptorSets.reserve(allocatedSets.size());
 	for (auto* setHandle : allocatedSets)
 	{
-		descriptorSets.push_back(setHandle);
+		descriptorSets.push_back(static_cast<vk::raii::DescriptorSet*>(setHandle));
 	}
 
-	std::vector<void*> shadowLayouts(MAX_FRAMES_IN_FLIGHT, shadowDescriptorSetLayout->GetHandle());
+	std::vector<DescriptorSetLayout*> shadowLayouts(MAX_FRAMES_IN_FLIGHT, shadowDescriptorSetLayout.get());
 	auto allocatedShadowSets = descriptorPool->AllocateDescriptorSets(shadowLayouts, MAX_FRAMES_IN_FLIGHT);
 
 	shadowDescriptorSets.clear();
 	shadowDescriptorSets.reserve(allocatedShadowSets.size());
 	for (auto* setHandle : allocatedShadowSets)
 	{
-		shadowDescriptorSets.push_back(setHandle);
+		shadowDescriptorSets.push_back(static_cast<vk::raii::DescriptorSet*>(setHandle));
 	}
 }
 
@@ -384,35 +390,35 @@ void core::gpu::Device::Impl::CreateCommandPool()
 		.flags = CommandPoolCreateFlags::ResetCommandBuffer
 	};
 
-	commandPool = std::make_unique<CommandPool>(*device, poolInfo);
+	commandPool = std::make_unique<CommandPool>(&device, poolInfo);
 }
 
 
 void core::gpu::Device::Impl::CreateDefaultTextures()
 {
-	defaultWhiteTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
-	defaultBlackTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
-	defaultNormalTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 0.5f, 0.5f, 1.0f, 1.0f);
+	defaultWhiteTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
+	defaultBlackTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
+	defaultNormalTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 0.5f, 0.5f, 1.0f, 1.0f);
 }
 
 void core::gpu::Device::Impl::LoadMaterialTextures()
 {
-	albedoTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
+	albedoTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	albedoTexture->LoadTextureIfExists("assets/textures/albedo.png");
 
-	normalTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 0.5f, 0.5f, 1.0f, 1.0f);
+	normalTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 0.5f, 0.5f, 1.0f, 1.0f);
 	normalTexture->LoadTextureIfExists("assets/textures/normal.png");
 
-	metallicTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
+	metallicTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	metallicTexture->LoadTextureIfExists("assets/textures/metallic.png");
 
-	roughnessTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
+	roughnessTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	roughnessTexture->LoadTextureIfExists("assets/textures/roughness.png");
 
-	aoTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
+	aoTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	aoTexture->LoadTextureIfExists("assets/textures/ao.png");
 
-	emissiveTexture = std::make_unique<Texture>(*device, *physicalDevice, *graphicsQueue, commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
+	emissiveTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
 	emissiveTexture->LoadTextureIfExists("assets/textures/emissive.png");
 }
 
@@ -443,7 +449,7 @@ void core::gpu::Device::Impl::CreateSwapchain()
 	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
 
 	SwapchainCreateInfo swapchainInfo{
-		.surface = &surface,
+		.surface = reinterpret_cast<void*>(static_cast<VkSurfaceKHR>(*surface)),
 		.width = static_cast<uint32_t>(width),
 		.height = static_cast<uint32_t>(height),
 		.preferredFormat = TextureFormat::RGBA8_SRGB,
@@ -467,7 +473,7 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 
 	std::vector<VertexInputAttribute> vertexAttributes = {
 		{0, 0, TextureFormat::RGB32_Float, offsetof(Vertex, pos)},
-		{1, 0, TextureFormat::RGB32_Float, offsetof(Vertex, color)},
+		//{1, 0, TextureFormat::RGB32_Float, offsetof(Vertex, color)},
 		{2, 0, TextureFormat::RG32_Float, offsetof(Vertex, texCoord)},
 		{3, 0, TextureFormat::RGB32_Float, offsetof(Vertex, normal)}
 	};
@@ -592,16 +598,9 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 
 void core::gpu::Device::Impl::CreateDescriptorSets()
 {
-	std::vector<void*> descriptorSetHandles;
-	descriptorSetHandles.reserve(descriptorSets.size());
-	for (auto& set : descriptorSets)
-	{
-		descriptorSetHandles.push_back(&set);
-	}
-
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		DescriptorSet(&device, descriptorSetHandles, i)
+		DescriptorSet(&device, &descriptorSets, i)
 			.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
 			.BindImage(*textureSampler, albedoTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, normalTexture.get(), *defaultNormalTexture)
@@ -609,7 +608,7 @@ void core::gpu::Device::Impl::CreateDescriptorSets()
 			.BindImage(*textureSampler, roughnessTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, aoTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, emissiveTexture.get(), *defaultBlackTexture)
-			.BindImage(*shadowSampler, nullptr, *defaultWhiteTexture, ImageLayout::DepthStencilAttachment)
+			.BindImage(*shadowSampler, nullptr, *defaultWhiteTexture, ImageLayout::ShaderReadOnly)
 			.Update();
 	}
 }
@@ -622,21 +621,15 @@ void core::gpu::Device::Impl::CreateShadowDescriptorSetLayout()
 		{0, DescriptorType::UniformBuffer, 1, core::ShaderStage::Vertex}
 	};
 
-	shadowDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(*device, shadowLayoutInfo);
+	shadowDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(&device, shadowLayoutInfo);
 }
+
 
 void core::gpu::Device::Impl::CreateShadowDescriptorSets()
 {
-	std::vector<void*> descriptorSetHandles;
-	descriptorSetHandles.reserve(shadowDescriptorSets.size());
-	for (auto& set : shadowDescriptorSets)
-	{
-		descriptorSetHandles.push_back(&set);
-	}
-
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		DescriptorSet(&device, descriptorSetHandles, i)
+		DescriptorSet(&device, &shadowDescriptorSets, i)
 			.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
 			.Update();
 	}

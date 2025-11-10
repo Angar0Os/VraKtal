@@ -14,12 +14,13 @@ namespace core::gpu
         vk::raii::Device& device;
         vk::raii::DescriptorPool pool;
 
+        std::vector<vk::raii::DescriptorSet> allocatedSets;
     public:
         explicit Impl(DescriptorPool& p, vk::raii::Device& dev,
             const DescriptorPoolCreateInfo& info);
         ~Impl();
 
-        std::vector<vk::raii::DescriptorSet> AllocateDescriptorSets(
+        std::vector<vk::raii::DescriptorSet*> AllocateDescriptorSets(
             const std::vector<vk::raii::DescriptorSetLayout*>& layouts, uint32_t count);
 
         vk::raii::DescriptorPool& GetPool();

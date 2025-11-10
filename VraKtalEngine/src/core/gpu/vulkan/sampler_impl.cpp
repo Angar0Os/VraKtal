@@ -41,7 +41,7 @@ core::gpu::Sampler::~Sampler() = default;
 
 void* core::gpu::Sampler::GetHandle() const
 {
-    return static_cast<void*>(&m_impl->GetSampler());
+    return reinterpret_cast<void*>(static_cast<VkSampler>(*m_impl->GetSampler()));
 }
 
 core::gpu::Sampler::Impl& core::gpu::Sampler::GetImpl()

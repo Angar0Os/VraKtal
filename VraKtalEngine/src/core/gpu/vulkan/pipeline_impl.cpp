@@ -104,7 +104,8 @@ core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, vk::raii::Device& dev, c
     std::vector<vk::DescriptorSetLayout> vkLayouts;
     for (auto* layout : info.descriptorSetLayouts)
     {
-        vkLayouts.push_back(*static_cast<vk::DescriptorSetLayout*>(layout->GetHandle()));
+        VkDescriptorSetLayout vkLayoutHandle = reinterpret_cast<VkDescriptorSetLayout>(layout->GetHandle());
+        vkLayouts.push_back(vk::DescriptorSetLayout(vkLayoutHandle));
     }
 
     vk::PipelineLayoutCreateInfo layoutInfo{};

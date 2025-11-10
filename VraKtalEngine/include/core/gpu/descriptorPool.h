@@ -38,7 +38,7 @@ namespace core::gpu
         DescriptorPool(DescriptorPool&&) noexcept;
         DescriptorPool& operator=(DescriptorPool&&) noexcept;
 
-        std::vector<void*> AllocateDescriptorSets(const std::vector<void*>& layouts, uint32_t count);
+        std::vector<void*> AllocateDescriptorSets(const std::vector<DescriptorSetLayout*>& layouts, uint32_t count);
 
         void* GetHandle() const;
 

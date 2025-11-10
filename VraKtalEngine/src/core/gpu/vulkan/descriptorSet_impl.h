@@ -16,7 +16,7 @@ namespace core::gpu
     private:
         DescriptorSet& parent;
         vk::raii::Device& device;
-        std::vector<vk::raii::DescriptorSet>& descriptorSets;
+        std::vector<vk::raii::DescriptorSet*>& descriptorSets;
         size_t currentFrame;
         uint32_t currentBinding = 0;
 
@@ -24,9 +24,16 @@ namespace core::gpu
         std::vector<vk::DescriptorImageInfo> imageInfos;
         std::vector<vk::WriteDescriptorSet> writes;
 
+        struct BindingInfo
+        {
+            uint32_t binding;
+            vk::DescriptorType type;
+            size_t infoIndex; 
+        };
+        std::vector<BindingInfo> bindingInfos;
     public:
         explicit Impl(DescriptorSet& p, vk::raii::Device& dev,
-            std::vector<vk::raii::DescriptorSet>& sets, size_t frame);
+            std::vector<vk::raii::DescriptorSet*>& sets, size_t frame); 
         ~Impl();
 
         DescriptorSet& BindBuffer(const Buffer& buffer, size_t offset, size_t range);

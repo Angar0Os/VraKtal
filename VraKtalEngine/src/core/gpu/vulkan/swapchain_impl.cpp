@@ -8,12 +8,12 @@ core::gpu::Swapchain::Impl::Impl(core::gpu::Swapchain& p, vk::raii::Device& dev,
     vk::raii::PhysicalDevice& physDev, const SwapchainCreateInfo& info)
     : parent(p), device(dev), physicalDevice(physDev), swapchain(nullptr)
 {
-    auto* vkSurface = static_cast<vk::SurfaceKHR*>(info.surface);
+    VkSurfaceKHR vkSurfaceHandle = reinterpret_cast<VkSurfaceKHR>(info.surface);
+    vk::SurfaceKHR vkSurface(vkSurfaceHandle);
 
-    vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(*vkSurface);
-
-    auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*vkSurface);
-    auto presentModes = physicalDevice.getSurfacePresentModesKHR(*vkSurface);
+    vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(vkSurface);
+    auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(vkSurface);
+    auto presentModes = physicalDevice.getSurfacePresentModesKHR(vkSurface);
 
     vk::SurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(surfaceFormats, info.preferredFormat);
     vk::PresentModeKHR presentMode = ChoosePresentMode(presentModes, info.presentMode);
@@ -28,7 +28,7 @@ core::gpu::Swapchain::Impl::Impl(core::gpu::Swapchain& p, vk::raii::Device& dev,
     }
 
     vk::SwapchainCreateInfoKHR createInfo{};
-    createInfo.surface = *vkSurface;
+    createInfo.surface = vkSurface;
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -210,7 +210,7 @@ core::gpu::Swapchain& core::gpu::Swapchain::operator=(Swapchain&&) noexcept = de
 
 void* core::gpu::Swapchain::GetHandle() const
 {
-    return static_cast<void*>(const_cast<vk::SwapchainKHR*>(&(*m_impl->GetSwapchain())));
+    return reinterpret_cast<void*>(static_cast<VkSwapchainKHR>(*m_impl->GetSwapchain()));
 }
 
 uint32_t core::gpu::Swapchain::GetImageCount() const
