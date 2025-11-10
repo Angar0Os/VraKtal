@@ -473,7 +473,7 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 
 	std::vector<VertexInputAttribute> vertexAttributes = {
 		{0, 0, TextureFormat::RGB32_Float, offsetof(Vertex, pos)},
-		//{1, 0, TextureFormat::RGB32_Float, offsetof(Vertex, color)},
+		{1, 0, TextureFormat::RGB32_Float, offsetof(Vertex, color)},
 		{2, 0, TextureFormat::RG32_Float, offsetof(Vertex, texCoord)},
 		{3, 0, TextureFormat::RGB32_Float, offsetof(Vertex, normal)}
 	};
@@ -633,4 +633,44 @@ void core::gpu::Device::Impl::CreateShadowDescriptorSets()
 			.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
 			.Update();
 	}
+}
+
+void* core::gpu::Device::GetDeviceHandle() const
+{
+	return reinterpret_cast<void*>(m_impl->GetVkDeviceHandle());
+}
+
+void* core::gpu::Device::GetPhysicalDeviceHandle() const
+{
+	return reinterpret_cast<void*>(m_impl->GetVkPhysicalDeviceHandle());
+}
+
+void* core::gpu::Device::GetGraphicsQueueHandle() const
+{
+	return reinterpret_cast<void*>(m_impl->GetGraphicsQueueVkHandle());
+}
+
+void* core::gpu::Device::GetCommandPoolHandle() const
+{
+	return reinterpret_cast<void*>(m_impl->GetCommandPoolVkHandle());
+}
+
+void* core::gpu::Device::GetSwapchainHandle() const
+{
+	return reinterpret_cast<void*>(m_impl->GetSwapchainVkHandle());
+}
+
+uint32_t core::gpu::Device::GetSwapchainImageCount() const
+{
+	return m_impl->GetSwapchainImageCountImpl();
+}
+
+void* core::gpu::Device::GetSwapchainImageViewHandle(uint32_t index) const
+{
+	return reinterpret_cast<void*>(m_impl->GetSwapchainImageViewVkHandle(index));
+}
+
+void* core::gpu::Device::GetSwapchainImageHandle(uint32_t index) const
+{
+	return reinterpret_cast<void*>(m_impl->GetSwapchainImageVkHandle(index));
 }

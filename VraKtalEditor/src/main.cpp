@@ -1,19 +1,43 @@
+#include <iostream>
 
 #include <core/window.h>
 #include <core/gpu/device.h>
+#include <graphics/renderer.h>
+
+#include <chrono>
+#include <thread>
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 
 int main()
 {
-    core::Window window(800, 600, "Texture Mesh");
-    core::gpu::Device device(window);
- /*   core::gpu::Renderer(device) renderer;
-    
+    try
+    {
+        core::Window window(800, 600, "Texture Mesh");
+        core::gpu::Device device(window);
 
-    device.InitVulkan();
-    renderer.MainLoop();
-    renderer.Cleanup();*/
+        graphics::Renderer renderer(window, device);
 
-    return 0;
+        renderer.SetFrameCallback([&](uint32_t imageIndex, void* available, void* finished, void* inFlightFence) -> bool {
+            std::cout << "Frame for image " << imageIndex << "\n";
+            (void)available; (void)finished; (void)inFlightFence;
+            return false;
+            });
+
+        while (!window.ShouldClose())
+        {
+            renderer.DrawFrame();
+            window.PollEvents();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+
+        renderer.Cleanup();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Fatal error: " << e.what() << "\n";
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }

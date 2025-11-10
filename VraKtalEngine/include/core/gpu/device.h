@@ -21,6 +21,16 @@ namespace core
 			~Device();
 
 			Impl& GetImpl();
+
+			void* GetDeviceHandle() const;
+			void* GetPhysicalDeviceHandle() const;
+			void* GetGraphicsQueueHandle() const;
+			void* GetCommandPoolHandle() const;
+			void* GetSwapchainHandle() const;
+			uint32_t GetSwapchainImageCount() const;
+
+			void* GetSwapchainImageViewHandle(uint32_t index) const;
+			void* GetSwapchainImageHandle(uint32_t index) const;
 		};
 	}
 }

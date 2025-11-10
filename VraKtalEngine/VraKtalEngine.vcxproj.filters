@@ -34,6 +34,12 @@
     <Filter Include="Resource Files\shaders">
       <UniqueIdentifier>{669e76bf-29ac-4540-be2a-e98d1e1b01ce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\graphics">
+      <UniqueIdentifier>{f0f8d6f7-313d-45f3-9bea-b03ff55fa51a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\graphics">
+      <UniqueIdentifier>{260b59cd-219e-41fc-ad43-41e58fe1d403}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -114,6 +120,15 @@
     <ClInclude Include="src\core\gpu\vulkan\swapchain_impl.h">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="include\graphics\renderer.h">
+      <Filter>Header Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\frameManager.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\vulkan\frameManager_impl.h">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -159,6 +174,12 @@
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\swapchain_impl.cpp">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\renderer.cpp">
+      <Filter>Source Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\vulkan\frameManager_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
   </ItemGroup>

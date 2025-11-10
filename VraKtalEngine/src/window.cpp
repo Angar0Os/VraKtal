@@ -1,9 +1,4 @@
 #include <core/window.h>
-
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#pragma comment(lib, "glfw3.lib")
-
 #include <stdexcept>
 
 static void	FramebufferResizeCallback(GLFWwindow* window, int width, int height)

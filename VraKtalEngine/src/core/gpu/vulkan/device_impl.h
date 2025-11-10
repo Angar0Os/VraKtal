@@ -148,6 +148,89 @@ namespace core::gpu
 			vk::KHRSynchronization2ExtensionName,
 			vk::KHRCreateRenderpass2ExtensionName
 		};
+
+		VkDevice GetVkDeviceHandle() const
+		{
+			return static_cast<VkDevice>(*device);
+		}
+
+		VkPhysicalDevice GetVkPhysicalDeviceHandle() const
+		{
+			return static_cast<VkPhysicalDevice>(*physicalDevice);
+		}
+
+		VkQueue GetGraphicsQueueVkHandle() const
+		{
+			return static_cast<VkQueue>(*graphicsQueue);
+		}
+
+		VkCommandPool GetCommandPoolVkHandle() const
+		{
+			if (!commandPool)
+			{
+				throw std::runtime_error("CommandPool not initialized");
+			}
+			auto* raiiPool = static_cast<vk::raii::CommandPool*>(commandPool->GetHandle());
+			return static_cast<VkCommandPool>(**raiiPool);
+		}
+
+		VkSwapchainKHR GetSwapchainVkHandle() const
+		{
+			if (!swapchain)
+			{
+				throw std::runtime_error("Swapchain not initialized");
+			}
+			return static_cast<VkSwapchainKHR>(swapchain->GetHandle());
+		}
+
+		uint32_t GetSwapchainImageCountImpl() const
+		{
+			if (!swapchain)
+			{
+				throw std::runtime_error("Swapchain not initialized");
+			}
+			return swapchain->GetImageCount();
+		}
+
+		VkImageView GetSwapchainImageViewVkHandle(uint32_t index) const
+		{
+			if (!swapchain)
+			{
+				throw std::runtime_error("Swapchain not initialized");
+			}
+
+			if (index >= swapchain->GetImageCount())
+			{
+				throw std::runtime_error("Swapchain image view index out of range");
+			}
+
+			auto img = swapchain->GetImage(index);
+			if (!img.imageView)
+			{
+				throw std::runtime_error("Image view not initialized for index: " + std::to_string(index));
+			}
+
+			auto* viewPtr = static_cast<vk::ImageView*>(img.imageView);
+			return static_cast<VkImageView>(*viewPtr);
+		}
+
+		VkImage GetSwapchainImageVkHandle(uint32_t index) const
+		{
+			if (!swapchain)
+			{
+				throw std::runtime_error("Swapchain not initialized");
+			}
+
+			if (index >= swapchain->GetImageCount())
+			{
+				throw std::runtime_error("Swapchain image view index out of range");
+			}
+
+			auto img = swapchain->GetImage(index);
+
+			auto* imagePtr = static_cast<vk::Image*>(img.image);
+			return static_cast<VkImage>(*imagePtr);
+		}
 	};
 }
 

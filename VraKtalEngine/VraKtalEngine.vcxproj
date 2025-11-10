@@ -177,11 +177,13 @@
     <ClInclude Include="include\core\gpu\descriptorSet.h" />
     <ClInclude Include="include\core\gpu\descriptorSetLayout.h" />
     <ClInclude Include="include\core\gpu\device.h" />
+    <ClInclude Include="include\core\gpu\frameManager.h" />
     <ClInclude Include="include\core\gpu\image.h" />
     <ClInclude Include="include\core\gpu\pipeline.h" />
     <ClInclude Include="include\core\gpu\sampler.h" />
     <ClInclude Include="include\core\gpu\swapchain.h" />
     <ClInclude Include="include\core\window.h" />
+    <ClInclude Include="include\graphics\renderer.h" />
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\commandBuffer_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\commandPool_impl.h" />
@@ -189,6 +191,7 @@
     <ClInclude Include="src\core\gpu\vulkan\descriptorSetLayout_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\descriptorSet_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\device_impl.h" />
+    <ClInclude Include="src\core\gpu\vulkan\frameManager_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\image_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\pipeline_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\sampler_impl.h" />
@@ -205,12 +208,14 @@
     <ClCompile Include="src\core\gpu\vulkan\descriptorSetLayout_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\descriptorSet_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\device_impl.cpp" />
+    <ClCompile Include="src\core\gpu\vulkan\frameManager_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\image_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\pipeline_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\sampler_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\swapchain_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp" />
     <ClCompile Include="src\core\gpu_detail\converters.cpp" />
+    <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
