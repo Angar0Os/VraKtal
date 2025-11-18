@@ -2,7 +2,6 @@
 #define VRAKTAL_GRAPHICS_RENDERER_H
 #pragma once
 
-#include <functional>
 #include <atomic>
 
 #include <core/window.h>

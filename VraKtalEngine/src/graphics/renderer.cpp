@@ -1,11 +1,5 @@
 #include <graphics/renderer.h>
 
-#include <iostream>
-#include <thread>
-#include <chrono>
-#include <stdexcept>
-#include <iostream>
-
 using namespace graphics;
 
 Renderer::Renderer(core::Window& window, core::gpu::Device& device)

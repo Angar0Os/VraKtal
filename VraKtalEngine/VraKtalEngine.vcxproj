@@ -184,6 +184,9 @@
     <ClInclude Include="include\core\gpu\swapchain.h" />
     <ClInclude Include="include\core\window.h" />
     <ClInclude Include="include\graphics\renderer.h" />
+    <ClInclude Include="include\graphics\resources\mesh.h" />
+    <ClInclude Include="include\graphics\resources\scene.h" />
+    <ClInclude Include="include\loaders\meshLoader.h" />
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\commandBuffer_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\commandPool_impl.h" />
@@ -216,6 +219,7 @@
     <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp" />
     <ClCompile Include="src\core\gpu_detail\converters.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
+    <ClCompile Include="src\loaders\meshLoader.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>

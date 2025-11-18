@@ -4,8 +4,8 @@
 #include <core/gpu/device.h>
 #include <graphics/renderer.h>
 
-#include <chrono>
-#include <thread>
+#include <loaders/meshLoader.h>
+#include <graphics/resources/scene.h>
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 
@@ -17,13 +17,17 @@ int main()
         core::gpu::Device device(window);
 
         graphics::Renderer renderer(window, device);
+        
+        loaders::MeshLoader meshLoader;
+        auto mesh = meshLoader.LoadMesh("../bin/assets/models/viking_room.obj");
+
+        graphics::resources::Scene scene;
+        scene.AddMesh(mesh);
 
         while (!window.ShouldClose())
         {
-            renderer.DrawFrame();
+            renderer.DrawFrame(/*scene*/);
             window.PollEvents();
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         renderer.Cleanup();

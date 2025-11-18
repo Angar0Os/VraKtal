@@ -40,6 +40,15 @@
     <Filter Include="Header Files\graphics">
       <UniqueIdentifier>{260b59cd-219e-41fc-ad43-41e58fe1d403}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\graphics\resources">
+      <UniqueIdentifier>{8e3f5a15-7bd5-4935-902c-76e50fea865c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\loaders">
+      <UniqueIdentifier>{426604fe-bce5-4add-af24-79f158bf1ff9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\loaders">
+      <UniqueIdentifier>{05673a73-e4b1-4dde-8aa6-dda25ddb6918}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -129,6 +138,15 @@
     <ClInclude Include="src\core\gpu\vulkan\frameManager_impl.h">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="include\graphics\resources\mesh.h">
+      <Filter>Header Files\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\scene.h">
+      <Filter>Header Files\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="include\loaders\meshLoader.h">
+      <Filter>Header Files\loaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -181,6 +199,9 @@
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\frameManager_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\loaders\meshLoader.cpp">
+      <Filter>Source Files\loaders</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
