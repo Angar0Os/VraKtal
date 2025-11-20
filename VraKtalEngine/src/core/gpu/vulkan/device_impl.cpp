@@ -17,14 +17,6 @@ const std::vector<char const*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
 
-// Note : We will maybe move this, but this is here to make uniform buffers work properly.
-struct UniformBufferObject
-{
-	alignas(16) float model[16];
-	alignas(16) float view[16];
-	alignas(16) float projection[16];
-};
-
 std::vector<const char*> GetRequiredExtensions()
 {
 	uint32_t glfwExtensionCount = 0;
@@ -78,12 +70,15 @@ core::gpu::Device::Impl::Impl(core::Window& window)
 	CreateDefaultTextures();
 	LoadMaterialTextures();
 	CreateShadowMap();
+	CreateColorImage();
 
 	CreateGraphicsPipeline();
 	CreateShadowPipeline();
 
 	CreateDescriptorSets();
 	CreateShadowDescriptorSets();
+
+	CreateSyncObjects();
 }
 
 core::gpu::Device::Impl::~Impl()
@@ -432,7 +427,7 @@ void core::gpu::Device::Impl::CreateShadowMap()
 		.tiling = ImageTiling::Optimal,
 		.usage = ImageUsage::DepthStencilAttachment | ImageUsage::Sampled,
 		.memoryProperties = MemoryProperty::DeviceLocal,
-		.samples = SampleCount::e1
+		.samples = SampleCount::e4
 	};
 	shadowMapImage = std::make_unique<Image>(&device, &physicalDevice, shadowMapInfo);
 
@@ -635,42 +630,563 @@ void core::gpu::Device::Impl::CreateShadowDescriptorSets()
 	}
 }
 
-void* core::gpu::Device::GetDeviceHandle() const
+void core::gpu::Device::Impl::CreateSyncObjects()
 {
-	return reinterpret_cast<void*>(m_impl->GetVkDeviceHandle());
+	imageAvailable.clear();
+	renderFinished.clear();
+	inFlightFences.clear();
+	imagesInFlight.clear();
+	tempCmdBufs.clear();
+
+	vk::SemaphoreCreateInfo semInfo{};
+	imageAvailable.reserve(MAX_FRAMES_IN_FLIGHT);
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+	{
+		imageAvailable.emplace_back(device, semInfo);
+	}
+
+	uint32_t swapchainImageCount = swapchain->GetImages().size();
+	renderFinished.reserve(swapchainImageCount);
+	for (size_t i = 0; i < swapchainImageCount; ++i)
+	{
+		renderFinished.emplace_back(device, semInfo);
+	}
+
+	vk::FenceCreateInfo fenceInfo{ .flags = vk::FenceCreateFlagBits::eSignaled };
+	inFlightFences.reserve(MAX_FRAMES_IN_FLIGHT);
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+	{
+		inFlightFences.emplace_back(device, fenceInfo);
+	}
+
+	imagesInFlight.resize(swapchainImageCount, nullptr);
+	tempCmdBufs.resize(MAX_FRAMES_IN_FLIGHT);
 }
 
-void* core::gpu::Device::GetPhysicalDeviceHandle() const
+void core::gpu::Device::Impl::BeginFrame(uint32_t frameIndex)
 {
-	return reinterpret_cast<void*>(m_impl->GetVkPhysicalDeviceHandle());
+	if (frameIndex >= inFlightFences.size()) return;
+
+	vk::Result result = device.waitForFences(*inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
+
+	if (frameIndex < tempCmdBufs.size())
+	{
+		tempCmdBufs[frameIndex].reset();
+	}
+
+	device.resetFences(*inFlightFences[frameIndex]);
 }
 
-void* core::gpu::Device::GetGraphicsQueueHandle() const
+
+uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 {
-	return reinterpret_cast<void*>(m_impl->GetGraphicsQueueVkHandle());
+	if (frameIndex >= imageAvailable.size()) return UINT32_MAX;
+
+	uint32_t imageIndex = UINT32_MAX;
+	vk::SwapchainKHR swapchainHandle = reinterpret_cast<VkSwapchainKHR>(swapchain->GetHandle());
+
+	vk::ResultValue<uint32_t> res = device.acquireNextImage2KHR(
+		vk::AcquireNextImageInfoKHR{
+			.swapchain = swapchainHandle,
+			.timeout = UINT64_MAX,
+			.semaphore = *imageAvailable[frameIndex],
+			.fence = nullptr,
+			.deviceMask = 1
+		}
+	);
+
+	if (res.result == vk::Result::eErrorOutOfDateKHR)
+	{
+		return UINT32_MAX;
+	}
+
+	if (res.result != vk::Result::eSuccess && res.result != vk::Result::eSuboptimalKHR)
+	{
+		std::cerr << "AcquireNextImage failed: " << vk::to_string(res.result) << "\n";
+		return UINT32_MAX;
+	}
+
+	imageIndex = res.value;
+
+	if (imageIndex < imagesInFlight.size() && imagesInFlight[imageIndex] != nullptr)
+	{
+		device.waitForFences(*(*imagesInFlight[imageIndex]), VK_TRUE, UINT64_MAX);
+	}
+
+	imagesInFlight[imageIndex] = &inFlightFences[frameIndex];
+
+	return imageIndex;
 }
 
-void* core::gpu::Device::GetCommandPoolHandle() const
+void* core::gpu::Device::Impl::GetImageAvailableSemaphore(uint32_t frameIndex) const
 {
-	return reinterpret_cast<void*>(m_impl->GetCommandPoolVkHandle());
+	if (frameIndex >= imageAvailable.size()) return nullptr;
+	return reinterpret_cast<void*>(static_cast<VkSemaphore>(*imageAvailable[frameIndex]));
 }
 
-void* core::gpu::Device::GetSwapchainHandle() const
+void* core::gpu::Device::Impl::GetRenderFinishedSemaphore(uint32_t imageIndex) const
 {
-	return reinterpret_cast<void*>(m_impl->GetSwapchainVkHandle());
+	if (imageIndex >= renderFinished.size()) return nullptr;
+	return reinterpret_cast<void*>(static_cast<VkSemaphore>(*renderFinished[imageIndex]));
 }
 
-uint32_t core::gpu::Device::GetSwapchainImageCount() const
+void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
 {
-	return m_impl->GetSwapchainImageCountImpl();
+	if (frameIndex >= inFlightFences.size()) return nullptr;
+	return reinterpret_cast<void*>(static_cast<VkFence>(*inFlightFences[frameIndex]));
 }
 
-void* core::gpu::Device::GetSwapchainImageViewHandle(uint32_t index) const
+void core::gpu::Device::Impl::SubmitDefaultTransitionIfNeeded(uint32_t frameIndex, uint32_t imageIndex)
 {
-	return reinterpret_cast<void*>(m_impl->GetSwapchainImageViewVkHandle(index));
+	if (frameIndex >= imageAvailable.size() || frameIndex >= inFlightFences.size())
+		return;
+
+	SwapchainImage swapImageStruct = swapchain->GetImage(imageIndex);
+
+	vk::Image swapImage = VK_NULL_HANDLE;
+	if (swapImageStruct.image)
+	{
+		vk::Image* imagePtr = static_cast<vk::Image*>(swapImageStruct.image);
+		if (imagePtr)
+		{
+			swapImage = *imagePtr; 
+		}
+	}
+
+	if (swapImage == VK_NULL_HANDLE)
+	{
+		std::cerr << "Invalid swapchain image handle!\n";
+		return;
+	}
+
+	void* poolPtr = commandPool->GetHandle();
+	vk::raii::CommandPool* raiiPool = static_cast<vk::raii::CommandPool*>(poolPtr);
+	vk::CommandPool poolHandle = **raiiPool;
+
+	vk::CommandBufferAllocateInfo allocInfo{
+		.commandPool = poolHandle,
+		.level = vk::CommandBufferLevel::ePrimary,
+		.commandBufferCount = 1
+	};
+
+	try
+	{
+		std::vector<vk::raii::CommandBuffer> cmdBufs = device.allocateCommandBuffers(allocInfo);
+		if (cmdBufs.empty()) return;
+
+		tempCmdBufs[frameIndex] = std::make_unique<vk::raii::CommandBuffer>(std::move(cmdBufs[0]));
+		vk::raii::CommandBuffer& cmdBuf = *tempCmdBufs[frameIndex];
+
+		vk::CommandBufferBeginInfo beginInfo{
+			.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+		};
+		cmdBuf.begin(beginInfo);
+
+		vk::ImageMemoryBarrier barrier{
+			.srcAccessMask = {},
+			.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
+			.oldLayout = vk::ImageLayout::eUndefined,
+			.newLayout = vk::ImageLayout::eColorAttachmentOptimal, 
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = swapImage,
+			.subresourceRange = {
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+
+		cmdBuf.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::PipelineStageFlagBits::eColorAttachmentOutput, 
+			{},
+			{},
+			{},
+			{ barrier }
+		);
+
+		cmdBuf.end();
+
+		vk::CommandBuffer rawCmdBuf = *cmdBuf;
+		vk::Semaphore imgAvail = *imageAvailable[frameIndex];
+		vk::Semaphore renderFin = (imageIndex < renderFinished.size()) ? *renderFinished[imageIndex] : vk::Semaphore{};
+		vk::Fence fence = *inFlightFences[frameIndex];
+
+		vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		vk::SubmitInfo submitInfo{
+			.waitSemaphoreCount = 1,
+			.pWaitSemaphores = &imgAvail,
+			.pWaitDstStageMask = &waitStage,
+			.commandBufferCount = 1,
+			.pCommandBuffers = &rawCmdBuf,
+			.signalSemaphoreCount = renderFin ? 1u : 0u,
+			.pSignalSemaphores = renderFin ? &renderFin : nullptr
+		};
+
+		graphicsQueue.submit(submitInfo, fence);
+	}
+	catch (const vk::SystemError& e)
+	{
+		std::cerr << "Failed to allocate/submit command buffer: " << e.what() << "\n";
+	}
 }
 
-void* core::gpu::Device::GetSwapchainImageHandle(uint32_t index) const
+void* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
 {
-	return reinterpret_cast<void*>(m_impl->GetSwapchainImageVkHandle(index));
+	return swapchain->GetImage(imageIndex).image;
+}
+
+void* core::gpu::Device::Impl::GetColorImage() const
+{
+	return colorImage ? colorImage->GetHandle() : nullptr;
+}
+
+void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
+{
+	SwapchainImage swapImageStruct = swapchain->GetImage(imageIndex);
+
+	vk::Image swapImage = VK_NULL_HANDLE;
+	if (swapImageStruct.image)
+	{
+		vk::Image* imagePtr = static_cast<vk::Image*>(swapImageStruct.image);
+		if (imagePtr)
+		{
+			swapImage = *imagePtr;
+		}
+	}
+
+	if (swapImage == VK_NULL_HANDLE)
+	{
+		std::cerr << "Invalid swapchain image handle!\n";
+		return;
+	}
+
+	void* poolPtr = commandPool->GetHandle();
+	vk::raii::CommandPool* raiiPool = static_cast<vk::raii::CommandPool*>(poolPtr);
+	vk::CommandPool poolHandle = **raiiPool;
+
+	vk::CommandBufferAllocateInfo allocInfo{
+		.commandPool = poolHandle,
+		.level = vk::CommandBufferLevel::ePrimary,
+		.commandBufferCount = 1
+	};
+
+	try
+	{
+		std::vector<vk::raii::CommandBuffer> cmdBufs = device.allocateCommandBuffers(allocInfo);
+		if (cmdBufs.empty()) return;
+
+		vk::raii::CommandBuffer cmdBuf = std::move(cmdBufs[0]);
+
+		vk::CommandBufferBeginInfo beginInfo{
+			.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+		};
+		cmdBuf.begin(beginInfo);
+
+		vk::ImageMemoryBarrier barrier{
+			.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
+			.dstAccessMask = vk::AccessFlagBits::eMemoryRead,
+			.oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
+			.newLayout = vk::ImageLayout::ePresentSrcKHR,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = swapImage,
+			.subresourceRange = {
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+
+		cmdBuf.pipelineBarrier(
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::PipelineStageFlagBits::eBottomOfPipe,
+			{},
+			{},
+			{},
+			{ barrier }
+		);
+
+		cmdBuf.end();
+
+		vk::CommandBuffer rawCmdBuf = *cmdBuf;
+
+		vk::SubmitInfo submitInfo{
+			.waitSemaphoreCount = 0,
+			.pWaitSemaphores = nullptr,
+			.pWaitDstStageMask = nullptr,
+			.commandBufferCount = 1,
+			.pCommandBuffers = &rawCmdBuf,
+			.signalSemaphoreCount = 0,
+			.pSignalSemaphores = nullptr
+		};
+
+		graphicsQueue.submit(submitInfo, nullptr);
+		graphicsQueue.waitIdle(); 
+	}
+	catch (const vk::SystemError& e)
+	{
+		std::cerr << "Failed to transition image for present: " << e.what() << "\n";
+	}
+}
+
+void core::gpu::Device::Impl::Present(uint32_t imageIndex)
+{
+	if (imageIndex >= renderFinished.size()) return;
+
+	vk::Semaphore presentWait = *renderFinished[imageIndex];
+	vk::SwapchainKHR vkSwapchain = reinterpret_cast<VkSwapchainKHR>(swapchain->GetHandle());
+	;
+
+	vk::PresentInfoKHR presentInfo{
+		.waitSemaphoreCount = 1,
+		.pWaitSemaphores = &presentWait,
+		.swapchainCount = 1,
+		.pSwapchains = &vkSwapchain,
+		.pImageIndices = &imageIndex
+	};
+
+	try
+	{
+		vk::Result result = graphicsQueue.presentKHR(presentInfo);
+		if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR)
+		{
+		}
+	}
+	catch (const vk::OutOfDateKHRError&)
+	{
+	}
+}
+
+void core::gpu::Device::Impl::CreateColorImage()
+{
+	ImageCreateInfo colorInfo{
+		.width = swapchain->GetWidth(),
+		.height = swapchain->GetHeight(),
+		.mipLevels = 1,
+		.format = swapchain->GetFormat(),
+		.tiling = ImageTiling::Optimal,
+		.usage = ImageUsage::ColorAttachment | ImageUsage::Sampled,
+		.memoryProperties = MemoryProperty::DeviceLocal,
+		.samples = SampleCount::e4
+	};
+
+	colorImage = std::make_unique<Image>(&device, &physicalDevice, colorInfo);
+
+	ImageViewCreateInfo viewInfo{
+		.format = swapchain->GetFormat(),
+		.isDepth = false
+	};
+
+	colorImage->CreateView(viewInfo);
+}
+
+void core::gpu::Device::Impl::Cleanup()
+{
+	device.waitIdle();
+
+	imageAvailable.clear();
+	renderFinished.clear();
+	inFlightFences.clear();
+	imagesInFlight.clear();
+
+	tempCmdBufs.clear();
+}
+
+void core::gpu::Device::Impl::CreateCommandBuffers()
+{
+	return;
+}
+
+core::gpu::Buffer* core::gpu::Device::Impl::GetUniformBuffer(uint32_t frameIndex) const
+{
+	if (frameIndex >= uniformBuffers.size()) return nullptr;
+	return uniformBuffers[frameIndex].get();
+}
+
+void* core::gpu::Device::Impl::GetCommandPool() const
+{
+	return commandPool->GetHandle();
+}
+
+void* core::gpu::Device::Impl::GetGraphicsQueue() const
+{
+	return static_cast<void*>(const_cast<vk::Queue*>(&*graphicsQueue));
+}
+
+void* core::gpu::Device::Impl::GetPipeline() const
+{
+	return graphicsPipeline->GetHandle();
+}
+
+void* core::gpu::Device::Impl::GetPipelineLayout() const
+{
+	return graphicsPipeline->GetLayoutHandle();
+}
+
+void* core::gpu::Device::Impl::GetDescriptorSet(uint32_t frameIndex) const
+{
+	if (frameIndex >= descriptorSets.size()) return nullptr;
+	return reinterpret_cast<void*>(static_cast<VkDescriptorSet>(**descriptorSets[frameIndex]));
+}
+
+void* core::gpu::Device::Impl::GetHandle() const
+{
+	return static_cast<void*>(const_cast<vk::Device*>(&*device));
+}
+
+uint32_t core::gpu::Device::Impl::GetSwapchainWidth() const
+{
+	return swapchain->GetWidth();
+}
+
+uint32_t core::gpu::Device::Impl::GetSwapchainHeight() const
+{
+	return swapchain->GetHeight();
+}
+
+void* core::gpu::Device::Impl::GetSwapchainImageView(uint32_t imageIndex) const
+{
+	return swapchain->GetImage(imageIndex).imageView;
+}
+
+void* core::gpu::Device::Impl::GetDepthImageView() const
+{
+	return shadowMapImage->GetViewHandle();
+}
+
+void* core::gpu::Device::Impl::GetColorImageView() const
+{
+	if (!colorImage) return nullptr;
+	return colorImage->GetViewHandle();
+}
+
+void* core::gpu::Device::Impl::GetPhysicalDevice() const
+{
+	return static_cast<void*>(const_cast<vk::PhysicalDevice*>(&*physicalDevice));
+}
+
+void core::gpu::Device::BeginFrame(uint32_t frameIndex)
+{
+	if (m_impl) m_impl->BeginFrame(frameIndex);
+}
+
+uint32_t core::gpu::Device::AcquireNextImage(uint32_t frameIndex)
+{
+	return m_impl ? m_impl->AcquireNextImage(frameIndex) : UINT32_MAX;
+}
+
+void* core::gpu::Device::GetImageAvailableSemaphore(uint32_t frameIndex) const
+{
+	return m_impl ? m_impl->GetImageAvailableSemaphore(frameIndex) : nullptr;
+}
+
+void* core::gpu::Device::GetRenderFinishedSemaphore(uint32_t imageIndex) const
+{
+	return m_impl ? m_impl->GetRenderFinishedSemaphore(imageIndex) : nullptr;
+}
+
+void* core::gpu::Device::GetInFlightFence(uint32_t frameIndex) const
+{
+	return m_impl ? m_impl->GetInFlightFence(frameIndex) : nullptr;
+}
+
+void core::gpu::Device::SubmitDefaultTransitionIfNeeded(uint32_t frameIndex, uint32_t imageIndex)
+{
+	if (m_impl) m_impl->SubmitDefaultTransitionIfNeeded(frameIndex, imageIndex);
+}
+
+void core::gpu::Device::Present(uint32_t imageIndex)
+{
+	if (m_impl) m_impl->Present(imageIndex);
+}
+
+void core::gpu::Device::Cleanup()
+{
+	if (m_impl) m_impl->Cleanup();
+}
+
+void* core::gpu::Device::GetCommandPool() const
+{
+	return m_impl ? m_impl->GetCommandPool() : nullptr;
+}
+
+void* core::gpu::Device::GetGraphicsQueue() const
+{
+	return m_impl ? m_impl->GetGraphicsQueue() : nullptr;
+}
+
+void* core::gpu::Device::GetPipeline() const
+{
+	return m_impl ? m_impl->GetPipeline() : nullptr;
+}
+
+void* core::gpu::Device::GetPipelineLayout() const
+{
+	return m_impl ? m_impl->GetPipelineLayout() : nullptr;
+}
+
+void* core::gpu::Device::GetDescriptorSet(uint32_t frameIndex) const
+{
+	return m_impl->GetDescriptorSet(frameIndex);
+}
+
+uint32_t core::gpu::Device::GetSwapchainWidth() const
+{
+	return m_impl ? m_impl->GetSwapchainWidth() : 0;
+}
+
+uint32_t core::gpu::Device::GetSwapchainHeight() const
+{
+	return m_impl ? m_impl->GetSwapchainHeight() : 0;
+}
+
+void* core::gpu::Device::GetSwapchainImageView(uint32_t imageIndex) const
+{
+	return m_impl ? m_impl->GetSwapchainImageView(imageIndex) : nullptr;
+}
+
+void* core::gpu::Device::GetDepthImageView() const
+{
+	return m_impl ? m_impl->GetDepthImageView() : nullptr;
+}
+
+void* core::gpu::Device::GetColorImageView() const
+{
+	return m_impl ? m_impl->GetColorImageView() : nullptr;
+}
+
+void* core::gpu::Device::GetPhysicalDevice() const
+{
+	return m_impl ? m_impl->GetPhysicalDevice() : nullptr;
+}
+
+core::gpu::Buffer* core::gpu::Device::GetUniformBuffer(uint32_t frameIndex)
+{
+	return m_impl ? m_impl->GetUniformBuffer(frameIndex) : nullptr;
+}
+
+void* core::gpu::Device::GetHandle() const
+{
+	return m_impl ? m_impl->GetHandle() : nullptr;
+}
+
+void core::gpu::Device::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
+{
+	if (m_impl) m_impl->TransitionImageForPresent(frameIndex, imageIndex);
+}
+
+void* core::gpu::Device::GetSwapchainImage(uint32_t imageIndex) const
+{
+	return m_impl ? m_impl->GetSwapchainImage(imageIndex) : nullptr;
+}
+
+void* core::gpu::Device::GetColorImage() const
+{
+	return m_impl ? m_impl->GetColorImage() : nullptr;
 }

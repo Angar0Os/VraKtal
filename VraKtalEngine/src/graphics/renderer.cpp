@@ -1,14 +1,23 @@
 #include <graphics/renderer.h>
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <memory>
+#include <iostream>
+
 using namespace graphics;
+
 
 Renderer::Renderer(core::Window& window, core::gpu::Device& device)
     : m_window(window),
     m_device(device),
-    m_frameManager(device),
+    m_currentFrame(0),
     m_running(true),
-    m_currentFrame(0)
+    m_frameCounter(0),
+    m_viewMatrix(glm::mat4(1.0f)),
+    m_projMatrix(glm::mat4(1.0f)),
+    m_cameraPosition(glm::vec3(0.0f))
 {
+    CreateCommandBuffers();
 }
 
 Renderer::~Renderer()
@@ -16,30 +25,214 @@ Renderer::~Renderer()
     Cleanup();
 }
 
+void Renderer::CreateCommandBuffers()
+{
+    m_commandBuffers.clear();
+    m_commandBuffers.reserve(core::gpu::Device::FRAMES_IN_FLIGHT);
+
+    for (uint32_t i = 0; i < core::gpu::Device::FRAMES_IN_FLIGHT; i++)
+    {
+        core::gpu::CommandBufferCreateInfo cmdInfo{};
+        cmdInfo.commandPool = m_device.GetCommandPool();
+        cmdInfo.level = core::CommandBufferLevel::Primary;
+        cmdInfo.count = 1;
+
+        auto cmdBuffer = std::make_unique<core::gpu::CommandBuffer>(
+            m_device.GetHandle(),
+            m_device.GetGraphicsQueue(),
+            cmdInfo
+        );
+
+        m_commandBuffers.push_back(std::move(cmdBuffer));
+    }
+}
+void Renderer::SetScene(std::shared_ptr<resources::Scene> scene)
+{
+    m_scene = scene;
+
+    if (m_scene)
+    {
+        for (const auto& instance : m_scene->meshInstances)
+        {
+            if (m_meshBuffers.find(instance.mesh.get()) == m_meshBuffers.end())
+            {
+                CreateMeshBuffers(instance.mesh);
+            }
+        }
+    }
+}
+
+void Renderer::CreateMeshBuffers(std::shared_ptr<resources::Mesh> mesh)
+{
+    MeshBuffers buffers;
+
+    size_t vertexBufferSize = mesh->vertices.size() * sizeof(resources::Vertex);
+
+    core::gpu::BufferCreateInfo vertexInfo{
+        .size = vertexBufferSize,
+        .usage = core::BufferUsage::VertexBuffer | core::BufferUsage::TransferDst,
+        .memoryProperties = core::MemoryProperty::DeviceLocal
+    };
+
+    buffers.vertexBuffer = std::make_unique<core::gpu::Buffer>(
+        m_device.GetHandle(),
+        m_device.GetPhysicalDevice(),
+        vertexInfo
+    );
+
+    size_t indexBufferSize = mesh->indices.size() * sizeof(uint32_t);
+
+    core::gpu::BufferCreateInfo indexInfo{
+        .size = indexBufferSize,
+        .usage = core::BufferUsage::IndexBuffer | core::BufferUsage::TransferDst,
+        .memoryProperties = core::MemoryProperty::DeviceLocal
+    };
+
+    buffers.indexBuffer = std::make_unique<core::gpu::Buffer>(
+        m_device.GetHandle(),
+        m_device.GetPhysicalDevice(),
+        indexInfo
+    );
+
+    buffers.indexCount = static_cast<uint32_t>(mesh->indices.size());
+
+    m_meshBuffers[mesh.get()] = std::move(buffers);
+}
+
+void Renderer::UpdateCamera(const glm::mat4& view, const glm::mat4& proj, const glm::vec3& position)
+{
+    m_viewMatrix = view;
+    m_projMatrix = proj;
+    m_cameraPosition = position;
+}
+
+void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
+{
+    core::gpu::UniformBufferObject ubo{};
+
+    float angle = (m_frameCounter % 360) * 3.14159f / 180.0f;
+    ubo.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    ubo.view = m_viewMatrix;
+    ubo.proj = m_projMatrix;
+    ubo.viewPos = m_cameraPosition;
+
+    auto* uniformBuffer = m_device.GetUniformBuffer(frameIndex);
+    if (uniformBuffer)
+    {
+        uniformBuffer->CopyFrom(&ubo, sizeof(core::gpu::UniformBufferObject));
+    }
+}
+
+void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
+{
+    auto& cmd = m_commandBuffers[frameIndex];
+    cmd->Begin();
+
+    uint32_t width = m_device.GetSwapchainWidth();
+    uint32_t height = m_device.GetSwapchainHeight();
+
+    void* colorImageHandle = m_device.GetColorImage();
+    void* swapchainImageHandle = m_device.GetSwapchainImage(imageIndex);
+
+    std::cout << "ColorImage handle: " << colorImageHandle << std::endl;
+    std::cout << "Swapchain image handle: " << swapchainImageHandle << std::endl;
+
+    if (!colorImageHandle || !swapchainImageHandle)
+    {
+        std::cerr << "ERROR: Invalid image handle!" << std::endl;
+        return;
+    }
+
+    cmd->TransitionImageLayout(
+        swapchainImageHandle,
+        core::ImageLayout::Undefined,
+        core::ImageLayout::TransferDst
+    );
+
+    cmd->BeginRendering(
+        width, height,
+        m_device.GetColorImageView(),
+        m_device.GetDepthImageView()
+    );
+
+    cmd->BindPipeline(m_device.GetPipeline());
+    cmd->SetViewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
+    cmd->SetScissor(0, 0, width, height);
+    cmd->BindDescriptorSets(
+        m_device.GetPipelineLayout(),
+        m_device.GetDescriptorSet(frameIndex),
+        0
+    );
+
+    if (m_scene)
+    {
+        for (const auto& instance : m_scene->meshInstances)
+        {
+            auto it = m_meshBuffers.find(instance.mesh.get());
+            if (it != m_meshBuffers.end())
+            {
+                const auto& buffers = it->second;
+                cmd->BindVertexBuffer(buffers.vertexBuffer->GetHandle());
+                cmd->BindIndexBuffer(buffers.indexBuffer->GetHandle());
+                cmd->DrawIndexed(buffers.indexCount);
+            }
+        }
+    }
+
+    cmd->EndRendering();
+    
+    cmd->TransitionImageLayout(
+        colorImageHandle,
+        core::ImageLayout::ColorAttachment,
+        core::ImageLayout::TransferSrc
+    );
+
+    cmd->ResolveImage(
+        colorImageHandle,
+        swapchainImageHandle,
+        width,
+        height
+    );
+
+    cmd->TransitionImageLayout(
+        swapchainImageHandle,
+        core::ImageLayout::TransferDst,
+        core::ImageLayout::Present
+    );
+
+    cmd->End();
+}
+
 void Renderer::DrawFrame()
 {
-    if (!m_running.load()) return;
+    if (!m_running) return;
 
-    GLFWwindow* win = m_window.GlfwHandle();
-    if (!win) return;
+    m_device.BeginFrame(m_currentFrame);
 
-    m_frameManager.BeginFrame(m_currentFrame);
-
-    uint32_t imageIndex = m_frameManager.AcquireNextImage(m_currentFrame);
+    uint32_t imageIndex = m_device.AcquireNextImage(m_currentFrame);
     if (imageIndex == UINT32_MAX)
     {
         return;
     }
 
-    m_frameManager.SubmitDefaultTransitionIfNeeded(m_currentFrame, imageIndex);
+    UpdateUniformBuffer(m_currentFrame);
+    RecordCommandBuffer(m_currentFrame, imageIndex);
 
-    m_frameManager.Present(imageIndex);
+    m_commandBuffers[m_currentFrame]->Submit();
 
-    m_currentFrame = (m_currentFrame + 1) % core::gpu::FrameManager::FRAMES_IN_FLIGHT;
+    m_device.Present(imageIndex);
+
+    m_currentFrame = (m_currentFrame + 1) % core::gpu::Device::FRAMES_IN_FLIGHT;
+    m_frameCounter++;
 }
 
 void Renderer::Cleanup()
 {
-    if (!m_running.exchange(false)) return;
-    m_frameManager.Cleanup();
+    if (!m_running) return;
+    m_running = false;
+
+    m_meshBuffers.clear();
+    m_commandBuffers.clear();
+    m_device.Cleanup();
 }

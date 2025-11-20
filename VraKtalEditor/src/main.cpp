@@ -7,36 +7,36 @@
 #include <loaders/meshLoader.h>
 #include <graphics/resources/scene.h>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 
 int main()
 {
-    try
+    core::Window window(800, 600, "VraKtal Engine");
+    core::gpu::Device device(window);
+    graphics::Renderer renderer(window, device);
+
+    loaders::MeshLoader loader;
+    auto mesh = loader.LoadMesh("assets/models/viking_room.obj");
+
+    auto scene = std::make_shared<graphics::resources::Scene>();
+    scene->AddMesh(mesh, glm::mat4(1.0f));
+    renderer.SetScene(scene);
+
+    glm::vec3 cameraPos(2.0f, 2.0f, 2.0f);
+    glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 10.0f);
+    proj[1][1] *= -1;
+
+    renderer.UpdateCamera(view, proj, cameraPos);
+
+    while (!window.ShouldClose())
     {
-        core::Window window(800, 600, "VraKtal");
-        core::gpu::Device device(window);
-
-        graphics::Renderer renderer(window, device);
-        
-        loaders::MeshLoader meshLoader;
-        auto mesh = meshLoader.LoadMesh("../bin/assets/models/viking_room.obj");
-
-        graphics::resources::Scene scene;
-        scene.AddMesh(mesh);
-
-        while (!window.ShouldClose())
-        {
-            renderer.DrawFrame(/*scene*/);
-            window.PollEvents();
-        }
-
-        renderer.Cleanup();
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "Fatal error: " << e.what() << "\n";
-        return EXIT_FAILURE;
+        window.PollEvents();
+        renderer.DrawFrame();
     }
 
-    return EXIT_SUCCESS;
+    renderer.Cleanup();
+    return 0;
 }

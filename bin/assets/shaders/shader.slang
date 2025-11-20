@@ -1,5 +1,4 @@
-﻿// shader.slang
-[[vk::binding(0, 0)]]
+﻿[[vk::binding(0, 0)]]
 cbuffer UniformBufferObject
 {
     float4x4 model;

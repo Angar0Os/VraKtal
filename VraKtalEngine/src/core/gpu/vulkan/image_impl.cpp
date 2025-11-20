@@ -268,7 +268,8 @@ core::gpu::Image::~Image() = default;
 
 void* core::gpu::Image::GetHandle() const
 {
-    return static_cast<void*>(const_cast<vk::Image*>(&(*m_impl->GetImage())));
+    VkImage nativeHandle = *m_impl->GetImage();
+    return reinterpret_cast<void*>(nativeHandle);
 }
 
 void* core::gpu::Image::GetViewHandle() const

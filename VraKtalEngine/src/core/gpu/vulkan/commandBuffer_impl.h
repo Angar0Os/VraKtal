@@ -36,6 +36,26 @@ namespace core::gpu
         void End(uint32_t index);
         void Submit();
         void SubmitAndWait();
+
+        void BindPipeline(void* pipeline);
+        void BindVertexBuffer(void* buffer, size_t offset);
+        void BindIndexBuffer(void* buffer, size_t offset);
+        void BindDescriptorSets(void* pipelineLayout, void* descriptorSet, uint32_t firstSet);
+        void SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth);
+        void SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height);
+        void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
+        void BeginRendering(uint32_t width, uint32_t height, void* colorImageView, void* depthImageView);
+        void EndRendering();
+
+        void TransitionImageLayout(void* image,
+            vk::ImageLayout oldLayout,
+            vk::ImageLayout newLayout,
+            vk::AccessFlags srcAccess,
+            vk::AccessFlags dstAccess,
+            vk::PipelineStageFlags srcStage,
+            vk::PipelineStageFlags dstStage);
+
+        void ResolveImage(void* srcImage, void* dstImage, uint32_t width, uint32_t height);
     };
 }
 

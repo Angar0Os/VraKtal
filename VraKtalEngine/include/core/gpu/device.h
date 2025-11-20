@@ -5,12 +5,25 @@
 #include <memory>
 #include <cstdint>
 
+#include <glm/glm.hpp>
+
 namespace core
 {
 	class Window;
 
 	namespace gpu
 	{
+		class Buffer;
+
+		// Note : We will maybe move this, but this is here to make uniform buffers work properly.
+		struct UniformBufferObject
+		{
+			alignas(16) glm::mat4 model;
+			alignas(16) glm::mat4 view;
+			alignas(16) glm::mat4 proj;
+			alignas(16) glm::vec3 viewPos;
+		};
+
 		class Device
 		{
 		private:
@@ -22,15 +35,35 @@ namespace core
 
 			Impl& GetImpl();
 
-			void* GetDeviceHandle() const;
-			void* GetPhysicalDeviceHandle() const;
-			void* GetGraphicsQueueHandle() const;
-			void* GetCommandPoolHandle() const;
-			void* GetSwapchainHandle() const;
-			uint32_t GetSwapchainImageCount() const;
+			void BeginFrame(uint32_t frameIndex);
+			uint32_t AcquireNextImage(uint32_t frameIndex);
+			void* GetImageAvailableSemaphore(uint32_t frameIndex) const;
+			void* GetRenderFinishedSemaphore(uint32_t imageIndex) const;
+			void* GetInFlightFence(uint32_t frameIndex) const;
+			void SubmitDefaultTransitionIfNeeded(uint32_t frameIndex, uint32_t imageIndex);
+			void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
+			void Present(uint32_t imageIndex);
+			void Cleanup();
+			
+			void* GetHandle() const;
+			void* GetCommandPool() const;
+			void* GetGraphicsQueue() const;
+			void* GetPipeline() const;
+			void* GetPipelineLayout() const;
+			void* GetDescriptorSet(uint32_t frameIndex) const;
+			core::gpu::Buffer* GetUniformBuffer(uint32_t frameIndex);
 
-			void* GetSwapchainImageViewHandle(uint32_t index) const;
-			void* GetSwapchainImageHandle(uint32_t index) const;
+			uint32_t GetSwapchainWidth() const;
+			uint32_t GetSwapchainHeight() const;
+			void* GetSwapchainImageView(uint32_t imageIndex) const;
+			void* GetDepthImageView() const;
+			void* GetColorImageView() const;
+			void* GetPhysicalDevice() const;
+			void* GetSwapchainImage(uint32_t imageIndex) const;
+			void* GetColorImage() const;
+			
+
+			static constexpr uint32_t FRAMES_IN_FLIGHT = 2;
 		};
 	}
 }

@@ -178,12 +178,14 @@ core::gpu::Pipeline& core::gpu::Pipeline::operator=(Pipeline&&) noexcept = defau
 
 void* core::gpu::Pipeline::GetHandle() const
 {
-    return static_cast<void*>(const_cast<vk::Pipeline*>(&(*m_impl->GetPipeline())));
+    VkPipeline nativeHandle = *m_impl->GetPipeline();
+    return reinterpret_cast<void*>(nativeHandle);
 }
 
 void* core::gpu::Pipeline::GetLayoutHandle() const
 {
-    return static_cast<void*>(const_cast<vk::PipelineLayout*>(&(*m_impl->GetPipelineLayout())));
+    VkPipelineLayout nativeHandle = *m_impl->GetPipelineLayout();
+    return reinterpret_cast<void*>(nativeHandle);
 }
 
 core::gpu::Pipeline::Impl& core::gpu::Pipeline::GetImpl()

@@ -158,9 +158,12 @@ core::gpu::SwapchainImage core::gpu::Swapchain::Impl::GetImage(uint32_t index) c
         throw std::out_of_range("Swapchain image index out of range");
     }
 
+    VkImage nativeImage = static_cast<VkImage>(images[index]);
+    VkImageView nativeView = static_cast<VkImageView>(*imageViews[index]);
+
     return SwapchainImage{
-        .image = const_cast<vk::Image*>(&images[index]),
-        .imageView = const_cast<vk::ImageView*>(&(*imageViews[index]))
+        .image = reinterpret_cast<void*>(nativeImage),
+        .imageView = reinterpret_cast<void*>(nativeView)
     };
 }
 
