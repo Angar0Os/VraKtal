@@ -172,24 +172,72 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 
 	float angle = (m_frameCounter % 360) * 3.14159f / 180.0f;
 	ubo.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 0.0f, 1.0f));
-
 	ubo.view = m_viewMatrix;
 	ubo.proj = m_projMatrix;
 	ubo.viewPos = m_cameraPosition;
 
-	ubo.albedo = glm::vec3(1.0);
-	ubo.metallic = 0.0f;
-	ubo.roughness = 1.0;
-	ubo.ao = 1.0;
+	if (m_scene)
+	{
+		ubo.numLights = std::min(static_cast<int>(m_scene->lights.size()), core::gpu::MAX_LIGHTS);
+		for (int i = 0; i < ubo.numLights; i++)
+		{
+			const auto& light = m_scene->lights[i];
+			ubo.lights[i].position = light.position;
+			ubo.lights[i].color = light.color * light.intensity;
+			ubo.lights[i].intensity = light.intensity;
+			ubo.lights[i].enabled = light.enabled ? 1 : 0;
+			ubo.lights[i].type = 0;
+		}
 
-	ubo.emissive = glm::vec3(0.0f);
+		glm::vec3 shadowLightPos = glm::vec3(2.0f, 2.0f, 2.0f);
+		for (const auto& light : m_scene->lights)
+		{
+			if (light.enabled)
+			{
+				shadowLightPos = light.position;
+				break;
+			}
+		}
 
-	ubo.useAlbedoMap = 1;
-	ubo.useNormalMap = 0;
-	ubo.useMetallicMap = 0;
-	ubo.useRoughnessMap = 0;
-	ubo.useAOMap = 0;
-	ubo.useEmissiveMap = 0;
+		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f);
+		glm::mat4 lightView = glm::lookAt(shadowLightPos, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.lightSpaceMatrix = lightProjection * lightView;
+	}
+	else
+	{
+		ubo.numLights = 0;
+	}
+
+	if (m_scene && !m_scene->meshInstances.empty() && m_scene->meshInstances[0].material)
+	{
+		const auto& mat = *m_scene->meshInstances[0].material;
+		ubo.albedo = mat.albedo;
+		ubo.metallic = mat.metallic;
+		ubo.roughness = mat.roughness;
+		ubo.ao = mat.ao;
+		ubo.emissive = mat.emissive;
+
+		ubo.useAlbedoMap = mat.useAlbedoTexture ? 1 : 0;
+		ubo.useNormalMap = mat.useNormalTexture ? 1 : 0;
+		ubo.useMetallicMap = mat.useMetallicTexture ? 1 : 0;
+		ubo.useRoughnessMap = mat.useRoughnessTexture ? 1 : 0;
+		ubo.useAOMap = mat.useAOTexture ? 1 : 0;
+		ubo.useEmissiveMap = mat.useEmissiveTexture ? 1 : 0;
+	}
+	else
+	{
+		ubo.albedo = glm::vec3(1.0f);
+		ubo.metallic = 0.0f;
+		ubo.roughness = 0.5f;
+		ubo.ao = 1.0f;
+		ubo.emissive = glm::vec3(0.0f);
+		ubo.useAlbedoMap = 1;
+		ubo.useNormalMap = 0;
+		ubo.useMetallicMap = 0;
+		ubo.useRoughnessMap = 0;
+		ubo.useAOMap = 0;
+		ubo.useEmissiveMap = 0;
+	}
 
 	auto* uniformBuffer = m_device.GetUniformBuffer(frameIndex);
 	if (uniformBuffer)

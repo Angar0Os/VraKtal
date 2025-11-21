@@ -15,19 +15,33 @@ namespace core
 	{
 		class Buffer;
 
+		constexpr int MAX_LIGHTS = 8;
+
 		// Note : We will maybe move this, but this is here to make uniform buffers work properly.
 		struct UniformBufferObject
 		{
 			alignas(16) glm::mat4 model;
 			alignas(16) glm::mat4 view;
 			alignas(16) glm::mat4 proj;
+			alignas(16) glm::mat4 lightSpaceMatrix;
 			alignas(16) glm::vec3 viewPos;
+
+			struct LightData
+			{
+				alignas(16) glm::vec3 position;
+				alignas(16) glm::vec3 color;
+				alignas(4)  float intensity;
+				alignas(4)	int enabled;
+				alignas(4)	int type;
+			};
+
+			LightData lights[MAX_LIGHTS];
+			alignas(4) int numLights;
 
 			alignas(16) glm::vec3 albedo;
 			alignas(4)  float metallic;
 			alignas(4)  float roughness;
 			alignas(4)  float ao;
-
 			alignas(16) glm::vec3 emissive;
 
 			alignas(4) uint32_t useAlbedoMap;
