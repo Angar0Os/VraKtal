@@ -1,6 +1,5 @@
 #include <graphics/renderer.h>
 
-#include <glm/gtc/matrix_transform.hpp>
 #include <memory>
 #include <iostream>
 
@@ -165,12 +164,11 @@ void Renderer::UpdateCamera(const glm::mat4& view, const glm::mat4& proj, const 
 	m_cameraPosition = position;
 }
 
-void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
+void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const glm::mat4& modelMatrix, const std::shared_ptr<resources::Material>& material)
 {
 	core::gpu::UniformBufferObject ubo{};
 
-	float angle = (m_frameCounter % 360) * 3.14159f / 180.0f;
-	ubo.model = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = modelMatrix;
 	ubo.view = m_viewMatrix;
 	ubo.proj = m_projMatrix;
 	ubo.viewPos = m_cameraPosition;
@@ -178,6 +176,7 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 	if (m_scene)
 	{
 		ubo.numLights = std::min(static_cast<int>(m_scene->lights.size()), core::gpu::MAX_LIGHTS);
+
 		for (int i = 0; i < ubo.numLights; i++)
 		{
 			const auto& light = m_scene->lights[i];
@@ -187,62 +186,41 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 			ubo.lights[i].enabled = light.enabled ? 1 : 0;
 			ubo.lights[i].type = 0;
 		}
-
-		glm::vec3 shadowLightPos = glm::vec3(2.0f, 2.0f, 2.0f);
-		for (const auto& light : m_scene->lights)
-		{
-			if (light.enabled)
-			{
-				shadowLightPos = light.position;
-				break;
-			}
-		}
-
-		glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f);
-		glm::mat4 lightView = glm::lookAt(shadowLightPos, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.lightSpaceMatrix = lightProjection * lightView;
 	}
 	else
 	{
 		ubo.numLights = 0;
 	}
 
-	ubo.albedo = glm::vec3(1.0f);
-	ubo.metallic = 0.0f;
-	ubo.roughness = 0.5f;
-	ubo.ao = 1.0f;
-	ubo.emissive = glm::vec3(0.0f);
-
-	ubo.useAlbedoMap = 1;
-	ubo.useNormalMap = 0;
-	ubo.useMetallicMap = 0;
-	ubo.useRoughnessMap = 0;
-	ubo.useAOMap = 0;
-	ubo.useEmissiveMap = 0;
-
-	if (m_scene && !m_scene->meshInstances.empty())
+	if (material)
 	{
-		for (const auto& instance : m_scene->meshInstances)
-		{
-			if (instance.material)
-			{
-				const auto& mat = *instance.material;
-				ubo.albedo = mat.albedo;
-				ubo.metallic = mat.metallic;
-				ubo.roughness = mat.roughness;
-				ubo.ao = mat.ao;
-				ubo.emissive = mat.emissive;
+		ubo.albedo = material->albedo;
+		ubo.metallic = material->metallic;
+		ubo.roughness = material->roughness;
+		ubo.ao = material->ao;
+		ubo.emissive = material->emissive;
 
-				ubo.useAlbedoMap = mat.useAlbedoTexture ? 1 : 0;
-				ubo.useNormalMap = mat.useNormalTexture ? 1 : 0;
-				ubo.useMetallicMap = mat.useMetallicTexture ? 1 : 0;
-				ubo.useRoughnessMap = mat.useRoughnessTexture ? 1 : 0;
-				ubo.useAOMap = mat.useAOTexture ? 1 : 0;
-				ubo.useEmissiveMap = mat.useEmissiveTexture ? 1 : 0;
+		ubo.useAlbedoMap = material->useAlbedoTexture ? 1 : 0;
+		ubo.useNormalMap = material->useNormalTexture ? 1 : 0;
+		ubo.useMetallicMap = material->useMetallicTexture ? 1 : 0;
+		ubo.useRoughnessMap = material->useRoughnessTexture ? 1 : 0;
+		ubo.useAOMap = material->useAOTexture ? 1 : 0;
+		ubo.useEmissiveMap = material->useEmissiveTexture ? 1 : 0;
+	}
+	else
+	{
+		ubo.albedo = glm::vec3(1.0f);
+		ubo.metallic = 0.0f;
+		ubo.roughness = 0.5f;
+		ubo.ao = 1.0f;
+		ubo.emissive = glm::vec3(0.0f);
 
-				break;
-			}
-		}
+		ubo.useAlbedoMap = 0;
+		ubo.useNormalMap = 0;
+		ubo.useMetallicMap = 0;
+		ubo.useRoughnessMap = 0;
+		ubo.useAOMap = 0;
+		ubo.useEmissiveMap = 0;
 	}
 
 	auto* uniformBuffer = m_device.GetUniformBuffer(frameIndex);
@@ -295,16 +273,19 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 	cmd->BindPipeline(m_device.GetPipeline());
 	cmd->SetViewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
 	cmd->SetScissor(0, 0, width, height);
-	cmd->BindDescriptorSets(
-		m_device.GetPipelineLayout(),
-		m_device.GetDescriptorSet(frameIndex),
-		0
-	);
 
 	if (m_scene)
 	{
 		for (const auto& instance : m_scene->meshInstances)
 		{
+			UpdateUniformBuffer(frameIndex, instance.transform, instance.material);
+
+			cmd->BindDescriptorSets(
+				m_device.GetPipelineLayout(),
+				m_device.GetDescriptorSet(frameIndex),
+				0
+			);
+
 			auto it = m_meshBuffers.find(instance.mesh.get());
 			if (it != m_meshBuffers.end())
 			{
@@ -356,7 +337,6 @@ void Renderer::DrawFrame()
 		return;
 	}
 
-	UpdateUniformBuffer(m_currentFrame);
 	RecordCommandBuffer(m_currentFrame, imageIndex);
 
 	void* waitSemaphore = m_device.GetImageAvailableSemaphore(m_currentFrame);
