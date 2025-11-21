@@ -70,14 +70,14 @@ core::gpu::Device::Impl::Impl(core::Window& window)
 	CreateSamplers();
 
 	CreateDefaultTextures();
-	LoadMaterialTextures();
+	LoadMaterialTextures();        
 	CreateShadowMap();
 	CreateColorImage();
 
 	CreateGraphicsPipeline();
 	CreateShadowPipeline();
 
-	CreateDescriptorSets();
+	CreateDescriptorSets();       
 	CreateShadowDescriptorSets();
 
 	CreateSyncObjects();
@@ -400,22 +400,38 @@ void core::gpu::Device::Impl::CreateDefaultTextures()
 
 void core::gpu::Device::Impl::LoadMaterialTextures()
 {
-	albedoTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
-	albedoTexture->LoadTextureIfExists("assets/textures/albedo.png");
+	albedoTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
+		commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 
-	normalTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 0.5f, 0.5f, 1.0f, 1.0f);
+	normalTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
+		commandPool->GetHandle(), 0.5f, 0.5f, 1.0f, 1.0f);
+
+	metallicTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
+		commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
+
+	roughnessTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
+		commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
+
+	aoTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
+		commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
+
+	emissiveTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
+		commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
+
+	bool loaded = albedoTexture->LoadTextureIfExists("../bin/assets/textures/viking_room.png");
+	if (loaded)
+	{
+		std::cout << "Viking room texture loaded successfully!" << std::endl;
+	}
+	else
+	{
+		std::cerr << "Failed to load viking room texture, using default white" << std::endl;
+	}
+
 	normalTexture->LoadTextureIfExists("assets/textures/normal.png");
-
-	metallicTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	metallicTexture->LoadTextureIfExists("assets/textures/metallic.png");
-
-	roughnessTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	roughnessTexture->LoadTextureIfExists("assets/textures/roughness.png");
-
-	aoTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
 	aoTexture->LoadTextureIfExists("assets/textures/ao.png");
-
-	emissiveTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
 	emissiveTexture->LoadTextureIfExists("assets/textures/emissive.png");
 }
 

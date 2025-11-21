@@ -22,7 +22,22 @@ namespace core
 			alignas(16) glm::mat4 view;
 			alignas(16) glm::mat4 proj;
 			alignas(16) glm::vec3 viewPos;
+
+			alignas(16) glm::vec3 albedo;
+			alignas(4)  float metallic;
+			alignas(4)  float roughness;
+			alignas(4)  float ao;
+
+			alignas(16) glm::vec3 emissive;
+
+			alignas(4) uint32_t useAlbedoMap;
+			alignas(4) uint32_t useNormalMap;
+			alignas(4) uint32_t useMetallicMap;
+			alignas(4) uint32_t useRoughnessMap;
+			alignas(4) uint32_t useAOMap;
+			alignas(4) uint32_t useEmissiveMap;
 		};
+
 
 		class Device
 		{

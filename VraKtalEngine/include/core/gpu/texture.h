@@ -37,7 +37,7 @@ namespace core::gpu
             void* commandPool, float r, float g, float b, float a,
             TextureFormat format = TextureFormat::RGBA8_SRGB);
 
-        Texture* LoadTextureIfExists(const std::string& filepath);
+        bool LoadTextureIfExists(const std::string& filepath);
 
         ~Texture();
 

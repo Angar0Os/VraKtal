@@ -177,6 +177,20 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
     ubo.proj = m_projMatrix;
     ubo.viewPos = m_cameraPosition;
 
+    ubo.albedo = glm::vec3(1.0);
+    ubo.metallic = 0.0f;
+    ubo.roughness = 1.0;
+    ubo.ao = 1.0;
+
+    ubo.emissive = glm::vec3(0.0f);
+
+    ubo.useAlbedoMap = 1;
+    ubo.useNormalMap = 0;
+    ubo.useMetallicMap = 0;
+    ubo.useRoughnessMap = 0;
+    ubo.useAOMap = 0;
+    ubo.useEmissiveMap = 0;
+
     auto* uniformBuffer = m_device.GetUniformBuffer(frameIndex);
     if (uniformBuffer)
     {

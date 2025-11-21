@@ -10,6 +10,7 @@
 #include <cmath>
 #include <fstream>
 #include <algorithm>
+#include <iostream>
 
 core::gpu::Texture::Impl::Impl(core::gpu::Texture& p, vk::raii::Device& dev,
     vk::raii::PhysicalDevice& physDev, vk::raii::Queue& q, vk::raii::CommandPool& pool,
@@ -17,7 +18,16 @@ core::gpu::Texture::Impl::Impl(core::gpu::Texture& p, vk::raii::Device& dev,
     : parent(p), device(dev), physicalDevice(physDev), queue(q), commandPool(pool),
     width(0), height(0), mipLevels(1)
 {
-    LoadFromFile(info);
+    try {
+        LoadFromFile(info);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to load texture from file: " << e.what() << std::endl;
+        width = 1;
+        height = 1;
+        image = CreateSolidColorImage(device, physicalDevice, queue, commandPool,
+            1.0f, 0.0f, 1.0f, 1.0f, TextureFormat::RGBA8_SRGB); 
+    }
 }
 
 core::gpu::Texture::Impl::~Impl() = default;
@@ -216,32 +226,91 @@ std::unique_ptr<core::gpu::Image> core::gpu::Texture::Impl::CreateSolidColorImag
     return image;
 }
 
-core::gpu::Texture* core::gpu::Texture::Impl::LoadTextureIfExists(const std::string& filepath)
+bool core::gpu::Texture::Impl::LoadTextureIfExists(const std::string& filepath)
 {
-    std::vector<Texture> loadedTextures;
-
     std::ifstream file(filepath);
     if (!file.good())
     {
-        return nullptr;
+        std::cerr << "Texture file not found: " << filepath << ", using default color" << std::endl;
+        return false;
     }
 
-    TextureCreateInfo textureInfo
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load(filepath.c_str(), &texWidth, &texHeight,
+        &texChannels, STBI_rgb_alpha);
+
+    if (!pixels)
     {
-        .filepath = filepath,
-        .format = TextureFormat::RGBA8_SRGB,
-        .minFilter = Filter::Linear,
-        .magFilter = Filter::Linear,
-        .addressMode = SamplerAddressMode::Repeat,
-        .generateMipmaps = true,
-        .flipVertically = true
+        std::cerr << "Failed to load texture image: " << filepath << std::endl;
+        return false;
+    }
+
+    width = static_cast<uint32_t>(texWidth);
+    height = static_cast<uint32_t>(texHeight);
+
+    mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+
+    vk::DeviceSize imageSize = texWidth * texHeight * 4;
+
+    BufferCreateInfo stagingBufferInfo{
+        .size = imageSize,
+        .usage = BufferUsage::TransferSrc,
+        .memoryProperties = MemoryProperty::HostVisible | MemoryProperty::HostCoherent
     };
 
-    loadedTextures.emplace_back(
-        &device, &physicalDevice, &queue, &commandPool, textureInfo
-    );
+    Buffer stagingBuffer(&device, &physicalDevice, stagingBufferInfo);
 
-    return &loadedTextures.back();
+    stagingBuffer.CopyFrom(pixels, imageSize, 0);
+
+    stbi_image_free(pixels);
+
+    ImageCreateInfo imageInfo{
+        .width = width,
+        .height = height,
+        .mipLevels = mipLevels,
+        .arrayLayers = 1,
+        .format = TextureFormat::RGBA8_SRGB,
+        .tiling = ImageTiling::Optimal,
+        .usage = ImageUsage::TransferSrc | ImageUsage::TransferDst | ImageUsage::Sampled,
+        .memoryProperties = MemoryProperty::DeviceLocal,
+        .samples = SampleCount::e1
+    };
+
+    image = std::make_unique<Image>(&device, &physicalDevice, imageInfo);
+
+    CommandBufferCreateInfo cmdInfo{
+        .commandPool = &commandPool,
+        .level = CommandBufferLevel::Primary,
+        .count = 1,
+        .singleTime = true
+    };
+    CommandBuffer cmdBuffer(&device, &queue, cmdInfo);
+
+    cmdBuffer.Begin(0);
+
+    image->TransitionLayout(cmdBuffer, ImageLayout::Undefined,
+        ImageLayout::TransferDst, mipLevels);
+
+    image->CopyFromBuffer(cmdBuffer, stagingBuffer, width, height);
+
+    image->GenerateMipmaps(cmdBuffer, width, height, mipLevels);
+
+    cmdBuffer.End(0);
+    cmdBuffer.SubmitAndWait();
+
+    ImageViewCreateInfo viewInfo{
+        .format = TextureFormat::RGBA8_SRGB,
+        .baseMipLevel = 0,
+        .levelCount = mipLevels,
+        .baseArrayLayer = 0,
+        .layerCount = 1,
+        .isDepth = false
+    };
+    image->CreateView(viewInfo);
+
+    std::cout << "Successfully loaded texture: " << filepath
+        << " (" << width << "x" << height << ", " << mipLevels << " mips)" << std::endl;
+    return true;
 }
 
 core::gpu::Texture::~Texture() = default;
@@ -296,7 +365,7 @@ core::gpu::Texture::Texture(void* device, void* physicalDevice, void* queue,
         vkCommandPool, r, g, b, a, format);
 }
 
-core::gpu::Texture* core::gpu::Texture::LoadTextureIfExists(const std::string& filepath)
+bool core::gpu::Texture::LoadTextureIfExists(const std::string& filepath)
 {
     return m_impl->LoadTextureIfExists(filepath);
 }

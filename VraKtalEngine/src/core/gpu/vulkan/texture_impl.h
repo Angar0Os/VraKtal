@@ -47,7 +47,7 @@ namespace core::gpu
             vk::raii::Queue& q, vk::raii::CommandPool& pool,
             float r, float g, float b, float a, TextureFormat format);
 
-        Texture* LoadTextureIfExists(const std::string& filepath);
+        bool LoadTextureIfExists(const std::string& filepath);
 
         ~Impl();
 

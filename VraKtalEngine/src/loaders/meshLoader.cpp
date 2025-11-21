@@ -159,10 +159,6 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 
     bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filepath.c_str());
 
-    if (!warn.empty()) std::cerr << "OBJ Warning: " << warn << "\n";
-    if (!err.empty())  std::cerr << "OBJ Error: " << err << "\n";
-    if (!ret) throw std::runtime_error("Failed to load OBJ: " + filepath);
-
     auto mesh = std::make_shared<graphics::resources::Mesh>();
     std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
 
@@ -170,25 +166,28 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
     {
         for (const auto& index : shape.mesh.indices)
         {
-			graphics::resources::Vertex vertex{};
+            graphics::resources::Vertex vertex{};
 
-            vertex.position = {
-                attrib.vertices[3 * index.vertex_index + 0],
-                attrib.vertices[3 * index.vertex_index + 1],
-                attrib.vertices[3 * index.vertex_index + 2]
-            };
+            if (index.vertex_index >= 0)
+            {
+                vertex.position = {
+                    attrib.vertices[3 * index.vertex_index + 0],
+                    attrib.vertices[3 * index.vertex_index + 1],
+                    attrib.vertices[3 * index.vertex_index + 2]
+                };
+            }
 
             if (index.texcoord_index >= 0)
             {
                 vertex.uv = {
                     attrib.texcoords[2 * index.texcoord_index + 0],
-                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+                    attrib.texcoords[2 * index.texcoord_index + 1]  
                 };
             }
-			else
-			{
+            else
+            {
                 vertex.uv = { 0.0f, 0.0f };
-			}
+            }
 
             if (index.normal_index >= 0)
             {
@@ -198,12 +197,12 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
                     attrib.normals[3 * index.normal_index + 2]
                 };
             }
-			else
-			{
-                vertex.normal = { 0.0f, 0.0f, 0.0f };
-			}
+            else
+            {
+                vertex.normal = { 0.0f, 1.0f, 0.0f }; 
+            }
 
-            vertex.tangent = { 1.0f, 1.0f, 1.0f, 1.0f }; 
+            vertex.tangent = { 1.0f, 0.0f, 0.0f, 1.0f };
 
             if (!uniqueVertices.contains(vertex))
             {
