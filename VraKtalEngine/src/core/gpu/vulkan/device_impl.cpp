@@ -70,14 +70,14 @@ core::gpu::Device::Impl::Impl(core::Window& window)
 	CreateSamplers();
 
 	CreateDefaultTextures();
-	LoadMaterialTextures();        
+	LoadMaterialTextures();
 	CreateShadowMap();
 	CreateColorImage();
 
 	CreateGraphicsPipeline();
 	CreateShadowPipeline();
 
-	CreateDescriptorSets();       
+	CreateDescriptorSets();
 	CreateShadowDescriptorSets();
 
 	CreateSyncObjects();
@@ -187,7 +187,7 @@ void core::gpu::Device::Impl::CreateSurface()
 
 	VkSurfaceKHR _surface;
 	VkResult result = glfwCreateWindowSurface(*instance, glfwWindow, nullptr, &_surface);
-	if (result != VK_SUCCESS) 
+	if (result != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create window surface. Error code: " + std::to_string(result));
 	}
@@ -280,7 +280,7 @@ void core::gpu::Device::Impl::CreateLogicalDevice()
 void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 {
 	DescriptorSetLayoutCreateInfo layoutInfo;
-	layoutInfo.bindings = 
+	layoutInfo.bindings =
 	{
 		{0, DescriptorType::UniformBuffer, 1, core::ShaderStage::Vertex | core::ShaderStage::Fragment},
 
@@ -299,7 +299,7 @@ void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 void core::gpu::Device::Impl::CreateDescriptorPool()
 {
 	DescriptorPoolCreateInfo poolInfo;
-	poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 2; 
+	poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 2;
 	poolInfo.poolSizes =
 	{
 		{DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT * 2},
@@ -480,7 +480,7 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 
 	VertexInputBinding vertexBinding{
 		.binding = 0,
-		.stride = sizeof(graphics::resources::Vertex),  
+		.stride = sizeof(graphics::resources::Vertex),
 		.inputRate = VertexInputRate::Vertex
 	};
 
@@ -494,7 +494,7 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 		{ShaderStageFlags::Vertex, shaderCode, "vertMain"},
 		{ShaderStageFlags::Fragment, shaderCode, "fragMain"}
 	};
-	
+
 	PipelineCreateInfo pipelineInfo{
 		.shaderStages = shaderStages,
 		.vertexBindings = {vertexBinding},
@@ -507,7 +507,7 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 		.depthWriteEnable = true,
 		.depthCompareOp = CompareOp::Less,
 		.blendEnable = false,
-		.samples = SampleCount::e4,  
+		.samples = SampleCount::e4,
 		.colorAttachmentFormats = {swapchain->GetFormat()},
 		.depthAttachmentFormat = TextureFormat::Depth32F,
 		.descriptorSetLayouts = {descriptorSetLayout.get()},
@@ -548,7 +548,7 @@ void core::gpu::Device::Impl::CreateShadowPipeline()
 		.depthCompareOp = CompareOp::LessOrEqual,
 		.blendEnable = false,
 		.samples = SampleCount::e1,
-		.colorAttachmentFormats = {}, 
+		.colorAttachmentFormats = {},
 		.depthAttachmentFormat = TextureFormat::Depth32F,
 		.descriptorSetLayouts = {shadowDescriptorSetLayout.get()},
 		.dynamicStates = {
@@ -846,7 +846,7 @@ void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uin
 		};
 
 		graphicsQueue.submit(submitInfo, nullptr);
-		graphicsQueue.waitIdle(); 
+		graphicsQueue.waitIdle();
 	}
 	catch (const vk::SystemError& e)
 	{

@@ -58,7 +58,7 @@ namespace core
 			void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
 			void Present(uint32_t imageIndex);
 			void Cleanup();
-			
+
 			void* GetHandle() const;
 			void* GetCommandPool() const;
 			void* GetGraphicsQueue() const;
@@ -78,7 +78,7 @@ namespace core
 			void* GetDepthImage() const;
 
 			void WaitIdle();
-			
+
 			static constexpr uint32_t FRAMES_IN_FLIGHT = 2;
 		};
 	}

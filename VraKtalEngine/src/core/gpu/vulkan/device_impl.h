@@ -86,7 +86,7 @@ namespace core::gpu
 		std::vector<vk::raii::Semaphore> imageAvailable;
 		std::vector<vk::raii::Semaphore> renderFinished;
 		std::vector<vk::raii::Fence> inFlightFences;
-		std::vector<const vk::raii::Fence*> imagesInFlight;  
+		std::vector<const vk::raii::Fence*> imagesInFlight;
 		std::vector<std::unique_ptr<vk::raii::CommandBuffer>> tempCmdBufs;
 
 		const Window& m_window;

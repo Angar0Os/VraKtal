@@ -141,6 +141,12 @@
     <ClInclude Include="include\loaders\meshLoader.h">
       <Filter>Header Files\loaders</Filter>
     </ClInclude>
+    <ClInclude Include="include\graphics\resources\material.h">
+      <Filter>Header Files\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\light.h">
+      <Filter>Header Files\graphics\resources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">

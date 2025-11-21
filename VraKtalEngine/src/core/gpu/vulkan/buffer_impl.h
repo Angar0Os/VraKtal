@@ -9,33 +9,33 @@ namespace core::gpu
 {
 	struct Buffer::Impl
 	{
-    private:
-        Buffer& parent;
-        vk::raii::Device& device;
-        vk::raii::PhysicalDevice& physicalDevice;
+	private:
+		Buffer& parent;
+		vk::raii::Device& device;
+		vk::raii::PhysicalDevice& physicalDevice;
 
-        vk::raii::Buffer buffer;
-        vk::raii::DeviceMemory memory;
+		vk::raii::Buffer buffer;
+		vk::raii::DeviceMemory memory;
 
-        size_t bufferSize;
-        void* mappedData;
+		size_t bufferSize;
+		void* mappedData;
 
-        uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
+		uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
-    public:
-        explicit Impl(Buffer& p, vk::raii::Device& dev, vk::raii::PhysicalDevice& physDev,
-            const BufferCreateInfo& info);
+	public:
+		explicit Impl(Buffer& p, vk::raii::Device& dev, vk::raii::PhysicalDevice& physDev,
+			const BufferCreateInfo& info);
 
-        ~Impl();
+		~Impl();
 
-        vk::raii::Buffer& GetBuffer();
-        const vk::raii::Buffer& GetBuffer() const;
+		vk::raii::Buffer& GetBuffer();
+		const vk::raii::Buffer& GetBuffer() const;
 
-        size_t GetSize() const;
+		size_t GetSize() const;
 
-        void Map(void** data);
-        void Unmap();
-        void CopyFrom(const void* data, size_t size, size_t offset);
+		void Map(void** data);
+		void Unmap();
+		void CopyFrom(const void* data, size_t size, size_t offset);
 	};
 }
 

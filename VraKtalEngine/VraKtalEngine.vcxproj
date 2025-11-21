@@ -183,6 +183,8 @@
     <ClInclude Include="include\core\gpu\swapchain.h" />
     <ClInclude Include="include\core\window.h" />
     <ClInclude Include="include\graphics\renderer.h" />
+    <ClInclude Include="include\graphics\resources\light.h" />
+    <ClInclude Include="include\graphics\resources\material.h" />
     <ClInclude Include="include\graphics\resources\mesh.h" />
     <ClInclude Include="include\graphics\resources\scene.h" />
     <ClInclude Include="include\loaders\meshLoader.h" />

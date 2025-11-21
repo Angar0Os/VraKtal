@@ -4,47 +4,47 @@
 #include <stdexcept>
 
 core::gpu::DescriptorSetLayout::Impl::Impl(core::gpu::DescriptorSetLayout& p,
-    vk::raii::Device& dev, const DescriptorSetLayoutCreateInfo& info)
-    : parent(p), device(dev), layout(nullptr)
+	vk::raii::Device& dev, const DescriptorSetLayoutCreateInfo& info)
+	: parent(p), device(dev), layout(nullptr)
 {
-    std::vector<vk::DescriptorSetLayoutBinding> vkBindings;
-    vkBindings.reserve(info.bindings.size());
+	std::vector<vk::DescriptorSetLayoutBinding> vkBindings;
+	vkBindings.reserve(info.bindings.size());
 
-    for (const auto& binding : info.bindings)
-    {
-        vk::DescriptorSetLayoutBinding bindings{};
-        bindings.binding = binding.binding;
-        bindings.descriptorType = core::gpu_detail::ToVulkan(binding.descriptorType);
-        bindings.descriptorCount = binding.descriptorCount;
-        bindings.stageFlags = core::gpu_detail::ToVulkan(binding.stageFlags);
-        bindings.pImmutableSamplers = nullptr;
+	for (const auto& binding : info.bindings)
+	{
+		vk::DescriptorSetLayoutBinding bindings{};
+		bindings.binding = binding.binding;
+		bindings.descriptorType = core::gpu_detail::ToVulkan(binding.descriptorType);
+		bindings.descriptorCount = binding.descriptorCount;
+		bindings.stageFlags = core::gpu_detail::ToVulkan(binding.stageFlags);
+		bindings.pImmutableSamplers = nullptr;
 
-        vkBindings.push_back(bindings);
-    }
+		vkBindings.push_back(bindings);
+	}
 
-    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.bindingCount = static_cast<uint32_t>(vkBindings.size());
-    layoutInfo.pBindings = vkBindings.data();
+	vk::DescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.bindingCount = static_cast<uint32_t>(vkBindings.size());
+	layoutInfo.pBindings = vkBindings.data();
 
-    layout = vk::raii::DescriptorSetLayout(device, layoutInfo);
+	layout = vk::raii::DescriptorSetLayout(device, layoutInfo);
 }
 
 core::gpu::DescriptorSetLayout::Impl::~Impl() = default;
 
 vk::raii::DescriptorSetLayout& core::gpu::DescriptorSetLayout::Impl::GetLayout()
 {
-    return layout;
+	return layout;
 }
 
 const vk::raii::DescriptorSetLayout& core::gpu::DescriptorSetLayout::Impl::GetLayout() const
 {
-    return layout;
+	return layout;
 }
 
 core::gpu::DescriptorSetLayout::DescriptorSetLayout(void* device, const DescriptorSetLayoutCreateInfo& info)
 {
-    auto& vkDevice = *static_cast<vk::raii::Device*>(device);
-    m_impl = std::make_unique<Impl>(*this, vkDevice, info);
+	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
+	m_impl = std::make_unique<Impl>(*this, vkDevice, info);
 }
 
 core::gpu::DescriptorSetLayout::~DescriptorSetLayout() = default;
@@ -54,15 +54,15 @@ core::gpu::DescriptorSetLayout& core::gpu::DescriptorSetLayout::operator=(Descri
 
 void* core::gpu::DescriptorSetLayout::GetHandle() const
 {
-    return reinterpret_cast<void*>(static_cast<VkDescriptorSetLayout>(*m_impl->GetLayout()));
+	return reinterpret_cast<void*>(static_cast<VkDescriptorSetLayout>(*m_impl->GetLayout()));
 }
 
 core::gpu::DescriptorSetLayout::Impl& core::gpu::DescriptorSetLayout::GetImpl()
 {
-    return *m_impl;
+	return *m_impl;
 }
 
 const core::gpu::DescriptorSetLayout::Impl& core::gpu::DescriptorSetLayout::GetImpl() const
 {
-    return *m_impl;
+	return *m_impl;
 }
