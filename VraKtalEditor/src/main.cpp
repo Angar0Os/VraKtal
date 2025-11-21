@@ -13,41 +13,40 @@
 
 int main()
 {
-	core::Window window(800, 600, "VraKtal Engine");
-	core::gpu::Device device(window);
-	graphics::Renderer renderer(window, device);
+    core::Window window(800, 600, "VraKtal Engine");
+    core::gpu::Device device(window);
+    graphics::Renderer renderer(window, device);
 
-	loaders::MeshLoader loader;
-	auto mesh = loader.LoadMesh("assets/models/viking_room.obj");
+    loaders::MeshLoader loader;
+    auto mesh = loader.LoadMesh("assets/models/viking_room.obj");
 
-	std::cout << "Mesh loaded: "
-		<< mesh->vertices.size() << " vertices, "
-		<< mesh->indices.size() << " indices" << std::endl;
+    std::cout << "Mesh loaded: "
+        << mesh->vertices.size() << " vertices, "
+        << mesh->indices.size() << " indices" << std::endl;
 
-	if (mesh->vertices.empty() || mesh->indices.empty())
-	{
-		std::cerr << "ERROR: Mesh is empty!" << std::endl;
-		return -1;
-	}
+    if (mesh->vertices.empty() || mesh->indices.empty())
+    {
+        std::cerr << "ERROR: Mesh is empty!" << std::endl;
+        return -1;
+    }
+        
+    auto scene = std::make_shared<graphics::resources::Scene>();
+    scene->AddMesh(mesh, glm::mat4(1.0f));
+    renderer.SetScene(scene);
 
-	auto scene = std::make_shared<graphics::resources::Scene>();
-	auto meshInstance = scene->AddMesh(mesh, glm::mat4(1.0f));
+    glm::vec3 cameraPos(2.0f, 2.0f, 2.0f);
+    glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 10.0f);
+    proj[1][1] *= -1;
 
-	renderer.SetScene(scene);
+    renderer.UpdateCamera(view, proj, cameraPos);
 
-	glm::vec3 cameraPos(2.0f, 2.0f, 2.0f);
-	glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 10.0f);
-	proj[1][1] *= -1;
+    while (!window.ShouldClose())
+    {
+        window.PollEvents();
+        renderer.DrawFrame();
+    }
 
-	renderer.UpdateCamera(view, proj, cameraPos);
-
-	while (!window.ShouldClose())
-	{
-		window.PollEvents();
-		renderer.DrawFrame();
-	}
-
-	renderer.Cleanup();
-	return 0;
+    renderer.Cleanup();
+    return 0;
 }

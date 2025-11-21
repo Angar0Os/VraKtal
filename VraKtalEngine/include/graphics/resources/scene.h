@@ -18,9 +18,11 @@ namespace graphics::resources
 
 		std::vector<MeshInstance> meshInstances;
 
-		void AddMesh(std::shared_ptr<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f))
+		MeshInstance AddMesh(std::shared_ptr<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f))
 		{
-			meshInstances.push_back({ mesh, transform });
+			MeshInstance instance = { mesh, transform };
+			meshInstances.push_back(instance);
+			return instance;
 		}
 	};
 }
