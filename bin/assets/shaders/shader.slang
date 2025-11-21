@@ -206,7 +206,8 @@ float4 fragMain(VSOutput input) : SV_Target
     }
     
     // Lumière ambiante approximative
-    float3 ambient = float3(0.03, 0.03, 0.03) * albedoValue * aoValue;
+    //float3 ambient = float3(0.03, 0.03, 0.03) * albedoValue * aoValue;
+    float3 ambient = float3(1.0, 1.0, 1.0) * albedoValue; 
     
     float3 color = ambient + Lo + emissiveValue;
     

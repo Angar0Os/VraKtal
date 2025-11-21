@@ -34,7 +34,7 @@ namespace core::gpu
 
         void Begin(uint32_t index);
         void End(uint32_t index);
-        void Submit();
+        void Submit(void* waitSemaphore = nullptr, void* signalSemaphore = nullptr, void* fence = nullptr);
         void SubmitAndWait();
 
         void BindPipeline(void* pipeline);
@@ -47,13 +47,16 @@ namespace core::gpu
         void BeginRendering(uint32_t width, uint32_t height, void* colorImageView, void* depthImageView);
         void EndRendering();
 
+		void CopyBuffer(void* srcBuffer, void* dstBuffer, size_t size);
+
         void TransitionImageLayout(void* image,
             vk::ImageLayout oldLayout,
             vk::ImageLayout newLayout,
             vk::AccessFlags srcAccess,
             vk::AccessFlags dstAccess,
             vk::PipelineStageFlags srcStage,
-            vk::PipelineStageFlags dstStage);
+            vk::PipelineStageFlags dstStage,
+            bool isDepth);
 
         void ResolveImage(void* srcImage, void* dstImage, uint32_t width, uint32_t height);
     };

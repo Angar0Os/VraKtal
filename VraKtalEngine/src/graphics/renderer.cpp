@@ -46,6 +46,7 @@ void Renderer::CreateCommandBuffers()
         m_commandBuffers.push_back(std::move(cmdBuffer));
     }
 }
+
 void Renderer::SetScene(std::shared_ptr<resources::Scene> scene)
 {
     m_scene = scene;
@@ -64,9 +65,43 @@ void Renderer::SetScene(std::shared_ptr<resources::Scene> scene)
 
 void Renderer::CreateMeshBuffers(std::shared_ptr<resources::Mesh> mesh)
 {
+    if (!mesh || mesh->vertices.empty() || mesh->indices.empty())
+    {
+        std::cerr << "ERROR: Invalid mesh data!" << std::endl;
+        return;
+    }
+
     MeshBuffers buffers;
 
     size_t vertexBufferSize = mesh->vertices.size() * sizeof(resources::Vertex);
+    size_t indexBufferSize = mesh->indices.size() * sizeof(uint32_t);
+
+    core::gpu::BufferCreateInfo stagingVertexInfo{
+        .size = vertexBufferSize,
+        .usage = core::BufferUsage::TransferSrc,
+        .memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+    };
+
+    auto stagingVertexBuffer = std::make_unique<core::gpu::Buffer>(
+        m_device.GetHandle(),
+        m_device.GetPhysicalDevice(),
+        stagingVertexInfo
+    );
+
+    core::gpu::BufferCreateInfo stagingIndexInfo{
+        .size = indexBufferSize,
+        .usage = core::BufferUsage::TransferSrc,
+        .memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+    };
+
+    auto stagingIndexBuffer = std::make_unique<core::gpu::Buffer>(
+        m_device.GetHandle(),
+        m_device.GetPhysicalDevice(),
+        stagingIndexInfo
+    );
+
+    stagingVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
+    stagingIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
 
     core::gpu::BufferCreateInfo vertexInfo{
         .size = vertexBufferSize,
@@ -79,8 +114,6 @@ void Renderer::CreateMeshBuffers(std::shared_ptr<resources::Mesh> mesh)
         m_device.GetPhysicalDevice(),
         vertexInfo
     );
-
-    size_t indexBufferSize = mesh->indices.size() * sizeof(uint32_t);
 
     core::gpu::BufferCreateInfo indexInfo{
         .size = indexBufferSize,
@@ -95,6 +128,33 @@ void Renderer::CreateMeshBuffers(std::shared_ptr<resources::Mesh> mesh)
     );
 
     buffers.indexCount = static_cast<uint32_t>(mesh->indices.size());
+
+    core::gpu::CommandBufferCreateInfo cmdInfo{};
+    cmdInfo.commandPool = m_device.GetCommandPool();
+    cmdInfo.level = core::CommandBufferLevel::Primary;
+    cmdInfo.count = 1;
+    cmdInfo.singleTime = true;
+
+    auto transferCmd = std::make_unique<core::gpu::CommandBuffer>(
+        m_device.GetHandle(),
+        m_device.GetGraphicsQueue(),
+        cmdInfo
+    );
+
+    transferCmd->Begin(0);
+    transferCmd->CopyBuffer(
+        stagingVertexBuffer->GetHandle(),
+        buffers.vertexBuffer->GetHandle(),
+        vertexBufferSize
+    );
+    transferCmd->CopyBuffer(
+        stagingIndexBuffer->GetHandle(),
+        buffers.indexBuffer->GetHandle(),
+        indexBufferSize
+    );
+    transferCmd->End(0);
+
+    transferCmd->SubmitAndWait();
 
     m_meshBuffers[mesh.get()] = std::move(buffers);
 }
@@ -127,27 +187,35 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 {
     auto& cmd = m_commandBuffers[frameIndex];
-    cmd->Begin();
+
+    cmd->Begin(0);
 
     uint32_t width = m_device.GetSwapchainWidth();
     uint32_t height = m_device.GetSwapchainHeight();
 
     void* colorImageHandle = m_device.GetColorImage();
     void* swapchainImageHandle = m_device.GetSwapchainImage(imageIndex);
+    void* depthImageHandle = m_device.GetDepthImage();
 
-    std::cout << "ColorImage handle: " << colorImageHandle << std::endl;
-    std::cout << "Swapchain image handle: " << swapchainImageHandle << std::endl;
-
-    if (!colorImageHandle || !swapchainImageHandle)
-    {
-        std::cerr << "ERROR: Invalid image handle!" << std::endl;
-        return;
-    }
+    cmd->TransitionImageLayout(
+        colorImageHandle,
+        core::ImageLayout::Undefined,
+        core::ImageLayout::ColorAttachment,
+        false 
+    );
 
     cmd->TransitionImageLayout(
         swapchainImageHandle,
         core::ImageLayout::Undefined,
-        core::ImageLayout::TransferDst
+        core::ImageLayout::TransferDst,
+        false 
+    );
+
+    cmd->TransitionImageLayout(
+        depthImageHandle,
+        core::ImageLayout::Undefined,
+        core::ImageLayout::Undefined,  
+        true  
     );
 
     cmd->BeginRendering(
@@ -173,19 +241,29 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
             if (it != m_meshBuffers.end())
             {
                 const auto& buffers = it->second;
+
                 cmd->BindVertexBuffer(buffers.vertexBuffer->GetHandle());
                 cmd->BindIndexBuffer(buffers.indexBuffer->GetHandle());
                 cmd->DrawIndexed(buffers.indexCount);
             }
+            else
+            {
+                std::cout << "ERROR: Mesh buffers not found!" << std::endl;
+            }
         }
+    }
+    else
+    {
+        std::cout << "ERROR: No scene set!" << std::endl;
     }
 
     cmd->EndRendering();
-    
+
     cmd->TransitionImageLayout(
         colorImageHandle,
         core::ImageLayout::ColorAttachment,
-        core::ImageLayout::TransferSrc
+        core::ImageLayout::TransferSrc,
+        false
     );
 
     cmd->ResolveImage(
@@ -198,10 +276,11 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
     cmd->TransitionImageLayout(
         swapchainImageHandle,
         core::ImageLayout::TransferDst,
-        core::ImageLayout::Present
+        core::ImageLayout::Present,
+        false
     );
 
-    cmd->End();
+    cmd->End(0);
 }
 
 void Renderer::DrawFrame()
@@ -219,7 +298,11 @@ void Renderer::DrawFrame()
     UpdateUniformBuffer(m_currentFrame);
     RecordCommandBuffer(m_currentFrame, imageIndex);
 
-    m_commandBuffers[m_currentFrame]->Submit();
+    void* waitSemaphore = m_device.GetImageAvailableSemaphore(m_currentFrame);
+    void* signalSemaphore = m_device.GetRenderFinishedSemaphore(imageIndex);
+    void* fence = m_device.GetInFlightFence(m_currentFrame);
+
+    m_commandBuffers[m_currentFrame]->Submit(waitSemaphore, signalSemaphore, fence);
 
     m_device.Present(imageIndex);
 
@@ -229,6 +312,8 @@ void Renderer::DrawFrame()
 
 void Renderer::Cleanup()
 {
+    m_device.WaitIdle();
+
     if (!m_running) return;
     m_running = false;
 

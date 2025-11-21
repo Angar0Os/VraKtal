@@ -8,6 +8,8 @@
 
 #include <core/enum.h>
 
+#include <graphics/resources/mesh.h>
+
 #include <fstream>
 
 #pragma comment(lib, "vulkan-1.lib")
@@ -462,15 +464,14 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 
 	VertexInputBinding vertexBinding{
 		.binding = 0,
-		.stride = sizeof(Vertex),  
+		.stride = sizeof(graphics::resources::Vertex),  
 		.inputRate = VertexInputRate::Vertex
 	};
 
 	std::vector<VertexInputAttribute> vertexAttributes = {
-		{0, 0, TextureFormat::RGB32_Float, offsetof(Vertex, pos)},
-		{1, 0, TextureFormat::RGB32_Float, offsetof(Vertex, color)},
-		{2, 0, TextureFormat::RG32_Float, offsetof(Vertex, texCoord)},
-		{3, 0, TextureFormat::RGB32_Float, offsetof(Vertex, normal)}
+		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, position)},
+		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::Vertex, uv)},
+		{3, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, normal)}
 	};
 
 	std::vector<ShaderStage> shaderStages = {
@@ -506,12 +507,12 @@ void core::gpu::Device::Impl::CreateShadowPipeline()
 
 	VertexInputBinding vertexBinding{
 		.binding = 0,
-		.stride = sizeof(Vertex),
+		.stride = sizeof(graphics::resources::Vertex),
 		.inputRate = VertexInputRate::Vertex
 	};
 
 	std::vector<VertexInputAttribute> vertexAttributes = {
-		{0, 0, TextureFormat::RGB32_Float, offsetof(Vertex, pos)}
+		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, position)}
 	};
 
 	std::vector<ShaderStage> shaderStages = {
@@ -667,14 +668,12 @@ void core::gpu::Device::Impl::BeginFrame(uint32_t frameIndex)
 {
 	if (frameIndex >= inFlightFences.size()) return;
 
-	vk::Result result = device.waitForFences(*inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
+	device.waitForFences(*inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
 
 	if (frameIndex < tempCmdBufs.size())
 	{
 		tempCmdBufs[frameIndex].reset();
 	}
-
-	device.resetFences(*inFlightFences[frameIndex]);
 }
 
 
@@ -713,6 +712,8 @@ uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 		device.waitForFences(*(*imagesInFlight[imageIndex]), VK_TRUE, UINT64_MAX);
 	}
 
+	device.resetFences(*inFlightFences[frameIndex]);
+
 	imagesInFlight[imageIndex] = &inFlightFences[frameIndex];
 
 	return imageIndex;
@@ -734,104 +735,6 @@ void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
 {
 	if (frameIndex >= inFlightFences.size()) return nullptr;
 	return reinterpret_cast<void*>(static_cast<VkFence>(*inFlightFences[frameIndex]));
-}
-
-void core::gpu::Device::Impl::SubmitDefaultTransitionIfNeeded(uint32_t frameIndex, uint32_t imageIndex)
-{
-	if (frameIndex >= imageAvailable.size() || frameIndex >= inFlightFences.size())
-		return;
-
-	SwapchainImage swapImageStruct = swapchain->GetImage(imageIndex);
-
-	vk::Image swapImage = VK_NULL_HANDLE;
-	if (swapImageStruct.image)
-	{
-		vk::Image* imagePtr = static_cast<vk::Image*>(swapImageStruct.image);
-		if (imagePtr)
-		{
-			swapImage = *imagePtr; 
-		}
-	}
-
-	if (swapImage == VK_NULL_HANDLE)
-	{
-		std::cerr << "Invalid swapchain image handle!\n";
-		return;
-	}
-
-	void* poolPtr = commandPool->GetHandle();
-	vk::raii::CommandPool* raiiPool = static_cast<vk::raii::CommandPool*>(poolPtr);
-	vk::CommandPool poolHandle = **raiiPool;
-
-	vk::CommandBufferAllocateInfo allocInfo{
-		.commandPool = poolHandle,
-		.level = vk::CommandBufferLevel::ePrimary,
-		.commandBufferCount = 1
-	};
-
-	try
-	{
-		std::vector<vk::raii::CommandBuffer> cmdBufs = device.allocateCommandBuffers(allocInfo);
-		if (cmdBufs.empty()) return;
-
-		tempCmdBufs[frameIndex] = std::make_unique<vk::raii::CommandBuffer>(std::move(cmdBufs[0]));
-		vk::raii::CommandBuffer& cmdBuf = *tempCmdBufs[frameIndex];
-
-		vk::CommandBufferBeginInfo beginInfo{
-			.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
-		};
-		cmdBuf.begin(beginInfo);
-
-		vk::ImageMemoryBarrier barrier{
-			.srcAccessMask = {},
-			.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
-			.oldLayout = vk::ImageLayout::eUndefined,
-			.newLayout = vk::ImageLayout::eColorAttachmentOptimal, 
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = swapImage,
-			.subresourceRange = {
-				.aspectMask = vk::ImageAspectFlagBits::eColor,
-				.baseMipLevel = 0,
-				.levelCount = 1,
-				.baseArrayLayer = 0,
-				.layerCount = 1
-			}
-		};
-
-		cmdBuf.pipelineBarrier(
-			vk::PipelineStageFlagBits::eTopOfPipe,
-			vk::PipelineStageFlagBits::eColorAttachmentOutput, 
-			{},
-			{},
-			{},
-			{ barrier }
-		);
-
-		cmdBuf.end();
-
-		vk::CommandBuffer rawCmdBuf = *cmdBuf;
-		vk::Semaphore imgAvail = *imageAvailable[frameIndex];
-		vk::Semaphore renderFin = (imageIndex < renderFinished.size()) ? *renderFinished[imageIndex] : vk::Semaphore{};
-		vk::Fence fence = *inFlightFences[frameIndex];
-
-		vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-		vk::SubmitInfo submitInfo{
-			.waitSemaphoreCount = 1,
-			.pWaitSemaphores = &imgAvail,
-			.pWaitDstStageMask = &waitStage,
-			.commandBufferCount = 1,
-			.pCommandBuffers = &rawCmdBuf,
-			.signalSemaphoreCount = renderFin ? 1u : 0u,
-			.pSignalSemaphores = renderFin ? &renderFin : nullptr
-		};
-
-		graphicsQueue.submit(submitInfo, fence);
-	}
-	catch (const vk::SystemError& e)
-	{
-		std::cerr << "Failed to allocate/submit command buffer: " << e.what() << "\n";
-	}
 }
 
 void* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
@@ -971,7 +874,7 @@ void core::gpu::Device::Impl::CreateColorImage()
 		.mipLevels = 1,
 		.format = swapchain->GetFormat(),
 		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::ColorAttachment | ImageUsage::Sampled,
+		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc,
 		.memoryProperties = MemoryProperty::DeviceLocal,
 		.samples = SampleCount::e4
 	};
@@ -1035,6 +938,11 @@ void* core::gpu::Device::Impl::GetDescriptorSet(uint32_t frameIndex) const
 	return reinterpret_cast<void*>(static_cast<VkDescriptorSet>(**descriptorSets[frameIndex]));
 }
 
+void* core::gpu::Device::Impl::GetDepthImage() const
+{
+	return shadowMapImage ? shadowMapImage->GetHandle() : nullptr;
+}
+
 void* core::gpu::Device::Impl::GetHandle() const
 {
 	return static_cast<void*>(const_cast<vk::Device*>(&*device));
@@ -1071,6 +979,11 @@ void* core::gpu::Device::Impl::GetPhysicalDevice() const
 	return static_cast<void*>(const_cast<vk::PhysicalDevice*>(&*physicalDevice));
 }
 
+void core::gpu::Device::Impl::WaitIdle()
+{
+	device.waitIdle();
+}
+
 void core::gpu::Device::BeginFrame(uint32_t frameIndex)
 {
 	if (m_impl) m_impl->BeginFrame(frameIndex);
@@ -1094,11 +1007,6 @@ void* core::gpu::Device::GetRenderFinishedSemaphore(uint32_t imageIndex) const
 void* core::gpu::Device::GetInFlightFence(uint32_t frameIndex) const
 {
 	return m_impl ? m_impl->GetInFlightFence(frameIndex) : nullptr;
-}
-
-void core::gpu::Device::SubmitDefaultTransitionIfNeeded(uint32_t frameIndex, uint32_t imageIndex)
-{
-	if (m_impl) m_impl->SubmitDefaultTransitionIfNeeded(frameIndex, imageIndex);
 }
 
 void core::gpu::Device::Present(uint32_t imageIndex)
@@ -1189,4 +1097,14 @@ void* core::gpu::Device::GetSwapchainImage(uint32_t imageIndex) const
 void* core::gpu::Device::GetColorImage() const
 {
 	return m_impl ? m_impl->GetColorImage() : nullptr;
+}
+
+void* core::gpu::Device::GetDepthImage() const
+{
+	return m_impl ? m_impl->GetDepthImage() : nullptr;
+}
+
+void core::gpu::Device::WaitIdle()
+{
+	if (m_impl) m_impl->WaitIdle();
 }

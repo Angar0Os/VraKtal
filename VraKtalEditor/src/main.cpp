@@ -20,6 +20,16 @@ int main()
     loaders::MeshLoader loader;
     auto mesh = loader.LoadMesh("assets/models/viking_room.obj");
 
+    std::cout << "Mesh loaded: "
+        << mesh->vertices.size() << " vertices, "
+        << mesh->indices.size() << " indices" << std::endl;
+
+    if (mesh->vertices.empty() || mesh->indices.empty())
+    {
+        std::cerr << "ERROR: Mesh is empty!" << std::endl;
+        return -1;
+    }
+        
     auto scene = std::make_shared<graphics::resources::Scene>();
     scene->AddMesh(mesh, glm::mat4(1.0f));
     renderer.SetScene(scene);

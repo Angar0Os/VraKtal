@@ -36,35 +36,6 @@ constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 namespace core::gpu
 {
-	struct Vertex
-	{
-		glm::vec3 pos;
-		glm::vec3 color;
-		glm::vec2 texCoord;
-		glm::vec3 normal;
-
-		static vk::VertexInputBindingDescription GetBindingDescription()
-		{
-			return { 0, sizeof(Vertex), vk::VertexInputRate::eVertex };
-		}
-
-		static std::array<vk::VertexInputAttributeDescription, 4> GetAttributeDescriptions()
-		{
-			return
-			{
-				vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, pos)),
-				vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color)),
-				vk::VertexInputAttributeDescription(2, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, texCoord)),
-				vk::VertexInputAttributeDescription(3, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, normal))
-			};
-		}
-
-		bool operator==(const Vertex& other) const
-		{
-			return pos == other.pos && color == other.color && texCoord == other.texCoord;
-		}
-	};
-
 	struct Device::Impl
 	{
 	private:
@@ -156,7 +127,6 @@ namespace core::gpu
 		void* GetImageAvailableSemaphore(uint32_t frameIndex) const;
 		void* GetRenderFinishedSemaphore(uint32_t imageIndex) const;
 		void* GetInFlightFence(uint32_t frameIndex) const;
-		void SubmitDefaultTransitionIfNeeded(uint32_t frameIndex, uint32_t imageIndex);
 		void Present(uint32_t imageIndex);
 		void Cleanup();
 
@@ -177,6 +147,9 @@ namespace core::gpu
 
 		void* GetSwapchainImage(uint32_t imageIndex) const;
 		void* GetColorImage() const;
+		void* GetDepthImage() const;
+
+		void WaitIdle();
 
 		void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
 

@@ -34,7 +34,7 @@ core::gpu::Swapchain::Impl::Impl(core::gpu::Swapchain& p, vk::raii::Device& dev,
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
     createInfo.imageExtent = extent;
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+    createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
     createInfo.imageSharingMode = vk::SharingMode::eExclusive;
     createInfo.preTransform = capabilities.currentTransform;
     createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;

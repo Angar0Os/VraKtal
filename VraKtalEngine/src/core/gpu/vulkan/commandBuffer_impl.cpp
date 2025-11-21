@@ -85,19 +85,41 @@ void core::gpu::CommandBuffer::Impl::End(uint32_t index)
     commandBuffers[index].end();
 }
 
-void core::gpu::CommandBuffer::Impl::Submit()
+void core::gpu::CommandBuffer::Impl::Submit(void* waitSemaphore, void* signalSemaphore, void* fence)
 {
     if (currentIndex >= commandBuffers.size())
     {
         throw std::runtime_error("No command buffer has been begun");
     }
 
+    vk::CommandBuffer cmdBuf = *commandBuffers[currentIndex];
+
     vk::SubmitInfo submitInfo{};
     submitInfo.commandBufferCount = 1;
-    vk::CommandBuffer cmdBuf = *commandBuffers[currentIndex];
     submitInfo.pCommandBuffers = &cmdBuf;
 
-    queue.submit(submitInfo, nullptr);
+    vk::Semaphore vkWaitSemaphore = VK_NULL_HANDLE;
+    vk::Semaphore vkSignalSemaphore = VK_NULL_HANDLE;
+    vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+
+    if (waitSemaphore)
+    {
+        vkWaitSemaphore = reinterpret_cast<VkSemaphore>(waitSemaphore);
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = &vkWaitSemaphore;
+        submitInfo.pWaitDstStageMask = &waitStage;
+    }
+
+    if (signalSemaphore)
+    {
+        vkSignalSemaphore = reinterpret_cast<VkSemaphore>(signalSemaphore);
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &vkSignalSemaphore;
+    }
+
+    vk::Fence vkFence = fence ? reinterpret_cast<VkFence>(fence) : nullptr;
+
+    queue.submit(submitInfo, vkFence);
 }
 
 void core::gpu::CommandBuffer::Impl::SubmitAndWait()
@@ -173,7 +195,7 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(uint32_t width,
     colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
     colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
     colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-    colorAttachment.clearValue = vk::ClearColorValue(0.f, 0.f, 0.f, 1.f);
+    colorAttachment.clearValue = vk::ClearColorValue(0.1f, 0.1f, 0.15f, 1.f);
 
     vk::RenderingAttachmentInfo depthAttachment{};
     depthAttachment.imageView = vkDepthView;
@@ -208,7 +230,7 @@ void core::gpu::CommandBuffer::Impl::BindPipeline(void* pipeline)
 
     GetCommandBuffer(currentIndex).bindPipeline(
         vk::PipelineBindPoint::eGraphics,
-        vk::Pipeline(vkPipeline)  
+        vk::Pipeline(vkPipeline)
     );
 }
 
@@ -242,7 +264,8 @@ void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
     vk::AccessFlags srcAccess,
     vk::AccessFlags dstAccess,
     vk::PipelineStageFlags srcStage,
-    vk::PipelineStageFlags dstStage)
+    vk::PipelineStageFlags dstStage,
+    bool isDepth)
 {
     vk::Image vkImage = reinterpret_cast<VkImage>(image);
 
@@ -254,9 +277,9 @@ void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = vkImage;
+
     vk::ImageSubresourceRange subRange{};
-   
-    subRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    subRange.aspectMask = isDepth ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
     subRange.baseMipLevel = 0;
     subRange.levelCount = 1;
     subRange.baseArrayLayer = 0;
@@ -284,24 +307,37 @@ void core::gpu::CommandBuffer::Impl::ResolveImage(void* srcImage, void* dstImage
     vk::Offset3D offset = { 0, 0, 0 };
     resolveRegion.srcOffset = offset;
 
-    vk::ImageSubresourceLayers dstSubresource{}; 
+    vk::ImageSubresourceLayers dstSubresource{};
     dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
     dstSubresource.mipLevel = 0;
     dstSubresource.baseArrayLayer = 0;
     dstSubresource.layerCount = 1;
     resolveRegion.dstSubresource = dstSubresource;
 
-	vk::Offset3D dstOffset = { 0, 0, 0 };
-	resolveRegion.dstOffset = dstOffset;
-       
+    vk::Offset3D dstOffset = { 0, 0, 0 };
+    resolveRegion.dstOffset = dstOffset;
+
     vk::Extent3D ext3D = { width, height, 1 };
-	resolveRegion.extent = ext3D;
+    resolveRegion.extent = ext3D;
 
     GetCommandBuffer(currentIndex).resolveImage(
         vkSrcImage, vk::ImageLayout::eTransferSrcOptimal,
         vkDstImage, vk::ImageLayout::eTransferDstOptimal,
         resolveRegion
     );
+}
+
+void core::gpu::CommandBuffer::Impl::CopyBuffer(void* srcBuffer, void* dstBuffer, size_t size)
+{
+    vk::Buffer vkSrcBuffer = reinterpret_cast<VkBuffer>(srcBuffer);
+    vk::Buffer vkDstBuffer = reinterpret_cast<VkBuffer>(dstBuffer);
+
+    vk::BufferCopy copyRegion;
+    copyRegion.srcOffset = 0;
+    copyRegion.dstOffset = 0;
+    copyRegion.size = size;
+
+    GetCommandBuffer(currentIndex).copyBuffer(vkSrcBuffer, vkDstBuffer, copyRegion);
 }
 
 uint32_t core::gpu::CommandBuffer::GetCount() const
@@ -319,9 +355,9 @@ void core::gpu::CommandBuffer::End(uint32_t index)
     m_impl->End(index);
 }
 
-void core::gpu::CommandBuffer::Submit()
+void core::gpu::CommandBuffer::Submit(void* waitSemaphore, void* signalSemaphore, void* fence)
 {
-    m_impl->Submit();
+    m_impl->Submit(waitSemaphore, signalSemaphore, fence);
 }
 
 void core::gpu::CommandBuffer::SubmitAndWait()
@@ -384,11 +420,24 @@ const core::gpu::CommandBuffer::Impl& core::gpu::CommandBuffer::GetImpl() const
     return *m_impl;
 }
 
-void core::gpu::CommandBuffer::TransitionImageLayout(void* image, ImageLayout oldLayout, ImageLayout newLayout)
+void core::gpu::CommandBuffer::TransitionImageLayout(void* image, ImageLayout oldLayout, ImageLayout newLayout, bool isDepth)
 {
     vk::AccessFlags srcAccess, dstAccess;
     vk::PipelineStageFlags srcStage, dstStage;
     vk::ImageLayout vkOldLayout, vkNewLayout;
+
+    if (isDepth && oldLayout == ImageLayout::Undefined)
+    {
+        srcAccess = {};
+        dstAccess = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+        srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
+        dstStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+        vkOldLayout = vk::ImageLayout::eUndefined;
+        vkNewLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+
+        m_impl->TransitionImageLayout(image, vkOldLayout, vkNewLayout, srcAccess, dstAccess, srcStage, dstStage, isDepth);
+        return;
+    }
 
     switch (oldLayout)
     {
@@ -445,10 +494,15 @@ void core::gpu::CommandBuffer::TransitionImageLayout(void* image, ImageLayout ol
         throw std::runtime_error("Unsupported layout transition!");
     }
 
-    m_impl->TransitionImageLayout(image, vkOldLayout, vkNewLayout, srcAccess, dstAccess, srcStage, dstStage);
+    m_impl->TransitionImageLayout(image, vkOldLayout, vkNewLayout, srcAccess, dstAccess, srcStage, dstStage, isDepth);
 }
 
 void core::gpu::CommandBuffer::ResolveImage(void* srcImage, void* dstImage, uint32_t width, uint32_t height)
 {
     m_impl->ResolveImage(srcImage, dstImage, width, height);
+}
+
+void core::gpu::CommandBuffer::CopyBuffer(void* srcBuffer, void* dstBuffer, size_t size)
+{
+    m_impl->CopyBuffer(srcBuffer, dstBuffer, size);
 }

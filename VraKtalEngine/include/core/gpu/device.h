@@ -40,7 +40,6 @@ namespace core
 			void* GetImageAvailableSemaphore(uint32_t frameIndex) const;
 			void* GetRenderFinishedSemaphore(uint32_t imageIndex) const;
 			void* GetInFlightFence(uint32_t frameIndex) const;
-			void SubmitDefaultTransitionIfNeeded(uint32_t frameIndex, uint32_t imageIndex);
 			void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
 			void Present(uint32_t imageIndex);
 			void Cleanup();
@@ -61,8 +60,10 @@ namespace core
 			void* GetPhysicalDevice() const;
 			void* GetSwapchainImage(uint32_t imageIndex) const;
 			void* GetColorImage() const;
-			
+			void* GetDepthImage() const;
 
+			void WaitIdle();
+			
 			static constexpr uint32_t FRAMES_IN_FLIGHT = 2;
 		};
 	}
