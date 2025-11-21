@@ -11,14 +11,52 @@
 #include <graphics/resources/mesh.h>
 
 #include <glm/glm.hpp>
+
+#include <memory>
+#include <vector>
 #include <unordered_map>
+#include <functional>
 
 namespace graphics
 {
 	class Renderer
 	{
 	public:
-		explicit Renderer(core::Window& window, core::gpu::Device& device);
+		using ImGuiCallback = std::function<void()>;
+
+	private:
+		struct MeshBuffers
+		{
+			std::unique_ptr<core::gpu::Buffer> vertexBuffer;
+			std::unique_ptr<core::gpu::Buffer> indexBuffer;
+			uint32_t indexCount = 0;
+		};
+
+		core::Window& m_window;
+		core::gpu::Device& m_device;
+
+		std::vector<std::unique_ptr<core::gpu::CommandBuffer>> m_commandBuffers;
+		std::unordered_map<resources::Mesh*, MeshBuffers> m_meshBuffers;
+
+		std::shared_ptr<resources::Scene> m_scene;
+
+		ImGuiCallback m_imguiCallback;
+
+		uint32_t m_currentFrame;
+		uint64_t m_frameCounter;
+		bool m_running;
+
+		glm::mat4 m_viewMatrix;
+		glm::mat4 m_projMatrix;
+		glm::vec3 m_cameraPosition;
+
+		void CreateCommandBuffers();
+		void CreateMeshBuffers(std::shared_ptr<resources::Mesh> mesh);
+		void UpdateUniformBuffer(uint32_t frameIndex);
+		void RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
+
+	public:
+		Renderer(core::Window& window, core::gpu::Device& device);
 		~Renderer();
 
 		void SetScene(std::shared_ptr<resources::Scene> scene);
@@ -26,33 +64,9 @@ namespace graphics
 		void DrawFrame();
 		void Cleanup();
 
-	private:
-		void CreateCommandBuffers();
-		void CreateMeshBuffers(std::shared_ptr<resources::Mesh> mesh);
-		void RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
-		void UpdateUniformBuffer(uint32_t frameIndex);
+		void SetImGuiCallback(ImGuiCallback callback) { m_imguiCallback = callback; }
 
-		struct MeshBuffers
-		{
-			std::unique_ptr<core::gpu::Buffer> vertexBuffer;
-			std::unique_ptr<core::gpu::Buffer> indexBuffer;
-			uint32_t indexCount;
-		};
-
-		core::Window& m_window;
-		core::gpu::Device& m_device;
-
-		std::shared_ptr<resources::Scene> m_scene;
-		std::unordered_map<resources::Mesh*, MeshBuffers> m_meshBuffers;
-		std::vector<std::unique_ptr<core::gpu::CommandBuffer>> m_commandBuffers;
-
-		glm::mat4 m_viewMatrix;
-		glm::mat4 m_projMatrix;
-		glm::vec3 m_cameraPosition;
-
-		uint32_t m_currentFrame;
-		uint32_t m_frameCounter;
-		bool m_running;
+		std::shared_ptr<resources::Scene> GetScene() { return m_scene; }
 	};
 }
 

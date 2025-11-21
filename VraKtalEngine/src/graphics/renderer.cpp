@@ -6,7 +6,6 @@
 
 using namespace graphics;
 
-
 Renderer::Renderer(core::Window& window, core::gpu::Device& device)
 	: m_window(window),
 	m_device(device),
@@ -283,7 +282,7 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 	cmd->TransitionImageLayout(
 		depthImageHandle,
 		core::ImageLayout::Undefined,
-		core::ImageLayout::Undefined,
+		core::ImageLayout::DepthStencilAttachment,
 		true
 	);
 
@@ -315,15 +314,7 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 				cmd->BindIndexBuffer(buffers.indexBuffer->GetHandle());
 				cmd->DrawIndexed(buffers.indexCount);
 			}
-			else
-			{
-				std::cout << "ERROR: Mesh buffers not found!" << std::endl;
-			}
 		}
-	}
-	else
-	{
-		std::cout << "ERROR: No scene set!" << std::endl;
 	}
 
 	cmd->EndRendering();
@@ -361,6 +352,7 @@ void Renderer::DrawFrame()
 	uint32_t imageIndex = m_device.AcquireNextImage(m_currentFrame);
 	if (imageIndex == UINT32_MAX)
 	{
+		m_device.RecreateSwapchain();
 		return;
 	}
 
@@ -385,7 +377,6 @@ void Renderer::Cleanup()
 
 	if (!m_running) return;
 	m_running = false;
-
 	m_meshBuffers.clear();
 	m_commandBuffers.clear();
 	m_device.Cleanup();

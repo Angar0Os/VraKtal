@@ -418,16 +418,7 @@ void core::gpu::Device::Impl::LoadMaterialTextures()
 	emissiveTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
 		commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
 
-	bool loaded = albedoTexture->LoadTextureIfExists("../bin/assets/textures/viking_room.png");
-	if (loaded)
-	{
-		std::cout << "Viking room texture loaded successfully!" << std::endl;
-	}
-	else
-	{
-		std::cerr << "Failed to load viking room texture, using default white" << std::endl;
-	}
-
+	albedoTexture->LoadTextureIfExists("../bin/assets/textures/viking_room.png");
 	normalTexture->LoadTextureIfExists("assets/textures/normal.png");
 	metallicTexture->LoadTextureIfExists("assets/textures/metallic.png");
 	roughnessTexture->LoadTextureIfExists("assets/textures/roughness.png");
@@ -582,9 +573,7 @@ std::vector<char> core::gpu::Device::Impl::ReadFile(const std::string& filename)
 
 void core::gpu::Device::Impl::RecreateSwapchain()
 {
-	device.waitIdle();
-
-	int width, height;
+	int width = 0, height = 0;
 	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
 
 	while (width == 0 || height == 0)
@@ -593,31 +582,26 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 		glfwWaitEvents();
 	}
 
-	void* oldSwapchain = swapchain->GetHandle();
+	device.waitIdle();
 
 	SwapchainCreateInfo swapchainInfo{
-		.surface = &surface,
+		.surface = reinterpret_cast<void*>(static_cast<VkSurfaceKHR>(*surface)),
 		.width = static_cast<uint32_t>(width),
 		.height = static_cast<uint32_t>(height),
 		.preferredFormat = TextureFormat::RGBA8_SRGB,
 		.presentMode = PresentMode::Mailbox,
 		.minImageCount = 3,
-		.oldSwapchain = oldSwapchain
+		.oldSwapchain = swapchain->GetHandle()
 	};
-
 	swapchain = std::make_unique<Swapchain>(&device, &physicalDevice, swapchainInfo);
+
+	CreateColorImage();
+	CreateShadowMap();
+	CreateSyncObjects();
 }
 
 void core::gpu::Device::Impl::CreateDescriptorSets()
 {
-	std::cout << "offsetof viewPos = " << offsetof(UniformBufferObject, viewPos) << std::endl;
-	std::cout << "offsetof lights = " << offsetof(UniformBufferObject, lights) << std::endl;
-	std::cout << "sizeof(LightData) = " << sizeof(UniformBufferObject::LightData) << std::endl;
-	std::cout << "sizeof(UniformBufferObject) = " << sizeof(UniformBufferObject) << std::endl;
-	std::cout << "offsetof useAlbedoMap = " << offsetof(UniformBufferObject, useAlbedoMap) << std::endl;
-	std::cout << "offsetof numLights = " << offsetof(UniformBufferObject, numLights) << std::endl;
-	std::cout << "offsetof albedo = " << offsetof(UniformBufferObject, albedo) << std::endl;
-
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		DescriptorSet(&device, &descriptorSets, i)
@@ -1131,4 +1115,9 @@ void* core::gpu::Device::GetDepthImage() const
 void core::gpu::Device::WaitIdle()
 {
 	if (m_impl) m_impl->WaitIdle();
+}
+
+void core::gpu::Device::RecreateSwapchain()
+{
+	if (m_impl) m_impl->RecreateSwapchain();
 }

@@ -33,7 +33,7 @@ namespace core
 				alignas(4)  float intensity;
 				alignas(4)	int enabled;
 				alignas(4)	int type;
-				alignas(4)  int _padding; // Note : Simplement pour s'aligner à 48bytes
+				alignas(4)  int _padding; // Note : Simple padding to make size multiple of 16 bytes.
 			};
 
 			LightData lights[MAX_LIGHTS];
@@ -92,6 +92,7 @@ namespace core
 			void* GetColorImage() const;
 			void* GetDepthImage() const;
 
+			void RecreateSwapchain();
 			void WaitIdle();
 
 			static constexpr uint32_t FRAMES_IN_FLIGHT = 2;

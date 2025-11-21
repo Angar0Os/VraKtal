@@ -308,8 +308,6 @@ bool core::gpu::Texture::Impl::LoadTextureIfExists(const std::string& filepath)
 	};
 	image->CreateView(viewInfo);
 
-	std::cout << "Successfully loaded texture: " << filepath
-		<< " (" << width << "x" << height << ", " << mipLevels << " mips)" << std::endl;
 	return true;
 }
 
