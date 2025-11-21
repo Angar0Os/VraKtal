@@ -29,7 +29,7 @@ int main()
 	material->useAlbedoTexture = true;
 	material->albedoTexture = "assets/textures/viking_room.png";
 
-	scene->AddMesh(mesh, material, glm::mat4(1.0));
+	auto meshInstance = scene->AddMesh(mesh, material, glm::mat4(1.0));
 
 	graphics::resources::Light light1;
 	light1.position = glm::vec3(2.0f, 2.0f, 2.0f);

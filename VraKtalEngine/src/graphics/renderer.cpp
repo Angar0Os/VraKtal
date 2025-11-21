@@ -208,35 +208,42 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 		ubo.numLights = 0;
 	}
 
-	if (m_scene && !m_scene->meshInstances.empty() && m_scene->meshInstances[0].material)
-	{
-		const auto& mat = *m_scene->meshInstances[0].material;
-		ubo.albedo = mat.albedo;
-		ubo.metallic = mat.metallic;
-		ubo.roughness = mat.roughness;
-		ubo.ao = mat.ao;
-		ubo.emissive = mat.emissive;
+	ubo.albedo = glm::vec3(1.0f);
+	ubo.metallic = 0.0f;
+	ubo.roughness = 0.5f;
+	ubo.ao = 1.0f;
+	ubo.emissive = glm::vec3(0.0f);
 
-		ubo.useAlbedoMap = mat.useAlbedoTexture ? 1 : 0;
-		ubo.useNormalMap = mat.useNormalTexture ? 1 : 0;
-		ubo.useMetallicMap = mat.useMetallicTexture ? 1 : 0;
-		ubo.useRoughnessMap = mat.useRoughnessTexture ? 1 : 0;
-		ubo.useAOMap = mat.useAOTexture ? 1 : 0;
-		ubo.useEmissiveMap = mat.useEmissiveTexture ? 1 : 0;
-	}
-	else
+	ubo.useAlbedoMap = 1;
+	ubo.useNormalMap = 0;
+	ubo.useMetallicMap = 0;
+	ubo.useRoughnessMap = 0;
+	ubo.useAOMap = 0;
+	ubo.useEmissiveMap = 0;
+
+	if (m_scene && !m_scene->meshInstances.empty())
 	{
-		ubo.albedo = glm::vec3(1.0f);
-		ubo.metallic = 0.0f;
-		ubo.roughness = 0.5f;
-		ubo.ao = 1.0f;
-		ubo.emissive = glm::vec3(0.0f);
-		ubo.useAlbedoMap = 1;
-		ubo.useNormalMap = 0;
-		ubo.useMetallicMap = 0;
-		ubo.useRoughnessMap = 0;
-		ubo.useAOMap = 0;
-		ubo.useEmissiveMap = 0;
+		for (const auto& instance : m_scene->meshInstances)
+		{
+			if (instance.material)
+			{
+				const auto& mat = *instance.material;
+				ubo.albedo = mat.albedo;
+				ubo.metallic = mat.metallic;
+				ubo.roughness = mat.roughness;
+				ubo.ao = mat.ao;
+				ubo.emissive = mat.emissive;
+
+				ubo.useAlbedoMap = mat.useAlbedoTexture ? 1 : 0;
+				ubo.useNormalMap = mat.useNormalTexture ? 1 : 0;
+				ubo.useMetallicMap = mat.useMetallicTexture ? 1 : 0;
+				ubo.useRoughnessMap = mat.useRoughnessTexture ? 1 : 0;
+				ubo.useAOMap = mat.useAOTexture ? 1 : 0;
+				ubo.useEmissiveMap = mat.useEmissiveTexture ? 1 : 0;
+
+				break;
+			}
+		}
 	}
 
 	auto* uniformBuffer = m_device.GetUniformBuffer(frameIndex);

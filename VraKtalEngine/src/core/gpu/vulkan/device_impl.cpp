@@ -610,6 +610,14 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 
 void core::gpu::Device::Impl::CreateDescriptorSets()
 {
+	std::cout << "offsetof viewPos = " << offsetof(UniformBufferObject, viewPos) << std::endl;
+	std::cout << "offsetof lights = " << offsetof(UniformBufferObject, lights) << std::endl;
+	std::cout << "sizeof(LightData) = " << sizeof(UniformBufferObject::LightData) << std::endl;
+	std::cout << "sizeof(UniformBufferObject) = " << sizeof(UniformBufferObject) << std::endl;
+	std::cout << "offsetof useAlbedoMap = " << offsetof(UniformBufferObject, useAlbedoMap) << std::endl;
+	std::cout << "offsetof numLights = " << offsetof(UniformBufferObject, numLights) << std::endl;
+	std::cout << "offsetof albedo = " << offsetof(UniformBufferObject, albedo) << std::endl;
+
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		DescriptorSet(&device, &descriptorSets, i)

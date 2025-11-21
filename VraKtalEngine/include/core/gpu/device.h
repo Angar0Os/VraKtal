@@ -15,7 +15,7 @@ namespace core
 	{
 		class Buffer;
 
-		constexpr int MAX_LIGHTS = 8;
+		constexpr int MAX_LIGHTS = 10;
 
 		// Note : We will maybe move this, but this is here to make uniform buffers work properly.
 		struct UniformBufferObject
@@ -33,6 +33,7 @@ namespace core
 				alignas(4)  float intensity;
 				alignas(4)	int enabled;
 				alignas(4)	int type;
+				alignas(4)  int _padding; // Note : Simplement pour s'aligner à 48bytes
 			};
 
 			LightData lights[MAX_LIGHTS];

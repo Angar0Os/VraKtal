@@ -55,10 +55,8 @@ Sampler2D emissiveMap;
 [[vk::binding(7, 0)]]
 Sampler2D shadowMap;
 
-// CORRECTION: Ajouter static
 static const float PI = 3.14159265359;
 
-// Distribution GGX/Trowbridge-Reitz
 float DistributionGGX(float3 N, float3 H, float roughness)
 {
     float a = roughness * roughness;
@@ -73,7 +71,6 @@ float DistributionGGX(float3 N, float3 H, float roughness)
     return num / denom;
 }
 
-// Geometry Schlick-GGX
 float GeometrySchlickGGX(float NdotV, float roughness)
 {
     float r = (roughness + 1.0);
@@ -85,7 +82,6 @@ float GeometrySchlickGGX(float NdotV, float roughness)
     return num / denom;
 }
 
-// Geometry Smith
 float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
 {
     float NdotV = max(dot(N, V), 0.0);
@@ -96,16 +92,13 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-// Fresnel Schlick
 float3 FresnelSchlick(float cosTheta, float3 F0)
 {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-// Extraire la normal map
 float3 GetNormalFromMap(float2 texCoords, float3 worldPos, float3 normal)
 {
-    // CORRECTION: Comparer avec 0 au lieu de conversion implicite
     if (useNormalMap == 0)
         return normalize(normal);
     
@@ -133,7 +126,6 @@ struct VSOutput
     float4 shadowCoord : TEXCOORD1;
 };
 
-// VERTEX SHADER
 [shader("vertex")]
 VSOutput vertMain(
     float3 position : POSITION,
@@ -153,29 +145,23 @@ VSOutput vertMain(
     return output;
 }
 
-// FRAGMENT SHADER
 [shader("fragment")]
 float4 fragMain(VSOutput input) : SV_Target
 {
-    // CORRECTION: Comparer avec 0 au lieu de conversion implicite
     float3 albedoValue = (useAlbedoMap != 0) ? albedoMap.Sample(input.texCoord).rgb : albedo;
     float metallicValue = (useMetallicMap != 0) ? metallicMap.Sample(input.texCoord).r : metallic;
     float roughnessValue = (useRoughnessMap != 0) ? roughnessMap.Sample(input.texCoord).r : roughness;
     float aoValue = (useAOMap != 0) ? aoMap.Sample(input.texCoord).r : ao;
     float3 emissiveValue = (useEmissiveMap != 0) ? emissiveMap.Sample(input.texCoord).rgb : emissive;
     
-    // Normal mapping
     float3 N = GetNormalFromMap(input.texCoord, input.worldPos, input.normal);
     float3 V = normalize(viewPos - input.worldPos);
     
-    // Calculer F0 (réflectance à incidence normale)
-    float3 F0 = float3(0.04, 0.04, 0.04); // Diélectrique de base
+    float3 F0 = float3(0.04, 0.04, 0.04);
     F0 = lerp(F0, albedoValue, metallicValue);
     
-    // Radiance sortante
     float3 Lo = float3(0.0, 0.0, 0.0);
     
-    // Boucle sur toutes les lumières
     for (int i = 0; i < numLights; i++)
     {
         if (lights[i].enabled == 0)
@@ -188,7 +174,6 @@ float4 fragMain(VSOutput input) : SV_Target
         float attenuation = 1.0 / (distance * distance);
         float3 radiance = lights[i].color * lights[i].intensity * attenuation;
         
-        // BRDF Cook-Torrance
         float NDF = DistributionGGX(N, H, roughnessValue);
         float G = GeometrySmith(N, V, L, roughnessValue);
         float3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
@@ -205,22 +190,27 @@ float4 fragMain(VSOutput input) : SV_Target
         Lo += (kD * albedoValue / PI + specular) * radiance * NdotL;
     }
     
-    // Lumière ambiante approximative
-    //float3 ambient = float3(0.03, 0.03, 0.03) * albedoValue * aoValue;
-    float3 ambient = float3(1.0, 1.0, 1.0) * albedoValue; 
+    float3 ambient = float3(0.3, 0.3, 0.3) * albedoValue * aoValue;
+    
+    if (numLights == 0)
+    {
+        float3 defaultLightDir = normalize(float3(1.0, 1.0, 1.0));
+        float NdotL = max(dot(N, defaultLightDir), 0.0);
+        Lo += albedoValue * NdotL * 0.8;
+    }
     
     float3 color = ambient + Lo + emissiveValue;
+
+    float exposure = 1.5;
+    color = float3(1.0, 1.0, 1.0) - exp(-color * exposure);
     
-    // Tone mapping HDR (Reinhard)
-    color = color / (color + float3(1.0, 1.0, 1.0));
-    
-    // Correction gamma
     color = pow(color, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
     
     return float4(color, 1.0);
+    //return float4(float(useAlbedoMap), 0, 0, 1);
+    //return float4(input.texCoord.x, input.texCoord.y, 0, 1);
 }
 
-// SHADOW VERTEX SHADER
 struct ShadowVSOutput
 {
     float4 position : SV_Position;
