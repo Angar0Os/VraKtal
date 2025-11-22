@@ -122,6 +122,38 @@ void core::gpu::CommandBuffer::Impl::Submit(void* waitSemaphore, void* signalSem
 	queue.submit(submitInfo, vkFence);
 }
 
+void core::gpu::CommandBuffer::Impl::PushConstants(void* pipelineLayout,
+	uint32_t stageFlags,
+	uint32_t offset,
+	uint32_t size,
+	const void* pValues)
+{
+	if (!pipelineLayout || !pValues)
+	{
+		throw std::runtime_error("Invalid push constants parameters!");
+	}
+
+	vk::PipelineLayout vkLayout = reinterpret_cast<VkPipelineLayout>(pipelineLayout);
+
+	vk::ShaderStageFlags vkStageFlags;
+
+	if (stageFlags & static_cast<uint32_t>(ShaderStageFlags::Vertex))
+		vkStageFlags |= vk::ShaderStageFlagBits::eVertex;
+
+	if (stageFlags & static_cast<uint32_t>(ShaderStageFlags::Fragment))
+		vkStageFlags |= vk::ShaderStageFlagBits::eFragment;
+
+	if (stageFlags & static_cast<uint32_t>(ShaderStageFlags::Compute))
+		vkStageFlags |= vk::ShaderStageFlagBits::eCompute;
+
+	GetCommandBuffer(currentIndex).pushConstants<uint8_t>(
+		vkLayout,
+		vkStageFlags,
+		offset,
+		vk::ArrayProxy<const uint8_t>(size, static_cast<const uint8_t*>(pValues))
+	);
+}
+
 void core::gpu::CommandBuffer::Impl::SubmitAndWait()
 {
 	Submit();
@@ -505,4 +537,13 @@ void core::gpu::CommandBuffer::ResolveImage(void* srcImage, void* dstImage, uint
 void core::gpu::CommandBuffer::CopyBuffer(void* srcBuffer, void* dstBuffer, size_t size)
 {
 	m_impl->CopyBuffer(srcBuffer, dstBuffer, size);
+}
+
+void core::gpu::CommandBuffer::PushConstants(void* pipelineLayout,
+	uint32_t stageFlags,
+	uint32_t offset,
+	uint32_t size,
+	const void* pValues)
+{
+	m_impl->PushConstants(pipelineLayout, stageFlags, offset, size, pValues);
 }

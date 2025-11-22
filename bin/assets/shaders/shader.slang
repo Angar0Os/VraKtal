@@ -1,7 +1,12 @@
-﻿[[vk::binding(0, 0)]]
-cbuffer UniformBufferObject
+﻿[[vk::push_constant]]
+cbuffer PushConstants
 {
     float4x4 model;
+};
+
+[[vk::binding(0, 0)]]
+cbuffer UniformBufferObject
+{
     float4x4 view;
     float4x4 proj;
     float4x4 lightSpaceMatrix;

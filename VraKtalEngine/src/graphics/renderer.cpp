@@ -164,18 +164,18 @@ void Renderer::UpdateCamera(const glm::mat4& view, const glm::mat4& proj, const 
 	m_cameraPosition = position;
 }
 
-void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const glm::mat4& modelMatrix, const std::shared_ptr<resources::Material>& material)
+void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<resources::Material>& material)
 {
 	core::gpu::UniformBufferObject ubo{};
 
-	ubo.model = modelMatrix;
 	ubo.view = m_viewMatrix;
 	ubo.proj = m_projMatrix;
 	ubo.viewPos = m_cameraPosition;
 
 	if (m_scene)
 	{
-		ubo.numLights = std::min(static_cast<int>(m_scene->lights.size()), core::gpu::MAX_LIGHTS);
+		ubo.numLights = std::min(static_cast<int>(m_scene->lights.size()),
+			core::gpu::MAX_LIGHTS);
 
 		for (int i = 0; i < ubo.numLights; i++)
 		{
@@ -274,16 +274,32 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 	cmd->SetViewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
 	cmd->SetScissor(0, 0, width, height);
 
+	if (m_scene && !m_scene->meshInstances.empty())
+	{
+		UpdateUniformBuffer(frameIndex, m_scene->meshInstances[0].material);
+	}
+
+	cmd->BindDescriptorSets(
+		m_device.GetPipelineLayout(),
+		m_device.GetDescriptorSet(frameIndex),
+		0
+	);
+
 	if (m_scene)
 	{
 		for (const auto& instance : m_scene->meshInstances)
 		{
-			UpdateUniformBuffer(frameIndex, instance.transform, instance.material);
+			if (!instance.visible) continue;
 
-			cmd->BindDescriptorSets(
+			PushConstants pushConstants;
+			pushConstants.model = instance.transform;
+
+			cmd->PushConstants(
 				m_device.GetPipelineLayout(),
-				m_device.GetDescriptorSet(frameIndex),
-				0
+				static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
+				0,
+				sizeof(PushConstants),
+				&pushConstants
 			);
 
 			auto it = m_meshBuffers.find(instance.mesh.get());
@@ -323,7 +339,6 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	cmd->End(0);
 }
-
 void Renderer::DrawFrame()
 {
 	if (!m_running) return;

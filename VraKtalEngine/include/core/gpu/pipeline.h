@@ -33,33 +33,40 @@ namespace core::gpu
 		std::string entryPoint = "main";
 	};
 
+	struct PushConstantRange
+	{
+		uint32_t stageFlags;
+		uint32_t offset;
+		uint32_t size;
+	};
+
 	struct PipelineCreateInfo
 	{
 		std::vector<ShaderStage> shaderStages;
 		std::vector<VertexInputBinding> vertexBindings;
 		std::vector<VertexInputAttribute> vertexAttributes;
 
-		PrimitiveTopology topology = PrimitiveTopology::TriangleList;
-		PolygonMode polygonMode = PolygonMode::Fill;
-		CullMode cullMode = CullMode::Back;
-		FrontFace frontFace = FrontFace::CounterClockwise;
+		PrimitiveTopology topology;
 
-		bool depthTestEnable = true;
-		bool depthWriteEnable = true;
-		CompareOp depthCompareOp = CompareOp::Less;
+		PolygonMode polygonMode;
+		CullMode cullMode;
 
-		bool blendEnable = false;
-		SampleCount samples = SampleCount::e1;
+		FrontFace frontFace;
+
+		CompareOp depthCompareOp;
+
+		bool depthTestEnable;
+		bool depthWriteEnable;
+		bool blendEnable;
+
+		SampleCount samples;
+
+		TextureFormat depthAttachmentFormat;
 
 		std::vector<TextureFormat> colorAttachmentFormats;
-		TextureFormat depthAttachmentFormat = TextureFormat::Undefined;
-
 		std::vector<DescriptorSetLayout*> descriptorSetLayouts;
-
-		std::vector<DynamicState> dynamicStates = {
-			DynamicState::Viewport,
-			DynamicState::Scissor
-		};
+		std::vector<PushConstantRange> pushConstantRanges;
+		std::vector<DynamicState> dynamicStates;
 	};
 
 	class Pipeline

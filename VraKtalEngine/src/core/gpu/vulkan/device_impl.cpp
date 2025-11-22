@@ -487,24 +487,32 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 		{ShaderStageFlags::Fragment, shaderCode, "fragMain"}
 	};
 
-	PipelineCreateInfo pipelineInfo{
-		.shaderStages = shaderStages,
-		.vertexBindings = {vertexBinding},
-		.vertexAttributes = vertexAttributes,
-		.topology = PrimitiveTopology::TriangleList,
-		.polygonMode = PolygonMode::Fill,
-		.cullMode = CullMode::Back,
-		.frontFace = FrontFace::CounterClockwise,
-		.depthTestEnable = true,
-		.depthWriteEnable = true,
-		.depthCompareOp = CompareOp::Less,
-		.blendEnable = false,
-		.samples = SampleCount::e4,
-		.colorAttachmentFormats = {swapchain->GetFormat()},
-		.depthAttachmentFormat = TextureFormat::Depth32F,
-		.descriptorSetLayouts = {descriptorSetLayout.get()},
-		.dynamicStates = {DynamicState::Viewport, DynamicState::Scissor}
+	std::vector<PushConstantRange> pushConstants = {
+		{
+			.stageFlags = static_cast<uint32_t>(ShaderStageFlags::Vertex),
+			.offset = 0,
+			.size = sizeof(glm::mat4)
+		}
 	};
+
+	PipelineCreateInfo pipelineInfo{};
+	pipelineInfo.shaderStages = shaderStages;
+	pipelineInfo.vertexBindings = { vertexBinding };
+	pipelineInfo.vertexAttributes = vertexAttributes;
+	pipelineInfo.topology = PrimitiveTopology::TriangleList;
+	pipelineInfo.polygonMode = PolygonMode::Fill;
+	pipelineInfo.cullMode = CullMode::Back;
+	pipelineInfo.frontFace = FrontFace::CounterClockwise;
+	pipelineInfo.depthTestEnable = true;
+	pipelineInfo.depthWriteEnable = true;
+	pipelineInfo.depthCompareOp = CompareOp::Less;
+	pipelineInfo.blendEnable = false;
+	pipelineInfo.samples = SampleCount::e4;
+	pipelineInfo.colorAttachmentFormats = { swapchain->GetFormat() };
+	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
+	pipelineInfo.descriptorSetLayouts = { descriptorSetLayout.get() };
+	pipelineInfo.pushConstantRanges = pushConstants;
+	pipelineInfo.dynamicStates = { DynamicState::Viewport, DynamicState::Scissor };
 
 	graphicsPipeline = std::make_unique<Pipeline>(&device, pipelineInfo);
 }
@@ -527,27 +535,35 @@ void core::gpu::Device::Impl::CreateShadowPipeline()
 		{ShaderStageFlags::Vertex, shaderCode, "shadowMain"}
 	};
 
-	PipelineCreateInfo shadowInfo{
-		.shaderStages = shaderStages,
-		.vertexBindings = {vertexBinding},
-		.vertexAttributes = vertexAttributes,
-		.topology = PrimitiveTopology::TriangleList,
-		.polygonMode = PolygonMode::Fill,
-		.cullMode = CullMode::Back,
-		.frontFace = FrontFace::CounterClockwise,
-		.depthTestEnable = true,
-		.depthWriteEnable = true,
-		.depthCompareOp = CompareOp::LessOrEqual,
-		.blendEnable = false,
-		.samples = SampleCount::e1,
-		.colorAttachmentFormats = {},
-		.depthAttachmentFormat = TextureFormat::Depth32F,
-		.descriptorSetLayouts = {shadowDescriptorSetLayout.get()},
-		.dynamicStates = {
-			DynamicState::Viewport,
-			DynamicState::Scissor,
-			DynamicState::DepthBias
+	std::vector<PushConstantRange> pushConstants = {
+		{
+			.stageFlags = static_cast<uint32_t>(ShaderStageFlags::Vertex),
+			.offset = 0,
+			.size = sizeof(glm::mat4)
 		}
+	};
+
+	PipelineCreateInfo shadowInfo{};
+	shadowInfo.shaderStages = shaderStages;
+	shadowInfo.vertexBindings = { vertexBinding };
+	shadowInfo.vertexAttributes = vertexAttributes;
+	shadowInfo.topology = PrimitiveTopology::TriangleList;
+	shadowInfo.polygonMode = PolygonMode::Fill;
+	shadowInfo.cullMode = CullMode::Back;
+	shadowInfo.frontFace = FrontFace::CounterClockwise;
+	shadowInfo.depthTestEnable = true;
+	shadowInfo.depthWriteEnable = true;
+	shadowInfo.depthCompareOp = CompareOp::LessOrEqual;
+	shadowInfo.blendEnable = false;
+	shadowInfo.samples = SampleCount::e1;
+	shadowInfo.colorAttachmentFormats = {};
+	shadowInfo.depthAttachmentFormat = TextureFormat::Depth32F;
+	shadowInfo.descriptorSetLayouts = { shadowDescriptorSetLayout.get() };
+	shadowInfo.pushConstantRanges = pushConstants;
+	shadowInfo.dynamicStates = {
+		DynamicState::Viewport,
+		DynamicState::Scissor,
+		DynamicState::DepthBias
 	};
 
 	shadowPipeline = std::make_unique<Pipeline>(&device, shadowInfo);

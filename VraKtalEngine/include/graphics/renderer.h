@@ -19,6 +19,11 @@
 
 namespace graphics
 {
+	struct PushConstants
+	{
+		glm::mat4 model;
+	};
+
 	class Renderer
 	{
 	public:
@@ -52,7 +57,7 @@ namespace graphics
 
 		void CreateCommandBuffers();
 		void CreateMeshBuffers(std::shared_ptr<resources::Mesh> mesh);
-		void UpdateUniformBuffer(uint32_t frameIndex, const glm::mat4& modelMatrix, const std::shared_ptr<resources::Material>& material);
+		void UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<resources::Material>& material);
 		void RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
 
 	public:

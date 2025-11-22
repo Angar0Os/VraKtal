@@ -20,7 +20,6 @@ namespace core
 		// Note : We will maybe move this, but this is here to make uniform buffers work properly.
 		struct UniformBufferObject
 		{
-			alignas(16) glm::mat4 model;
 			alignas(16) glm::mat4 view;
 			alignas(16) glm::mat4 proj;
 			alignas(16) glm::mat4 lightSpaceMatrix;
@@ -52,7 +51,6 @@ namespace core
 			alignas(4) uint32_t useAOMap;
 			alignas(4) uint32_t useEmissiveMap;
 		};
-
 
 		class Device
 		{

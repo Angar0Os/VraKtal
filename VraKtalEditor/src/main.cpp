@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -32,6 +32,10 @@ int main()
 	material->albedoTexture = "assets/textures/viking_room.png";
 
 	auto meshInstance = scene->AddMesh(mesh, material, glm::mat4(1.0));
+	meshInstance->SetPosition(glm::vec3(-1.0f, 0.0f, 0.0f));
+
+	auto cube2 = scene->AddMesh(mesh, material, glm::mat4(1.0f));
+	cube2->SetPosition(glm::vec3(1.0f, 0.0f, 0.0f));
 
 	graphics::resources::Light light1;
 	light1.position = glm::vec3(2.0f, 2.0f, 2.0f);

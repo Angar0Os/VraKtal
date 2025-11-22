@@ -56,12 +56,12 @@ namespace graphics::resources
 		std::vector<MeshInstance> meshInstances;
 		std::vector<Light> lights;
 
-		MeshInstance& AddMesh(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material,
+		MeshInstance* AddMesh(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material,
 			const glm::mat4& transform = glm::mat4(1.0f), const std::string& name = "")
 		{
 			MeshInstance instance = { mesh, material, transform, name };
 			meshInstances.push_back(instance);
-			return meshInstances.back();
+			return &meshInstances.back();
 		}
 
 		void ClearMeshes()

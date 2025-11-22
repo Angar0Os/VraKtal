@@ -49,6 +49,8 @@ namespace core::gpu
 
 		void CopyBuffer(void* srcBuffer, void* dstBuffer, size_t size);
 
+		void PushConstants(void* pipelineLayout, uint32_t stageFlags, uint32_t offset, uint32_t size, const void* pValues);
+
 		void TransitionImageLayout(void* image,
 			vk::ImageLayout oldLayout,
 			vk::ImageLayout newLayout,
