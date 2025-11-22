@@ -1,145 +1,58 @@
-#include "../src/core/rhi/window_impl_vulkan.h"
-#include "../src/core/rhi/gpuDevice_impl_glfw_vulkan.h"
-#include "../src/core/rhi/commandBuffer_impl_vulkan.h"
-#include "../src/core/rhi/renderer_impl_vulkan.h"
-
-#include <core/graphics/meshRenderer.h>
-
-#include <core/loaders/gltfLoader.h>
-#include <core/loaders/textureLoader.h>
-#include <core/loaders/shaderLoader.h>
-
-#include <core/rhi/renderingInfo.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <vector>
 #include <iostream>
+
+#include <core/window.h>
+#include <core/gpu/device.h>
+#include <graphics/renderer.h>
+
+#include <loaders/meshLoader.h>
+#include <graphics/resources/scene.h>
+
+#include <glm/gtc/matrix_transform.hpp>
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 
-using namespace core::rhi::vulkan;
-using namespace core::rhi;
-using namespace core::loaders;
-using namespace core::graphics;
-using namespace core::graphics::resources;
-
 int main()
 {
-    WindowVulkan window(800, 600, "Textured Mesh");
-    GpuDeviceVulkan device(window);
+	core::Window window(800, 600, "VraKtal Engine");
+	core::gpu::Device device(window);
+	graphics::Renderer renderer(window, device);
+	loaders::MeshLoader loaders;
 
-    device.WrapSwapchainImages();
+	auto scene = std::make_shared<graphics::resources::Scene>();
+	auto mesh = loaders.LoadMesh("assets/models/viking_room.obj");
 
-    MeshRenderer meshRenderer(device);
-    RendererVulkan renderer(&meshRenderer);
+	auto material = std::make_shared<graphics::resources::Material>();
+	material->name = "VikingRoomMaterial";
+	material->albedo = glm::vec3(1.0f);
+	material->metallic = 0.0f;
+	material->roughness = 0.5f;
+	material->useAlbedoTexture = true;
+	material->albedoTexture = "assets/textures/viking_room.png";
 
-    Scene scene = LoadScene("../bin/assets/meshes/traffic_cone/traffic_cone.gltf");
+	auto meshInstance = scene->AddMesh(mesh, material, glm::mat4(1.0));
 
-    TextureLoader texLoader(device);
-    std::vector<TextureGpu> gpuTextures;
-    texLoader.LoadSceneTextures(scene, gpuTextures);
+	graphics::resources::Light light1;
+	light1.position = glm::vec3(2.0f, 2.0f, 2.0f);
+	light1.color = glm::vec3(1.0f, 1.0f, 1.0f);
+	light1.intensity = 1.0f;
+	light1.enabled = true;
+	scene->AddLight(light1);
 
-    if (scene.materials.empty()) 
-    {
-        resources::Material defMat;
-        defMat.baseColorTexture = gpuTextures.empty() ? -1 : 0;
-        scene.materials.push_back(defMat);
-        std::cout << "Added fallback material" << std::endl;
-    }
+	renderer.SetScene(scene);
 
-    for (auto& m : scene.meshes) 
-    {
-        if ((int)m.materialIndex < 0) 
-        {
-            m.materialIndex = 0;
-        }
-    }
+	glm::vec3 cameraPos(2.0f, 2.0f, 2.0f);
+	glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 10.0f);
+	proj[1][1] *= -1;
 
-    meshRenderer.CreateDescriptorPool((uint32_t)scene.materials.size());
+	renderer.UpdateCamera(view, proj, cameraPos);
 
-    std::vector<VkDescriptorSet> materialSets;
-    materialSets.reserve(scene.materials.size());
+	while (!window.ShouldClose())
+	{
+		window.PollEvents();
+		renderer.DrawFrame();
+	}
 
-    for (auto& mat : scene.materials) 
-    {
-        int texIndex = mat.baseColorTexture;
-        if (texIndex < 0 || texIndex >= (int)gpuTextures.size()) 
-        {
-            texIndex = 0;
-        }
-        auto& t = gpuTextures[texIndex];
-        materialSets.push_back(meshRenderer.CreateDescriptorSet(t.view, t.sampler));
-    }
-
-    meshRenderer.SetMaterialDescriptorSets(materialSets);
-
-    std::vector<GpuMesh> gpuMeshes;
-    gpuMeshes.reserve(scene.meshes.size());
-    for (auto& m : scene.meshes) 
-    {
-        gpuMeshes.push_back(meshRenderer.UploadMesh(m));
-    }
-
-    std::vector<CommandBufferVulkan*> commandBuffers;
-    for (int i = 0; i < 2; ++i) 
-    {
-        commandBuffers.push_back(new CommandBufferVulkan(device));
-    }
-
-    uint32_t currentFrame = 0;
-
-    glm::mat4 view = glm::lookAt(glm::vec3(-30, -30, 20), glm::vec3(0, 10, 0), glm::vec3(0, 1, 0));
-
-    auto size = window.Size();
-    float aspect = static_cast<float>(size.first) / static_cast<float>(size.second);
-
-    glm::mat4 proj = glm::perspectiveRH_ZO(glm::radians(60.0f), aspect, 0.1f, 100.0f);
-    proj[1][1] *= -1;
-
-    while (!window.ShouldClose())
-    {
-        window.PollEvents();
-
-        uint32_t imageIndex;
-        if (!device.BeginFrame(imageIndex)) 
-        {
-            continue;
-        }
-
-        CommandBufferVulkan& commandBuffer = *commandBuffers[currentFrame];
-        commandBuffer.Begin();
-
-        RenderingInfo info;
-        info.width = device.SwapExtent().width;
-        info.height = device.SwapExtent().height;
-
-        RenderingAttachment color{};
-        color.image = device.GetSwapchainImage(imageIndex);
-        color.clearValue = { 0.1f, 0.1f, 0.15f, 1.f };
-        color.loadOp = LoadOp::Clear;
-        color.storeOp = StoreOp::Store;
-        info.colorAttachments.push_back(color);
-
-        renderer.Render(commandBuffer, info, imageIndex, gpuMeshes, view, proj);
-
-        commandBuffer.End();
-        device.EndFrame(imageIndex, commandBuffer.GetNative());
-
-        currentFrame = (currentFrame + 1) % 2;
-    }
-
-    device.WaitIdle();
-
-    for (auto& g : gpuMeshes)
-    {
-        meshRenderer.DestroyMesh(g);
-    }
-    for (auto* cmd : commandBuffers)
-    {
-        delete cmd;
-    }
-
-    std::cout << "Done\n";
-    return 0;
+	renderer.Cleanup();
+	return 0;
 }
