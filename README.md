@@ -48,16 +48,16 @@ configured.
 
 ### Rendering
 
-- [] Ray Tracing 
-- [] Render Graph system
+- ☐ Ray Tracing 
+- ☐ Render Graph system
 
 ### Editor
 
--  [] Editor Core
--  [] Light Tool
--  [] Inspector
--  [] Material Tool
--  [] Scene Editor
+-  ☐ Editor Core
+-  ☐ Light Tool
+-  ☐ Inspector
+-  ☐ Material Tool
+-  ☐ Scene Editor
 
 ### Engine & Tools
 
