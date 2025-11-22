@@ -1,4 +1,5 @@
 #define NOMINMAX // Disable Windows min/max macros which conflict with std::min/max
+#define LAB_TASK_LEVEL 1
 
 #include "../src/core/gpu/vulkan/device_impl.h"
 

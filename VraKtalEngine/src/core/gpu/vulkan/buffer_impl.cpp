@@ -24,12 +24,25 @@ core::gpu::Buffer::Impl::Impl(core::gpu::Buffer& p, vk::raii::Device& dev,
 
 	vk::MemoryRequirements memRequirements = buffer.getMemoryRequirements();
 
+	vk::MemoryAllocateFlagsInfo allocFlagsInfo{};
+	bool needsDeviceAddress = (info.usage & BufferUsage::ShaderDeviceAddress) != BufferUsage::None;
+
+	if (needsDeviceAddress)
+	{
+		allocFlagsInfo.flags = vk::MemoryAllocateFlagBits::eDeviceAddress;
+	}
+
 	vk::MemoryAllocateInfo allocInfo{};
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = FindMemoryType(
 		memRequirements.memoryTypeBits,
 		core::gpu_detail::ToVulkan(info.memoryProperties)
 	);
+
+	if (needsDeviceAddress)
+	{
+		allocInfo.pNext = &allocFlagsInfo;
+	}
 
 	memory = vk::raii::DeviceMemory(device, allocInfo);
 
@@ -107,6 +120,18 @@ void core::gpu::Buffer::Impl::CopyFrom(const void* data, size_t size, size_t off
 	Map(&mappedMem);
 
 	std::memcpy(static_cast<char*>(mappedMem) + offset, data, size);
+}
+
+uint64_t core::gpu::Buffer::Impl::GetDeviceAddress() const
+{
+	vk::BufferDeviceAddressInfo addressInfo{};
+	addressInfo.buffer = *buffer;
+	return device.getBufferAddress(addressInfo);
+}
+
+uint64_t core::gpu::Buffer::GetDeviceAddress() const
+{
+	return m_impl->GetDeviceAddress();
 }
 
 core::gpu::Buffer::Buffer(void* device, void* physicalDevice, const BufferCreateInfo& info)

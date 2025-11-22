@@ -111,7 +111,11 @@ namespace core
 		StorageBuffer = 1 << 3,
 		IndexBuffer = 1 << 4,
 		VertexBuffer = 1 << 5,
-		IndirectBuffer = 1 << 6
+		IndirectBuffer = 1 << 6,
+
+		ShaderDeviceAddress = 1 << 17,
+		AccelerationStructureStorage = 1 << 20,
+		AccelerationStructureBuildInput = 1 << 19
 	};
 
 	inline BufferUsage operator|(BufferUsage a, BufferUsage b)

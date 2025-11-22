@@ -27,6 +27,8 @@ namespace core::gpu
 		void* GetHandle() const;
 		size_t GetSize() const;
 
+		uint64_t GetDeviceAddress() const;
+
 		void Map(void** data);
 		void Unmap();
 
