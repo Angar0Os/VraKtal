@@ -3,11 +3,8 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
-#include <algorithm>
-#include <cmath>
 
 namespace graphics::resources
 {

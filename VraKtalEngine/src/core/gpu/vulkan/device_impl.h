@@ -12,7 +12,6 @@ import vulkan_hpp;
 
 #include <core/gpu/device.h>
 #include <core/window.h>
-#include <core/gpu/descriptorSet.h>
 #include <core/gpu/descriptorSetLayout.h>
 #include <core/gpu/buffer.h>
 #include <core/gpu/sampler.h>
@@ -23,8 +22,6 @@ import vulkan_hpp;
 #include <core/gpu/commandPool.h>
 #include <core/gpu/swapchain.h>
 #include <core/gpu/pipeline.h>
-
-#include <glm/glm.hpp>
 
 #ifdef NDEBUG
 constexpr bool enableValidationLayers = false;

@@ -5,11 +5,13 @@
 #include <graphics/resources/mesh.h>
 #include <graphics/resources/material.h>
 #include <graphics/resources/light.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <algorithm>
 #include <memory>
 #include <vector>
-#include <algorithm>
 #include <string>
 
 namespace graphics::resources

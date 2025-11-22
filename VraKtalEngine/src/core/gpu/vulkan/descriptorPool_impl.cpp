@@ -2,8 +2,6 @@
 #include "../src/core/gpu/vulkan/descriptorSetLayout_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
-#include <stdexcept>
-
 core::gpu::DescriptorPool::Impl::Impl(core::gpu::DescriptorPool& p,
 	vk::raii::Device& dev, const DescriptorPoolCreateInfo& info)
 	: parent(p), device(dev), pool(nullptr)

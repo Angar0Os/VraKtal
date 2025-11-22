@@ -1,13 +1,15 @@
 #include <iostream>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <core/window.h>
 #include <core/gpu/device.h>
-#include <graphics/renderer.h>
 
-#include <loaders/meshLoader.h>
+#include <graphics/renderer.h>
 #include <graphics/resources/scene.h>
 
-#include <glm/gtc/matrix_transform.hpp>
+#include <loaders/meshLoader.h>
+
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 

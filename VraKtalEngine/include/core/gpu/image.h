@@ -55,8 +55,8 @@ namespace core::gpu
 
 		void CreateView(const ImageViewCreateInfo& info);
 
-		void TransitionLayout(CommandBuffer& commandBuffer, ImageLayout oldLayout,
-			ImageLayout newLayout, uint32_t mipLevels = 1);
+		void TransitionLayout(CommandBuffer& commandBuffer,
+			ImageLayout oldLayout, ImageLayout newLayout, uint32_t mipLevels = 1);
 
 		void CopyFromBuffer(CommandBuffer& commandBuffer, Buffer& buffer,
 			uint32_t width, uint32_t height);

@@ -1,8 +1,6 @@
 #include "../src/core/gpu/vulkan/sampler_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
-#include <core/enum.h>
-
 core::gpu::Sampler::Impl::Impl(core::gpu::Sampler& p, vk::raii::Device& dev, const SamplerCreateInfo& info)
 	: parent(p), device(dev), sampler(nullptr)
 {

@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 
 #include <core/enum.h>
+#include <core/gpu/descriptorSet.h>
 
 #include <graphics/resources/mesh.h>
 

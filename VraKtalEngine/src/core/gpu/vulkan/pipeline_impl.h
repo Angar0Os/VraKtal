@@ -1,5 +1,5 @@
-#ifndef VRAKTAL_CORE_GPU_VULKAN_PIPELINE_IMPL_H
-#define VRAKTAL_CORE_GPU_VULKAN_PIPELINE_IMPL_H
+#ifndef VRAKTAL_CORE_GPU_VULKAN_PIPELINE_H
+#define VRAKTAL_CORE_GPU_VULKAN_PIPELINE_H
 #pragma once
 
 #include <core/gpu/pipeline.h>
@@ -28,4 +28,4 @@ namespace core::gpu
 	};
 }
 
-#endif // VRAKTAL_CORE_GPU_VULKAN_PIPELINE_IMPL_H
+#endif // VRAKTAL_CORE_GPU_VULKAN_PIPELINE_H

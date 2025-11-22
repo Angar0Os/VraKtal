@@ -19,7 +19,6 @@ cbuffer UniformBufferObject
     LightData lights[10];
     int numLights;
     
-    // Matériau PBR
     float3 albedo;
     float metallic;
     float roughness;
@@ -207,8 +206,6 @@ float4 fragMain(VSOutput input) : SV_Target
     color = pow(color, float3(1.0 / 2.2, 1.0 / 2.2, 1.0 / 2.2));
     
     return float4(color, 1.0);
-    //return float4(float(useAlbedoMap), 0, 0, 1);
-    //return float4(input.texCoord.x, input.texCoord.y, 0, 1);
 }
 
 struct ShadowVSOutput

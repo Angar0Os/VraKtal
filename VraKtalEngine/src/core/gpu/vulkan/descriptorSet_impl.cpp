@@ -45,7 +45,7 @@ core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindImage(const Sample
 	VkSampler vkSamplerHandle = reinterpret_cast<VkSampler>(sampler.GetHandle());
 	vk::Sampler vkSampler(vkSamplerHandle);
 
-	const Texture* selectedTexture = (texture && texture->isValid())
+	const Texture* selectedTexture = (texture && texture->IsValid())
 		? texture
 		: &defaultTexture;
 

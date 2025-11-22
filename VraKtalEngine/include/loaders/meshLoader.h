@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <string>
+
 #include <graphics/resources/mesh.h>
 
 namespace loaders

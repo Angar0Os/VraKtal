@@ -6,11 +6,6 @@
 #include <utility>
 #include <string>
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#pragma comment(lib, "glfw3.lib")
-
-
 struct GLFWwindow;
 
 namespace core

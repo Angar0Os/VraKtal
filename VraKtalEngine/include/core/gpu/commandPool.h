@@ -9,39 +9,37 @@
 
 namespace core::gpu
 {
-    struct CommandPoolCreateInfo
-    {
-        uint32_t queueFamilyIndex;
-        CommandPoolCreateFlags flags = CommandPoolCreateFlags::None;
-    };
+	struct CommandPoolCreateInfo
+	{
+		uint32_t queueFamilyIndex;
+		CommandPoolCreateFlags flags = CommandPoolCreateFlags::None;
+	};
 
-    class CommandPool
-    {
-    private:
-        struct Impl;
-        std::unique_ptr<Impl> m_impl;
+	class CommandPool
+	{
+	private:
+		struct Impl;
+		std::unique_ptr<Impl> m_impl;
 
-    public:
-        CommandPool(void* device, const CommandPoolCreateInfo& info);
-        ~CommandPool();
+	public:
+		CommandPool(void* device, const CommandPoolCreateInfo& info);
+		~CommandPool();
 
-        CommandPool(const CommandPool&) = delete;
-        CommandPool& operator=(const CommandPool&) = delete;
+		CommandPool(const CommandPool&) = delete;
+		CommandPool& operator=(const CommandPool&) = delete;
 
-        CommandPool(CommandPool&&) noexcept;
-        CommandPool& operator=(CommandPool&&) noexcept;
+		CommandPool(CommandPool&&) noexcept;
+		CommandPool& operator=(CommandPool&&) noexcept;
 
-        // Allocate command buffers from this pool
-        std::vector<void*> AllocateCommandBuffers(uint32_t count, bool secondary = false);
+		std::vector<void*> AllocateCommandBuffers(uint32_t count, bool secondary = false);
 
-        // Reset all command buffers allocated from this pool
-        void Reset(bool releaseResources = false);
+		void Reset(bool releaseResources = false);
 
-        void* GetHandle() const;
+		void* GetHandle() const;
 
-        Impl& GetImpl();
-        const Impl& GetImpl() const;
-    };
+		Impl& GetImpl();
+		const Impl& GetImpl() const;
+	};
 }
 
 #endif //VRAKTAL_CORE_GPU_COMMANDPOOL_H

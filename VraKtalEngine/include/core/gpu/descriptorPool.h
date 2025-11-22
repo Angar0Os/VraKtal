@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <vector>
+
 #include <core/enum.h>
 #include <core/gpu/descriptorSetLayout.h>
 
@@ -22,28 +23,28 @@ namespace core::gpu
 		bool allowFreeDescriptorSet = false;
 	};
 
-    class DescriptorPool
-    {
-    private:
-        struct Impl;
-        std::unique_ptr<Impl> m_impl;
+	class DescriptorPool
+	{
+	private:
+		struct Impl;
+		std::unique_ptr<Impl> m_impl;
 
-    public:
-        DescriptorPool(void* device, const DescriptorPoolCreateInfo& info);
-        ~DescriptorPool();
+	public:
+		DescriptorPool(void* device, const DescriptorPoolCreateInfo& info);
+		~DescriptorPool();
 
-        DescriptorPool(const DescriptorPool&) = delete;
-        DescriptorPool& operator=(const DescriptorPool&) = delete;
+		DescriptorPool(const DescriptorPool&) = delete;
+		DescriptorPool& operator=(const DescriptorPool&) = delete;
 
-        DescriptorPool(DescriptorPool&&) noexcept;
-        DescriptorPool& operator=(DescriptorPool&&) noexcept;
+		DescriptorPool(DescriptorPool&&) noexcept;
+		DescriptorPool& operator=(DescriptorPool&&) noexcept;
 
-        std::vector<void*> AllocateDescriptorSets(const std::vector<DescriptorSetLayout*>& layouts, uint32_t count);
+		std::vector<void*> AllocateDescriptorSets(const std::vector<DescriptorSetLayout*>& layouts, uint32_t count);
 
-        void* GetHandle() const;
+		void* GetHandle() const;
 
-        Impl& GetImpl();
-    };
+		Impl& GetImpl();
+	};
 }
 
 #endif //VRAKTAL_CORE_GPU_DESCRIPTORPOOL_H

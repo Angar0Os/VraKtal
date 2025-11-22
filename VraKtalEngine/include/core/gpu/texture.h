@@ -53,7 +53,7 @@ namespace core::gpu
 		uint32_t GetHeight() const;
 		uint32_t GetMipLevels() const;
 
-		bool isValid() const { return GetImageView() != nullptr; }
+		bool IsValid() const { return GetImageView() != nullptr; }
 
 		Impl& GetImpl();
 		const Impl& GetImpl() const;
