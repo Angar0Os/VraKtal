@@ -15,7 +15,6 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
-#include <functional>
 
 namespace graphics
 {
@@ -27,7 +26,6 @@ namespace graphics
 	class Renderer
 	{
 	public:
-		using ImGuiCallback = std::function<void()>;
 
 	private:
 		struct MeshBuffers
@@ -44,8 +42,6 @@ namespace graphics
 		std::unordered_map<resources::Mesh*, MeshBuffers> m_meshBuffers;
 
 		std::shared_ptr<resources::Scene> m_scene;
-
-		ImGuiCallback m_imguiCallback;
 
 		uint32_t m_currentFrame;
 		uint64_t m_frameCounter;
@@ -68,8 +64,6 @@ namespace graphics
 		void UpdateCamera(const glm::mat4& view, const glm::mat4& proj, const glm::vec3& position);
 		void DrawFrame();
 		void Cleanup();
-
-		void SetImGuiCallback(ImGuiCallback callback) { m_imguiCallback = callback; }
 
 		std::shared_ptr<resources::Scene> GetScene() { return m_scene; }
 	};
