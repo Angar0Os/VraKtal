@@ -58,6 +58,12 @@ void Renderer::SetScene(std::shared_ptr<resources::Scene> scene)
 				CreateMeshBuffers(instance.mesh);
 			}
 		}
+
+		if (m_rayTracingEnabled)
+		{
+			DisableRayTracing();
+			EnableRayTracing();
+		}
 	}
 }
 
@@ -376,3 +382,219 @@ void Renderer::Cleanup()
 	m_commandBuffers.clear();
 	m_device.Cleanup();
 }
+
+void Renderer::EnableRayTracing()
+{
+	if (m_rayTracingEnabled) return;
+
+	std::cout << "Enabling ray tracing..." << std::endl;
+
+	if (!m_scene)
+	{
+		std::cerr << "Cannot enable ray tracing: no scene set!" << std::endl;
+		return;
+	}
+
+	for (const auto& instance : m_scene->meshInstances)
+	{
+		if (m_rtMeshData.find(instance.mesh.get()) == m_rtMeshData.end())
+		{
+			CreateRTMeshBuffers(instance.mesh);
+			CreateBLAS(instance.mesh.get());
+		}
+	}
+
+	BuildTLAS();
+
+	m_rayTracingEnabled = true;
+	std::cout << "Ray tracing enabled successfully!" << std::endl;
+}
+
+void Renderer::DisableRayTracing()
+{
+	if (!m_rayTracingEnabled) return;
+
+	m_device.WaitIdle();
+	m_tlas.reset();
+	m_rtMeshData.clear();
+	m_rayTracingEnabled = false;
+
+	std::cout << "Ray tracing disabled." << std::endl;
+}
+
+void Renderer::CreateRTMeshBuffers(std::shared_ptr<resources::Mesh> mesh)
+{
+	if (!mesh || mesh->vertices.empty() || mesh->indices.empty())
+	{
+		std::cerr << "ERROR: Invalid mesh data for RT buffers!" << std::endl;
+		return;
+	}
+
+	RTMeshData rtData;
+
+	size_t vertexBufferSize = mesh->vertices.size() * sizeof(resources::Vertex);
+	size_t indexBufferSize = mesh->indices.size() * sizeof(uint32_t);
+
+	core::gpu::BufferCreateInfo rtVertexInfo{
+		.size = vertexBufferSize,
+		.usage = core::BufferUsage::AccelerationStructureBuildInput |
+				 core::BufferUsage::ShaderDeviceAddress |
+				 core::BufferUsage::StorageBuffer,
+		.memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+	};
+
+	rtData.rtVertexBuffer = std::make_unique<core::gpu::Buffer>(
+		m_device.GetHandle(),
+		m_device.GetPhysicalDevice(),
+		rtVertexInfo
+	);
+	rtData.rtVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
+
+	core::gpu::BufferCreateInfo rtIndexInfo{
+		.size = indexBufferSize,
+		.usage = core::BufferUsage::AccelerationStructureBuildInput |
+				 core::BufferUsage::ShaderDeviceAddress |
+				 core::BufferUsage::StorageBuffer,
+		.memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+	};
+
+	rtData.rtIndexBuffer = std::make_unique<core::gpu::Buffer>(
+		m_device.GetHandle(),
+		m_device.GetPhysicalDevice(),
+		rtIndexInfo
+	);
+	rtData.rtIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
+
+	m_rtMeshData[mesh.get()] = std::move(rtData);
+}
+
+void Renderer::CreateBLAS(resources::Mesh* mesh)
+{
+	auto it = m_rtMeshData.find(mesh);
+	if (it == m_rtMeshData.end())
+	{
+		std::cerr << "ERROR: RT mesh data not found for BLAS creation!" << std::endl;
+		return;
+	}
+
+	auto& rtData = it->second;
+
+	core::gpu::AccelerationStructureGeometry geometry{};
+	geometry.vertexBuffer = rtData.rtVertexBuffer.get();
+	geometry.vertexCount = static_cast<uint32_t>(mesh->vertices.size());
+	geometry.vertexStride = sizeof(resources::Vertex);
+	geometry.indexBuffer = rtData.rtIndexBuffer.get();
+	geometry.indexCount = static_cast<uint32_t>(mesh->indices.size());
+	geometry.triangleCount = geometry.indexCount / 3;
+	geometry.opaque = true;
+
+	core::gpu::AccelerationStructureCreateInfo blasInfo{};
+	blasInfo.type = core::gpu::AccelerationStructureType::BottomLevel;
+	blasInfo.geometries.push_back(geometry);
+	blasInfo.preferFastTrace = true;
+	blasInfo.allowUpdate = false;
+
+	rtData.blas = std::make_unique<core::gpu::AccelerationStructure>(
+		m_device.GetHandle(),
+		m_device.GetPhysicalDevice(),
+		blasInfo
+	);
+}
+
+void Renderer::BuildTLAS()
+{
+	if (!m_scene || m_scene->meshInstances.empty())
+	{
+		std::cerr << "Cannot build TLAS: no mesh instances!" << std::endl;
+		return;
+	}
+
+	std::vector<core::gpu::AccelerationStructureInstance> instances;
+	instances.reserve(m_scene->meshInstances.size());
+
+	uint32_t instanceIndex = 0;
+	for (const auto& meshInstance : m_scene->meshInstances)
+	{
+		if (!meshInstance.visible) continue;
+
+		auto it = m_rtMeshData.find(meshInstance.mesh.get());
+		if (it == m_rtMeshData.end() || !it->second.blas)
+		{
+			std::cerr << "Warning: BLAS not found for mesh instance!" << std::endl;
+			continue;
+		}
+
+		const glm::mat4& mat = meshInstance.transform;
+		float transform[3][4] = {
+			{mat[0][0], mat[1][0], mat[2][0], mat[3][0]},
+			{mat[0][1], mat[1][1], mat[2][1], mat[3][1]},
+			{mat[0][2], mat[1][2], mat[2][2], mat[3][2]}
+		};
+
+		core::gpu::AccelerationStructureInstance instance{};
+		std::memcpy(&instance.transform, &transform, sizeof(transform));
+		instance.instanceCustomIndex = instanceIndex++;
+		instance.mask = 0xFF;
+		instance.instanceShaderBindingTableRecordOffset = 0;
+		instance.blas = it->second.blas.get();
+
+		instances.push_back(instance);
+	}
+
+	if (instances.empty())
+	{
+		std::cerr << "No valid instances for TLAS!" << std::endl;
+		return;
+	}
+
+	core::gpu::AccelerationStructureCreateInfo tlasInfo{};
+	tlasInfo.type = core::gpu::AccelerationStructureType::TopLevel;
+	tlasInfo.instances = instances;
+	tlasInfo.preferFastTrace = true;
+	tlasInfo.allowUpdate = false;
+
+	m_tlas = std::make_unique<core::gpu::AccelerationStructure>(
+		m_device.GetHandle(),
+		m_device.GetPhysicalDevice(),
+		tlasInfo
+	);
+
+	RebuildAccelerationStructures();
+}
+
+void Renderer::RebuildAccelerationStructures()
+{
+	core::gpu::CommandBufferCreateInfo cmdInfo{};
+	cmdInfo.commandPool = m_device.GetCommandPool();
+	cmdInfo.count = 1;
+	cmdInfo.singleTime = true;
+	cmdInfo.level = core::CommandBufferLevel::Primary;
+
+	core::gpu::CommandBuffer cmdBuffer(
+		m_device.GetHandle(),
+		m_device.GetGraphicsQueue(),
+		cmdInfo
+	);
+
+	cmdBuffer.Begin(0);
+
+	for (auto& [mesh, rtData] : m_rtMeshData)
+	{
+		if (rtData.blas)
+		{
+			cmdBuffer.BuildAccelerationStructure(rtData.blas.get());
+			cmdBuffer.AccelerationStructureBarrier();
+		}
+	}
+
+	if (m_tlas)
+	{
+		cmdBuffer.BuildAccelerationStructure(m_tlas.get());
+	}
+
+	cmdBuffer.End(0);
+	cmdBuffer.SubmitAndWait();
+
+	std::cout << "Acceleration structures built successfully!" << std::endl;
+}
+
