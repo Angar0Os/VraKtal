@@ -6,6 +6,7 @@
 #include <string>
 
 #include <graphics/resources/mesh.h>
+#include <core/gpu/buffer.h>
 
 namespace loaders
 {

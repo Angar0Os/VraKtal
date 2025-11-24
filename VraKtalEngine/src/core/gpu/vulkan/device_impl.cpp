@@ -199,44 +199,113 @@ void core::gpu::Device::Impl::CreateSurface()
 void core::gpu::Device::Impl::PickPhysicalDevice()
 {
 	std::vector<vk::raii::PhysicalDevice> devices = instance.enumeratePhysicalDevices();
-	const auto                            devIter = std::ranges::find_if(
-		devices,
-		[&](auto const& device)
-		{
-			// Require Vulkan 1.3+ support for some features used
-			bool supportsVulkan1_3 = device.getProperties().apiVersion >= VK_API_VERSION_1_3;
 
-			// Choose a device with graphics queue support
-			auto queueFamilies = device.getQueueFamilyProperties();
-			bool supportsGraphics =
-				std::ranges::any_of(queueFamilies, [](auto const& qfp) { return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics); });
+	vk::raii::PhysicalDevice* bestDevice = nullptr;
+	int bestScore = -1;
 
-			// Check device extension support
-			auto availableDeviceExtensions = device.enumerateDeviceExtensionProperties();
-			bool supportsAllRequiredExtensions =
-				std::ranges::all_of(requiredDeviceExtension,
-					[&availableDeviceExtensions](auto const& requiredDeviceExtension)
-					{
-						return std::ranges::any_of(availableDeviceExtensions,
-							[requiredDeviceExtension](auto const& availableDeviceExtension)
-							{ return strcmp(availableDeviceExtension.extensionName, requiredDeviceExtension) == 0; });
-					});
-
-			// Inspect features (using pNext chain to request feature structs)
-			auto features = device.template getFeatures2<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan13Features, vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
-			bool supportsRequiredFeatures = features.template get<vk::PhysicalDeviceFeatures2>().features.samplerAnisotropy &&
-				features.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
-				features.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
-
-			return supportsVulkan1_3 && supportsGraphics && supportsAllRequiredExtensions && supportsRequiredFeatures;
-		});
-	if (devIter != devices.end())
+	for (auto& device : devices)
 	{
-		physicalDevice = *devIter;
+		auto props = device.getProperties();
+		int score = 0;
+
+		auto queueFamilies = device.getQueueFamilyProperties();
+		bool supportsGraphics = std::ranges::any_of(queueFamilies,
+			[](auto const& qfp) { return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics); });
+
+		auto availableDeviceExtensions = device.enumerateDeviceExtensionProperties();
+		bool supportsAllRequiredExtensions = true;
+
+		std::vector<const char*> requiredExtensions = {
+			vk::KHRSwapchainExtensionName,
+			vk::KHRSpirv14ExtensionName,
+			vk::KHRSynchronization2ExtensionName,
+			vk::KHRCreateRenderpass2ExtensionName
+		};
+
+		for (const auto& requiredExt : requiredExtensions)
+		{
+			bool found = std::ranges::any_of(availableDeviceExtensions,
+				[requiredExt](auto const& availableExt)
+				{ return strcmp(availableExt.extensionName, requiredExt) == 0; });
+
+			if (!found)
+			{
+				supportsAllRequiredExtensions = false;
+				break;
+			}
+		}
+
+		if (!supportsAllRequiredExtensions) continue;
+
+		auto basicFeatures = device.template getFeatures2
+			<vk::PhysicalDeviceFeatures2,
+			vk::PhysicalDeviceVulkan13Features,
+			vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+
+		bool samplerAniso = basicFeatures.template get<vk::PhysicalDeviceFeatures2>().features.samplerAnisotropy;
+		bool dynRender = basicFeatures.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering;
+		bool extDynState = basicFeatures.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
+
+		std::vector<const char*> rtExtensions = {
+			VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+			VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+			VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+			VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+			VK_KHR_RAY_QUERY_EXTENSION_NAME,
+			VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
+			VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME
+		};
+
+		bool supportsAllRTExtensions = true;
+		for (const auto& rtExt : rtExtensions)
+		{
+			bool found = std::ranges::any_of(availableDeviceExtensions,
+				[rtExt](auto const& availableExt)
+				{ return strcmp(availableExt.extensionName, rtExt) == 0; });
+
+			if (!found)
+			{
+				supportsAllRTExtensions = false;
+				break;
+			}
+		}
+
+		if (!supportsAllRTExtensions) continue;
+
+		auto rtFeatures = device.template getFeatures2
+			<vk::PhysicalDeviceFeatures2,
+			vk::PhysicalDeviceBufferDeviceAddressFeatures,
+			vk::PhysicalDeviceAccelerationStructureFeaturesKHR,
+			vk::PhysicalDeviceRayTracingPipelineFeaturesKHR,
+			vk::PhysicalDeviceRayQueryFeaturesKHR>();
+
+		bool bufferAddr = rtFeatures.template get<vk::PhysicalDeviceBufferDeviceAddressFeatures>().bufferDeviceAddress;
+		bool accelStruct = rtFeatures.template get<vk::PhysicalDeviceAccelerationStructureFeaturesKHR>().accelerationStructure;
+		bool rtPipeline = rtFeatures.template get<vk::PhysicalDeviceRayTracingPipelineFeaturesKHR>().rayTracingPipeline;
+		bool rayQuery = rtFeatures.template get<vk::PhysicalDeviceRayQueryFeaturesKHR>().rayQuery;
+
+		if (props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
+			score += 1000;
+		else if (props.deviceType == vk::PhysicalDeviceType::eIntegratedGpu)
+			score += 100;
+
+		score += props.limits.maxImageDimension2D / 1000;
+
+		if (score > bestScore)
+		{
+			bestScore = score;
+			bestDevice = &device;
+		}
+	}
+
+	if (bestDevice)
+	{
+		auto props = bestDevice->getProperties();
+		physicalDevice = *bestDevice;
 	}
 	else
 	{
-		throw std::runtime_error("failed to find a suitable GPU!");
+		throw std::runtime_error("Failed to find a suitable GPU with raytracing support!");
 	}
 }
 
@@ -244,7 +313,6 @@ void core::gpu::Device::Impl::CreateLogicalDevice()
 {
 	std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
 
-	// Find a queue family with graphics and present support
 	for (uint32_t qfpIndex = 0; qfpIndex < queueFamilyProperties.size(); ++qfpIndex)
 	{
 		if ((queueFamilyProperties[qfpIndex].queueFlags & vk::QueueFlagBits::eGraphics) &&
@@ -254,29 +322,61 @@ void core::gpu::Device::Impl::CreateLogicalDevice()
 			break;
 		}
 	}
+
 	if (queueIndex == ~0)
 	{
-		throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
+		throw std::runtime_error("Could not find a queue for graphics and present");
 	}
 
-	// Build a pNext chain to request features at device creation
-	vk::StructureChain<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceVulkan13Features, vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT> featureChain =
-	{
-		{.features = {.samplerAnisotropy = true } },            // enable anisotropy
-		{.synchronization2 = true, .dynamicRendering = true },  // enable synchronization2 and dynamic rendering
-		{.extendedDynamicState = true }                         // enable extended dynamic state
+	vk::PhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
+	rayQueryFeatures.rayQuery = VK_TRUE;
+
+	vk::PhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeatures{};
+	rtPipelineFeatures.rayTracingPipeline = VK_TRUE;
+	rtPipelineFeatures.pNext = &rayQueryFeatures;
+
+	vk::PhysicalDeviceAccelerationStructureFeaturesKHR accelFeatures{};
+	accelFeatures.accelerationStructure = VK_TRUE;
+	accelFeatures.pNext = &rtPipelineFeatures;
+
+	vk::PhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
+	bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+	bufferDeviceAddressFeatures.pNext = &accelFeatures;
+
+	vk::StructureChain
+		<vk::PhysicalDeviceFeatures2,
+		vk::PhysicalDeviceVulkan13Features,
+		vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT> featureChain = {
+	   {.features = {.samplerAnisotropy = true} },
+	   {.synchronization2 = true, .dynamicRendering = true},
+	   {.extendedDynamicState = true}
 	};
 
-	float                     queuePriority = 0.0f;
-	vk::DeviceQueueCreateInfo deviceQueueCreateInfo{ .queueFamilyIndex = queueIndex, .queueCount = 1, .pQueuePriorities = &queuePriority };
-	vk::DeviceCreateInfo      deviceCreateInfo{ .pNext = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
-												.queueCreateInfoCount = 1,
-												.pQueueCreateInfos = &deviceQueueCreateInfo,
-												.enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtension.size()),
-												.ppEnabledExtensionNames = requiredDeviceExtension.data() };
+	featureChain.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().pNext = &bufferDeviceAddressFeatures;
+
+	float queuePriority = 1.0f;
+	vk::DeviceQueueCreateInfo deviceQueueCreateInfo{
+		.queueFamilyIndex = queueIndex,
+		.queueCount = 1,
+		.pQueuePriorities = &queuePriority
+	};
+
+	vk::DeviceCreateInfo deviceCreateInfo{
+		.pNext = &featureChain.get<vk::PhysicalDeviceFeatures2>(),
+		.queueCreateInfoCount = 1,
+		.pQueueCreateInfos = &deviceQueueCreateInfo,
+		.enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtension.size()),
+		.ppEnabledExtensionNames = requiredDeviceExtension.data()
+	};
 
 	device = vk::raii::Device(physicalDevice, deviceCreateInfo);
 	graphicsQueue = vk::raii::Queue(device, queueIndex, 0);
+
+	auto rtProps = physicalDevice.getProperties2
+		<vk::PhysicalDeviceProperties2,
+		vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
+
+	const auto& rtPipelineProps = rtProps.get<vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
 }
 
 void core::gpu::Device::Impl::CreateDescriptorSetLayout()
