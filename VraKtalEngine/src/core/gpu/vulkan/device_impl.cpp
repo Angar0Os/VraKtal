@@ -392,7 +392,6 @@ void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 		{4, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
 		{5, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
 		{6, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{7, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
 		{8, DescriptorType::AccelerationStructure, 1, core::ShaderStage::Fragment}
 	};
 
@@ -758,7 +757,6 @@ void core::gpu::Device::Impl::CreateDescriptorSets()
 			.BindImage(*textureSampler, roughnessTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, aoTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, emissiveTexture.get(), *defaultBlackTexture)
-			//.BindImage(*shadowSampler, nullptr, *defaultWhiteTexture, ImageLayout::ShaderReadOnly)
 			.Update();
 	}
 }
