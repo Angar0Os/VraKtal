@@ -7,6 +7,7 @@
 core::gpu::CommandBuffer::Impl::Impl(core::gpu::CommandBuffer& p, vk::raii::Device& dev,
 	vk::raii::Queue& q, vk::raii::CommandPool& pool, const CommandBufferCreateInfo& info)
 	: parent(p), device(dev), queue(q), commandPool(pool),
+	commandBuffers(nullptr),
 	isSingleTime(info.singleTime), currentIndex(0)
 {
 	if (info.count == 0)
@@ -52,11 +53,17 @@ void core::gpu::CommandBuffer::Impl::BuildAccelerationStructure(void* accelerati
 {
 	if (!accelerationStructure)
 	{
-		throw std::runtime_error("Invalid acceleration structure handle");
+		throw std::runtime_error("Invalid acceleration structure handle (nullptr)");
 	}
 
 	auto* accelStruct = static_cast<AccelerationStructure*>(accelerationStructure);
-	accelStruct->Build(*GetCommandBuffer(currentIndex));
+
+	try {
+		accelStruct->Build(&GetCommandBuffer(currentIndex));
+	}
+	catch (const std::exception& e) {
+		throw std::runtime_error(std::string("Failed to build acceleration structure: ") + e.what());
+	}
 }
 
 void core::gpu::CommandBuffer::Impl::AccelerationStructureBarrier()

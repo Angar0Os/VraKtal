@@ -67,9 +67,7 @@ void AccelerationStructure::Impl::CreateAccelerationStructureBuffer(vk::DeviceSi
 void AccelerationStructure::Impl::CreateScratchBuffer(vk::DeviceSize size)
 {
 	auto chain = physicalDevice.getProperties2<vk::PhysicalDeviceProperties2, vk::PhysicalDeviceAccelerationStructurePropertiesKHR>();
-
-	const auto& accelProps =
-		chain.get<vk::PhysicalDeviceAccelerationStructurePropertiesKHR>();
+	const auto& accelProps = chain.get<vk::PhysicalDeviceAccelerationStructurePropertiesKHR>();
 
 	vk::DeviceSize alignment = accelProps.minAccelerationStructureScratchOffsetAlignment;
 	if (alignment == 0) alignment = 256;
@@ -83,6 +81,11 @@ void AccelerationStructure::Impl::CreateScratchBuffer(vk::DeviceSize size)
 	};
 
 	scratchBuffer = std::make_unique<Buffer>(&device, &physicalDevice, bufferInfo);
+
+	VkDeviceAddress scratchAddr = scratchBuffer->GetDeviceAddress();
+	if (scratchAddr == 0) {
+		throw std::runtime_error("Scratch buffer device address is 0");
+	}
 }
 
 void AccelerationStructure::Impl::CreateBottomLevel(const AccelerationStructureCreateInfo& info)
@@ -130,8 +133,8 @@ void AccelerationStructure::Impl::CreateBottomLevel(const AccelerationStructureC
 		trianglesDatas.push_back(trianglesData);
 
 		vk::AccelerationStructureGeometryKHR geometry{};
-		geometry.geometryType = vk::GeometryTypeKHR::eTriangles;
-		geometry.geometry.triangles = trianglesDatas.back();
+		geometry.setGeometryType(vk::GeometryTypeKHR::eTriangles);
+		geometry.geometry.setTriangles(trianglesDatas.back());
 		geometry.flags = geom.opaque ? vk::GeometryFlagBitsKHR::eOpaque : vk::GeometryFlagsKHR{};
 
 		vkGeometries.push_back(geometry);
@@ -147,11 +150,11 @@ void AccelerationStructure::Impl::CreateBottomLevel(const AccelerationStructureC
 	}
 
 	vk::AccelerationStructureBuildGeometryInfoKHR buildInfo{};
-	buildInfo.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
-	buildInfo.flags = buildFlags;
-	buildInfo.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
-	buildInfo.geometryCount = static_cast<uint32_t>(vkGeometries.size());
-	buildInfo.pGeometries = vkGeometries.data();
+	buildInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+	buildInfo.setFlags(buildFlags);
+	buildInfo.setMode(vk::BuildAccelerationStructureModeKHR::eBuild);
+	buildInfo.setGeometryCount(static_cast<uint32_t>(vkGeometries.size()));
+	buildInfo.setPGeometries(vkGeometries.data());
 
 	buildSizes = device.getAccelerationStructureBuildSizesKHR(
 		vk::AccelerationStructureBuildTypeKHR::eDevice,
@@ -208,20 +211,23 @@ void AccelerationStructure::Impl::CreateTopLevel(const AccelerationStructureCrea
 	instanceBuffer->CopyFrom(vkInstances.data(), sizeof(vk::AccelerationStructureInstanceKHR) * vkInstances.size(), 0);
 
 	vk::AccelerationStructureGeometryInstancesDataKHR instancesData{};
-	instancesData.arrayOfPointers = VK_FALSE;
+	instancesData.setArrayOfPointers(VK_FALSE);
 	instancesData.data.deviceAddress = instanceBuffer->GetDeviceAddress();
 
+	if (instancesData.data.deviceAddress == 0)
+		throw std::runtime_error("Instance buffer device address is 0");
+
 	vk::AccelerationStructureGeometryKHR geometry{};
-	geometry.geometryType = vk::GeometryTypeKHR::eInstances;
-	geometry.geometry.instances = instancesData;
+	geometry.setGeometryType(vk::GeometryTypeKHR::eInstances);
+	geometry.geometry.setInstances(instancesData);
 	geometry.flags = vk::GeometryFlagsKHR{};
 
 	vk::AccelerationStructureBuildGeometryInfoKHR buildInfo{};
-	buildInfo.type = vk::AccelerationStructureTypeKHR::eTopLevel;
-	buildInfo.flags = buildFlags;
-	buildInfo.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
-	buildInfo.geometryCount = 1;
-	buildInfo.pGeometries = &geometry;
+	buildInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
+	buildInfo.setFlags(buildFlags);
+	buildInfo.setMode(vk::BuildAccelerationStructureModeKHR::eBuild);
+	buildInfo.setGeometryCount(1);
+	buildInfo.setPGeometries(&geometry);
 
 	uint32_t instanceCount = static_cast<uint32_t>(instances.size());
 
@@ -247,8 +253,18 @@ void AccelerationStructure::Impl::CreateTopLevel(const AccelerationStructureCrea
 
 void AccelerationStructure::Impl::Build(vk::raii::CommandBuffer& commandBuffer)
 {
+	if (!accelerationStructure.has_value())
+	{
+		throw std::runtime_error("Acceleration structure not initialized before Build()");
+	}
+
 	if (type == AccelerationStructureType::BottomLevel)
 	{
+		if (geometries.empty())
+		{
+			throw std::runtime_error("Cannot build BLAS with no geometries");
+		}
+
 		std::vector<vk::AccelerationStructureGeometryKHR> vkGeometries;
 		std::vector<vk::AccelerationStructureBuildRangeInfoKHR> buildRanges;
 		std::vector<vk::AccelerationStructureGeometryTrianglesDataKHR> trianglesDatas;
@@ -259,6 +275,11 @@ void AccelerationStructure::Impl::Build(vk::raii::CommandBuffer& commandBuffer)
 
 		for (const auto& geom : geometries)
 		{
+			if (!geom.vertexBuffer)
+			{
+				throw std::runtime_error("Geometry has null vertex buffer");
+			}
+
 			vk::AccelerationStructureGeometryTrianglesDataKHR trianglesData{};
 			trianglesData.vertexFormat = vk::Format::eR32G32B32Sfloat;
 			trianglesData.vertexData.deviceAddress = geom.vertexBuffer->GetDeviceAddress();
@@ -281,8 +302,8 @@ void AccelerationStructure::Impl::Build(vk::raii::CommandBuffer& commandBuffer)
 			trianglesDatas.push_back(trianglesData);
 
 			vk::AccelerationStructureGeometryKHR geometry{};
-			geometry.geometryType = vk::GeometryTypeKHR::eTriangles;
-			geometry.geometry.triangles = trianglesDatas.back();
+			geometry.setGeometryType(vk::GeometryTypeKHR::eTriangles);
+			geometry.geometry.setTriangles(trianglesDatas.back());
 			geometry.flags = geom.opaque ? vk::GeometryFlagBitsKHR::eOpaque : vk::GeometryFlagsKHR{};
 
 			vkGeometries.push_back(geometry);
@@ -295,58 +316,88 @@ void AccelerationStructure::Impl::Build(vk::raii::CommandBuffer& commandBuffer)
 			buildRanges.push_back(rangeInfo);
 		}
 
+		if (!scratchBuffer)
+		{
+			throw std::runtime_error("Scratch buffer not created");
+		}
+
 		vk::AccelerationStructureBuildGeometryInfoKHR buildInfo{};
-		buildInfo.type = vk::AccelerationStructureTypeKHR::eBottomLevel;
-		buildInfo.flags = buildFlags;
-		buildInfo.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
-		buildInfo.dstAccelerationStructure = **accelerationStructure;
-		buildInfo.geometryCount = static_cast<uint32_t>(vkGeometries.size());
-		buildInfo.pGeometries = vkGeometries.data();
+		buildInfo.setType(vk::AccelerationStructureTypeKHR::eBottomLevel);
+		buildInfo.setFlags(buildFlags);
+		buildInfo.setMode(vk::BuildAccelerationStructureModeKHR::eBuild);
+		buildInfo.setSrcAccelerationStructure(VK_NULL_HANDLE);
+		buildInfo.setDstAccelerationStructure(**accelerationStructure);
+		buildInfo.setGeometryCount(static_cast<uint32_t>(vkGeometries.size()));
+		buildInfo.setPGeometries(vkGeometries.data());
 		buildInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress();
 
-		std::vector<const vk::AccelerationStructureBuildRangeInfoKHR*> pBuildRanges;
-		pBuildRanges.reserve(buildRanges.size());
-		for (auto& r : buildRanges)
-			pBuildRanges.push_back(&r);
+		if (buildInfo.scratchData.deviceAddress == 0)
+		{
+			throw std::runtime_error("Scratch buffer device address is 0");
+		}
 
-		std::vector<vk::AccelerationStructureBuildGeometryInfoKHR> infos;
-		infos.push_back(buildInfo);
+		std::vector<vk::AccelerationStructureBuildRangeInfoKHR*> buildRangePtrs;
+		buildRangePtrs.reserve(buildRanges.size());
+		for (auto& range : buildRanges)
+		{
+			buildRangePtrs.push_back(&range);
+		}
 
-		std::vector<const vk::AccelerationStructureBuildRangeInfoKHR*> rangePtrs;
-		for (auto& r : buildRanges)
-			rangePtrs.push_back(&r);
-
-		commandBuffer.buildAccelerationStructuresKHR(infos, rangePtrs);
+		commandBuffer.buildAccelerationStructuresKHR({ buildInfo }, buildRangePtrs);
 	}
 	else
 	{
-		// TLAS build
+		if (instances.empty())
+		{
+			throw std::runtime_error("Cannot build TLAS with no instances");
+		}
+
+		if (!instanceBuffer)
+		{
+			throw std::runtime_error("Instance buffer not created");
+		}
+
+		if (!scratchBuffer)
+		{
+			throw std::runtime_error("Scratch buffer not created");
+		}
+
 		vk::AccelerationStructureGeometryInstancesDataKHR instancesData{};
-		instancesData.arrayOfPointers = VK_FALSE;
+		instancesData.setArrayOfPointers(VK_FALSE);
 		instancesData.data.deviceAddress = instanceBuffer->GetDeviceAddress();
 
+		if (instancesData.data.deviceAddress == 0)
+			throw std::runtime_error("Instance buffer device address is 0 (TLAS)");
+
 		vk::AccelerationStructureGeometryKHR geometry{};
-		geometry.geometryType = vk::GeometryTypeKHR::eInstances;
-		geometry.geometry.instances = instancesData;
+		geometry.setGeometryType(vk::GeometryTypeKHR::eInstances);
+		geometry.geometry.setInstances(instancesData);
+		geometry.flags = vk::GeometryFlagsKHR{};
 
 		vk::AccelerationStructureBuildGeometryInfoKHR buildInfo{};
-		buildInfo.type = vk::AccelerationStructureTypeKHR::eTopLevel;
-		buildInfo.flags = buildFlags;
-		buildInfo.mode = vk::BuildAccelerationStructureModeKHR::eBuild;
-		buildInfo.dstAccelerationStructure = *accelerationStructure;
-		buildInfo.geometryCount = 1;
-		buildInfo.pGeometries = &geometry;
+		buildInfo.setType(vk::AccelerationStructureTypeKHR::eTopLevel);
+		buildInfo.setFlags(buildFlags);
+		buildInfo.setMode(vk::BuildAccelerationStructureModeKHR::eBuild);
+		buildInfo.setSrcAccelerationStructure(VK_NULL_HANDLE);
+		buildInfo.setDstAccelerationStructure(**accelerationStructure);
+		buildInfo.setGeometryCount(1);
+		buildInfo.setPGeometries(&geometry);
 		buildInfo.scratchData.deviceAddress = scratchBuffer->GetDeviceAddress();
+
+		if (buildInfo.scratchData.deviceAddress == 0)
+		{
+			throw std::runtime_error("Scratch buffer device address is 0 (TLAS)");
+		}
 
 		vk::AccelerationStructureBuildRangeInfoKHR rangeInfo{};
 		rangeInfo.primitiveCount = static_cast<uint32_t>(instances.size());
+		rangeInfo.primitiveOffset = 0;
+		rangeInfo.firstVertex = 0;
+		rangeInfo.transformOffset = 0;
 
-		const vk::AccelerationStructureBuildRangeInfoKHR* pBuildRanges = &rangeInfo;
+		std::vector<vk::AccelerationStructureBuildRangeInfoKHR*> buildRangePtrs = { &rangeInfo };
 
-		std::array<vk::AccelerationStructureBuildGeometryInfoKHR, 1> infos{ buildInfo };
-		std::array<const vk::AccelerationStructureBuildRangeInfoKHR*, 1> ranges{ &rangeInfo };
-
-		commandBuffer.buildAccelerationStructuresKHR(infos, ranges);
+		commandBuffer.buildAccelerationStructuresKHR({ buildInfo }, buildRangePtrs);
 	}
 }
 

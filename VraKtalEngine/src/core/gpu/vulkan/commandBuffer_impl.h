@@ -17,7 +17,8 @@ namespace core::gpu
 		vk::raii::Queue& queue;
 		vk::raii::CommandPool& commandPool;
 
-		std::vector<vk::raii::CommandBuffer> commandBuffers;
+		// Keep RAII owner alive in this object to preserve internal dispatcher
+		vk::raii::CommandBuffers commandBuffers;
 		bool isSingleTime;
 		uint32_t currentIndex;
 
