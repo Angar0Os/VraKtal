@@ -280,22 +280,26 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 	cmd->SetViewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
 	cmd->SetScissor(0, 0, width, height);
 
-	if (m_scene && !m_scene->meshInstances.empty())
-	{
-		UpdateUniformBuffer(frameIndex, m_scene->meshInstances[0].material);
-	}
-
-	cmd->BindDescriptorSets(
-		m_device.GetPipelineLayout(),
-		m_device.GetDescriptorSet(frameIndex),
-		0
-	);
-
 	if (m_scene)
 	{
+		const resources::Material* lastMaterial = nullptr;
+
 		for (const auto& instance : m_scene->meshInstances)
 		{
 			if (!instance.visible) continue;
+
+			if (instance.material.get() != lastMaterial)
+			{
+				UpdateUniformBuffer(frameIndex, instance.material);
+
+				cmd->BindDescriptorSets(
+					m_device.GetPipelineLayout(),
+					m_device.GetDescriptorSet(frameIndex),
+					0
+				);
+
+				lastMaterial = instance.material.get();
+			}
 
 			PushConstants pushConstants;
 			pushConstants.model = instance.transform;
@@ -345,6 +349,7 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	cmd->End(0);
 }
+
 void Renderer::DrawFrame()
 {
 	if (!m_running) return;
@@ -607,4 +612,3 @@ void Renderer::RebuildAccelerationStructures()
 
 	std::cout << "Acceleration structures built successfully!" << std::endl;
 }
-

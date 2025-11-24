@@ -83,6 +83,7 @@ namespace graphics
 		void EnableRayTracing();
 		void DisableRayTracing();
 		bool IsRayTracingEnabled() const { return m_rayTracingEnabled; }
+
 		core::gpu::AccelerationStructure* GetTLAS() const { return m_tlas.get(); }
 
 		std::shared_ptr<resources::Scene> GetScene() { return m_scene; }

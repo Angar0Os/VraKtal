@@ -282,3 +282,63 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 
 	return mesh;
 }
+
+std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::CreatePlane(
+	float width, float height, int subdivisionsX, int subdivisionsZ)
+{
+	auto mesh = std::make_shared<graphics::resources::Mesh>();
+
+	int vertCountX = subdivisionsX + 1;
+	int vertCountZ = subdivisionsZ + 1;
+
+	float halfWidth = width * 0.5f;
+	float halfHeight = height * 0.5f;
+
+	float deltaX = width / subdivisionsX;
+	float deltaZ = height / subdivisionsZ;
+
+	float uvDeltaX = 1.0f / subdivisionsX;
+	float uvDeltaZ = 1.0f / subdivisionsZ;
+
+	for (int z = 0; z < vertCountZ; z++)
+	{
+		for (int x = 0; x < vertCountX; x++)
+		{
+			graphics::resources::Vertex vertex;
+
+			vertex.position = glm::vec3(
+				-halfWidth + x * deltaX,
+				0.0f,
+				-halfHeight + z * deltaZ
+			);
+
+			vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f);
+			vertex.uv = glm::vec2(x * uvDeltaX, z * uvDeltaZ);
+
+			vertex.tangent = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+			mesh->vertices.push_back(vertex);
+		}
+	}
+
+	for (int z = 0; z < subdivisionsZ; z++)
+	{
+		for (int x = 0; x < subdivisionsX; x++)
+		{
+			int topLeft = z * vertCountX + x;
+			int topRight = topLeft + 1;
+			int bottomLeft = (z + 1) * vertCountX + x;
+			int bottomRight = bottomLeft + 1;
+
+			mesh->indices.push_back(topLeft);
+			mesh->indices.push_back(bottomLeft);
+			mesh->indices.push_back(topRight);
+
+			mesh->indices.push_back(topRight);
+			mesh->indices.push_back(bottomLeft);
+			mesh->indices.push_back(bottomRight);
+		}
+	}
+
+	return mesh;
+}

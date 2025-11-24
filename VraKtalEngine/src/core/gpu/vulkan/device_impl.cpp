@@ -758,7 +758,7 @@ void core::gpu::Device::Impl::CreateDescriptorSets()
 			.BindImage(*textureSampler, roughnessTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, aoTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, emissiveTexture.get(), *defaultBlackTexture)
-			.BindImage(*shadowSampler, nullptr, *defaultWhiteTexture, ImageLayout::ShaderReadOnly)
+			//.BindImage(*shadowSampler, nullptr, *defaultWhiteTexture, ImageLayout::ShaderReadOnly)
 			.Update();
 	}
 }
