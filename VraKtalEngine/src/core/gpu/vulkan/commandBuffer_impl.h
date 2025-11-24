@@ -61,6 +61,19 @@ namespace core::gpu
 			bool isDepth);
 
 		void ResolveImage(void* srcImage, void* dstImage, uint32_t width, uint32_t height);
+
+		void BuildAccelerationStructure(void* accelerationStructure);
+
+		void AccelerationStructureBarrier();
+
+		void TraceRays(void* pipeline,
+			void* raygenSBT, uint32_t raygenOffset, uint32_t raygenStride,
+			void* missSBT, uint32_t missOffset, uint32_t missStride, uint32_t missCount,
+			void* hitSBT, uint32_t hitOffset, uint32_t hitStride, uint32_t hitCount,
+			void* callableSBT, uint32_t callableOffset, uint32_t callableStride, uint32_t callableCount,
+			uint32_t width, uint32_t height, uint32_t depth);
+
+		void BindRayTracingPipeline(void* pipeline);
 	};
 }
 

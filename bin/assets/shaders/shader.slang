@@ -1,4 +1,55 @@
-﻿[[vk::push_constant]]
+﻿struct RayPayload
+{
+    float3 color;
+    float distance;
+    bool hit;
+};
+
+[shader("raygeneration")]
+void raygenMain()
+{
+    uint2 launchIndex = DispatchRaysIndex().xy;
+    uint2 launchDim = DispatchRaysDimensions().xy;
+    
+    float2 pixelCenter = float2(launchIndex) + float2(0.5, 0.5);
+    float2 inUV = pixelCenter / float2(launchDim);
+    float2 d = inUV * 2.0 - 1.0;
+    
+    float4 origin = mul(inverse(view), float4(0, 0, 0, 1));
+    float4 target = mul(inverse(proj), float4(d.x, d.y, 1, 1));
+    float4 direction = mul(inverse(view), float4(normalize(target.xyz), 0));
+    
+    RayDesc ray;
+    ray.Origin = origin.xyz;
+    ray.Direction = direction.xyz;
+    ray.TMin = 0.001;
+    ray.TMax = 10000.0;
+    
+    RayPayload payload;
+    payload.color = float3(0, 0, 0);
+    payload.hit = false;
+    
+    TraceRay(tlas, RAY_FLAG_NONE, 0xFF, 0, 0, 0, ray, payload);
+    
+    outputImage[launchIndex] = float4(payload.color, 1.0);
+}
+
+[shader("closesthit")]
+void closestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
+{
+    payload.hit = true;
+    payload.color = float3(1.0, 0.0, 0.0); 
+    payload.distance = RayTCurrent();
+}
+
+[shader("miss")]
+void missMain(inout RayPayload payload)
+{
+    payload.hit = false;
+    payload.color = float3(0.1, 0.1, 0.15); 
+}
+
+[[vk::push_constant]]
 cbuffer PushConstants
 {
     float4x4 model;
@@ -58,6 +109,12 @@ Sampler2D emissiveMap;
 
 [[vk::binding(7, 0)]]
 Sampler2D shadowMap;
+
+[[vk::binding(8, 0)]]
+RaytracingAccelerationStructure tlas;
+
+[[vk::binding(9, 0)]]
+RWTexture2D<float4> outputImage;
 
 static const float PI = 3.14159265359;
 
