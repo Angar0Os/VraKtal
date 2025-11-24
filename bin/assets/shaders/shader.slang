@@ -1,55 +1,4 @@
-﻿struct RayPayload
-{
-    float3 color;
-    float distance;
-    bool hit;
-};
-
-[shader("raygeneration")]
-void raygenMain()
-{
-    uint2 launchIndex = DispatchRaysIndex().xy;
-    uint2 launchDim = DispatchRaysDimensions().xy;
-    
-    float2 pixelCenter = float2(launchIndex) + float2(0.5, 0.5);
-    float2 inUV = pixelCenter / float2(launchDim);
-    float2 d = inUV * 2.0 - 1.0;
-    
-    float4 origin = mul(inverse(view), float4(0, 0, 0, 1));
-    float4 target = mul(inverse(proj), float4(d.x, d.y, 1, 1));
-    float4 direction = mul(inverse(view), float4(normalize(target.xyz), 0));
-    
-    RayDesc ray;
-    ray.Origin = origin.xyz;
-    ray.Direction = direction.xyz;
-    ray.TMin = 0.001;
-    ray.TMax = 10000.0;
-    
-    RayPayload payload;
-    payload.color = float3(0, 0, 0);
-    payload.hit = false;
-    
-    TraceRay(tlas, RAY_FLAG_NONE, 0xFF, 0, 0, 0, ray, payload);
-    
-    outputImage[launchIndex] = float4(payload.color, 1.0);
-}
-
-[shader("closesthit")]
-void closestHitMain(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attribs)
-{
-    payload.hit = true;
-    payload.color = float3(1.0, 0.0, 0.0); 
-    payload.distance = RayTCurrent();
-}
-
-[shader("miss")]
-void missMain(inout RayPayload payload)
-{
-    payload.hit = false;
-    payload.color = float3(0.1, 0.1, 0.15); 
-}
-
-[[vk::push_constant]]
+﻿[[vk::push_constant]]
 cbuffer PushConstants
 {
     float4x4 model;
@@ -113,9 +62,6 @@ Sampler2D shadowMap;
 [[vk::binding(8, 0)]]
 RaytracingAccelerationStructure tlas;
 
-[[vk::binding(9, 0)]]
-RWTexture2D<float4> outputImage;
-
 static const float PI = 3.14159265359;
 
 float DistributionGGX(float3 N, float3 H, float roughness)
@@ -178,6 +124,28 @@ float3 GetNormalFromMap(float2 texCoords, float3 worldPos, float3 normal)
     return normalize(mul(tangentNormal, TBN));
 }
 
+bool TraceShadowRay(float3 origin, float3 direction, float maxDistance)
+{
+    RayDesc ray;
+    ray.Origin = origin;
+    ray.Direction = direction;
+    ray.TMin = 0.001;
+    ray.TMax = maxDistance;
+    
+    RayQuery<0> query;
+    
+    query.TraceRayInline(
+        tlas,
+        0x01,  
+        0xFF, 
+        ray
+    );
+    
+    while(query.Proceed()) { }
+    
+    return query.CommittedStatus() == 1;
+}
+
 struct VSOutput
 {
     float4 position : SV_Position;
@@ -232,8 +200,18 @@ float4 fragMain(VSOutput input) : SV_Target
         float3 H = normalize(V + L);
         
         float distance = length(lights[i].position - input.worldPos);
+        
+        float shadow = 1.0;
+        
+        float3 shadowOrigin = input.worldPos + N * 0.01;
+        
+        bool inShadow = TraceShadowRay(shadowOrigin, L, distance);
+        
+        shadow = inShadow ? 0.2 : 1.0;
+        
+        // Calcul de l'atténuation et radiance
         float attenuation = 1.0 / (distance * distance);
-        float3 radiance = lights[i].color * lights[i].intensity * attenuation;
+        float3 radiance = lights[i].color * lights[i].intensity * attenuation * shadow;
         
         float NDF = DistributionGGX(N, H, roughnessValue);
         float G = GeometrySmith(N, V, L, roughnessValue);

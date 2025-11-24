@@ -153,7 +153,8 @@ namespace core
 		UniformBuffer,
 		CombinedImageSampler,
 		StorageBuffer,
-		StorageImage
+		StorageImage,
+		AccelerationStructure
 	};
 
 	enum class ShaderStageFlags : uint32_t

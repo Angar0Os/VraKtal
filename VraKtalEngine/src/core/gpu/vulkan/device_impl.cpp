@@ -392,7 +392,8 @@ void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 		{4, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
 		{5, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
 		{6, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{7, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment}
+		{7, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{8, DescriptorType::AccelerationStructure, 1, core::ShaderStage::Fragment}
 	};
 
 	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(&device, layoutInfo);
@@ -405,11 +406,38 @@ void core::gpu::Device::Impl::CreateDescriptorPool()
 	poolInfo.poolSizes =
 	{
 		{DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT * 2},
-		{DescriptorType::CombinedImageSampler, MAX_FRAMES_IN_FLIGHT * 7}
+		{DescriptorType::CombinedImageSampler, MAX_FRAMES_IN_FLIGHT * 7},
+		{DescriptorType::AccelerationStructure, MAX_FRAMES_IN_FLIGHT}
 	};
 	poolInfo.allowFreeDescriptorSet = true;
 
 	descriptorPool = std::make_unique<DescriptorPool>(&device, poolInfo);
+}
+
+void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, void* tlasHandle)
+{
+	if (frameIndex >= descriptorSets.size() || !tlasHandle) return;
+
+	vk::DescriptorSet descSet = **descriptorSets[frameIndex];
+
+	VkAccelerationStructureKHR rawHandle = reinterpret_cast<VkAccelerationStructureKHR>(tlasHandle);
+	const vk::AccelerationStructureKHR vkAccel(rawHandle);
+
+	vk::WriteDescriptorSetAccelerationStructureKHR accelInfo{};
+	accelInfo.accelerationStructureCount = 1;
+	accelInfo.pAccelerationStructures = &vkAccel;
+
+	vk::WriteDescriptorSet writeDesc{};
+	writeDesc.dstSet = descSet;
+	writeDesc.dstBinding = 8;
+	writeDesc.dstArrayElement = 0;
+	writeDesc.descriptorCount = 1;
+	writeDesc.descriptorType = vk::DescriptorType::eAccelerationStructureKHR;
+	writeDesc.pNext = &accelInfo;
+
+	device.updateDescriptorSets(writeDesc, nullptr);
+
+	std::cout << "TLAS updated in descriptor set " << frameIndex << std::endl;
 }
 
 void core::gpu::Device::Impl::AllocateDescriptorSets()
@@ -1238,4 +1266,9 @@ void core::gpu::Device::WaitIdle()
 void core::gpu::Device::RecreateSwapchain()
 {
 	if (m_impl) m_impl->RecreateSwapchain();
+}
+
+void core::gpu::Device::UpdateDescriptorWithTLAS(uint32_t frameIndex, void* tlasHandle)
+{
+	if (m_impl) m_impl->UpdateDescriptorWithTLAS(frameIndex, tlasHandle);
 }

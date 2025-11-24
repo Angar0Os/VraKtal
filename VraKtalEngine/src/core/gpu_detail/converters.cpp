@@ -212,6 +212,8 @@ vk::DescriptorType core::gpu_detail::ToVulkan(core::DescriptorType type)
 		return vk::DescriptorType::eStorageBuffer;
 	case core::DescriptorType::StorageImage:
 		return vk::DescriptorType::eStorageImage;
+	case core::DescriptorType::AccelerationStructure:
+		return vk::DescriptorType::eAccelerationStructureKHR;
 	default:
 		throw std::runtime_error("Unknown descriptor type");
 	}

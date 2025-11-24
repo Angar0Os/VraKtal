@@ -150,6 +150,8 @@ namespace core::gpu
 
 		void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
 
+		void UpdateDescriptorWithTLAS(uint32_t frameIndex, void* tlasHandle);
+
 		std::vector<const char*> requiredDeviceExtension = {
 			vk::KHRSwapchainExtensionName,
 			vk::KHRSpirv14ExtensionName,

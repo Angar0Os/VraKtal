@@ -90,6 +90,8 @@ namespace core
 			void* GetColorImage() const;
 			void* GetDepthImage() const;
 
+			void UpdateDescriptorWithTLAS(uint32_t frameIndex, void* tlasHandle);
+
 			void RecreateSwapchain();
 			void WaitIdle();
 

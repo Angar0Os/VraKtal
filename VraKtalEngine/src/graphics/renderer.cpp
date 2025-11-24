@@ -406,6 +406,16 @@ void Renderer::EnableRayTracing()
 
 	BuildTLAS();
 
+	if (m_tlas)
+	{
+		void* tlasHandle = m_tlas->GetHandle();
+		for (uint32_t i = 0; i < core::gpu::Device::FRAMES_IN_FLIGHT; i++)
+		{
+			m_device.UpdateDescriptorWithTLAS(i, tlasHandle);
+		}
+		std::cout << "TLAS bound to all descriptor sets!" << std::endl;
+	}
+
 	m_rayTracingEnabled = true;
 	std::cout << "Ray tracing enabled successfully!" << std::endl;
 }
