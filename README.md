@@ -49,6 +49,11 @@ configured.
 ### Rendering
 
 - ☐ Ray Tracing 
+- ☐ TAA
+- ☐ Denoising
+- ☐ Stratified sampling, blue noise, importance sampling
+- ☐ Restir DI 
+- ☐ Restir GI
 - ☐ Render Graph system
 
 ### Editor
