@@ -51,14 +51,8 @@ int main()
 		mainLight.color = glm::vec3(1.0f, 0.95f, 0.9f);
 		mainLight.intensity = 15.0f;
 		mainLight.enabled = true;
+		mainLight.lightRadius = 0.001f;
 		scene->AddLight(mainLight);
-
-		graphics::resources::Light fillLight;
-		fillLight.position = glm::vec3(-3.0f, 2.0f, -2.0f);
-		fillLight.color = glm::vec3(0.6f, 0.7f, 1.0f);
-		fillLight.intensity = 3.0f;
-		fillLight.enabled = true;
-		scene->AddLight(fillLight);
 
 		renderer.SetScene(scene);
 
@@ -72,8 +66,8 @@ int main()
 		renderer.UpdateCamera(view, proj, cameraPos);
 
 		float time = 0.0f;
-		const float lightRadius = 4.0f;
-		const float lightHeight = 4.0f;
+		const float lightRadius = 1.0f;
+		const float lightHeight = 1.0f;
 		const float rotationSpeed = 0.01f;
 
 		while (!window.ShouldClose())

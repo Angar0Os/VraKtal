@@ -15,10 +15,13 @@ cbuffer UniformBufferObject
     struct LightData
     {
         float3 position;
+        float _pad0;      
         float3 color;
         float intensity;
         int enabled;
         int type;
+        float lightRadius;
+        float _pad1;    
     };
     
     LightData lights[10];
@@ -36,6 +39,8 @@ cbuffer UniformBufferObject
     int useRoughnessMap;
     int useAOMap;
     int useEmissiveMap;
+    
+    uint frameCount;
 };
 
 [[vk::binding(1, 0)]]
@@ -60,6 +65,26 @@ Sampler2D emissiveMap;
 RaytracingAccelerationStructure tlas;
 
 static const float PI = 3.14159265359;
+
+uint pcg_hash(uint seed)
+{
+    uint state = seed * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+float random(inout uint seed)
+{
+    seed = pcg_hash(seed);
+    return float(seed) / 4294967296.0;
+}
+
+float2 randomDisk(inout uint seed)
+{
+    float angle = random(seed) * 2.0 * PI;
+    float radius = sqrt(random(seed));
+    return float2(cos(angle), sin(angle)) * radius;
+}
 
 float DistributionGGX(float3 N, float3 H, float roughness)
 {
@@ -121,6 +146,13 @@ float3 GetNormalFromMap(float2 texCoords, float3 worldPos, float3 normal)
     return normalize(mul(tangentNormal, TBN));
 }
 
+void BuildOrthonormalBasis(float3 direction, out float3 tangent, out float3 bitangent)
+{
+    float3 up = abs(direction.y) < 0.999 ? float3(0.0, 1.0, 0.0) : float3(1.0, 0.0, 0.0);
+    tangent = normalize(cross(up, direction));
+    bitangent = cross(direction, tangent);
+}
+
 bool TraceShadowRay(float3 origin, float3 direction, float maxDistance)
 {
     RayDesc ray;
@@ -129,18 +161,51 @@ bool TraceShadowRay(float3 origin, float3 direction, float maxDistance)
     ray.TMin = 0.001;
     ray.TMax = maxDistance;
     
-    RayQuery<0> query;
+    RayQuery<RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH> query;
     
     query.TraceRayInline(
         tlas,
-        0x01,  
+        RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH,
         0xFF, 
         ray
     );
     
-    while(query.Proceed()) { }
+    query.Proceed();
     
-    return query.CommittedStatus() == 1;
+    return query.CommittedStatus() == COMMITTED_TRIANGLE_HIT;
+}
+
+float TraceSoftShadowMonteCarlo(float3 origin, float3 lightCenter, float lightRadius, float3 normal, float NdotL, inout uint rngSeed)
+{
+    if (NdotL <= 0.0)
+        return 0.0;
+    
+    float3 toLight = lightCenter - origin;
+    float distance = length(toLight);
+    float3 lightDir = toLight / distance;
+    
+    if (lightRadius <= 0.001)
+    {
+        float3 rayOrigin = origin + normal * 0.01;
+        bool inShadow = TraceShadowRay(rayOrigin, lightDir, distance);
+        return inShadow ? 0.0 : 1.0;
+    }
+    
+    float3 tangent, bitangent;
+    BuildOrthonormalBasis(lightDir, tangent, bitangent);
+    
+    float2 diskOffset = randomDisk(rngSeed) * lightRadius;
+    float3 sampleOffset = tangent * diskOffset.x + bitangent * diskOffset.y;
+    float3 samplePoint = lightCenter + sampleOffset;
+    
+    float3 toSample = samplePoint - origin;
+    float sampleDistance = length(toSample);
+    float3 sampleDir = normalize(toSample);
+    
+    float3 rayOrigin = origin + normal * 0.01;
+    bool occluded = TraceShadowRay(rayOrigin, sampleDir, sampleDistance);
+    
+    return occluded ? 0.0 : 1.0;
 }
 
 struct VSOutput
@@ -174,6 +239,10 @@ VSOutput vertMain(
 [shader("fragment")]
 float4 fragMain(VSOutput input) : SV_Target
 {
+    uint rngSeed = uint(input.position.x) * 1973u + 
+                   uint(input.position.y) * 9277u + 
+                   frameCount * 26699u;
+    
     float3 albedoValue = (useAlbedoMap != 0) ? albedoMap.Sample(input.texCoord).rgb : albedo;
     float metallicValue = (useMetallicMap != 0) ? metallicMap.Sample(input.texCoord).r : metallic;
     float roughnessValue = (useRoughnessMap != 0) ? roughnessMap.Sample(input.texCoord).r : roughness;
@@ -188,27 +257,38 @@ float4 fragMain(VSOutput input) : SV_Target
     
     float3 Lo = float3(0.0, 0.0, 0.0);
     
+    int activeLights = 0;
+    
     for (int i = 0; i < numLights; i++)
     {
         if (lights[i].enabled == 0)
             continue;
         
-        float3 L = normalize(lights[i].position - input.worldPos);
-        float3 H = normalize(V + L);
+        activeLights++;
         
+        float3 L = normalize(lights[i].position - input.worldPos);
         float distance = length(lights[i].position - input.worldPos);
         
-        float shadow = 1.0;
+        float NdotL = max(dot(N, L), 0.0);
+        if (NdotL <= 0.001) 
+            continue;
         
-        float3 shadowOrigin = input.worldPos + N * 0.01;
+        float visibility = TraceSoftShadowMonteCarlo(
+            input.worldPos,
+            lights[i].position,
+            lights[i].lightRadius,
+            N,
+            NdotL,
+            rngSeed
+        );
         
-        bool inShadow = TraceShadowRay(shadowOrigin, L, distance);
+        if (visibility <= 0.001)
+            continue;
         
-        shadow = inShadow ? 0.2 : 1.0;
+        float3 H = normalize(V + L);
         
-        // Calcul de l'atténuation et radiance
         float attenuation = 1.0 / (distance * distance);
-        float3 radiance = lights[i].color * lights[i].intensity * attenuation * shadow;
+        float3 radiance = lights[i].color * lights[i].intensity * attenuation * visibility;
         
         float NDF = DistributionGGX(N, H, roughnessValue);
         float G = GeometrySmith(N, V, L, roughnessValue);
@@ -219,23 +299,22 @@ float4 fragMain(VSOutput input) : SV_Target
         kD *= 1.0 - metallicValue;
         
         float3 numerator = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * NdotL + 0.0001;
         float3 specular = numerator / denominator;
         
-        float NdotL = max(dot(N, L), 0.0);
         Lo += (kD * albedoValue / PI + specular) * radiance * NdotL;
     }
     
-    float3 ambient = float3(0.3, 0.3, 0.3) * albedoValue * aoValue;
+    float3 ambient = float3(0.01, 0.01, 0.01) * albedoValue * aoValue;
     
-    if (numLights == 0)
+    if (activeLights == 0)
     {
         float3 defaultLightDir = normalize(float3(1.0, 1.0, 1.0));
         float NdotL = max(dot(N, defaultLightDir), 0.0);
         Lo += albedoValue * NdotL * 0.8;
     }
     
-    float3 color = ambient + Lo + emissiveValue;
+    float3 color = Lo + ambient + emissiveValue;
 
     float exposure = 1.5;
     color = float3(1.0, 1.0, 1.0) - exp(-color * exposure);

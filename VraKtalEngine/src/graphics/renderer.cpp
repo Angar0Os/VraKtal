@@ -187,10 +187,11 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<re
 		{
 			const auto& light = m_scene->lights[i];
 			ubo.lights[i].position = light.position;
-			ubo.lights[i].color = light.color * light.intensity;
+			ubo.lights[i].color = light.color;
 			ubo.lights[i].intensity = light.intensity;
 			ubo.lights[i].enabled = light.enabled ? 1 : 0;
 			ubo.lights[i].type = 0;
+			ubo.lights[i].lightRadius = light.radius;
 		}
 	}
 	else
@@ -228,6 +229,8 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<re
 		ubo.useAOMap = 0;
 		ubo.useEmissiveMap = 0;
 	}
+
+	ubo.frameCount = static_cast<uint32_t>(m_frameCounter);
 
 	auto* uniformBuffer = m_device.GetUniformBuffer(frameIndex);
 	if (uniformBuffer)

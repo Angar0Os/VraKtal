@@ -32,7 +32,7 @@ namespace core
 				alignas(4)  float intensity;
 				alignas(4)	int enabled;
 				alignas(4)	int type;
-				alignas(4)  int _padding; // Note : Simple padding to make size multiple of 16 bytes.
+				alignas(4)  float lightRadius;
 			};
 
 			LightData lights[MAX_LIGHTS];
@@ -50,6 +50,8 @@ namespace core
 			alignas(4) uint32_t useRoughnessMap;
 			alignas(4) uint32_t useAOMap;
 			alignas(4) uint32_t useEmissiveMap;
+
+			alignas(4) uint32_t frameCount;
 		};
 
 		class Device
