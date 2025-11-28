@@ -12,7 +12,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadMesh(const std::string& filepath)
+std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadMesh(const std::string& filepath)
 {
 	std::string ext = std::filesystem::path(filepath).extension().string();
 	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
@@ -31,7 +31,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadMesh(const s
 	}
 }
 
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const std::string& filepath)
+std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadGLTF(const std::string& filepath)
 {
 	tinygltf::Model model;
 	tinygltf::TinyGLTF loader;
@@ -55,8 +55,8 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 	if (!err.empty())  std::cerr << "GLTF Error: " << err << "\n";
 	if (!ret) throw std::runtime_error("Failed to load GLTF: " + filepath);
 
-	auto mesh = std::make_shared<graphics::resources::Mesh>();
-	std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
+	auto mesh = std::make_shared<graphics::resources::object::Mesh>();
+	std::unordered_map<graphics::resources::object::Vertex, uint32_t> uniqueVertices{};
 
 	if (model.meshes.empty())
 	{
@@ -124,12 +124,12 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 			}
 		}
 
-		std::unordered_map<graphics::resources::Vertex, uint32_t> localVertexMap;
+		std::unordered_map<graphics::resources::object::Vertex, uint32_t> localVertexMap;
 		uint32_t localVertexCount = 0;
 
 		for (size_t i = 0; i < positions.size() / 3; i++)
 		{
-			graphics::resources::Vertex v{};
+			graphics::resources::object::Vertex v{};
 			v.position = { positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2] };
 			if (!normals.empty())
 				v.normal = { normals[i * 3 + 0], normals[i * 3 + 1], normals[i * 3 + 2] };
@@ -155,7 +155,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 		{
 			for (auto idx : primitiveIndices)
 			{
-				graphics::resources::Vertex originalVertex{};
+				graphics::resources::object::Vertex originalVertex{};
 				originalVertex.position = {
 					positions[idx * 3 + 0],
 					positions[idx * 3 + 1],
@@ -181,7 +181,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 			}
 		}
 
-		graphics::resources::SubMesh submesh;
+		graphics::resources::object::SubMesh submesh;
 		submesh.firstIndex = submeshFirstIndex;
 		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
 		submesh.vertexOffset = submeshVertexOffset;
@@ -202,7 +202,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 	return mesh;
 }
 
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const std::string& filepath)
+std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadOBJ(const std::string& filepath)
 {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
@@ -211,8 +211,8 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 
 	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filepath.c_str());
 
-	auto mesh = std::make_shared<graphics::resources::Mesh>();
-	std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
+	auto mesh = std::make_shared<graphics::resources::object::Mesh>();
+	std::unordered_map<graphics::resources::object::Vertex, uint32_t> uniqueVertices{};
 
 	for (size_t shapeIdx = 0; shapeIdx < shapes.size(); ++shapeIdx)
 	{
@@ -223,7 +223,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 
 		for (const auto& index : shape.mesh.indices)
 		{
-			graphics::resources::Vertex vertex{};
+			graphics::resources::object::Vertex vertex{};
 
 			if (index.vertex_index >= 0)
 			{
@@ -270,7 +270,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 			mesh->indices.push_back(uniqueVertices[vertex]);
 		}
 
-		graphics::resources::SubMesh submesh;
+		graphics::resources::object::SubMesh submesh;
 		submesh.firstIndex = submeshFirstIndex;
 		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
 		submesh.vertexOffset = submeshVertexOffset;
@@ -283,10 +283,10 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 	return mesh;
 }
 
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::CreatePlane(
+std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::CreatePlane(
 	float width, float height, int subdivisionsX, int subdivisionsZ)
 {
-	auto mesh = std::make_shared<graphics::resources::Mesh>();
+	auto mesh = std::make_shared<graphics::resources::object::Mesh>();
 
 	int vertCountX = subdivisionsX + 1;
 	int vertCountZ = subdivisionsZ + 1;
@@ -304,7 +304,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::CreatePlane(
 	{
 		for (int x = 0; x < vertCountX; x++)
 		{
-			graphics::resources::Vertex vertex;
+			graphics::resources::object::Vertex vertex;
 
 			vertex.position = glm::vec3(
 				-halfWidth + x * deltaX,

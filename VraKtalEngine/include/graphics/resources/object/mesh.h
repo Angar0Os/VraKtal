@@ -11,7 +11,7 @@ namespace core::gpu
 	class Buffer;
 }
 
-namespace graphics::resources
+namespace graphics::resources::object
 {
 	struct Vertex
 	{
@@ -167,9 +167,9 @@ namespace graphics::resources
 namespace std
 {
 	template<>
-	struct hash<graphics::resources::Vertex>
+	struct hash<graphics::resources::object::Vertex>
 	{
-		size_t operator()(const graphics::resources::Vertex& vertex) const
+		size_t operator()(const graphics::resources::object::Vertex& vertex) const
 		{
 			size_t h1 = hash<float>()(vertex.position.x);
 			size_t h2 = hash<float>()(vertex.position.y);

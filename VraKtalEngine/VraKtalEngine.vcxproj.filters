@@ -49,6 +49,12 @@
     <Filter Include="Source Files\loaders">
       <UniqueIdentifier>{05673a73-e4b1-4dde-8aa6-dda25ddb6918}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\graphics\resources\object">
+      <UniqueIdentifier>{8bfa7b30-46ed-4edc-8cd8-3ddd1882b352}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\graphics\resources\property">
+      <UniqueIdentifier>{3737e3eb-bce0-4260-9680-a11a37364864}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -132,26 +138,41 @@
     <ClInclude Include="include\graphics\renderer.h">
       <Filter>Header Files\graphics</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\resources\mesh.h">
-      <Filter>Header Files\graphics\resources</Filter>
-    </ClInclude>
     <ClInclude Include="include\graphics\resources\scene.h">
       <Filter>Header Files\graphics\resources</Filter>
     </ClInclude>
     <ClInclude Include="include\loaders\meshLoader.h">
       <Filter>Header Files\loaders</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\resources\material.h">
-      <Filter>Header Files\graphics\resources</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\light.h">
-      <Filter>Header Files\graphics\resources</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\gpu\vulkan\accelerationStructure_impl.h">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="include\core\gpu\accelerationStructure.h">
       <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\camera.h">
+      <Filter>Header Files\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\property\transform.h">
+      <Filter>Header Files\graphics\resources\property</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\object.h">
+      <Filter>Header Files\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\light.h">
+      <Filter>Header Files\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\material.h">
+      <Filter>Header Files\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\mesh.h">
+      <Filter>Header Files\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\project.h">
+      <Filter>Header Files\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\staticMesh.h">
+      <Filter>Header Files\graphics\resources\object</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

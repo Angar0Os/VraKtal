@@ -5,7 +5,7 @@
 #include <string>
 #include <glm/glm.hpp>
 
-namespace graphics::resources
+namespace graphics::resources::object
 {
 	struct Material
 	{

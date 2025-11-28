@@ -10,7 +10,7 @@
 #include <core/enum.h>
 #include <core/gpu/descriptorSet.h>
 
-#include <graphics/resources/mesh.h>
+#include <graphics/resources/object/mesh.h>
 
 #include <fstream>
 
@@ -600,14 +600,14 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 
 	VertexInputBinding vertexBinding{
 		.binding = 0,
-		.stride = sizeof(graphics::resources::Vertex),
+		.stride = sizeof(graphics::resources::object::Vertex),
 		.inputRate = VertexInputRate::Vertex
 	};
 
 	std::vector<VertexInputAttribute> vertexAttributes = {
-		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, position)},
-		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::Vertex, uv)},
-		{3, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, normal)}
+		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, position)},
+		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::object::Vertex, uv)},
+		{3, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, normal)}
 	};
 
 	std::vector<ShaderStage> shaderStages = {
@@ -651,12 +651,12 @@ void core::gpu::Device::Impl::CreateShadowPipeline()
 
 	VertexInputBinding vertexBinding{
 		.binding = 0,
-		.stride = sizeof(graphics::resources::Vertex),
+		.stride = sizeof(graphics::resources::object::Vertex),
 		.inputRate = VertexInputRate::Vertex
 	};
 
 	std::vector<VertexInputAttribute> vertexAttributes = {
-		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, position)}
+		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, position)}
 	};
 
 	std::vector<ShaderStage> shaderStages = {

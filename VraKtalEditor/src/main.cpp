@@ -1,9 +1,15 @@
 ﻿#include <iostream>
+
 #include <glm/gtc/matrix_transform.hpp>
+
 #include <core/window.h>
 #include <core/gpu/device.h>
+
 #include <graphics/renderer.h>
 #include <graphics/resources/scene.h>
+#include <graphics/resources/object/material.h>
+#include <graphics/resources/object/camera.h>
+
 #include <loaders/meshLoader.h>
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
@@ -17,11 +23,19 @@ int main()
 		graphics::Renderer renderer(window, device);
 		loaders::MeshLoader loader;
 
-		auto scene = std::make_shared<graphics::resources::Scene>();
+		auto scene = std::make_shared<graphics::resources::Scene>("MainScene");
+
+		auto camera = scene->AddCamera("MainCamera");
+		camera->SetPosition(glm::vec3(4.0f, 3.0f, 4.0f));
+		camera->LookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+		camera->fov = 45.0f;
+		camera->aspectRatio = 800.0f / 600.0f;
+		camera->zNear = 0.1f;
+		camera->zFar = 100.0f;
 
 		auto vikingRoomMesh = loader.LoadMesh("assets/models/viking_room.obj");
 
-		auto vikingMaterial = std::make_shared<graphics::resources::Material>();
+		auto vikingMaterial = std::make_shared<graphics::resources::object::Material>();
 		vikingMaterial->name = "VikingRoomMaterial";
 		vikingMaterial->albedo = glm::vec3(1.0f);
 		vikingMaterial->metallic = 0.0f;
@@ -29,24 +43,24 @@ int main()
 		vikingMaterial->useAlbedoTexture = true;
 		vikingMaterial->albedoTexture = "assets/textures/viking_room.png";
 
-		auto meshInstance1 = scene->AddMesh(vikingRoomMesh, vikingMaterial, glm::mat4(1.0));
-		meshInstance1->SetPosition(glm::vec3(-1.5f, 0.5f, 0.0f));
+		auto meshObj1 = scene->AddStaticMesh("VikingRoom1", vikingRoomMesh, vikingMaterial);
+		meshObj1->SetPosition(glm::vec3(-1.5f, 0.5f, 0.0f));
 
-		auto meshInstance2 = scene->AddMesh(vikingRoomMesh, vikingMaterial, glm::mat4(1.0f));
-		meshInstance2->SetPosition(glm::vec3(1.5f, 0.5f, 0.0f));
+		auto meshObj2 = scene->AddStaticMesh("VikingRoom2", vikingRoomMesh, vikingMaterial);
+		meshObj2->SetPosition(glm::vec3(1.5f, 0.5f, 0.0f));
 
 		auto planeMesh = loaders::MeshLoader::CreatePlane(10.0f, 10.0f, 10, 10);
 
-		auto planeMaterial = std::make_shared<graphics::resources::Material>();
+		auto planeMaterial = std::make_shared<graphics::resources::object::Material>();
 		planeMaterial->name = "GroundMaterial";
 		planeMaterial->albedo = glm::vec3(0.8f, 0.8f, 0.8f);
 		planeMaterial->metallic = 0.0f;
 		planeMaterial->roughness = 0.9f;
 		planeMaterial->ao = 1.0f;
 
-		auto planeInstance = scene->AddMesh(planeMesh, planeMaterial, glm::mat4(1.0f));
+		auto planeObj = scene->AddStaticMesh("Ground", planeMesh, planeMaterial);
 
-		graphics::resources::Light mainLight;
+		graphics::resources::object::Light mainLight;
 		mainLight.position = glm::vec3(3.0f, 4.0f, 3.0f);
 		mainLight.color = glm::vec3(1.0f, 0.95f, 0.9f);
 		mainLight.intensity = 15.0f;
@@ -55,15 +69,7 @@ int main()
 		scene->AddLight(mainLight);
 
 		renderer.SetScene(scene);
-
 		renderer.EnableRayTracing();
-
-		glm::vec3 cameraPos(4.0f, 3.0f, 4.0f);
-		glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-		proj[1][1] *= -1;
-
-		renderer.UpdateCamera(view, proj, cameraPos);
 
 		float time = 0.0f;
 		const float lightRadius = 1.0f;
@@ -75,7 +81,6 @@ int main()
 			window.PollEvents();
 
 			time += 0.016f;
-
 			float angle = time * rotationSpeed;
 
 			scene->lights[0].position = glm::vec3(
@@ -85,7 +90,6 @@ int main()
 			);
 
 			scene->lights[0].intensity = 15.0f + 5.0f * sin(time * 2.0f);
-			static int frameCounter = 0;
 
 			renderer.DrawFrame();
 		}

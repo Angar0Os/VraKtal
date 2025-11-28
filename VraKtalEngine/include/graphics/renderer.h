@@ -9,7 +9,7 @@
 #include <core/gpu/accelerationStructure.h>
 
 #include <graphics/resources/scene.h>
-#include <graphics/resources/mesh.h>
+#include <graphics/resources/object/mesh.h>
 
 #include <glm/glm.hpp>
 
@@ -45,9 +45,9 @@ namespace graphics
 		core::gpu::Device& m_device;
 
 		std::vector<std::unique_ptr<core::gpu::CommandBuffer>> m_commandBuffers;
-		std::unordered_map<resources::Mesh*, MeshBuffers> m_meshBuffers;
+		std::unordered_map<resources::object::Mesh*, MeshBuffers> m_meshBuffers;
 
-		std::unordered_map<resources::Mesh*, RTMeshData> m_rtMeshData;
+		std::unordered_map<resources::object::Mesh*, RTMeshData> m_rtMeshData;
 		std::unique_ptr<core::gpu::AccelerationStructure> m_tlas;
 		bool m_rayTracingEnabled = false;
 
@@ -62,21 +62,22 @@ namespace graphics
 		glm::vec3 m_cameraPosition;
 
 		void CreateCommandBuffers();
-		void CreateMeshBuffers(std::shared_ptr<resources::Mesh> mesh);
-		void UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<resources::Material>& material);
+		void CreateMeshBuffers(std::shared_ptr<resources::object::Mesh> mesh);
+		void UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<resources::object::Material>& material);
 		void RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
 
-		void CreateRTMeshBuffers(std::shared_ptr<resources::Mesh> mesh);
-		void CreateBLAS(resources::Mesh* mesh);
+		void CreateRTMeshBuffers(std::shared_ptr<resources::object::Mesh> mesh);
+		void CreateBLAS(resources::object::Mesh* mesh);
 		void BuildTLAS();
 		void RebuildAccelerationStructures();
+		void UpdateCamera(const glm::mat4& view, const glm::mat4& proj, const glm::vec3& position);
 
 	public:
 		Renderer(core::Window& window, core::gpu::Device& device);
 		~Renderer();
 
 		void SetScene(std::shared_ptr<resources::Scene> scene);
-		void UpdateCamera(const glm::mat4& view, const glm::mat4& proj, const glm::vec3& position);
+		void UpdateCameraFromScene();
 		void DrawFrame();
 		void Cleanup();
 

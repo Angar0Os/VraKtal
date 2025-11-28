@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include <string>
 
-namespace graphics::resources
+namespace graphics::resources::object
 {
 	enum class LightType
 	{
