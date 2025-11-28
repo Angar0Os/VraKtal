@@ -46,19 +46,13 @@ namespace core::gpu
 		uint32_t							queueIndex = ~0;
 
 		std::unique_ptr<CommandPool> commandPool;
-
 		std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
-		std::unique_ptr<DescriptorSetLayout> shadowDescriptorSetLayout;
-
 		std::unique_ptr<DescriptorPool> descriptorPool;
-
 		std::vector<vk::raii::DescriptorSet*> descriptorSets;
-		std::vector<vk::raii::DescriptorSet*> shadowDescriptorSets;
 
 		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
 
 		std::unique_ptr<Sampler> textureSampler;
-		std::unique_ptr<Sampler> shadowSampler;
 
 		std::unique_ptr<Texture> defaultWhiteTexture;
 		std::unique_ptr<Texture> defaultBlackTexture;
@@ -72,11 +66,10 @@ namespace core::gpu
 		std::unique_ptr<Texture> emissiveTexture;
 
 		std::unique_ptr<Image> colorImage;
-		std::unique_ptr<Image> shadowMapImage;
+		std::unique_ptr<Image> depthImage;
 
 		std::unique_ptr<Swapchain> swapchain;
 		std::unique_ptr<Pipeline> graphicsPipeline;
-		std::unique_ptr<Pipeline> shadowPipeline;
 
 		std::vector<CommandBuffer> commandBuffers;
 
@@ -100,11 +93,9 @@ namespace core::gpu
 		void CreateLogicalDevice();
 		void CreateSwapchain();
 		void CreateGraphicsPipeline();
-		void CreateShadowPipeline();
 		void RecreateSwapchain();
 
 		void CreateDescriptorSetLayout();
-		void CreateShadowDescriptorSetLayout();
 		void CreateCommandPool();
 		void CreateDescriptorPool();
 		void AllocateDescriptorSets();
@@ -112,10 +103,9 @@ namespace core::gpu
 		void CreateSamplers();
 		void CreateDefaultTextures();
 		void LoadMaterialTextures();
-		void CreateShadowMap();
 		void CreateColorImage();
+		void CreateDepthImage();
 		void CreateDescriptorSets();
-		void CreateShadowDescriptorSets();
 		void CreateCommandBuffers();
 		void CreateSyncObjects();
 

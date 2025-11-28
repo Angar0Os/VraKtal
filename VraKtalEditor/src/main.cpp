@@ -1,7 +1,5 @@
 ﻿#include <iostream>
 
-#include <glm/gtc/matrix_transform.hpp>
-
 #include <core/window.h>
 #include <core/gpu/device.h>
 
@@ -26,8 +24,8 @@ int main()
 		auto scene = std::make_shared<graphics::resources::Scene>("MainScene");
 
 		auto camera = scene->AddCamera("MainCamera");
-		camera->SetPosition(glm::vec3(4.0f, 3.0f, 4.0f));
-		camera->LookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+		camera->SetPosition(glm::vec3(0.0f, 1.5f, 5.0f));
+		camera->LookAt(glm::vec3(0.0f, 0.5f, 0.0f));
 		camera->fov = 45.0f;
 		camera->aspectRatio = 800.0f / 600.0f;
 		camera->zNear = 0.1f;
@@ -71,26 +69,9 @@ int main()
 		renderer.SetScene(scene);
 		renderer.EnableRayTracing();
 
-		float time = 0.0f;
-		const float lightRadius = 1.0f;
-		const float lightHeight = 1.0f;
-		const float rotationSpeed = 0.01f;
-
 		while (!window.ShouldClose())
 		{
 			window.PollEvents();
-
-			time += 0.016f;
-			float angle = time * rotationSpeed;
-
-			scene->lights[0].position = glm::vec3(
-				lightRadius * cos(angle),
-				lightHeight,
-				lightRadius * sin(angle)
-			);
-
-			scene->lights[0].intensity = 15.0f + 5.0f * sin(time * 2.0f);
-
 			renderer.DrawFrame();
 		}
 

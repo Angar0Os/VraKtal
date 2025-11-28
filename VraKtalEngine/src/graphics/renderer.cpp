@@ -357,7 +357,6 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	cmd->End(0);
 }
-
 void Renderer::DrawFrame()
 {
 	if (!m_running) return;
@@ -395,46 +394,6 @@ void Renderer::Cleanup()
 	m_meshBuffers.clear();
 	m_commandBuffers.clear();
 	m_device.Cleanup();
-}
-
-void Renderer::EnableRayTracing()
-{
-	if (m_rayTracingEnabled) return;
-
-	std::cout << "Enabling ray tracing..." << std::endl;
-
-	if (!m_scene)
-	{
-		std::cerr << "Cannot enable ray tracing: no scene set!" << std::endl;
-		return;
-	}
-
-	auto staticMeshes = m_scene->GetStaticMeshes();
-	for (auto* staticMesh : staticMeshes)
-	{
-		if (!staticMesh->mesh) continue;
-
-		if (m_rtMeshData.find(staticMesh->mesh.get()) == m_rtMeshData.end())
-		{
-			CreateRTMeshBuffers(staticMesh->mesh);
-			CreateBLAS(staticMesh->mesh.get());
-		}
-	}
-
-	BuildTLAS();
-
-	if (m_tlas)
-	{
-		void* tlasHandle = m_tlas->GetHandle();
-		for (uint32_t i = 0; i < core::gpu::Device::FRAMES_IN_FLIGHT; i++)
-		{
-			m_device.UpdateDescriptorWithTLAS(i, tlasHandle);
-		}
-		std::cout << "TLAS bound to all descriptor sets!" << std::endl;
-	}
-
-	m_rayTracingEnabled = true;
-	std::cout << "Ray tracing enabled successfully!" << std::endl;
 }
 
 void Renderer::DisableRayTracing()
@@ -505,7 +464,6 @@ void Renderer::CreateBLAS(resources::object::Mesh* mesh)
 	}
 
 	auto& rtData = it->second;
-
 	core::gpu::AccelerationStructureGeometry geometry{};
 	geometry.vertexBuffer = rtData.rtVertexBuffer.get();
 	geometry.vertexCount = static_cast<uint32_t>(mesh->vertices.size());
@@ -528,6 +486,43 @@ void Renderer::CreateBLAS(resources::object::Mesh* mesh)
 	);
 }
 
+void Renderer::EnableRayTracing()
+{
+	if (m_rayTracingEnabled) return;
+
+	if (!m_scene)
+	{
+		std::cerr << "Cannot enable ray tracing: no scene set!" << std::endl;
+		return;
+	}
+
+	auto staticMeshes = m_scene->GetStaticMeshes();
+	for (auto* staticMesh : staticMeshes)
+	{
+		if (!staticMesh->mesh) continue;
+
+		if (m_rtMeshData.find(staticMesh->mesh.get()) == m_rtMeshData.end())
+		{
+			CreateRTMeshBuffers(staticMesh->mesh);
+			CreateBLAS(staticMesh->mesh.get());
+		}
+	}
+
+	BuildTLAS();
+	RebuildAccelerationStructures();
+
+	if (m_tlas)
+	{
+		void* tlasHandle = m_tlas->GetHandle();
+		for (uint32_t i = 0; i < core::gpu::Device::FRAMES_IN_FLIGHT; i++)
+		{
+			m_device.UpdateDescriptorWithTLAS(i, tlasHandle);
+		}
+	}
+
+	m_rayTracingEnabled = true;
+}
+
 void Renderer::BuildTLAS()
 {
 	if (!m_scene)
@@ -547,6 +542,7 @@ void Renderer::BuildTLAS()
 	instances.reserve(staticMeshes.size());
 
 	uint32_t instanceIndex = 0;
+
 	for (auto* staticMesh : staticMeshes)
 	{
 		if (!staticMesh->visible || !staticMesh->mesh) continue;
@@ -592,8 +588,6 @@ void Renderer::BuildTLAS()
 		m_device.GetPhysicalDevice(),
 		tlasInfo
 	);
-
-	RebuildAccelerationStructures();
 }
 
 void Renderer::RebuildAccelerationStructures()

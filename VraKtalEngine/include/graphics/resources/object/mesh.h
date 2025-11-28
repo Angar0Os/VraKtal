@@ -16,8 +16,8 @@ namespace graphics::resources::object
 	struct Vertex
 	{
 		glm::vec3 position;
-		glm::vec3 normal;
 		glm::vec2 uv;
+		glm::vec3 normal;
 		glm::vec4 tangent;
 
 		bool operator==(const Vertex& other) const

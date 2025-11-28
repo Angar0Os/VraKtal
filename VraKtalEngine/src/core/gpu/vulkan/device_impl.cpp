@@ -62,7 +62,6 @@ core::gpu::Device::Impl::Impl(core::Window& window)
 	CreateSwapchain();
 
 	CreateDescriptorSetLayout();
-	CreateShadowDescriptorSetLayout();
 
 	CreateDescriptorPool();
 	AllocateDescriptorSets();
@@ -73,14 +72,12 @@ core::gpu::Device::Impl::Impl(core::Window& window)
 
 	CreateDefaultTextures();
 	LoadMaterialTextures();
-	CreateShadowMap();
 	CreateColorImage();
+	CreateDepthImage();
 
 	CreateGraphicsPipeline();
-	CreateShadowPipeline();
 
 	CreateDescriptorSets();
-	CreateShadowDescriptorSets();
 
 	CreateSyncObjects();
 }
@@ -450,16 +447,6 @@ void core::gpu::Device::Impl::AllocateDescriptorSets()
 	{
 		descriptorSets.push_back(static_cast<vk::raii::DescriptorSet*>(setHandle));
 	}
-
-	std::vector<DescriptorSetLayout*> shadowLayouts(MAX_FRAMES_IN_FLIGHT, shadowDescriptorSetLayout.get());
-	auto allocatedShadowSets = descriptorPool->AllocateDescriptorSets(shadowLayouts, MAX_FRAMES_IN_FLIGHT);
-
-	shadowDescriptorSets.clear();
-	shadowDescriptorSets.reserve(allocatedShadowSets.size());
-	for (auto* setHandle : allocatedShadowSets)
-	{
-		shadowDescriptorSets.push_back(static_cast<vk::raii::DescriptorSet*>(setHandle));
-	}
 }
 
 void core::gpu::Device::Impl::CreateUniformBuffers()
@@ -496,17 +483,6 @@ void core::gpu::Device::Impl::CreateSamplers()
 		.maxLod = 1000.0f
 	};
 	textureSampler = std::make_unique<Sampler>(&device, samplerInfo);
-
-	SamplerCreateInfo shadowSamplerInfo{
-		.minFilter = Filter::Linear,
-		.magFilter = Filter::Linear,
-		.addressModeU = SamplerAddressMode::ClampToBorder,
-		.addressModeV = SamplerAddressMode::ClampToBorder,
-		.addressModeW = SamplerAddressMode::ClampToBorder,
-		.enableCompare = true,
-		.compareOp = CompareOp::LessOrEqual
-	};
-	shadowSampler = std::make_unique<Sampler>(&device, shadowSamplerInfo);
 }
 
 void core::gpu::Device::Impl::CreateCommandPool()
@@ -553,27 +529,6 @@ void core::gpu::Device::Impl::LoadMaterialTextures()
 	roughnessTexture->LoadTextureIfExists("assets/textures/roughness.png");
 	aoTexture->LoadTextureIfExists("assets/textures/ao.png");
 	emissiveTexture->LoadTextureIfExists("assets/textures/emissive.png");
-}
-
-void core::gpu::Device::Impl::CreateShadowMap()
-{
-	ImageCreateInfo shadowMapInfo{
-		.width = 2048,
-		.height = 2048,
-		.mipLevels = 1,
-		.format = TextureFormat::Depth32F,
-		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::DepthStencilAttachment | ImageUsage::Sampled,
-		.memoryProperties = MemoryProperty::DeviceLocal,
-		.samples = SampleCount::e4
-	};
-	shadowMapImage = std::make_unique<Image>(&device, &physicalDevice, shadowMapInfo);
-
-	ImageViewCreateInfo shadowViewInfo{
-		.format = TextureFormat::Depth32F,
-		.isDepth = true
-	};
-	shadowMapImage->CreateView(shadowViewInfo);
 }
 
 void core::gpu::Device::Impl::CreateSwapchain()
@@ -645,58 +600,6 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 	graphicsPipeline = std::make_unique<Pipeline>(&device, pipelineInfo);
 }
 
-void core::gpu::Device::Impl::CreateShadowPipeline()
-{
-	auto shaderCode = ReadFile("../bin/assets/shaders/slang.spv");
-
-	VertexInputBinding vertexBinding{
-		.binding = 0,
-		.stride = sizeof(graphics::resources::object::Vertex),
-		.inputRate = VertexInputRate::Vertex
-	};
-
-	std::vector<VertexInputAttribute> vertexAttributes = {
-		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, position)}
-	};
-
-	std::vector<ShaderStage> shaderStages = {
-		{ShaderStageFlags::Vertex, shaderCode, "shadowMain"}
-	};
-
-	std::vector<PushConstantRange> pushConstants = {
-		{
-			.stageFlags = static_cast<uint32_t>(ShaderStageFlags::Vertex),
-			.offset = 0,
-			.size = sizeof(glm::mat4)
-		}
-	};
-
-	PipelineCreateInfo shadowInfo{};
-	shadowInfo.shaderStages = shaderStages;
-	shadowInfo.vertexBindings = { vertexBinding };
-	shadowInfo.vertexAttributes = vertexAttributes;
-	shadowInfo.topology = PrimitiveTopology::TriangleList;
-	shadowInfo.polygonMode = PolygonMode::Fill;
-	shadowInfo.cullMode = CullMode::Back;
-	shadowInfo.frontFace = FrontFace::CounterClockwise;
-	shadowInfo.depthTestEnable = true;
-	shadowInfo.depthWriteEnable = true;
-	shadowInfo.depthCompareOp = CompareOp::LessOrEqual;
-	shadowInfo.blendEnable = false;
-	shadowInfo.samples = SampleCount::e1;
-	shadowInfo.colorAttachmentFormats = {};
-	shadowInfo.depthAttachmentFormat = TextureFormat::Depth32F;
-	shadowInfo.descriptorSetLayouts = { shadowDescriptorSetLayout.get() };
-	shadowInfo.pushConstantRanges = pushConstants;
-	shadowInfo.dynamicStates = {
-		DynamicState::Viewport,
-		DynamicState::Scissor,
-		DynamicState::DepthBias
-	};
-
-	shadowPipeline = std::make_unique<Pipeline>(&device, shadowInfo);
-}
-
 std::vector<char> core::gpu::Device::Impl::ReadFile(const std::string& filename)
 {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -741,7 +644,7 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 	swapchain = std::make_unique<Swapchain>(&device, &physicalDevice, swapchainInfo);
 
 	CreateColorImage();
-	CreateShadowMap();
+	CreateDepthImage();
 	CreateSyncObjects();
 }
 
@@ -757,28 +660,6 @@ void core::gpu::Device::Impl::CreateDescriptorSets()
 			.BindImage(*textureSampler, roughnessTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, aoTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, emissiveTexture.get(), *defaultBlackTexture)
-			.Update();
-	}
-}
-
-void core::gpu::Device::Impl::CreateShadowDescriptorSetLayout()
-{
-	DescriptorSetLayoutCreateInfo shadowLayoutInfo;
-	shadowLayoutInfo.bindings =
-	{
-		{0, DescriptorType::UniformBuffer, 1, core::ShaderStage::Vertex}
-	};
-
-	shadowDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(&device, shadowLayoutInfo);
-}
-
-
-void core::gpu::Device::Impl::CreateShadowDescriptorSets()
-{
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		DescriptorSet(&device, &shadowDescriptorSets, i)
-			.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
 			.Update();
 	}
 }
@@ -1041,6 +922,29 @@ void core::gpu::Device::Impl::CreateColorImage()
 	colorImage->CreateView(viewInfo);
 }
 
+void core::gpu::Device::Impl::CreateDepthImage()
+{
+	ImageCreateInfo depthInfo{
+		.width = swapchain->GetWidth(),
+		.height = swapchain->GetHeight(),
+		.mipLevels = 1,
+		.format = TextureFormat::Depth32F,
+		.tiling = ImageTiling::Optimal,
+		.usage = ImageUsage::DepthStencilAttachment,
+		.memoryProperties = MemoryProperty::DeviceLocal,
+		.samples = SampleCount::e4
+	};
+
+	depthImage = std::make_unique<Image>(&device, &physicalDevice, depthInfo);
+
+	ImageViewCreateInfo viewInfo{
+		.format = TextureFormat::Depth32F,
+		.isDepth = true
+	};
+
+	depthImage->CreateView(viewInfo);
+}
+
 void core::gpu::Device::Impl::Cleanup()
 {
 	device.waitIdle();
@@ -1090,11 +994,6 @@ void* core::gpu::Device::Impl::GetDescriptorSet(uint32_t frameIndex) const
 	return reinterpret_cast<void*>(static_cast<VkDescriptorSet>(**descriptorSets[frameIndex]));
 }
 
-void* core::gpu::Device::Impl::GetDepthImage() const
-{
-	return shadowMapImage ? shadowMapImage->GetHandle() : nullptr;
-}
-
 void* core::gpu::Device::Impl::GetHandle() const
 {
 	return static_cast<void*>(const_cast<vk::Device*>(&*device));
@@ -1115,9 +1014,14 @@ void* core::gpu::Device::Impl::GetSwapchainImageView(uint32_t imageIndex) const
 	return swapchain->GetImage(imageIndex).imageView;
 }
 
+void* core::gpu::Device::Impl::GetDepthImage() const
+{
+	return depthImage ? depthImage->GetHandle() : nullptr;
+}
+
 void* core::gpu::Device::Impl::GetDepthImageView() const
 {
-	return shadowMapImage->GetViewHandle();
+	return depthImage ? depthImage->GetViewHandle() : nullptr;
 }
 
 void* core::gpu::Device::Impl::GetColorImageView() const
