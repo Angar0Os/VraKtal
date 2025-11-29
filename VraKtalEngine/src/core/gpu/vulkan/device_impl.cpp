@@ -561,8 +561,8 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 
 	std::vector<VertexInputAttribute> vertexAttributes = {
 		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, position)},
-		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::object::Vertex, uv)},
-		{3, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, normal)}
+		{1, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, normal)},
+		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::object::Vertex, uv)}
 	};
 
 	std::vector<ShaderStage> shaderStages = {
