@@ -26,13 +26,20 @@ namespace graphics::resources::object
 			glm::vec3 pos = transform.position;
 			glm::vec3 forward = transform.GetForward();
 			glm::vec3 up = transform.GetUp();
-			return glm::lookAt(pos, pos + forward, up);
+			return glm::lookAtLH(pos, pos + forward, up);
 		}
 
 		glm::mat4 GetProjectionMatrix() const
 		{
-			glm::mat4 proj = glm::perspective(glm::radians(fov), aspectRatio, zNear, zFar);
-			proj[1][1] *= -1;
+			glm::mat4 proj = glm::perspectiveLH(
+				glm::radians(fov),
+				aspectRatio,
+				zNear,
+				zFar
+			);
+
+			proj[1][1] *= -1.0f;
+
 			return proj;
 		}
 

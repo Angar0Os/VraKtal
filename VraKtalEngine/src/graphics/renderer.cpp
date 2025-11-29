@@ -555,6 +555,7 @@ void Renderer::BuildTLAS()
 		}
 
 		const glm::mat4 mat = staticMesh->GetTransformMatrix();
+
 		float transform[3][4] = {
 			{mat[0][0], mat[1][0], mat[2][0], mat[3][0]},
 			{mat[0][1], mat[1][1], mat[2][1], mat[3][1]},

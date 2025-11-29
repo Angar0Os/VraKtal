@@ -189,15 +189,7 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadGLTF
 		submesh.name = "primitive_" + std::to_string(primIdx);
 
 		mesh->subMeshes.push_back(submesh);
-
-		std::cout << "  - Submesh " << primIdx << ": "
-			<< submesh.indexCount << " indices, material "
-			<< submesh.materialIndex << "\n";
 	}
-
-	std::cout << "Total: " << mesh->vertices.size() << " vertices, "
-		<< mesh->indices.size() << " indices, "
-		<< mesh->subMeshes.size() << " submeshes\n";
 
 	return mesh;
 }

@@ -416,7 +416,7 @@ void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, void
 
 	vk::DescriptorSet descSet = **descriptorSets[frameIndex];
 
-	VkAccelerationStructureKHR rawHandle = reinterpret_cast<VkAccelerationStructureKHR>(tlasHandle);
+	VkAccelerationStructureKHR rawHandle = static_cast<VkAccelerationStructureKHR>(tlasHandle);
 	const vk::AccelerationStructureKHR vkAccel(rawHandle);
 
 	vk::WriteDescriptorSetAccelerationStructureKHR accelInfo{};
@@ -533,11 +533,11 @@ void core::gpu::Device::Impl::LoadMaterialTextures()
 
 void core::gpu::Device::Impl::CreateSwapchain()
 {
-	int width, height;
+	int width, height = 0;
 	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
 
 	SwapchainCreateInfo swapchainInfo{
-		.surface = reinterpret_cast<void*>(static_cast<VkSurfaceKHR>(*surface)),
+		.surface = static_cast<void*>(static_cast<VkSurfaceKHR>(*surface)),
 		.width = static_cast<uint32_t>(width),
 		.height = static_cast<uint32_t>(height),
 		.preferredFormat = TextureFormat::RGBA8_SRGB,
@@ -584,8 +584,8 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 	pipelineInfo.vertexAttributes = vertexAttributes;
 	pipelineInfo.topology = PrimitiveTopology::TriangleList;
 	pipelineInfo.polygonMode = PolygonMode::Fill;
-	pipelineInfo.cullMode = CullMode::Back;
-	pipelineInfo.frontFace = FrontFace::CounterClockwise;
+	pipelineInfo.cullMode = CullMode::None;
+	pipelineInfo.frontFace = FrontFace::Clockwise;
 	pipelineInfo.depthTestEnable = true;
 	pipelineInfo.depthWriteEnable = true;
 	pipelineInfo.depthCompareOp = CompareOp::Less;
@@ -632,8 +632,14 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 
 	device.waitIdle();
 
+	imageAvailable.clear();
+	renderFinished.clear();
+	inFlightFences.clear();
+	imagesInFlight.clear();
+	tempCmdBufs.clear();
+
 	SwapchainCreateInfo swapchainInfo{
-		.surface = reinterpret_cast<void*>(static_cast<VkSurfaceKHR>(*surface)),
+		.surface = static_cast<void*>(static_cast<VkSurfaceKHR>(*surface)),
 		.width = static_cast<uint32_t>(width),
 		.height = static_cast<uint32_t>(height),
 		.preferredFormat = TextureFormat::RGBA8_SRGB,
@@ -645,7 +651,9 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 
 	CreateColorImage();
 	CreateDepthImage();
+	CreateGraphicsPipeline();
 	CreateSyncObjects();
+	CreateDescriptorSets();
 }
 
 void core::gpu::Device::Impl::CreateDescriptorSets()
@@ -714,42 +722,50 @@ uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 {
 	if (frameIndex >= imageAvailable.size()) return UINT32_MAX;
 
-	uint32_t imageIndex = UINT32_MAX;
 	vk::SwapchainKHR swapchainHandle = reinterpret_cast<VkSwapchainKHR>(swapchain->GetHandle());
 
-	vk::ResultValue<uint32_t> res = device.acquireNextImage2KHR(
-		vk::AcquireNextImageInfoKHR{
-			.swapchain = swapchainHandle,
-			.timeout = UINT64_MAX,
-			.semaphore = *imageAvailable[frameIndex],
-			.fence = nullptr,
-			.deviceMask = 1
+	try
+	{
+		vk::ResultValue<uint32_t> res = device.acquireNextImage2KHR(
+			vk::AcquireNextImageInfoKHR{
+				.swapchain = swapchainHandle,
+				.timeout = UINT64_MAX,
+				.semaphore = *imageAvailable[frameIndex],
+				.fence = nullptr,
+				.deviceMask = 1
+			}
+		);
+
+		if (res.result == vk::Result::eErrorOutOfDateKHR)
+		{
+			return UINT32_MAX;
 		}
-	);
 
-	if (res.result == vk::Result::eErrorOutOfDateKHR)
+		if (res.result != vk::Result::eSuccess && res.result != vk::Result::eSuboptimalKHR)
+		{
+			return UINT32_MAX;
+		}
+
+		uint32_t imageIndex = res.value;
+
+		if (imageIndex < imagesInFlight.size() && imagesInFlight[imageIndex] != nullptr)
+		{
+			device.waitForFences(**imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+		}
+
+		device.resetFences(*inFlightFences[frameIndex]);
+		imagesInFlight[imageIndex] = &inFlightFences[frameIndex];
+
+		return imageIndex;
+	}
+	catch (const vk::OutOfDateKHRError&)
 	{
 		return UINT32_MAX;
 	}
-
-	if (res.result != vk::Result::eSuccess && res.result != vk::Result::eSuboptimalKHR)
+	catch (const vk::SystemError& e)
 	{
-		std::cerr << "AcquireNextImage failed: " << vk::to_string(res.result) << "\n";
 		return UINT32_MAX;
 	}
-
-	imageIndex = res.value;
-
-	if (imageIndex < imagesInFlight.size() && imagesInFlight[imageIndex] != nullptr)
-	{
-		device.waitForFences(*(*imagesInFlight[imageIndex]), VK_TRUE, UINT64_MAX);
-	}
-
-	device.resetFences(*inFlightFences[frameIndex]);
-
-	imagesInFlight[imageIndex] = &inFlightFences[frameIndex];
-
-	return imageIndex;
 }
 
 void* core::gpu::Device::Impl::GetImageAvailableSemaphore(uint32_t frameIndex) const
@@ -761,13 +777,13 @@ void* core::gpu::Device::Impl::GetImageAvailableSemaphore(uint32_t frameIndex) c
 void* core::gpu::Device::Impl::GetRenderFinishedSemaphore(uint32_t imageIndex) const
 {
 	if (imageIndex >= renderFinished.size()) return nullptr;
-	return reinterpret_cast<void*>(static_cast<VkSemaphore>(*renderFinished[imageIndex]));
+	return static_cast<void*>(static_cast<VkSemaphore>(*renderFinished[imageIndex]));
 }
 
 void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
 {
 	if (frameIndex >= inFlightFences.size()) return nullptr;
-	return reinterpret_cast<void*>(static_cast<VkFence>(*inFlightFences[frameIndex]));
+	return static_cast<void*>(static_cast<VkFence>(*inFlightFences[frameIndex]));
 }
 
 void* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
@@ -877,7 +893,6 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 
 	vk::Semaphore presentWait = *renderFinished[imageIndex];
 	vk::SwapchainKHR vkSwapchain = reinterpret_cast<VkSwapchainKHR>(swapchain->GetHandle());
-	;
 
 	vk::PresentInfoKHR presentInfo{
 		.waitSemaphoreCount = 1,
@@ -890,11 +905,11 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 	try
 	{
 		vk::Result result = graphicsQueue.presentKHR(presentInfo);
-		if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR)
-		{
-		}
 	}
 	catch (const vk::OutOfDateKHRError&)
+	{
+	}
+	catch (const vk::SystemError& e)
 	{
 	}
 }
@@ -991,7 +1006,7 @@ void* core::gpu::Device::Impl::GetPipelineLayout() const
 void* core::gpu::Device::Impl::GetDescriptorSet(uint32_t frameIndex) const
 {
 	if (frameIndex >= descriptorSets.size()) return nullptr;
-	return reinterpret_cast<void*>(static_cast<VkDescriptorSet>(**descriptorSets[frameIndex]));
+	return static_cast<void*>(static_cast<VkDescriptorSet>(**descriptorSets[frameIndex]));
 }
 
 void* core::gpu::Device::Impl::GetHandle() const
