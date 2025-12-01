@@ -61,13 +61,6 @@ namespace graphics::resources
 			return (it != objects.end()) ? it->get() : nullptr;
 		}
 
-		template<typename T>
-		T* FindObjectByNameAs(const std::string& objectName)
-		{
-			auto obj = FindObjectByName(objectName);
-			return obj ? dynamic_cast<T*>(obj) : nullptr;
-		}
-
 		std::vector<object::StaticMesh*> GetStaticMeshes()
 		{
 			std::vector<object::StaticMesh*> meshes;

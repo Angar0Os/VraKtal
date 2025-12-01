@@ -726,7 +726,7 @@ uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 
 	try
 	{
-		vk::ResultValue<uint32_t> res = device.acquireNextImage2KHR(
+		std::pair<vk::Result, uint32_t> result = device.acquireNextImage2KHR(
 			vk::AcquireNextImageInfoKHR{
 				.swapchain = swapchainHandle,
 				.timeout = UINT64_MAX,
@@ -736,17 +736,17 @@ uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 			}
 		);
 
-		if (res.result == vk::Result::eErrorOutOfDateKHR)
+		uint32_t imageIndex = result.second;
+
+		if (result.first == vk::Result::eErrorOutOfDateKHR)
 		{
 			return UINT32_MAX;
 		}
 
-		if (res.result != vk::Result::eSuccess && res.result != vk::Result::eSuboptimalKHR)
+		if (result.first != vk::Result::eSuccess && result.first != vk::Result::eSuboptimalKHR)
 		{
 			return UINT32_MAX;
 		}
-
-		uint32_t imageIndex = res.value;
 
 		if (imageIndex < imagesInFlight.size() && imagesInFlight[imageIndex] != nullptr)
 		{

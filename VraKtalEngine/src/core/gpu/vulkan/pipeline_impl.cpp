@@ -2,8 +2,6 @@
 #include "../src/core/gpu_detail/converters.h"
 #include <core/gpu/descriptorSetLayout.h>
 
-#include <stdexcept>
-
 core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, vk::raii::Device& dev, const PipelineCreateInfo& info)
 	: parent(p), device(dev), pipelineLayout(nullptr), pipeline(nullptr)
 {
