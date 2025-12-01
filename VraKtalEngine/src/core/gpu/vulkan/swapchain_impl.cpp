@@ -40,7 +40,7 @@ core::gpu::Swapchain::Impl::Impl(core::gpu::Swapchain& p, vk::raii::Device& dev,
 	createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = vk::True;
-	createInfo.oldSwapchain = info.oldSwapchain ? *static_cast<vk::SwapchainKHR*>(info.oldSwapchain) : nullptr;
+	createInfo.oldSwapchain = info.oldSwapchain ? reinterpret_cast<VkSwapchainKHR>(reinterpret_cast<uintptr_t>(info.oldSwapchain)) : VK_NULL_HANDLE;
 
 	swapchain = vk::raii::SwapchainKHR(device, createInfo);
 

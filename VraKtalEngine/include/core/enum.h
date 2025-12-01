@@ -1,6 +1,7 @@
 #ifndef VRAKTAL_CORE_ENUMS_H
 #define VRAKTAL_CORE_ENUMS_H
 #pragma once
+
 #include <cstdint>
 
 namespace core
@@ -111,7 +112,11 @@ namespace core
 		StorageBuffer = 1 << 3,
 		IndexBuffer = 1 << 4,
 		VertexBuffer = 1 << 5,
-		IndirectBuffer = 1 << 6
+		IndirectBuffer = 1 << 6,
+
+		ShaderDeviceAddress = 1 << 17,
+		AccelerationStructureStorage = 1 << 20,
+		AccelerationStructureBuildInput = 1 << 19
 	};
 
 	inline BufferUsage operator|(BufferUsage a, BufferUsage b)
@@ -148,7 +153,8 @@ namespace core
 		UniformBuffer,
 		CombinedImageSampler,
 		StorageBuffer,
-		StorageImage
+		StorageImage,
+		AccelerationStructure
 	};
 
 	enum class ShaderStageFlags : uint32_t
@@ -160,7 +166,16 @@ namespace core
 		Geometry = 1 << 3,
 		TessellationControl = 1 << 4,
 		TessellationEvaluation = 1 << 5,
-		AllGraphics = Vertex | Fragment | Geometry | TessellationControl | TessellationEvaluation
+
+		RayGen = 1 << 6,
+		ClosestHit = 1 << 7,
+		AnyHit = 1 << 8,
+		Miss = 1 << 9,
+		Intersection = 1 << 10,
+		Callable = 1 << 11,
+
+		AllGraphics = Vertex | Fragment | Geometry | TessellationControl | TessellationEvaluation,
+		AllRayTracing = RayGen | ClosestHit | AnyHit | Miss | Intersection | Callable
 	};
 
 	inline ShaderStageFlags operator|(ShaderStageFlags a, ShaderStageFlags b)
@@ -182,6 +197,14 @@ namespace core
 		Geometry = 1 << 3,
 		TessellationControl = 1 << 4,
 		TessellationEvaluation = 1 << 5,
+
+		RayGen = 1 << 6,
+		ClosestHit = 1 << 7,
+		AnyHit = 1 << 8,
+		Miss = 1 << 9,
+		Intersection = 1 << 10,
+		Callable = 1 << 11,
+
 		All = 0x7FFFFFFF
 	};
 

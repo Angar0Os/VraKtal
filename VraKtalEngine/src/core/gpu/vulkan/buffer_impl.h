@@ -33,6 +33,8 @@ namespace core::gpu
 
 		size_t GetSize() const;
 
+		uint64_t GetDeviceAddress() const;
+
 		void Map(void** data);
 		void Unmap();
 		void CopyFrom(const void* data, size_t size, size_t offset);

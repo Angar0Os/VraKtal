@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include <string>
 
-namespace graphics::resources
+namespace graphics::resources::object
 {
 	enum class LightType
 	{
@@ -32,6 +32,8 @@ namespace graphics::resources
 		float quadratic;
 		float radius;
 
+		float lightRadius;
+
 		Light()
 			: name("Light"),
 			position(2.0f, 2.0f, 2.0f),
@@ -45,7 +47,8 @@ namespace graphics::resources
 			constant(1.0f),
 			linear(0.09f),
 			quadratic(0.032f),
-			radius(100.0f)
+			radius(100.0f),
+			lightRadius(0.5f)
 		{
 		}
 
@@ -57,6 +60,7 @@ namespace graphics::resources
 			light.color = color;
 			light.intensity = intensity;
 			light.type = LightType::Point;
+			light.lightRadius = 0.5f;
 			return light;
 		}
 
@@ -68,6 +72,7 @@ namespace graphics::resources
 			light.color = color;
 			light.intensity = intensity;
 			light.type = LightType::Directional;
+			light.lightRadius = 0.5f;
 			return light;
 		}
 
@@ -85,6 +90,7 @@ namespace graphics::resources
 			light.type = LightType::Spot;
 			light.innerConeAngle = innerAngle;
 			light.outerConeAngle = outerAngle;
+			light.lightRadius = 0.3f;
 			return light;
 		}
 

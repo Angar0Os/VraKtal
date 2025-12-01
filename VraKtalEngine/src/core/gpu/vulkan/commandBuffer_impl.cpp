@@ -1,10 +1,13 @@
 #include "../src/core/gpu/vulkan/commandBuffer_impl.h"
 
+#include <core/gpu/accelerationStructure.h>
+
 #include <stdexcept>
 
 core::gpu::CommandBuffer::Impl::Impl(core::gpu::CommandBuffer& p, vk::raii::Device& dev,
 	vk::raii::Queue& q, vk::raii::CommandPool& pool, const CommandBufferCreateInfo& info)
 	: parent(p), device(dev), queue(q), commandPool(pool),
+	commandBuffers(nullptr),
 	isSingleTime(info.singleTime), currentIndex(0)
 {
 	if (info.count == 0)
@@ -44,6 +47,121 @@ const vk::raii::CommandBuffer& core::gpu::CommandBuffer::Impl::GetCommandBuffer(
 		throw std::out_of_range("CommandBuffer index out of range");
 	}
 	return commandBuffers[index];
+}
+
+void core::gpu::CommandBuffer::Impl::BuildAccelerationStructure(void* accelerationStructure)
+{
+	if (!accelerationStructure)
+	{
+		throw std::runtime_error("Invalid acceleration structure handle (nullptr)");
+	}
+
+	auto* accelStruct = static_cast<AccelerationStructure*>(accelerationStructure);
+
+	try {
+		accelStruct->Build(&GetCommandBuffer(currentIndex));
+	}
+	catch (const std::exception& e) {
+		throw std::runtime_error(std::string("Failed to build acceleration structure: ") + e.what());
+	}
+}
+
+void core::gpu::CommandBuffer::Impl::AccelerationStructureBarrier()
+{
+	vk::MemoryBarrier barrier{};
+	barrier.srcAccessMask = vk::AccessFlagBits::eAccelerationStructureWriteKHR;
+	barrier.dstAccessMask = vk::AccessFlagBits::eAccelerationStructureReadKHR;
+
+	GetCommandBuffer(currentIndex).pipelineBarrier(
+		vk::PipelineStageFlagBits::eAccelerationStructureBuildKHR,
+		vk::PipelineStageFlagBits::eRayTracingShaderKHR,
+		{},
+		{ barrier },
+		{},
+		{}
+	);
+}
+
+void core::gpu::CommandBuffer::Impl::BindRayTracingPipeline(void* pipeline)
+{
+	VkPipeline vkPipeline = reinterpret_cast<VkPipeline>(pipeline);
+
+	if (!vkPipeline)
+	{
+		throw std::runtime_error("Invalid ray tracing pipeline handle");
+	}
+
+	GetCommandBuffer(currentIndex).bindPipeline(
+		vk::PipelineBindPoint::eRayTracingKHR,
+		vk::Pipeline(vkPipeline)
+	);
+}
+
+void core::gpu::CommandBuffer::Impl::TraceRays(
+	void* pipeline,
+	void* raygenSBT, uint32_t raygenOffset, uint32_t raygenStride,
+	void* missSBT, uint32_t missOffset, uint32_t missStride, uint32_t missCount,
+	void* hitSBT, uint32_t hitOffset, uint32_t hitStride, uint32_t hitCount,
+	void* callableSBT, uint32_t callableOffset, uint32_t callableStride, uint32_t callableCount,
+	uint32_t width, uint32_t height, uint32_t depth)
+{
+	vk::StridedDeviceAddressRegionKHR raygenRegion{};
+	if (raygenSBT)
+	{
+		vk::Buffer raygenBuffer = reinterpret_cast<VkBuffer>(raygenSBT);
+		vk::BufferDeviceAddressInfo addressInfo{};
+		addressInfo.buffer = raygenBuffer;
+
+		raygenRegion.deviceAddress = device.getBufferAddress(addressInfo) + raygenOffset;
+		raygenRegion.stride = raygenStride;
+		raygenRegion.size = raygenStride;
+	}
+
+	vk::StridedDeviceAddressRegionKHR missRegion{};
+	if (missSBT && missCount > 0)
+	{
+		vk::Buffer missBuffer = reinterpret_cast<VkBuffer>(missSBT);
+		vk::BufferDeviceAddressInfo addressInfo{};
+		addressInfo.buffer = missBuffer;
+
+		missRegion.deviceAddress = device.getBufferAddress(addressInfo) + missOffset;
+		missRegion.stride = missStride;
+		missRegion.size = missStride * missCount;
+	}
+
+	vk::StridedDeviceAddressRegionKHR hitRegion{};
+	if (hitSBT && hitCount > 0)
+	{
+		vk::Buffer hitBuffer = reinterpret_cast<VkBuffer>(hitSBT);
+		vk::BufferDeviceAddressInfo addressInfo{};
+		addressInfo.buffer = hitBuffer;
+
+		hitRegion.deviceAddress = device.getBufferAddress(addressInfo) + hitOffset;
+		hitRegion.stride = hitStride;
+		hitRegion.size = hitStride * hitCount;
+	}
+
+	vk::StridedDeviceAddressRegionKHR callableRegion{};
+	if (callableSBT && callableCount > 0)
+	{
+		vk::Buffer callableBuffer = reinterpret_cast<VkBuffer>(callableSBT);
+		vk::BufferDeviceAddressInfo addressInfo{};
+		addressInfo.buffer = callableBuffer;
+
+		callableRegion.deviceAddress = device.getBufferAddress(addressInfo) + callableOffset;
+		callableRegion.stride = callableStride;
+		callableRegion.size = callableStride * callableCount;
+	}
+
+	GetCommandBuffer(currentIndex).traceRaysKHR(
+		raygenRegion,
+		missRegion,
+		hitRegion,
+		callableRegion,
+		width,
+		height,
+		depth
+	);
 }
 
 uint32_t core::gpu::CommandBuffer::Impl::GetCount() const
@@ -120,6 +238,38 @@ void core::gpu::CommandBuffer::Impl::Submit(void* waitSemaphore, void* signalSem
 	vk::Fence vkFence = fence ? reinterpret_cast<VkFence>(fence) : nullptr;
 
 	queue.submit(submitInfo, vkFence);
+}
+
+void core::gpu::CommandBuffer::Impl::PushConstants(void* pipelineLayout,
+	uint32_t stageFlags,
+	uint32_t offset,
+	uint32_t size,
+	const void* pValues)
+{
+	if (!pipelineLayout || !pValues)
+	{
+		throw std::runtime_error("Invalid push constants parameters!");
+	}
+
+	vk::PipelineLayout vkLayout = reinterpret_cast<VkPipelineLayout>(pipelineLayout);
+
+	vk::ShaderStageFlags vkStageFlags;
+
+	if (stageFlags & static_cast<uint32_t>(ShaderStageFlags::Vertex))
+		vkStageFlags |= vk::ShaderStageFlagBits::eVertex;
+
+	if (stageFlags & static_cast<uint32_t>(ShaderStageFlags::Fragment))
+		vkStageFlags |= vk::ShaderStageFlagBits::eFragment;
+
+	if (stageFlags & static_cast<uint32_t>(ShaderStageFlags::Compute))
+		vkStageFlags |= vk::ShaderStageFlagBits::eCompute;
+
+	GetCommandBuffer(currentIndex).pushConstants<uint8_t>(
+		vkLayout,
+		vkStageFlags,
+		offset,
+		vk::ArrayProxy<const uint8_t>(size, static_cast<const uint8_t*>(pValues))
+	);
 }
 
 void core::gpu::CommandBuffer::Impl::SubmitAndWait()
@@ -505,4 +655,46 @@ void core::gpu::CommandBuffer::ResolveImage(void* srcImage, void* dstImage, uint
 void core::gpu::CommandBuffer::CopyBuffer(void* srcBuffer, void* dstBuffer, size_t size)
 {
 	m_impl->CopyBuffer(srcBuffer, dstBuffer, size);
+}
+
+void core::gpu::CommandBuffer::PushConstants(void* pipelineLayout,
+	uint32_t stageFlags,
+	uint32_t offset,
+	uint32_t size,
+	const void* pValues)
+{
+	m_impl->PushConstants(pipelineLayout, stageFlags, offset, size, pValues);
+}
+
+void core::gpu::CommandBuffer::BuildAccelerationStructure(void* accelerationStructure)
+{
+	m_impl->BuildAccelerationStructure(accelerationStructure);
+}
+
+void core::gpu::CommandBuffer::AccelerationStructureBarrier()
+{
+	m_impl->AccelerationStructureBarrier();
+}
+
+void core::gpu::CommandBuffer::BindRayTracingPipeline(void* pipeline)
+{
+	m_impl->BindRayTracingPipeline(pipeline);
+}
+
+void core::gpu::CommandBuffer::TraceRays(
+	void* pipeline,
+	void* raygenSBT, uint32_t raygenOffset, uint32_t raygenStride,
+	void* missSBT, uint32_t missOffset, uint32_t missStride, uint32_t missCount,
+	void* hitSBT, uint32_t hitOffset, uint32_t hitStride, uint32_t hitCount,
+	void* callableSBT, uint32_t callableOffset, uint32_t callableStride, uint32_t callableCount,
+	uint32_t width, uint32_t height, uint32_t depth)
+{
+	m_impl->TraceRays(
+		pipeline,
+		raygenSBT, raygenOffset, raygenStride,
+		missSBT, missOffset, missStride, missCount,
+		hitSBT, hitOffset, hitStride, hitCount,
+		callableSBT, callableOffset, callableStride, callableCount,
+		width, height, depth
+	);
 }

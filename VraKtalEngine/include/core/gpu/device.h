@@ -20,7 +20,6 @@ namespace core
 		// Note : We will maybe move this, but this is here to make uniform buffers work properly.
 		struct UniformBufferObject
 		{
-			alignas(16) glm::mat4 model;
 			alignas(16) glm::mat4 view;
 			alignas(16) glm::mat4 proj;
 			alignas(16) glm::mat4 lightSpaceMatrix;
@@ -33,7 +32,7 @@ namespace core
 				alignas(4)  float intensity;
 				alignas(4)	int enabled;
 				alignas(4)	int type;
-				alignas(4)  int _padding; // Note : Simple padding to make size multiple of 16 bytes.
+				alignas(4)  float lightRadius;
 			};
 
 			LightData lights[MAX_LIGHTS];
@@ -51,8 +50,9 @@ namespace core
 			alignas(4) uint32_t useRoughnessMap;
 			alignas(4) uint32_t useAOMap;
 			alignas(4) uint32_t useEmissiveMap;
-		};
 
+			alignas(4) uint32_t frameCount;
+		};
 
 		class Device
 		{
@@ -91,6 +91,8 @@ namespace core
 			void* GetSwapchainImage(uint32_t imageIndex) const;
 			void* GetColorImage() const;
 			void* GetDepthImage() const;
+
+			void UpdateDescriptorWithTLAS(uint32_t frameIndex, void* tlasHandle);
 
 			void RecreateSwapchain();
 			void WaitIdle();

@@ -2,8 +2,6 @@
 #include "../src/core/gpu_detail/converters.h"
 #include <core/gpu/descriptorSetLayout.h>
 
-#include <stdexcept>
-
 core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, vk::raii::Device& dev, const PipelineCreateInfo& info)
 	: parent(p), device(dev), pipelineLayout(nullptr), pipeline(nullptr)
 {
@@ -108,9 +106,33 @@ core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, vk::raii::Device& dev, c
 		vkLayouts.push_back(vk::DescriptorSetLayout(vkLayoutHandle));
 	}
 
+	std::vector<vk::PushConstantRange> vkPushConstants;
+	for (const auto& range : info.pushConstantRanges)
+	{
+		vk::ShaderStageFlags stageFlags{};
+
+		if (range.stageFlags & static_cast<uint32_t>(ShaderStageFlags::Vertex))
+			stageFlags |= vk::ShaderStageFlagBits::eVertex;
+
+		if (range.stageFlags & static_cast<uint32_t>(ShaderStageFlags::Fragment))
+			stageFlags |= vk::ShaderStageFlagBits::eFragment;
+
+		if (range.stageFlags & static_cast<uint32_t>(ShaderStageFlags::Compute))
+			stageFlags |= vk::ShaderStageFlagBits::eCompute;
+
+		vk::PushConstantRange constRange{};
+		constRange.stageFlags = stageFlags;
+		constRange.offset = range.offset;
+		constRange.size = range.size;
+
+		vkPushConstants.push_back(constRange);
+	}
+
 	vk::PipelineLayoutCreateInfo layoutInfo{};
 	layoutInfo.setLayoutCount = static_cast<uint32_t>(vkLayouts.size());
 	layoutInfo.pSetLayouts = vkLayouts.data();
+	layoutInfo.pushConstantRangeCount = static_cast<uint32_t>(vkPushConstants.size());
+	layoutInfo.pPushConstantRanges = vkPushConstants.data();
 
 	pipelineLayout = vk::raii::PipelineLayout(device, layoutInfo);
 

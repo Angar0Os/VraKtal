@@ -6,13 +6,18 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
-namespace graphics::resources
+namespace core::gpu
+{
+	class Buffer;
+}
+
+namespace graphics::resources::object
 {
 	struct Vertex
 	{
 		glm::vec3 position;
-		glm::vec3 normal;
 		glm::vec2 uv;
+		glm::vec3 normal;
 		glm::vec4 tangent;
 
 		bool operator==(const Vertex& other) const
@@ -24,11 +29,46 @@ namespace graphics::resources
 		}
 	};
 
+	struct SubMesh
+	{
+		uint32_t firstIndex = 0;
+		uint32_t indexCount = 0;
+		uint32_t vertexOffset = 0;
+		uint32_t materialIndex = 0;
+		std::string name;
+
+		uint32_t GetTriangleCount() const { return indexCount / 3; }
+	};
+
 	class Mesh
 	{
 	public:
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
+
+		std::vector<SubMesh> subMeshes;
+
+		std::unique_ptr<core::gpu::Buffer> vertexBuffer;
+		std::unique_ptr<core::gpu::Buffer> indexBuffer;
+
+		std::vector<SubMesh> GetSubmeshes() const
+		{
+			if (!subMeshes.empty())
+			{
+				return subMeshes;
+			}
+
+			SubMesh defaultSubmesh;
+			defaultSubmesh.firstIndex = 0;
+			defaultSubmesh.indexCount = static_cast<uint32_t>(indices.size());
+			defaultSubmesh.vertexOffset = 0;
+			defaultSubmesh.materialIndex = 0;
+			defaultSubmesh.name = "default";
+			return { defaultSubmesh };
+		}
+
+		bool HasSubmeshes() const { return !subMeshes.empty(); }
+
 
 		void Transform(const glm::mat4& matrix)
 		{
@@ -104,6 +144,7 @@ namespace graphics::resources
 			Mesh mesh;
 			mesh.vertices = vertices;
 			mesh.indices = indices;
+			mesh.subMeshes = subMeshes;
 			return mesh;
 		}
 
@@ -111,16 +152,24 @@ namespace graphics::resources
 		{
 			vertices.clear();
 			indices.clear();
+			subMeshes.clear();
+			vertexBuffer.reset();
+			indexBuffer.reset();
 		}
+
+		core::gpu::Buffer* GetVertexBuffer() const { return vertexBuffer.get(); }
+		core::gpu::Buffer* GetIndexBuffer() const { return indexBuffer.get(); }
+		uint32_t GetVertexCount() const { return static_cast<uint32_t>(vertices.size()); }
+		uint32_t GetIndexCount() const { return static_cast<uint32_t>(indices.size()); }
 	};
 }
 
 namespace std
 {
 	template<>
-	struct hash<graphics::resources::Vertex>
+	struct hash<graphics::resources::object::Vertex>
 	{
-		size_t operator()(const graphics::resources::Vertex& vertex) const
+		size_t operator()(const graphics::resources::object::Vertex& vertex) const
 		{
 			size_t h1 = hash<float>()(vertex.position.x);
 			size_t h2 = hash<float>()(vertex.position.y);

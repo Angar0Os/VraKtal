@@ -59,6 +59,22 @@ namespace core::gpu
 
 		void CopyBuffer(void* srcBuffer, void* dstBuffer, size_t size);
 
+		void PushConstants(void* pipelineLayout, uint32_t stageFlags, uint32_t offset, uint32_t size, const void* pValues);
+
+		void BuildAccelerationStructure(void* accelerationStructure);
+
+		void AccelerationStructureBarrier();
+
+		void BindRayTracingPipeline(void* pipeline);
+
+		void TraceRays(
+			void* pipeline,
+			void* raygenSBT, uint32_t raygenOffset, uint32_t raygenStride,
+			void* missSBT, uint32_t missOffset, uint32_t missStride, uint32_t missCount,
+			void* hitSBT, uint32_t hitOffset, uint32_t hitStride, uint32_t hitCount,
+			void* callableSBT, uint32_t callableOffset, uint32_t callableStride, uint32_t callableCount,
+			uint32_t width, uint32_t height, uint32_t depth);
+
 		Impl& GetImpl();
 		const Impl& GetImpl() const;
 	};

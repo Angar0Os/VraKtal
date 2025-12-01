@@ -1,60 +1,87 @@
-#include <iostream>
-
-#include <glm/gtc/matrix_transform.hpp>
+﻿#include <iostream>
 
 #include <core/window.h>
 #include <core/gpu/device.h>
 
 #include <graphics/renderer.h>
 #include <graphics/resources/scene.h>
+#include <graphics/resources/object/material.h>
+#include <graphics/resources/object/camera.h>
 
 #include <loaders/meshLoader.h>
-
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 
 int main()
 {
-	core::Window window(800, 600, "VraKtal Engine");
-	core::gpu::Device device(window);
-	graphics::Renderer renderer(window, device);
-	loaders::MeshLoader loaders;
-
-	auto scene = std::make_shared<graphics::resources::Scene>();
-	auto mesh = loaders.LoadMesh("assets/models/viking_room.obj");
-
-	auto material = std::make_shared<graphics::resources::Material>();
-	material->name = "VikingRoomMaterial";
-	material->albedo = glm::vec3(1.0f);
-	material->metallic = 0.0f;
-	material->roughness = 0.5f;
-	material->useAlbedoTexture = true;
-	material->albedoTexture = "assets/textures/viking_room.png";
-
-	auto meshInstance = scene->AddMesh(mesh, material, glm::mat4(1.0));
-
-	graphics::resources::Light light1;
-	light1.position = glm::vec3(2.0f, 2.0f, 2.0f);
-	light1.color = glm::vec3(1.0f, 1.0f, 1.0f);
-	light1.intensity = 1.0f;
-	light1.enabled = true;
-	scene->AddLight(light1);
-
-	renderer.SetScene(scene);
-
-	glm::vec3 cameraPos(2.0f, 2.0f, 2.0f);
-	glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 10.0f);
-	proj[1][1] *= -1;
-
-	renderer.UpdateCamera(view, proj, cameraPos);
-
-	while (!window.ShouldClose())
+	try
 	{
-		window.PollEvents();
-		renderer.DrawFrame();
+		core::Window window(800, 600, "VraKtal Engine");
+		core::gpu::Device device(window);
+		graphics::Renderer renderer(window, device);
+		loaders::MeshLoader loader;
+
+		auto scene = std::make_shared<graphics::resources::Scene>("MainScene");
+
+		auto camera = scene->AddCamera("MainCamera");
+		camera->SetPosition(glm::vec3(0.0f, 1.5f, 5.0f));
+		camera->LookAt(glm::vec3(0.0f, 0.5f, 0.0f));
+		camera->fov = 45.0f;
+		camera->aspectRatio = 800.0f / 600.0f;
+		camera->zNear = 0.1f;
+		camera->zFar = 100.0f;
+
+		auto vikingRoomMesh = loader.LoadMesh("assets/models/viking_room.obj");
+
+		auto vikingMaterial = std::make_shared<graphics::resources::object::Material>();
+		vikingMaterial->name = "VikingRoomMaterial";
+		vikingMaterial->albedo = glm::vec3(1.0f);
+		vikingMaterial->metallic = 0.0f;
+		vikingMaterial->roughness = 0.5f;
+		vikingMaterial->useAlbedoTexture = true;
+		vikingMaterial->albedoTexture = "assets/textures/viking_room.png";
+
+		auto meshObj1 = scene->AddStaticMesh("VikingRoom1", vikingRoomMesh, vikingMaterial);
+		meshObj1->SetPosition(glm::vec3(-1.5f, 0.5f, 0.0f));
+
+		auto meshObj2 = scene->AddStaticMesh("VikingRoom2", vikingRoomMesh, vikingMaterial);
+		meshObj2->SetPosition(glm::vec3(1.5f, 0.5f, 0.0f));
+
+		auto planeMesh = loaders::MeshLoader::CreatePlane(10.0f, 10.0f, 10, 10);
+
+		auto planeMaterial = std::make_shared<graphics::resources::object::Material>();
+		planeMaterial->name = "GroundMaterial";
+		planeMaterial->albedo = glm::vec3(0.8f, 0.8f, 0.8f);
+		planeMaterial->metallic = 0.0f;
+		planeMaterial->roughness = 0.9f;
+		planeMaterial->ao = 1.0f;
+
+		auto planeObj = scene->AddStaticMesh("Ground", planeMesh, planeMaterial);
+
+		graphics::resources::object::Light mainLight;
+		mainLight.position = glm::vec3(3.0f, 4.0f, 3.0f);
+		mainLight.color = glm::vec3(1.0f, 0.95f, 0.9f);
+		mainLight.intensity = 15.0f;
+		mainLight.enabled = true;
+		mainLight.lightRadius = 0.001f;
+		scene->AddLight(mainLight);
+
+		renderer.SetScene(scene);
+		renderer.EnableRayTracing();
+
+		while (!window.ShouldClose())
+		{
+			window.PollEvents();
+			renderer.DrawFrame();
+		}
+
+		renderer.Cleanup();
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "ERROR: " << e.what() << std::endl;
+		return -1;
 	}
 
-	renderer.Cleanup();
 	return 0;
 }

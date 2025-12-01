@@ -12,7 +12,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadMesh(const std::string& filepath)
+std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadMesh(const std::string& filepath)
 {
 	std::string ext = std::filesystem::path(filepath).extension().string();
 	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
@@ -31,7 +31,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadMesh(const s
 	}
 }
 
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const std::string& filepath)
+std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadGLTF(const std::string& filepath)
 {
 	tinygltf::Model model;
 	tinygltf::TinyGLTF loader;
@@ -55,8 +55,8 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 	if (!err.empty())  std::cerr << "GLTF Error: " << err << "\n";
 	if (!ret) throw std::runtime_error("Failed to load GLTF: " + filepath);
 
-	auto mesh = std::make_shared<graphics::resources::Mesh>();
-	std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
+	auto mesh = std::make_shared<graphics::resources::object::Mesh>();
+	std::unordered_map<graphics::resources::object::Vertex, uint32_t> uniqueVertices{};
 
 	if (model.meshes.empty())
 	{
@@ -69,88 +69,132 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 		throw std::runtime_error("GLTF mesh contains no primitives");
 	}
 
-	const tinygltf::Primitive& prim = gltfMesh.primitives[0];
+	std::cout << "Loading GLTF mesh '" << gltfMesh.name
+		<< "' with " << gltfMesh.primitives.size() << " primitives\n";
 
-	auto getFloatVec = [&](const std::string& name, int elementSize) -> std::vector<float>
+	for (size_t primIdx = 0; primIdx < gltfMesh.primitives.size(); ++primIdx)
+	{
+		const tinygltf::Primitive& prim = gltfMesh.primitives[primIdx];
+
+		uint32_t submeshFirstIndex = static_cast<uint32_t>(mesh->indices.size());
+		uint32_t submeshVertexOffset = static_cast<uint32_t>(mesh->vertices.size());
+
+		auto getFloatVec = [&](const std::string& name, int elementSize) -> std::vector<float>
+			{
+				auto attrIt = prim.attributes.find(name);
+				if (attrIt == prim.attributes.end())
+					return {};
+
+				const tinygltf::Accessor& accessor = model.accessors[attrIt->second];
+				const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+				const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+				const float* ptr = reinterpret_cast<const float*>(
+					&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+				return std::vector<float>(ptr, ptr + accessor.count * elementSize);
+			};
+
+		std::vector<float> positions = getFloatVec("POSITION", 3);
+		std::vector<float> normals = getFloatVec("NORMAL", 3);
+		std::vector<float> uvs = getFloatVec("TEXCOORD_0", 2);
+		std::vector<float> tangents = getFloatVec("TANGENT", 4);
+
+		std::vector<uint32_t> primitiveIndices;
+		if (prim.indices >= 0)
 		{
-			auto attrIt = prim.attributes.find(name);
-			if (attrIt == prim.attributes.end())
-				return {};
-
-			const tinygltf::Accessor& accessor = model.accessors[attrIt->second];
+			const tinygltf::Accessor& accessor = model.accessors[prim.indices];
 			const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
 			const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
-			const float* ptr = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
-			return std::vector<float>(ptr, ptr + accessor.count * elementSize);
-		};
+			primitiveIndices.resize(accessor.count);
 
-	std::vector<float> positions = getFloatVec("POSITION", 3);
-	std::vector<float> normals = getFloatVec("NORMAL", 3);
-	std::vector<float> uvs = getFloatVec("TEXCOORD_0", 2);
-	std::vector<float> tangents = getFloatVec("TANGENT", 4);
-
-	std::vector<uint32_t> indices;
-	if (prim.indices >= 0)
-	{
-		const tinygltf::Accessor& accessor = model.accessors[prim.indices];
-		const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-		const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
-
-		indices.resize(accessor.count);
-
-		if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
-		{
-			const uint16_t* src = reinterpret_cast<const uint16_t*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
-			for (size_t i = 0; i < accessor.count; i++) indices[i] = static_cast<uint32_t>(src[i]);
+			if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+			{
+				const uint16_t* src = reinterpret_cast<const uint16_t*>(
+					&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+				for (size_t i = 0; i < accessor.count; i++)
+					primitiveIndices[i] = static_cast<uint32_t>(src[i]);
+			}
+			else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
+			{
+				const uint32_t* src = reinterpret_cast<const uint32_t*>(
+					&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+				for (size_t i = 0; i < accessor.count; i++)
+					primitiveIndices[i] = src[i];
+			}
 		}
-		else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
-		{
-			const uint32_t* src = reinterpret_cast<const uint32_t*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
-			for (size_t i = 0; i < accessor.count; i++) indices[i] = src[i];
-		}
-		else
-		{
-			throw std::runtime_error("Unsupported GLTF index component type");
-		}
-	}
 
-	for (size_t i = 0; i < positions.size() / 3; i++)
-	{
-		graphics::resources::Vertex v{};
-		v.position = { positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2] };
-		if (!normals.empty()) v.normal = { normals[i * 3 + 0], normals[i * 3 + 1], normals[i * 3 + 2] };
-		if (!uvs.empty())     v.uv = { uvs[i * 2 + 0], uvs[i * 2 + 1] };
-		if (!tangents.empty()) v.tangent = { tangents[i * 4 + 0], tangents[i * 4 + 1], tangents[i * 4 + 2], tangents[i * 4 + 3] };
-		else v.tangent = { 1.0f,1.0f,1.0f,1.0f };
+		std::unordered_map<graphics::resources::object::Vertex, uint32_t> localVertexMap;
+		uint32_t localVertexCount = 0;
 
-		if (!uniqueVertices.contains(v))
+		for (size_t i = 0; i < positions.size() / 3; i++)
 		{
-			uniqueVertices[v] = static_cast<uint32_t>(mesh->vertices.size());
-			mesh->vertices.push_back(v);
-		}
-	}
+			graphics::resources::object::Vertex v{};
+			v.position = { positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2] };
+			if (!normals.empty())
+				v.normal = { normals[i * 3 + 0], normals[i * 3 + 1], normals[i * 3 + 2] };
+			if (!uvs.empty())
+				v.uv = { uvs[i * 2 + 0], uvs[i * 2 + 1] };
+			if (!tangents.empty())
+				v.tangent = { tangents[i * 4 + 0], tangents[i * 4 + 1],
+							  tangents[i * 4 + 2], tangents[i * 4 + 3] };
+			else
+				v.tangent = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	if (!indices.empty())
-	{
-		for (auto idx : indices)
-		{
-			mesh->indices.push_back(idx);
+			if (!uniqueVertices.contains(v))
+			{
+				uniqueVertices[v] = static_cast<uint32_t>(mesh->vertices.size());
+				mesh->vertices.push_back(v);
+			}
+
+			localVertexMap[v] = uniqueVertices[v];
+			localVertexCount++;
 		}
-	}
-	else
-	{
-		for (uint32_t i = 0; i < mesh->vertices.size(); i++)
+
+		if (!primitiveIndices.empty())
 		{
-			mesh->indices.push_back(i);
+			for (auto idx : primitiveIndices)
+			{
+				graphics::resources::object::Vertex originalVertex{};
+				originalVertex.position = {
+					positions[idx * 3 + 0],
+					positions[idx * 3 + 1],
+					positions[idx * 3 + 2]
+				};
+				if (!normals.empty())
+					originalVertex.normal = {
+						normals[idx * 3 + 0],
+						normals[idx * 3 + 1],
+						normals[idx * 3 + 2]
+				};
+				if (!uvs.empty())
+					originalVertex.uv = { uvs[idx * 2 + 0], uvs[idx * 2 + 1] };
+				if (!tangents.empty())
+					originalVertex.tangent = {
+						tangents[idx * 4 + 0], tangents[idx * 4 + 1],
+						tangents[idx * 4 + 2], tangents[idx * 4 + 3]
+				};
+				else
+					originalVertex.tangent = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+				mesh->indices.push_back(uniqueVertices[originalVertex]);
+			}
 		}
+
+		graphics::resources::object::SubMesh submesh;
+		submesh.firstIndex = submeshFirstIndex;
+		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
+		submesh.vertexOffset = submeshVertexOffset;
+		submesh.materialIndex = (prim.material >= 0) ? prim.material : 0;
+		submesh.name = "primitive_" + std::to_string(primIdx);
+
+		mesh->subMeshes.push_back(submesh);
 	}
 
 	return mesh;
 }
 
-
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const std::string& filepath)
+std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadOBJ(const std::string& filepath)
 {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
@@ -159,14 +203,19 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 
 	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filepath.c_str());
 
-	auto mesh = std::make_shared<graphics::resources::Mesh>();
-	std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
+	auto mesh = std::make_shared<graphics::resources::object::Mesh>();
+	std::unordered_map<graphics::resources::object::Vertex, uint32_t> uniqueVertices{};
 
-	for (const auto& shape : shapes)
+	for (size_t shapeIdx = 0; shapeIdx < shapes.size(); ++shapeIdx)
 	{
+		const auto& shape = shapes[shapeIdx];
+
+		uint32_t submeshFirstIndex = static_cast<uint32_t>(mesh->indices.size());
+		uint32_t submeshVertexOffset = static_cast<uint32_t>(mesh->vertices.size());
+
 		for (const auto& index : shape.mesh.indices)
 		{
-			graphics::resources::Vertex vertex{};
+			graphics::resources::object::Vertex vertex{};
 
 			if (index.vertex_index >= 0)
 			{
@@ -211,6 +260,75 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 			}
 
 			mesh->indices.push_back(uniqueVertices[vertex]);
+		}
+
+		graphics::resources::object::SubMesh submesh;
+		submesh.firstIndex = submeshFirstIndex;
+		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
+		submesh.vertexOffset = submeshVertexOffset;
+		submesh.materialIndex = 0;
+		submesh.name = shape.name.empty() ? ("shape_" + std::to_string(shapeIdx)) : shape.name;
+
+		mesh->subMeshes.push_back(submesh);
+	}
+
+	return mesh;
+}
+
+std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::CreatePlane(
+	float width, float height, int subdivisionsX, int subdivisionsZ)
+{
+	auto mesh = std::make_shared<graphics::resources::object::Mesh>();
+
+	int vertCountX = subdivisionsX + 1;
+	int vertCountZ = subdivisionsZ + 1;
+
+	float halfWidth = width * 0.5f;
+	float halfHeight = height * 0.5f;
+
+	float deltaX = width / subdivisionsX;
+	float deltaZ = height / subdivisionsZ;
+
+	float uvDeltaX = 1.0f / subdivisionsX;
+	float uvDeltaZ = 1.0f / subdivisionsZ;
+
+	for (int z = 0; z < vertCountZ; z++)
+	{
+		for (int x = 0; x < vertCountX; x++)
+		{
+			graphics::resources::object::Vertex vertex;
+
+			vertex.position = glm::vec3(
+				-halfWidth + x * deltaX,
+				0.0f,
+				-halfHeight + z * deltaZ
+			);
+
+			vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f);
+			vertex.uv = glm::vec2(x * uvDeltaX, z * uvDeltaZ);
+
+			vertex.tangent = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+			mesh->vertices.push_back(vertex);
+		}
+	}
+
+	for (int z = 0; z < subdivisionsZ; z++)
+	{
+		for (int x = 0; x < subdivisionsX; x++)
+		{
+			int topLeft = z * vertCountX + x;
+			int topRight = topLeft + 1;
+			int bottomLeft = (z + 1) * vertCountX + x;
+			int bottomRight = bottomLeft + 1;
+
+			mesh->indices.push_back(topLeft);
+			mesh->indices.push_back(bottomLeft);
+			mesh->indices.push_back(topRight);
+
+			mesh->indices.push_back(topRight);
+			mesh->indices.push_back(bottomLeft);
+			mesh->indices.push_back(bottomRight);
 		}
 	}
 

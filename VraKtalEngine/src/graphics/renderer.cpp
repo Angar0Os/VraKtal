@@ -51,17 +51,25 @@ void Renderer::SetScene(std::shared_ptr<resources::Scene> scene)
 
 	if (m_scene)
 	{
-		for (const auto& instance : m_scene->meshInstances)
+		auto staticMeshes = m_scene->GetStaticMeshes();
+		for (auto* staticMesh : staticMeshes)
 		{
-			if (m_meshBuffers.find(instance.mesh.get()) == m_meshBuffers.end())
+			if (staticMesh->mesh &&
+				m_meshBuffers.find(staticMesh->mesh.get()) == m_meshBuffers.end())
 			{
-				CreateMeshBuffers(instance.mesh);
+				CreateMeshBuffers(staticMesh->mesh);
 			}
+		}
+
+		if (m_rayTracingEnabled)
+		{
+			DisableRayTracing();
+			EnableRayTracing();
 		}
 	}
 }
 
-void Renderer::CreateMeshBuffers(std::shared_ptr<resources::Mesh> mesh)
+void Renderer::CreateMeshBuffers(std::shared_ptr<resources::object::Mesh> mesh)
 {
 	if (!mesh || mesh->vertices.empty() || mesh->indices.empty())
 	{
@@ -71,7 +79,7 @@ void Renderer::CreateMeshBuffers(std::shared_ptr<resources::Mesh> mesh)
 
 	MeshBuffers buffers;
 
-	size_t vertexBufferSize = mesh->vertices.size() * sizeof(resources::Vertex);
+	size_t vertexBufferSize = mesh->vertices.size() * sizeof(resources::object::Vertex);
 	size_t indexBufferSize = mesh->indices.size() * sizeof(uint32_t);
 
 	core::gpu::BufferCreateInfo stagingVertexInfo{
@@ -164,27 +172,28 @@ void Renderer::UpdateCamera(const glm::mat4& view, const glm::mat4& proj, const 
 	m_cameraPosition = position;
 }
 
-void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const glm::mat4& modelMatrix, const std::shared_ptr<resources::Material>& material)
+void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<resources::object::Material>& material)
 {
 	core::gpu::UniformBufferObject ubo{};
 
-	ubo.model = modelMatrix;
 	ubo.view = m_viewMatrix;
 	ubo.proj = m_projMatrix;
 	ubo.viewPos = m_cameraPosition;
 
 	if (m_scene)
 	{
-		ubo.numLights = std::min(static_cast<int>(m_scene->lights.size()), core::gpu::MAX_LIGHTS);
+		ubo.numLights = std::min(static_cast<int>(m_scene->lights.size()),
+			core::gpu::MAX_LIGHTS);
 
 		for (int i = 0; i < ubo.numLights; i++)
 		{
 			const auto& light = m_scene->lights[i];
 			ubo.lights[i].position = light.position;
-			ubo.lights[i].color = light.color * light.intensity;
+			ubo.lights[i].color = light.color;
 			ubo.lights[i].intensity = light.intensity;
 			ubo.lights[i].enabled = light.enabled ? 1 : 0;
 			ubo.lights[i].type = 0;
+			ubo.lights[i].lightRadius = light.radius;
 		}
 	}
 	else
@@ -222,6 +231,8 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const glm::mat4& modelMa
 		ubo.useAOMap = 0;
 		ubo.useEmissiveMap = 0;
 	}
+
+	ubo.frameCount = static_cast<uint32_t>(m_frameCounter);
 
 	auto* uniformBuffer = m_device.GetUniformBuffer(frameIndex);
 	if (uniformBuffer)
@@ -276,21 +287,44 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	if (m_scene)
 	{
-		for (const auto& instance : m_scene->meshInstances)
-		{
-			UpdateUniformBuffer(frameIndex, instance.transform, instance.material);
+		const resources::object::Material* lastMaterial = nullptr;
 
-			cmd->BindDescriptorSets(
+		auto staticMeshes = m_scene->GetStaticMeshes();
+		for (auto* staticMesh : staticMeshes)
+		{
+			if (!staticMesh->visible) continue;
+
+			auto& mesh = staticMesh->mesh;
+			auto& material = staticMesh->material;
+
+			if (!mesh || !material) continue;
+
+			if (material.get() != lastMaterial)
+			{
+				UpdateUniformBuffer(frameIndex, material);
+				cmd->BindDescriptorSets(
+					m_device.GetPipelineLayout(),
+					m_device.GetDescriptorSet(frameIndex),
+					0
+				);
+				lastMaterial = material.get();
+			}
+
+			PushConstants pushConstants;
+			pushConstants.model = staticMesh->GetTransformMatrix();
+
+			cmd->PushConstants(
 				m_device.GetPipelineLayout(),
-				m_device.GetDescriptorSet(frameIndex),
-				0
+				static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
+				0,
+				sizeof(PushConstants),
+				&pushConstants
 			);
 
-			auto it = m_meshBuffers.find(instance.mesh.get());
+			auto it = m_meshBuffers.find(mesh.get());
 			if (it != m_meshBuffers.end())
 			{
 				const auto& buffers = it->second;
-
 				cmd->BindVertexBuffer(buffers.vertexBuffer->GetHandle());
 				cmd->BindIndexBuffer(buffers.indexBuffer->GetHandle());
 				cmd->DrawIndexed(buffers.indexCount);
@@ -323,11 +357,11 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	cmd->End(0);
 }
-
 void Renderer::DrawFrame()
 {
 	if (!m_running) return;
 
+	UpdateCameraFromScene();
 	m_device.BeginFrame(m_currentFrame);
 
 	uint32_t imageIndex = m_device.AcquireNextImage(m_currentFrame);
@@ -360,4 +394,247 @@ void Renderer::Cleanup()
 	m_meshBuffers.clear();
 	m_commandBuffers.clear();
 	m_device.Cleanup();
+}
+
+void Renderer::DisableRayTracing()
+{
+	if (!m_rayTracingEnabled) return;
+
+	m_device.WaitIdle();
+	m_tlas.reset();
+	m_rtMeshData.clear();
+	m_rayTracingEnabled = false;
+
+	std::cout << "Ray tracing disabled." << std::endl;
+}
+
+void Renderer::CreateRTMeshBuffers(std::shared_ptr<resources::object::Mesh> mesh)
+{
+	if (!mesh || mesh->vertices.empty() || mesh->indices.empty())
+	{
+		std::cerr << "ERROR: Invalid mesh data for RT buffers!" << std::endl;
+		return;
+	}
+
+	RTMeshData rtData;
+
+	size_t vertexBufferSize = mesh->vertices.size() * sizeof(resources::object::Vertex);
+	size_t indexBufferSize = mesh->indices.size() * sizeof(uint32_t);
+
+	core::gpu::BufferCreateInfo rtVertexInfo{
+		.size = vertexBufferSize,
+		.usage = core::BufferUsage::AccelerationStructureBuildInput |
+				 core::BufferUsage::ShaderDeviceAddress |
+				 core::BufferUsage::StorageBuffer,
+		.memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+	};
+
+	rtData.rtVertexBuffer = std::make_unique<core::gpu::Buffer>(
+		m_device.GetHandle(),
+		m_device.GetPhysicalDevice(),
+		rtVertexInfo
+	);
+	rtData.rtVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
+
+	core::gpu::BufferCreateInfo rtIndexInfo{
+		.size = indexBufferSize,
+		.usage = core::BufferUsage::AccelerationStructureBuildInput |
+				 core::BufferUsage::ShaderDeviceAddress |
+				 core::BufferUsage::StorageBuffer,
+		.memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+	};
+
+	rtData.rtIndexBuffer = std::make_unique<core::gpu::Buffer>(
+		m_device.GetHandle(),
+		m_device.GetPhysicalDevice(),
+		rtIndexInfo
+	);
+	rtData.rtIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
+
+	m_rtMeshData[mesh.get()] = std::move(rtData);
+}
+
+void Renderer::CreateBLAS(resources::object::Mesh* mesh)
+{
+	auto it = m_rtMeshData.find(mesh);
+	if (it == m_rtMeshData.end())
+	{
+		std::cerr << "ERROR: RT mesh data not found for BLAS creation!" << std::endl;
+		return;
+	}
+
+	auto& rtData = it->second;
+	core::gpu::AccelerationStructureGeometry geometry{};
+	geometry.vertexBuffer = rtData.rtVertexBuffer.get();
+	geometry.vertexCount = static_cast<uint32_t>(mesh->vertices.size());
+	geometry.vertexStride = sizeof(resources::object::Vertex);
+	geometry.indexBuffer = rtData.rtIndexBuffer.get();
+	geometry.indexCount = static_cast<uint32_t>(mesh->indices.size());
+	geometry.triangleCount = geometry.indexCount / 3;
+	geometry.opaque = true;
+
+	core::gpu::AccelerationStructureCreateInfo blasInfo{};
+	blasInfo.type = core::gpu::AccelerationStructureType::BottomLevel;
+	blasInfo.geometries.push_back(geometry);
+	blasInfo.preferFastTrace = true;
+	blasInfo.allowUpdate = false;
+
+	rtData.blas = std::make_unique<core::gpu::AccelerationStructure>(
+		m_device.GetHandle(),
+		m_device.GetPhysicalDevice(),
+		blasInfo
+	);
+}
+
+void Renderer::EnableRayTracing()
+{
+	if (m_rayTracingEnabled) return;
+
+	if (!m_scene)
+	{
+		std::cerr << "Cannot enable ray tracing: no scene set!" << std::endl;
+		return;
+	}
+
+	auto staticMeshes = m_scene->GetStaticMeshes();
+	for (auto* staticMesh : staticMeshes)
+	{
+		if (!staticMesh->mesh) continue;
+
+		if (m_rtMeshData.find(staticMesh->mesh.get()) == m_rtMeshData.end())
+		{
+			CreateRTMeshBuffers(staticMesh->mesh);
+			CreateBLAS(staticMesh->mesh.get());
+		}
+	}
+
+	BuildTLAS();
+	RebuildAccelerationStructures();
+
+	if (m_tlas)
+	{
+		void* tlasHandle = m_tlas->GetHandle();
+		for (uint32_t i = 0; i < core::gpu::Device::FRAMES_IN_FLIGHT; i++)
+		{
+			m_device.UpdateDescriptorWithTLAS(i, tlasHandle);
+		}
+	}
+
+	m_rayTracingEnabled = true;
+}
+
+void Renderer::BuildTLAS()
+{
+	if (!m_scene)
+	{
+		std::cerr << "Cannot build TLAS: no scene set!" << std::endl;
+		return;
+	}
+
+	auto staticMeshes = m_scene->GetStaticMeshes();
+	if (staticMeshes.empty())
+	{
+		std::cerr << "Cannot build TLAS: no mesh instances!" << std::endl;
+		return;
+	}
+
+	std::vector<core::gpu::AccelerationStructureInstance> instances;
+	instances.reserve(staticMeshes.size());
+
+	uint32_t instanceIndex = 0;
+
+	for (auto* staticMesh : staticMeshes)
+	{
+		if (!staticMesh->visible || !staticMesh->mesh) continue;
+
+		auto it = m_rtMeshData.find(staticMesh->mesh.get());
+		if (it == m_rtMeshData.end() || !it->second.blas)
+		{
+			std::cerr << "Warning: BLAS not found for mesh instance!" << std::endl;
+			continue;
+		}
+
+		const glm::mat4 mat = staticMesh->GetTransformMatrix();
+
+		float transform[3][4] = {
+			{mat[0][0], mat[1][0], mat[2][0], mat[3][0]},
+			{mat[0][1], mat[1][1], mat[2][1], mat[3][1]},
+			{mat[0][2], mat[1][2], mat[2][2], mat[3][2]}
+		};
+
+		core::gpu::AccelerationStructureInstance instance{};
+		std::memcpy(&instance.transform, &transform, sizeof(transform));
+		instance.instanceCustomIndex = instanceIndex++;
+		instance.mask = 0xFF;
+		instance.instanceShaderBindingTableRecordOffset = 0;
+		instance.blas = it->second.blas.get();
+
+		instances.push_back(instance);
+	}
+
+	if (instances.empty())
+	{
+		std::cerr << "No valid instances for TLAS!" << std::endl;
+		return;
+	}
+
+	core::gpu::AccelerationStructureCreateInfo tlasInfo{};
+	tlasInfo.type = core::gpu::AccelerationStructureType::TopLevel;
+	tlasInfo.instances = instances;
+	tlasInfo.preferFastTrace = true;
+	tlasInfo.allowUpdate = false;
+
+	m_tlas = std::make_unique<core::gpu::AccelerationStructure>(
+		m_device.GetHandle(),
+		m_device.GetPhysicalDevice(),
+		tlasInfo
+	);
+}
+
+void Renderer::RebuildAccelerationStructures()
+{
+	core::gpu::CommandBufferCreateInfo cmdInfo{};
+	cmdInfo.commandPool = m_device.GetCommandPool();
+	cmdInfo.count = 1;
+	cmdInfo.singleTime = true;
+	cmdInfo.level = core::CommandBufferLevel::Primary;
+
+	core::gpu::CommandBuffer cmdBuffer(
+		m_device.GetHandle(),
+		m_device.GetGraphicsQueue(),
+		cmdInfo
+	);
+
+	cmdBuffer.Begin(0);
+
+	for (auto& [mesh, rtData] : m_rtMeshData)
+	{
+		if (rtData.blas)
+		{
+			cmdBuffer.BuildAccelerationStructure(rtData.blas.get());
+			cmdBuffer.AccelerationStructureBarrier();
+		}
+	}
+
+	if (m_tlas)
+	{
+		cmdBuffer.BuildAccelerationStructure(m_tlas.get());
+	}
+
+	cmdBuffer.End(0);
+	cmdBuffer.SubmitAndWait();
+
+	std::cout << "Acceleration structures built successfully!" << std::endl;
+}
+
+void Renderer::UpdateCameraFromScene()
+{
+	if (m_scene && m_scene->activeCamera)
+	{
+		UpdateCamera(
+			m_scene->activeCamera->GetViewMatrix(),
+			m_scene->activeCamera->GetProjectionMatrix(),
+			m_scene->activeCamera->GetPosition()
+		);
+	}
 }

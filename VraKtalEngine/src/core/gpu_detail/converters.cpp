@@ -87,6 +87,15 @@ vk::BufferUsageFlags core::gpu_detail::ToVulkan(core::BufferUsage usage)
 	if ((usage & core::BufferUsage::IndirectBuffer) != core::BufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
 
+	if ((usage & core::BufferUsage::ShaderDeviceAddress) != core::BufferUsage::None)
+		flags |= vk::BufferUsageFlagBits::eShaderDeviceAddress;
+
+	if ((usage & core::BufferUsage::AccelerationStructureStorage) != core::BufferUsage::None)
+		flags |= vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR;
+
+	if ((usage & core::BufferUsage::AccelerationStructureBuildInput) != core::BufferUsage::None)
+		flags |= vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR;
+
 	return flags;
 }
 
@@ -203,6 +212,8 @@ vk::DescriptorType core::gpu_detail::ToVulkan(core::DescriptorType type)
 		return vk::DescriptorType::eStorageBuffer;
 	case core::DescriptorType::StorageImage:
 		return vk::DescriptorType::eStorageImage;
+	case core::DescriptorType::AccelerationStructure:
+		return vk::DescriptorType::eAccelerationStructureKHR;
 	default:
 		throw std::runtime_error("Unknown descriptor type");
 	}
