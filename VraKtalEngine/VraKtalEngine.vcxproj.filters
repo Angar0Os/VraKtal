@@ -225,7 +225,7 @@
       <Filter>Source Files\graphics</Filter>
     </ClCompile>
     <ClCompile Include="src\loaders\meshLoader.cpp">
-      <Filter>Source Files\loaders</Filter>
+      <Filter>Source Files\loader</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\accelerationStructure_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
