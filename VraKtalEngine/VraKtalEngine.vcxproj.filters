@@ -203,7 +203,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\shaders\shader.slang">
-      <Filter>Resource Files\shaders</Filter>
+      <Filter>Resource Files\shader</Filter>
     </None>
   </ItemGroup>
 </Project>
