@@ -104,9 +104,10 @@ namespace graphics::resources
 				[](const auto& obj) { return obj->visible; });
 		}
 
-		void AddLight(const object::Light& light)
+		object::Light* AddLight(const object::Light& light)
 		{
 			lights.push_back(light);
+            return &lights.back();
 		}
 
 		void RemoveLight(size_t index)

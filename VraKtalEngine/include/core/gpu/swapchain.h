@@ -9,6 +9,8 @@
 
 namespace core::gpu
 {
+	class Image;
+
 	struct SwapchainCreateInfo
 	{
 		void* surface = nullptr;
@@ -18,12 +20,6 @@ namespace core::gpu
 		PresentMode presentMode = PresentMode::Fifo;
 		uint32_t minImageCount = 2;
 		void* oldSwapchain = nullptr;
-	};
-
-	struct SwapchainImage
-	{
-		void* image = nullptr;
-		void* imageView = nullptr;
 	};
 
 	class Swapchain
@@ -45,8 +41,8 @@ namespace core::gpu
 		void* GetHandle() const;
 
 		uint32_t GetImageCount() const;
-		SwapchainImage GetImage(uint32_t index) const;
-		std::vector<SwapchainImage> GetImages() const;
+		const Image* GetImage(uint32_t index) const;
+		std::vector<const Image*> GetImages() const;
 
 		TextureFormat GetFormat() const;
 		uint32_t GetWidth() const;

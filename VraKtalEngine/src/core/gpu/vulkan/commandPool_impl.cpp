@@ -1,10 +1,11 @@
 #include "../src/core/gpu/vulkan/commandPool_impl.h"
-#include "../src/core/gpu_detail/converters.h"\
+#include "../src/core/gpu/vulkan/device_impl.h"
+#include "../src/core/gpu_detail/converters.h"
 
 #include <stdexcept>
 
 core::gpu::CommandPool::Impl::Impl(core::gpu::CommandPool& p,
-	vk::raii::Device& dev, const CommandPoolCreateInfo& info)
+	const core::gpu::Device* dev, const CommandPoolCreateInfo& info)
 	: parent(p), device(dev), pool(nullptr), queueFamilyIndex(info.queueFamilyIndex)
 {
 	vk::CommandPoolCreateInfo poolInfo{};
@@ -12,7 +13,7 @@ core::gpu::CommandPool::Impl::Impl(core::gpu::CommandPool& p,
 	poolInfo.flags = core::gpu_detail::ToVulkan(info.flags);
 	poolInfo.queueFamilyIndex = info.queueFamilyIndex;
 
-	pool = vk::raii::CommandPool(device, poolInfo);
+	pool = vk::raii::CommandPool(device->GetImpl().device, poolInfo);
 }
 
 core::gpu::CommandPool::Impl::~Impl() = default;
@@ -25,7 +26,7 @@ std::vector<vk::raii::CommandBuffer> core::gpu::CommandPool::Impl::AllocateComma
 	allocInfo.level = secondary ? vk::CommandBufferLevel::eSecondary : vk::CommandBufferLevel::ePrimary;
 	allocInfo.commandBufferCount = count;
 
-	return device.allocateCommandBuffers(allocInfo);
+	return device->GetImpl().device.allocateCommandBuffers(allocInfo);
 }
 
 void core::gpu::CommandPool::Impl::Reset(bool releaseResources)
@@ -49,10 +50,9 @@ uint32_t core::gpu::CommandPool::Impl::GetQueueFamilyIndex() const
 	return queueFamilyIndex;
 }
 
-core::gpu::CommandPool::CommandPool(void* device, const CommandPoolCreateInfo& info)
+core::gpu::CommandPool::CommandPool(const core::gpu::Device* device, const CommandPoolCreateInfo& info)
 {
-	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
-	m_impl = std::make_unique<Impl>(*this, vkDevice, info);
+	m_impl = std::make_unique<Impl>(*this, device, info);
 }
 
 core::gpu::CommandPool::~CommandPool() = default;
@@ -80,17 +80,7 @@ void core::gpu::CommandPool::Reset(bool releaseResources)
 	m_impl->Reset(releaseResources);
 }
 
-void* core::gpu::CommandPool::GetHandle() const
-{
-	return static_cast<void*>(const_cast<vk::raii::CommandPool*>(&m_impl->GetPool()));
-}
-
-core::gpu::CommandPool::Impl& core::gpu::CommandPool::GetImpl()
-{
-	return *m_impl;
-}
-
-const core::gpu::CommandPool::Impl& core::gpu::CommandPool::GetImpl() const
+core::gpu::CommandPool::Impl& core::gpu::CommandPool::GetImpl() const
 {
 	return *m_impl;
 }

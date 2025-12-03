@@ -9,10 +9,8 @@ namespace core::gpu
 {
 	struct Image::Impl
 	{
-	private:
 		Image& parent;
-		vk::raii::Device& device;
-		vk::raii::PhysicalDevice& physicalDevice;
+		const Device* device;
 
 		vk::raii::Image image;
 		vk::raii::DeviceMemory memory;
@@ -28,7 +26,7 @@ namespace core::gpu
 		uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
 	public:
-		explicit Impl(Image& p, vk::raii::Device& dev, vk::raii::PhysicalDevice& physDev,
+        explicit Impl(Image& p, const core::gpu::Device* device,
 			const ImageCreateInfo& info);
 		~Impl();
 

@@ -7,77 +7,82 @@
 
 namespace core::gpu
 {
-	struct CommandBufferCreateInfo
-	{
-		void* commandPool = nullptr;
-		CommandBufferLevel level = CommandBufferLevel::Primary;
-		uint32_t count = 1;
-		bool singleTime = false;
-	};
+    class AccelerationStructure;
+    class Buffer;
+    class DescriptorSet;
+    class Device;
+    class Image;
+    class Pipeline;
 
-	class CommandBuffer
-	{
-	private:
-		struct Impl;
-		std::unique_ptr<Impl> m_impl;
+    struct SCommandBufferCreateInfo
+    {
+        const core::gpu::Device* device;
+        ECommandBufferLevel level = ECommandBufferLevel::Primary;
+        uint32_t count = 1;
+        bool singleTime = false;
+    };
 
-	public:
-		CommandBuffer(void* device, void* queue, const CommandBufferCreateInfo& info);
-		~CommandBuffer();
+    class CommandBuffer
+    {
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> m_impl;
 
-		CommandBuffer(const CommandBuffer&) = delete;
-		CommandBuffer& operator=(const CommandBuffer&) = delete;
+    public:
+        CommandBuffer(const core::gpu::Device* _device, const SCommandBufferCreateInfo& _info);
+        ~CommandBuffer();
 
-		CommandBuffer(CommandBuffer&&) noexcept;
-		CommandBuffer& operator=(CommandBuffer&&) noexcept;
+        CommandBuffer(const CommandBuffer&) = delete;
+        CommandBuffer& operator=(const CommandBuffer&) = delete;
 
-		void* GetHandle(uint32_t index = 0) const;
-		uint32_t GetCount() const;
+        CommandBuffer(CommandBuffer&&) noexcept;
+        CommandBuffer& operator=(CommandBuffer&&) noexcept;
 
-		void Begin(uint32_t index = 0);
-		void End(uint32_t index = 0);
+        uint32_t GetCount() const;
 
-		void Submit(void* waitSemaphore = nullptr, void* signalSemaphore = nullptr, void* fence = nullptr);
-		void SubmitAndWait();
+        void Begin(uint32_t _index = 0);
+        void End(uint32_t _index = 0);
 
-		void BindPipeline(void* pipeline);
-		void BindVertexBuffer(void* buffer, size_t offset = 0);
-		void BindIndexBuffer(void* buffer, size_t offset = 0);
-		void BindDescriptorSets(void* pipelineLayout, void* descriptorSet, uint32_t firstSet = 0);
+        void Submit(const core::gpu::Device* _device, void* _waitSemaphore = nullptr, void* _signalSemaphore = nullptr, void* _fence = nullptr);
+        void SubmitAndWait(const core::gpu::Device* _device);
 
-		void SetViewport(float x, float y, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f);
-		void SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height);
+        void BindPipeline(const core::gpu::Pipeline* _pipeline);
+        void BindVertexBuffer(const core::gpu::Buffer* _buffer, size_t _offset = 0);
+        void BindIndexBuffer(const core::gpu::Buffer* _buffer, size_t _offset = 0);
+        void BindDescriptorSets(const core::gpu::Device* _device, const core::gpu::DescriptorSet* _descriptorSet, uint32_t _frameIndex, uint32_t _firstSet = 0);
 
-		void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1,
-			uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0);
+        void SetViewport(float _x, float _y, float _width, float _height, float _minDepth = 0.0f, float _maxDepth = 1.0f);
+        void SetScissor(int32_t _x, int32_t _y, uint32_t _width, uint32_t _height);
 
-		void BeginRendering(uint32_t width, uint32_t height, void* colorImageView, void* depthImageView);
-		void EndRendering();
+        void DrawIndexed(uint32_t _indexCount, uint32_t _instanceCount = 1,
+                         uint32_t _firstIndex = 0, int32_t _vertexOffset = 0, uint32_t _firstInstance = 0);
 
-		void TransitionImageLayout(void* image, ImageLayout oldLayout, ImageLayout newLayout, bool isDepth = false);
-		void ResolveImage(void* srcImage, void* dstImage, uint32_t width, uint32_t height);
+        void BeginRendering(uint32_t _width, uint32_t _height, void* _colorImageView, void* _depthImageView);
+        void EndRendering();
 
-		void CopyBuffer(void* srcBuffer, void* dstBuffer, size_t size);
+        void TransitionImageLayout(const core::gpu::Image* _image, ImageLayout _oldLayout, ImageLayout _newLayout, bool _isDepth = false);
+        void ResolveImage(const core::gpu::Image* _srcImage, const core::gpu::Image* _dstImage, uint32_t _width, uint32_t _height);
 
-		void PushConstants(void* pipelineLayout, uint32_t stageFlags, uint32_t offset, uint32_t size, const void* pValues);
+        void CopyBuffer(const core::gpu::Buffer* _srcBuffer, const core::gpu::Buffer* _dstBuffer, size_t _size);
 
-		void BuildAccelerationStructure(void* accelerationStructure);
+        void PushConstants(const core::gpu::Pipeline* _pipeline, uint32_t _stageFlags, uint32_t _offset, uint32_t _size, const void* _pValues);
 
-		void AccelerationStructureBarrier();
+        void BuildAccelerationStructure(const core::gpu::AccelerationStructure* _accelerationStructure);
 
-		void BindRayTracingPipeline(void* pipeline);
+        void AccelerationStructureBarrier();
 
-		void TraceRays(
-			void* pipeline,
-			void* raygenSBT, uint32_t raygenOffset, uint32_t raygenStride,
-			void* missSBT, uint32_t missOffset, uint32_t missStride, uint32_t missCount,
-			void* hitSBT, uint32_t hitOffset, uint32_t hitStride, uint32_t hitCount,
-			void* callableSBT, uint32_t callableOffset, uint32_t callableStride, uint32_t callableCount,
-			uint32_t width, uint32_t height, uint32_t depth);
+        void BindRayTracingPipeline(const core::gpu::Pipeline* _pipeline);
 
-		Impl& GetImpl();
-		const Impl& GetImpl() const;
-	};
+        void TraceRays(
+            const core::gpu::Device* _device,
+            void* _raygenSBT, uint32_t _raygenOffset, uint32_t _raygenStride,
+            void* _missSBT, uint32_t _missOffset, uint32_t _missStride, uint32_t _missCount,
+            void* _hitSBT, uint32_t _hitOffset, uint32_t _hitStride, uint32_t _hitCount,
+            void* _callableSBT, uint32_t _callableOffset, uint32_t _callableStride, uint32_t _callableCount,
+            uint32_t _width, uint32_t _height, uint32_t _depth);
+
+        Impl& GetImpl() const;
+    };
 }
 
 #endif //VRAKTAL_CORE_GPU_COMMANDBUFFER_H

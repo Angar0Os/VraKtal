@@ -26,18 +26,17 @@ Renderer::~Renderer()
 void Renderer::CreateCommandBuffers()
 {
 	m_commandBuffers.clear();
-	m_commandBuffers.reserve(core::gpu::Device::FRAMES_IN_FLIGHT);
+	m_commandBuffers.reserve(core::gpu::Device::s_FRAMES_IN_FLIGHT);
 
-	for (uint32_t i = 0; i < core::gpu::Device::FRAMES_IN_FLIGHT; i++)
+	for (uint32_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; i++)
 	{
-		core::gpu::CommandBufferCreateInfo cmdInfo{};
-		cmdInfo.commandPool = m_device.GetCommandPool();
-		cmdInfo.level = core::CommandBufferLevel::Primary;
+		core::gpu::SCommandBufferCreateInfo cmdInfo{};
+		cmdInfo.device = &m_device;
+		cmdInfo.level = core::ECommandBufferLevel::Primary;
 		cmdInfo.count = 1;
 
 		auto cmdBuffer = std::make_unique<core::gpu::CommandBuffer>(
-			m_device.GetHandle(),
-			m_device.GetGraphicsQueue(),
+			&m_device,
 			cmdInfo
 		);
 
@@ -82,85 +81,81 @@ void Renderer::CreateMeshBuffers(std::shared_ptr<resources::object::Mesh> mesh)
 	size_t vertexBufferSize = mesh->vertices.size() * sizeof(resources::object::Vertex);
 	size_t indexBufferSize = mesh->indices.size() * sizeof(uint32_t);
 
-	core::gpu::BufferCreateInfo stagingVertexInfo{
+	core::gpu::SBufferCreateInfo stagingVertexInfo{
 		.size = vertexBufferSize,
-		.usage = core::BufferUsage::TransferSrc,
-		.memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+		.usage = core::EBufferUsage::TransferSrc,
+		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
 	};
 
 	auto stagingVertexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device.GetHandle(),
-		m_device.GetPhysicalDevice(),
+		&m_device,
 		stagingVertexInfo
 	);
 
-	core::gpu::BufferCreateInfo stagingIndexInfo{
+	core::gpu::SBufferCreateInfo stagingIndexInfo{
 		.size = indexBufferSize,
-		.usage = core::BufferUsage::TransferSrc,
-		.memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+		.usage = core::EBufferUsage::TransferSrc,
+		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
 	};
 
 	auto stagingIndexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device.GetHandle(),
-		m_device.GetPhysicalDevice(),
+		&m_device,
 		stagingIndexInfo
 	);
 
 	stagingVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
 	stagingIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
 
-	core::gpu::BufferCreateInfo vertexInfo{
+	core::gpu::SBufferCreateInfo vertexInfo{
 		.size = vertexBufferSize,
-		.usage = core::BufferUsage::VertexBuffer | core::BufferUsage::TransferDst,
-		.memoryProperties = core::MemoryProperty::DeviceLocal
+		.usage = core::EBufferUsage::VertexBuffer | core::EBufferUsage::TransferDst,
+		.memoryProperties = core::EMemoryProperty::DeviceLocal
 	};
 
 	buffers.vertexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device.GetHandle(),
-		m_device.GetPhysicalDevice(),
+		&m_device,
 		vertexInfo
 	);
 
-	core::gpu::BufferCreateInfo indexInfo{
+	core::gpu::SBufferCreateInfo indexInfo{
 		.size = indexBufferSize,
-		.usage = core::BufferUsage::IndexBuffer | core::BufferUsage::TransferDst,
-		.memoryProperties = core::MemoryProperty::DeviceLocal
+		.usage = core::EBufferUsage::IndexBuffer | core::EBufferUsage::TransferDst,
+		.memoryProperties = core::EMemoryProperty::DeviceLocal
 	};
 
 	buffers.indexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device.GetHandle(),
-		m_device.GetPhysicalDevice(),
+		&m_device,
 		indexInfo
 	);
 
 	buffers.indexCount = static_cast<uint32_t>(mesh->indices.size());
 
-	core::gpu::CommandBufferCreateInfo cmdInfo{};
-	cmdInfo.commandPool = m_device.GetCommandPool();
-	cmdInfo.level = core::CommandBufferLevel::Primary;
+	core::gpu::SCommandBufferCreateInfo cmdInfo{};
+	cmdInfo.device = &m_device;
+	cmdInfo.level = core::ECommandBufferLevel::Primary;
 	cmdInfo.count = 1;
 	cmdInfo.singleTime = true;
 
 	auto transferCmd = std::make_unique<core::gpu::CommandBuffer>(
-		m_device.GetHandle(),
-		m_device.GetGraphicsQueue(),
+		&m_device,
 		cmdInfo
 	);
 
 	transferCmd->Begin(0);
 	transferCmd->CopyBuffer(
-		stagingVertexBuffer->GetHandle(),
-		buffers.vertexBuffer->GetHandle(),
+		stagingVertexBuffer.get(),
+		buffers.vertexBuffer.get(),
 		vertexBufferSize
 	);
+
 	transferCmd->CopyBuffer(
-		stagingIndexBuffer->GetHandle(),
-		buffers.indexBuffer->GetHandle(),
+		stagingIndexBuffer.get(),
+		buffers.indexBuffer.get(),
 		indexBufferSize
 	);
 	transferCmd->End(0);
 
-	transferCmd->SubmitAndWait();
+	transferCmd->SubmitAndWait(&m_device);
 
 	m_meshBuffers[mesh.get()] = std::move(buffers);
 }
@@ -250,9 +245,9 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 	uint32_t width = m_device.GetSwapchainWidth();
 	uint32_t height = m_device.GetSwapchainHeight();
 
-	void* colorImageHandle = m_device.GetColorImage();
-	void* swapchainImageHandle = m_device.GetSwapchainImage(imageIndex);
-	void* depthImageHandle = m_device.GetDepthImage();
+	const auto* colorImageHandle = m_device.GetColorImage();
+	const auto* swapchainImageHandle = m_device.GetSwapchainImage(imageIndex);
+	const auto* depthImageHandle = m_device.GetDepthImage();
 
 	cmd->TransitionImageLayout(
 		colorImageHandle,
@@ -277,11 +272,11 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	cmd->BeginRendering(
 		width, height,
-		m_device.GetColorImageView(),
-		m_device.GetDepthImageView()
+        colorImageHandle->GetViewHandle(),
+        depthImageHandle->GetViewHandle()
 	);
 
-	cmd->BindPipeline(m_device.GetPipeline());
+	//cmd->BindPipeline(pipelineHandle); /* Note : we will need to remove the vk::raii::Pipeline on device and make it a real pipeline*/
 	cmd->SetViewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
 	cmd->SetScissor(0, 0, width, height);
 
@@ -302,31 +297,34 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 			if (material.get() != lastMaterial)
 			{
 				UpdateUniformBuffer(frameIndex, material);
-				cmd->BindDescriptorSets(
-					m_device.GetPipelineLayout(),
-					m_device.GetDescriptorSet(frameIndex),
+				
+				// TODO : We need to make the descriptor sets a real descriptorSet type on device.
+				/*cmd->BindDescriptorSets(
+					&m_device.GetDescriptorSet(),
+                    frameIndex,
 					0
-				);
+				);*/
 				lastMaterial = material.get();
 			}
 
 			PushConstants pushConstants;
 			pushConstants.model = staticMesh->GetTransformMatrix();
 
-			cmd->PushConstants(
+			// TODO : We need to make the descriptor sets a real pipeline type on device.
+			/*cmd->PushConstants(
 				m_device.GetPipelineLayout(),
 				static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
 				0,
 				sizeof(PushConstants),
 				&pushConstants
-			);
+			);*/
 
 			auto it = m_meshBuffers.find(mesh.get());
 			if (it != m_meshBuffers.end())
 			{
 				const auto& buffers = it->second;
-				cmd->BindVertexBuffer(buffers.vertexBuffer->GetHandle());
-				cmd->BindIndexBuffer(buffers.indexBuffer->GetHandle());
+				cmd->BindVertexBuffer(buffers.vertexBuffer.get());
+				cmd->BindIndexBuffer(buffers.indexBuffer.get());
 				cmd->DrawIndexed(buffers.indexCount);
 			}
 		}
@@ -377,11 +375,11 @@ void Renderer::DrawFrame()
 	void* signalSemaphore = m_device.GetRenderFinishedSemaphore(imageIndex);
 	void* fence = m_device.GetInFlightFence(m_currentFrame);
 
-	m_commandBuffers[m_currentFrame]->Submit(waitSemaphore, signalSemaphore, fence);
+	m_commandBuffers[m_currentFrame]->Submit(&m_device, waitSemaphore, signalSemaphore, fence);
 
 	m_device.Present(imageIndex);
 
-	m_currentFrame = (m_currentFrame + 1) % core::gpu::Device::FRAMES_IN_FLIGHT;
+	m_currentFrame = (m_currentFrame + 1) % core::gpu::Device::s_FRAMES_IN_FLIGHT;
 	m_frameCounter++;
 }
 
@@ -421,32 +419,30 @@ void Renderer::CreateRTMeshBuffers(std::shared_ptr<resources::object::Mesh> mesh
 	size_t vertexBufferSize = mesh->vertices.size() * sizeof(resources::object::Vertex);
 	size_t indexBufferSize = mesh->indices.size() * sizeof(uint32_t);
 
-	core::gpu::BufferCreateInfo rtVertexInfo{
+	core::gpu::SBufferCreateInfo rtVertexInfo{
 		.size = vertexBufferSize,
-		.usage = core::BufferUsage::AccelerationStructureBuildInput |
-				 core::BufferUsage::ShaderDeviceAddress |
-				 core::BufferUsage::StorageBuffer,
-		.memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+		.usage = core::EBufferUsage::AccelerationStructureBuildInput |
+				 core::EBufferUsage::ShaderDeviceAddress |
+				 core::EBufferUsage::StorageBuffer,
+		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
 	};
 
 	rtData.rtVertexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device.GetHandle(),
-		m_device.GetPhysicalDevice(),
+		&m_device,
 		rtVertexInfo
 	);
 	rtData.rtVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
 
-	core::gpu::BufferCreateInfo rtIndexInfo{
+	core::gpu::SBufferCreateInfo rtIndexInfo{
 		.size = indexBufferSize,
-		.usage = core::BufferUsage::AccelerationStructureBuildInput |
-				 core::BufferUsage::ShaderDeviceAddress |
-				 core::BufferUsage::StorageBuffer,
-		.memoryProperties = core::MemoryProperty::HostVisible | core::MemoryProperty::HostCoherent
+		.usage = core::EBufferUsage::AccelerationStructureBuildInput |
+				 core::EBufferUsage::ShaderDeviceAddress |
+				 core::EBufferUsage::StorageBuffer,
+		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
 	};
 
 	rtData.rtIndexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device.GetHandle(),
-		m_device.GetPhysicalDevice(),
+		&m_device,
 		rtIndexInfo
 	);
 	rtData.rtIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
@@ -464,7 +460,7 @@ void Renderer::CreateBLAS(resources::object::Mesh* mesh)
 	}
 
 	auto& rtData = it->second;
-	core::gpu::AccelerationStructureGeometry geometry{};
+	core::gpu::SAccelerationStructureGeometry geometry{};
 	geometry.vertexBuffer = rtData.rtVertexBuffer.get();
 	geometry.vertexCount = static_cast<uint32_t>(mesh->vertices.size());
 	geometry.vertexStride = sizeof(resources::object::Vertex);
@@ -473,15 +469,14 @@ void Renderer::CreateBLAS(resources::object::Mesh* mesh)
 	geometry.triangleCount = geometry.indexCount / 3;
 	geometry.opaque = true;
 
-	core::gpu::AccelerationStructureCreateInfo blasInfo{};
-	blasInfo.type = core::gpu::AccelerationStructureType::BottomLevel;
+	core::gpu::SAccelerationStructureCreateInfo blasInfo{};
+	blasInfo.type = core::gpu::EAccelerationStructureType::BottomLevel;
 	blasInfo.geometries.push_back(geometry);
 	blasInfo.preferFastTrace = true;
 	blasInfo.allowUpdate = false;
 
 	rtData.blas = std::make_unique<core::gpu::AccelerationStructure>(
-		m_device.GetHandle(),
-		m_device.GetPhysicalDevice(),
+		&m_device,
 		blasInfo
 	);
 }
@@ -513,10 +508,9 @@ void Renderer::EnableRayTracing()
 
 	if (m_tlas)
 	{
-		void* tlasHandle = m_tlas->GetHandle();
-		for (uint32_t i = 0; i < core::gpu::Device::FRAMES_IN_FLIGHT; i++)
+		for (uint32_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; i++)
 		{
-			m_device.UpdateDescriptorWithTLAS(i, tlasHandle);
+			m_device.UpdateDescriptorWithTLAS(i, m_tlas.get());
 		}
 	}
 
@@ -538,7 +532,7 @@ void Renderer::BuildTLAS()
 		return;
 	}
 
-	std::vector<core::gpu::AccelerationStructureInstance> instances;
+	std::vector<core::gpu::SAccelerationStructureInstance> instances;
 	instances.reserve(staticMeshes.size());
 
 	uint32_t instanceIndex = 0;
@@ -562,7 +556,7 @@ void Renderer::BuildTLAS()
 			{mat[0][2], mat[1][2], mat[2][2], mat[3][2]}
 		};
 
-		core::gpu::AccelerationStructureInstance instance{};
+		core::gpu::SAccelerationStructureInstance instance{};
 		std::memcpy(&instance.transform, &transform, sizeof(transform));
 		instance.instanceCustomIndex = instanceIndex++;
 		instance.mask = 0xFF;
@@ -578,30 +572,28 @@ void Renderer::BuildTLAS()
 		return;
 	}
 
-	core::gpu::AccelerationStructureCreateInfo tlasInfo{};
-	tlasInfo.type = core::gpu::AccelerationStructureType::TopLevel;
+	core::gpu::SAccelerationStructureCreateInfo tlasInfo{};
+	tlasInfo.type = core::gpu::EAccelerationStructureType::TopLevel;
 	tlasInfo.instances = instances;
 	tlasInfo.preferFastTrace = true;
 	tlasInfo.allowUpdate = false;
 
 	m_tlas = std::make_unique<core::gpu::AccelerationStructure>(
-		m_device.GetHandle(),
-		m_device.GetPhysicalDevice(),
+		&m_device,
 		tlasInfo
 	);
 }
 
 void Renderer::RebuildAccelerationStructures()
 {
-	core::gpu::CommandBufferCreateInfo cmdInfo{};
-	cmdInfo.commandPool = m_device.GetCommandPool();
+	core::gpu::SCommandBufferCreateInfo cmdInfo{};
+	cmdInfo.device = &m_device;
 	cmdInfo.count = 1;
 	cmdInfo.singleTime = true;
-	cmdInfo.level = core::CommandBufferLevel::Primary;
+	cmdInfo.level = core::ECommandBufferLevel::Primary;
 
 	core::gpu::CommandBuffer cmdBuffer(
-		m_device.GetHandle(),
-		m_device.GetGraphicsQueue(),
+		&m_device,
 		cmdInfo
 	);
 
@@ -622,7 +614,7 @@ void Renderer::RebuildAccelerationStructures()
 	}
 
 	cmdBuffer.End(0);
-	cmdBuffer.SubmitAndWait();
+	cmdBuffer.SubmitAndWait(&m_device);
 
 	std::cout << "Acceleration structures built successfully!" << std::endl;
 }

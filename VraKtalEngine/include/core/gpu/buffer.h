@@ -7,35 +7,36 @@
 
 namespace core::gpu
 {
-	struct BufferCreateInfo
-	{
-		size_t size = 0;
-		BufferUsage usage = BufferUsage::None;
-		MemoryProperty memoryProperties = MemoryProperty::None;
-	};
+    class Device;
 
-	class Buffer
-	{
-	private:
-		struct Impl;
-		std::unique_ptr<Impl> m_impl;
+    struct SBufferCreateInfo
+    {
+        size_t size = 0;
+        EBufferUsage usage = EBufferUsage::None;
+        EMemoryProperty memoryProperties = EMemoryProperty::None;
+    };
 
-	public:
-		Buffer(void* device, void* physicalDevice, const BufferCreateInfo& info);
-		~Buffer();
+    class Buffer
+    {
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> m_impl;
 
-		void* GetHandle() const;
-		size_t GetSize() const;
+    public:
+        Buffer(const core::gpu::Device* _device, const SBufferCreateInfo& _info);
+        ~Buffer();
 
-		uint64_t GetDeviceAddress() const;
+        size_t GetSize() const;
 
-		void Map(void** data);
-		void Unmap();
+        uint64_t GetDeviceAddress() const;
 
-		void CopyFrom(const void* data, size_t size, size_t offset = 0);
+        void Map(void** data);
+        void Unmap();
 
-		Impl& GetImpl();
-	};
+        void CopyFrom(const void* _data, size_t _size, size_t _offset = 0);
+
+        Impl& GetImpl() const;
+    };
 }
 
 #endif //VRAKTAL_CORE_GPU_BUFFER_H

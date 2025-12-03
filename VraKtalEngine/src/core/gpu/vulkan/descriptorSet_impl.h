@@ -13,7 +13,6 @@ namespace core::gpu
 
 	struct DescriptorSet::Impl
 	{
-	private:
 		DescriptorSet& parent;
 		vk::raii::Device& device;
 		std::vector<vk::raii::DescriptorSet*>& descriptorSets;
@@ -31,7 +30,7 @@ namespace core::gpu
 			size_t infoIndex;
 		};
 		std::vector<BindingInfo> bindingInfos;
-	public:
+
 		explicit Impl(DescriptorSet& p, vk::raii::Device& dev,
 			std::vector<vk::raii::DescriptorSet*>& sets, size_t frame);
 		~Impl();

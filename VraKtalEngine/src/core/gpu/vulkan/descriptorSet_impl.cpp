@@ -1,4 +1,5 @@
 #include "../src/core/gpu/vulkan/descriptorSet_impl.h"
+#include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <core/gpu/buffer.h>
@@ -20,12 +21,9 @@ core::gpu::DescriptorSet::Impl::~Impl() = default;
 
 core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindBuffer(const Buffer& buffer, size_t offset, size_t range)
 {
-	VkBuffer vkBufferHandle = reinterpret_cast<VkBuffer>(buffer.GetHandle());
-	vk::Buffer vkBuffer(vkBufferHandle);
-
 	size_t infoIndex = bufferInfos.size();
 	bufferInfos.emplace_back(
-		vkBuffer,
+		buffer.GetImpl().buffer,
 		static_cast<vk::DeviceSize>(offset),
 		static_cast<vk::DeviceSize>(range)
 	);
@@ -144,7 +142,7 @@ void core::gpu::DescriptorSet::Update()
 	m_impl->Update();
 }
 
-core::gpu::DescriptorSet::Impl& core::gpu::DescriptorSet::GetImpl()
+core::gpu::DescriptorSet::Impl& core::gpu::DescriptorSet::GetImpl() const
 {
 	return *m_impl;
 }

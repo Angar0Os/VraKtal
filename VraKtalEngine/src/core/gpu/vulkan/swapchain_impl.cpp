@@ -1,6 +1,8 @@
 #include "../src/core/gpu/vulkan/swapchain_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
+#include <core/gpu/image.h>
+
 #include <algorithm>
 #include <stdexcept>
 
@@ -44,16 +46,16 @@ core::gpu::Swapchain::Impl::Impl(core::gpu::Swapchain& p, vk::raii::Device& dev,
 
 	swapchain = vk::raii::SwapchainKHR(device, createInfo);
 
-	images = swapchain.getImages();
+	images = GetImages();
 
 	imageViews.clear();
 	imageViews.reserve(images.size());
 
-	for (const auto& image : images)
+	for (const core::gpu::Image* image : images)
 	{
 		vk::ImageViewCreateInfo viewInfo{};
 		vk::ImageSubresourceRange viewInfoSubResource{};
-		viewInfo.image = image;
+		viewInfo.image = *reinterpret_cast<vk::Image*>(image->GetHandle());
 		viewInfo.viewType = vk::ImageViewType::e2D;
 		viewInfo.format = format;
 
@@ -151,20 +153,14 @@ uint32_t core::gpu::Swapchain::Impl::GetImageCount() const
 	return static_cast<uint32_t>(images.size());
 }
 
-core::gpu::SwapchainImage core::gpu::Swapchain::Impl::GetImage(uint32_t index) const
+const core::gpu::Image* core::gpu::Swapchain::Impl::GetImage(uint32_t index) const
 {
 	if (index >= images.size())
 	{
 		throw std::out_of_range("Swapchain image index out of range");
 	}
 
-	VkImage nativeImage = static_cast<VkImage>(images[index]);
-	VkImageView nativeView = static_cast<VkImageView>(*imageViews[index]);
-
-	return SwapchainImage{
-		.image = reinterpret_cast<void*>(nativeImage),
-		.imageView = reinterpret_cast<void*>(nativeView)
-	};
+	return images[index];
 }
 
 core::TextureFormat core::gpu::Swapchain::Impl::GetFormat() const
@@ -198,6 +194,20 @@ uint32_t core::gpu::Swapchain::Impl::AcquireNextImage(vk::Semaphore semaphore, u
 	return imageIndex;
 }
 
+
+std::vector<const core::gpu::Image*> core::gpu::Swapchain::Impl::GetImages() const
+{
+	std::vector<const core::gpu::Image*> result;
+	result.reserve(GetImageCount());
+
+	for(uint32_t i = 0; i < GetImageCount(); ++i)
+	{
+		result.push_back(GetImage(i));
+	}
+
+	return result;
+}
+
 core::gpu::Swapchain::Swapchain(void* device, void* physicalDevice, const SwapchainCreateInfo& info)
 {
 	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
@@ -221,22 +231,14 @@ uint32_t core::gpu::Swapchain::GetImageCount() const
 	return m_impl->GetImageCount();
 }
 
-core::gpu::SwapchainImage core::gpu::Swapchain::GetImage(uint32_t index) const
+const core::gpu::Image* core::gpu::Swapchain::GetImage(uint32_t index) const
 {
 	return m_impl->GetImage(index);
 }
 
-std::vector<core::gpu::SwapchainImage> core::gpu::Swapchain::GetImages() const
+std::vector<const core::gpu::Image*> core::gpu::Swapchain::GetImages() const
 {
-	std::vector<SwapchainImage> result;
-	result.reserve(GetImageCount());
-
-	for (uint32_t i = 0; i < GetImageCount(); ++i)
-	{
-		result.push_back(GetImage(i));
-	}
-
-	return result;
+	return m_impl->GetImages();
 }
 
 core::TextureFormat core::gpu::Swapchain::GetFormat() const

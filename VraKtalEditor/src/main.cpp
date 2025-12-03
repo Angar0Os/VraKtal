@@ -2,6 +2,7 @@
 
 #include <core/window.h>
 #include <core/gpu/device.h>
+#include <core/gpu/image.h>
 
 #include <graphics/renderer.h>
 #include <graphics/resources/scene.h>
@@ -62,23 +63,32 @@ int main()
 	renderer.EnableRayTracing();
 
     float t = 0.0f;
+	
+	graphics::resources::object::Light mainLight;
+	mainLight.position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
+	mainLight.color = glm::vec3(1.0f, 0.0f, 0.0f);
+	mainLight.intensity = 5.0f;
+	mainLight.enabled = true;
+	mainLight.radius = 0.2f + 0.2f * glm::sin(t * 2.0f);
+	auto light = scene->AddLight(mainLight);
+
+    uint32_t frameCounter = 0;
 
 	while (!window.ShouldClose())
 	{
 		window.PollEvents();
 
-		graphics::resources::object::Light mainLight;
-		mainLight.position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
-		mainLight.color = glm::vec3(1.0f, 0.0f, 0.0f);
-		mainLight.intensity = 5.0f;
-		mainLight.enabled = true;
-		mainLight.radius = 0.2f + 0.2f * glm::sin(t * 2.0f);
-		scene->AddLight(mainLight);
-
-		renderer.DrawFrame();
-
-        scene->RemoveLight(0);
-        t += 1.0f / 60.0f;
+		light->position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
+		
+		uint32_t imageIndex = device.AcquireNextImage(frameCounter);
+		//core::gpu::Image* swapchainImage = device.GetSwapchainImage(imageIndex);
+		//
+		//scene->Render(renderer);
+		//renderer.DrawFrame(swapchainImage /*destination de rendu*/);
+		//
+		//device.Present(imageIndex);
+		//t += 1.0f / 60.0f;
+		//++frameCounter %= core::gpu::Device::FRAMES_IN_FLIGHT;
 	}
 
 	renderer.Cleanup();

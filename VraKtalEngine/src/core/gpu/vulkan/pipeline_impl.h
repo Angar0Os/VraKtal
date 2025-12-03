@@ -9,14 +9,12 @@ namespace core::gpu
 {
 	struct Pipeline::Impl
 	{
-	private:
 		Pipeline& parent;
 		vk::raii::Device& device;
 
 		vk::raii::PipelineLayout pipelineLayout;
 		vk::raii::Pipeline pipeline;
 
-	public:
 		explicit Impl(Pipeline& p, vk::raii::Device& dev, const PipelineCreateInfo& info);
 		~Impl();
 

@@ -13,7 +13,9 @@ namespace core
 
 	namespace gpu
 	{
+		class AccelerationStructure;
 		class Buffer;
+		class Image;
 
 		constexpr int MAX_LIGHTS = 10;
 
@@ -63,7 +65,7 @@ namespace core
 			explicit Device(Window& window);
 			~Device();
 
-			Impl& GetImpl();
+			Impl& GetImpl() const;
 
 			void BeginFrame(uint32_t frameIndex);
 			uint32_t AcquireNextImage(uint32_t frameIndex);
@@ -74,30 +76,26 @@ namespace core
 			void Present(uint32_t imageIndex);
 			void Cleanup();
 
-			void* GetHandle() const;
-			void* GetCommandPool() const;
 			void* GetGraphicsQueue() const;
 			void* GetPipeline() const;
 			void* GetPipelineLayout() const;
 			void* GetDescriptorSet(uint32_t frameIndex) const;
-			core::gpu::Buffer* GetUniformBuffer(uint32_t frameIndex);
 
 			uint32_t GetSwapchainWidth() const;
 			uint32_t GetSwapchainHeight() const;
-			void* GetSwapchainImageView(uint32_t imageIndex) const;
-			void* GetDepthImageView() const;
-			void* GetColorImageView() const;
 			void* GetPhysicalDevice() const;
-			void* GetSwapchainImage(uint32_t imageIndex) const;
-			void* GetColorImage() const;
-			void* GetDepthImage() const;
 
-			void UpdateDescriptorWithTLAS(uint32_t frameIndex, void* tlasHandle);
+			core::gpu::Buffer* GetUniformBuffer(uint32_t frameIndex);
+			const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
+			const core::gpu::Image* GetColorImage() const;
+			const core::gpu::Image* GetDepthImage() const;
+
+			void UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle);
 
 			void RecreateSwapchain();
 			void WaitIdle();
 
-			static constexpr uint32_t FRAMES_IN_FLIGHT = 2;
+			static constexpr uint32_t s_FRAMES_IN_FLIGHT = 2;
 		};
 	}
 }

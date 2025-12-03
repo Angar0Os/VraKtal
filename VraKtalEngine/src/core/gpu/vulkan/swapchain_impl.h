@@ -7,6 +7,8 @@
 
 namespace core::gpu
 {
+	class Image;
+
 	struct Swapchain::Impl
 	{
 	private:
@@ -15,7 +17,7 @@ namespace core::gpu
 		vk::raii::PhysicalDevice& physicalDevice;
 
 		vk::raii::SwapchainKHR swapchain;
-		std::vector<vk::Image> images;
+		std::vector<const Image*> images;
 		std::vector<vk::raii::ImageView> imageViews;
 
 		vk::Format format;
@@ -37,11 +39,13 @@ namespace core::gpu
 		const vk::raii::SwapchainKHR& GetSwapchain() const;
 
 		uint32_t GetImageCount() const;
-		SwapchainImage GetImage(uint32_t index) const;
+		const Image* GetImage(uint32_t index) const;
 
 		TextureFormat GetFormat() const;
 		uint32_t GetWidth() const;
 		uint32_t GetHeight() const;
+
+        std::vector<const Image*> GetImages() const;
 
 		uint32_t AcquireNextImage(vk::Semaphore semaphore, uint64_t timeout);
 	};

@@ -7,6 +7,7 @@
 #include <core/gpu/commandBuffer.h>
 #include <core/gpu/buffer.h>
 #include <core/gpu/accelerationStructure.h>
+#include <core/gpu/image.h>
 
 #include <graphics/resources/scene.h>
 #include <graphics/resources/object/mesh.h>

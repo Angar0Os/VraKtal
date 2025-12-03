@@ -10,6 +10,7 @@
 import vulkan_hpp;
 #endif
 
+#include <core/gpu/accelerationStructure.h>
 #include <core/gpu/device.h>
 #include <core/window.h>
 #include <core/gpu/descriptorSetLayout.h>
@@ -35,7 +36,8 @@ namespace core::gpu
 {
 	struct Device::Impl
 	{
-	private:
+        Device*								parent = nullptr;
+
 		vk::raii::Context					context;
 		vk::raii::Instance					instance = nullptr;
 		vk::raii::DebugUtilsMessengerEXT	debugMessenger = nullptr;
@@ -45,10 +47,10 @@ namespace core::gpu
 		vk::raii::Queue						graphicsQueue = nullptr;
 		uint32_t							queueIndex = ~0;
 
-		std::unique_ptr<CommandPool> commandPool;
-		std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
-		std::unique_ptr<DescriptorPool> descriptorPool;
-		std::vector<vk::raii::DescriptorSet*> descriptorSets;
+		std::unique_ptr<CommandPool>			commandPool;
+		std::unique_ptr<DescriptorSetLayout>	descriptorSetLayout;
+		std::unique_ptr<DescriptorPool>			descriptorPool;
+		std::vector<vk::raii::DescriptorSet*>	descriptorSets;
 
 		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
 
@@ -65,24 +67,24 @@ namespace core::gpu
 		std::unique_ptr<Texture> aoTexture;
 		std::unique_ptr<Texture> emissiveTexture;
 
-		std::unique_ptr<Image> colorImage;
-		std::unique_ptr<Image> depthImage;
+		std::unique_ptr<Image>	colorImage;
+		std::unique_ptr<Image>	depthImage;
 
-		std::unique_ptr<Swapchain> swapchain;
-		std::unique_ptr<Pipeline> graphicsPipeline;
+		std::unique_ptr<Swapchain>	swapchain;
+		std::unique_ptr<Pipeline>	graphicsPipeline;
 
-		std::vector<CommandBuffer> commandBuffers;
+		std::vector<CommandBuffer>	commandBuffers;
 
-		std::vector<vk::raii::Semaphore> imageAvailable;
-		std::vector<vk::raii::Semaphore> renderFinished;
-		std::vector<vk::raii::Fence> inFlightFences;
+		std::vector<vk::raii::Semaphore>	imageAvailable;
+		std::vector<vk::raii::Semaphore>	renderFinished;
+		std::vector<vk::raii::Fence>		inFlightFences;
 		std::vector<const vk::raii::Fence*> imagesInFlight;
 		std::vector<std::unique_ptr<vk::raii::CommandBuffer>> tempCmdBufs;
 
 		const Window& m_window;
 
 		std::vector<char> ReadFile(const std::string& filename);
-	public:
+
 		explicit Impl(Window& window);
 		~Impl();
 
@@ -117,30 +119,25 @@ namespace core::gpu
 		void Present(uint32_t imageIndex);
 		void Cleanup();
 
-		void* GetCommandPool() const;
 		void* GetGraphicsQueue() const;
 		void* GetPipeline() const;
 		void* GetPipelineLayout() const;
 		void* GetDescriptorSet(uint32_t frameIndex) const;
 		uint32_t GetSwapchainWidth() const;
 		uint32_t GetSwapchainHeight() const;
-		void* GetSwapchainImageView(uint32_t index) const;
-		void* GetDepthImageView() const;
-		void* GetColorImageView() const;
 		Buffer* GetUniformBuffer(uint32_t frameIndex) const;
 
 		void* GetPhysicalDevice() const;
-		void* GetHandle() const;
 
-		void* GetSwapchainImage(uint32_t imageIndex) const;
-		void* GetColorImage() const;
-		void* GetDepthImage() const;
+		const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
+		const core::gpu::Image* GetColorImage() const;
+		const core::gpu::Image* GetDepthImage() const;
 
 		void WaitIdle();
 
 		void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
 
-		void UpdateDescriptorWithTLAS(uint32_t frameIndex, void* tlasHandle);
+		void UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle);
 
 		std::vector<const char*> requiredDeviceExtension = {
 			vk::KHRSwapchainExtensionName,

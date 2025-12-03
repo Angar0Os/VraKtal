@@ -29,7 +29,7 @@ namespace core::gpu
 
         void Update();
 
-        Impl& GetImpl();
+        Impl& GetImpl() const;
     };
 }
 

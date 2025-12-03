@@ -8,8 +8,9 @@
 
 namespace core::gpu
 {
-	class CommandBuffer;
 	class Buffer;
+	class CommandBuffer;
+	class Device;
 
 	struct ImageCreateInfo
 	{
@@ -20,7 +21,7 @@ namespace core::gpu
 		TextureFormat format = TextureFormat::RGBA8_SRGB;
 		ImageTiling tiling = ImageTiling::Optimal;
 		ImageUsage usage = ImageUsage::None;
-		MemoryProperty memoryProperties = MemoryProperty::DeviceLocal;
+		EMemoryProperty memoryProperties = EMemoryProperty::DeviceLocal;
 		SampleCount samples = SampleCount::e1;
 	};
 
@@ -41,7 +42,7 @@ namespace core::gpu
 		std::unique_ptr<Impl> m_impl;
 
 	public:
-		Image(void* device, void* physicalDevice, const ImageCreateInfo& info);
+		Image(const core::gpu::Device* device, const ImageCreateInfo& info);
 		~Image();
 
 		void* GetHandle() const;
@@ -64,7 +65,7 @@ namespace core::gpu
 		void GenerateMipmaps(CommandBuffer& commandBuffer, uint32_t width,
 			uint32_t height, uint32_t mipLevels);
 
-		Impl& GetImpl();
+		Impl& GetImpl() const;
 	};
 }
 

@@ -1,14 +1,13 @@
 #include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu/vulkan/commandBuffer_impl.h"
+#include "../src/core/gpu/vulkan/device_impl.h"
 #include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <stdexcept>
 
-core::gpu::Image::Impl::Impl(core::gpu::Image& p, vk::raii::Device& dev,
-	vk::raii::PhysicalDevice& physDev, const ImageCreateInfo& info)
-	: parent(p), device(dev), physicalDevice(physDev),
-	image(nullptr), memory(nullptr), view(nullptr),
+core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _device, const ImageCreateInfo& info)
+	: parent(p), device(_device), image(nullptr), memory(nullptr), view(nullptr),
 	width(info.width), height(info.height),
 	mipLevels(info.mipLevels), arrayLayers(info.arrayLayers),
 	format(info.format), samples(info.samples)
@@ -32,7 +31,7 @@ core::gpu::Image::Impl::Impl(core::gpu::Image& p, vk::raii::Device& dev,
 	imageInfo.sharingMode = vk::SharingMode::eExclusive;
 	imageInfo.initialLayout = vk::ImageLayout::eUndefined;
 
-	image = vk::raii::Image(device, imageInfo);
+	image = vk::raii::Image(device->GetImpl().device, imageInfo);
 
 	vk::MemoryRequirements memRequirements = image.getMemoryRequirements();
 
@@ -43,7 +42,7 @@ core::gpu::Image::Impl::Impl(core::gpu::Image& p, vk::raii::Device& dev,
 		core::gpu_detail::ToVulkan(info.memoryProperties)
 	);
 
-	memory = vk::raii::DeviceMemory(device, allocInfo);
+	memory = vk::raii::DeviceMemory(device->GetImpl().device, allocInfo);
 
 	image.bindMemory(*memory, 0);
 }
@@ -53,7 +52,7 @@ core::gpu::Image::Impl::~Impl() = default;
 uint32_t core::gpu::Image::Impl::FindMemoryType(uint32_t typeFilter,
 	vk::MemoryPropertyFlags properties)
 {
-	vk::PhysicalDeviceMemoryProperties memProperties = physicalDevice.getMemoryProperties();
+	vk::PhysicalDeviceMemoryProperties memProperties = device->GetImpl().physicalDevice.getMemoryProperties();
 
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
 	{
@@ -80,7 +79,7 @@ void core::gpu::Image::Impl::CreateView(const ImageViewCreateInfo& info)
 	viewInfo.subresourceRange.baseArrayLayer = info.baseArrayLayer;
 	viewInfo.subresourceRange.layerCount = info.layerCount;
 
-	view = vk::raii::ImageView(device, viewInfo);
+	view = vk::raii::ImageView(device->GetImpl().device, viewInfo);
 }
 
 void core::gpu::Image::Impl::TransitionLayout(CommandBuffer& commandBuffer,
@@ -139,15 +138,13 @@ void core::gpu::Image::Impl::CopyFromBuffer(CommandBuffer& commandBuffer,
 	region.imageExtent = vk::Extent3D{ width, height, 1 };
 
 	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
-	auto& srcBuffer = buffer.GetImpl().GetBuffer();
-
-	cmdBuf.copyBufferToImage(*srcBuffer, *image, vk::ImageLayout::eTransferDstOptimal, region);
+	cmdBuf.copyBufferToImage(*buffer.GetImpl().buffer, *image, vk::ImageLayout::eTransferDstOptimal, region);
 }
 
 void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
 	uint32_t width, uint32_t height, uint32_t mipLevels)
 {
-	vk::FormatProperties formatProperties = physicalDevice.getFormatProperties(
+	vk::FormatProperties formatProperties = device->GetImpl().physicalDevice.getFormatProperties(
 		core::gpu_detail::ToVulkan(format));
 
 	if (!(formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear))
@@ -255,12 +252,9 @@ const vk::raii::ImageView& core::gpu::Image::Impl::GetView() const
 	return view;
 }
 
-core::gpu::Image::Image(void* device, void* physicalDevice, const ImageCreateInfo& info)
+core::gpu::Image::Image(const core::gpu::Device* device, const ImageCreateInfo& info)
 {
-	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
-	auto& vkPhysicalDevice = *static_cast<vk::raii::PhysicalDevice*>(physicalDevice);
-
-	m_impl = std::make_unique<Impl>(*this, vkDevice, vkPhysicalDevice, info);
+	m_impl = std::make_unique<Impl>(*this, device, info);
 }
 
 core::gpu::Image::~Image() = default;
@@ -324,7 +318,7 @@ void core::gpu::Image::GenerateMipmaps(CommandBuffer& commandBuffer,
 	m_impl->GenerateMipmaps(commandBuffer, width, height, mipLevels);
 }
 
-core::gpu::Image::Impl& core::gpu::Image::GetImpl()
+core::gpu::Image::Impl& core::gpu::Image::GetImpl() const
 {
 	return *m_impl;
 }
