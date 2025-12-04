@@ -1,7 +1,9 @@
 #include "../src/core/gpu/vulkan/descriptorSet_impl.h"
 #include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
+#include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu/vulkan/sampler_impl.h"
+#include "../src/core/gpu/vulkan/texture_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <core/gpu/buffer.h>
@@ -42,17 +44,14 @@ core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindBuffer(const Buffe
 core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindImage(const Sampler& sampler, const Texture* texture,
 	const Texture& defaultTexture, ImageLayout layout)
 {
-	const Texture* selectedTexture = (texture && texture->IsValid())
+	const Texture* selectedTexture = (texture && texture != nullptr)
 		? texture
 		: &defaultTexture;
-
-	VkImageView vkImageViewHandle = reinterpret_cast<VkImageView>(selectedTexture->GetImageView());
-	vk::ImageView vkImageView(vkImageViewHandle);
 
 	size_t infoIndex = imageInfos.size();
 	imageInfos.emplace_back(
 		sampler.GetImpl().sampler,
-		vkImageView,
+		selectedTexture->GetImpl().image->GetImpl().view,
 		core::gpu_detail::ToVulkan(layout)
 	);
 

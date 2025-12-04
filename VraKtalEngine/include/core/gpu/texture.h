@@ -52,16 +52,7 @@ namespace core::gpu
         Texture(Texture&&) noexcept;
         Texture& operator=(Texture&&) noexcept;
 
-        Image* GetImage() const;
-        void* GetImageView() const;
-        uint32_t GetWidth() const;
-        uint32_t GetHeight() const;
-        uint32_t GetMipLevels() const;
-
-        bool IsValid() const { return GetImageView() != nullptr; }
-
-        Impl& GetImpl();
-        const Impl& GetImpl() const;
+        Impl& GetImpl() const;
     };
 }
 

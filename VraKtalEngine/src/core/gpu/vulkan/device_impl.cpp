@@ -5,6 +5,9 @@
 #include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
 #include "../src/core/gpu/vulkan/commandPool_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
+#include "../src/core/gpu/vulkan/swapchain_impl.h"
+
+#include "../src/core/gpu_detail/converters.h"
 
 #include <core/gpu/descriptorSet.h>
 #include <core/enum.h>
@@ -542,7 +545,7 @@ void core::gpu::Device::Impl::CreateSwapchain()
 		.oldSwapchain = nullptr
 	};
 
-	swapchain = std::make_unique<Swapchain>(&device, &physicalDevice, swapchainInfo);
+	swapchain = std::make_unique<Swapchain>(parent, swapchainInfo);
 }
 
 void core::gpu::Device::Impl::CreateGraphicsPipeline()
@@ -587,7 +590,7 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 	pipelineInfo.depthCompareOp = CompareOp::Less;
 	pipelineInfo.blendEnable = false;
 	pipelineInfo.samples = SampleCount::e4;
-	pipelineInfo.colorAttachmentFormats = { swapchain->GetFormat() };
+	pipelineInfo.colorAttachmentFormats = { core::gpu_detail::FromVulkan(swapchain->GetImpl().format) };
 	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
 	pipelineInfo.descriptorSetLayouts = { descriptorSetLayout.get() };
 	pipelineInfo.pushConstantRanges = pushConstants;
@@ -641,9 +644,9 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 		.preferredFormat = TextureFormat::RGBA8_SRGB,
 		.presentMode = PresentMode::Mailbox,
 		.minImageCount = 3,
-		.oldSwapchain = swapchain->GetHandle()
+		.oldSwapchain = swapchain.get()
 	};
-	swapchain = std::make_unique<Swapchain>(&device, &physicalDevice, swapchainInfo);
+	swapchain = std::make_unique<Swapchain>(parent, swapchainInfo);
 
 	CreateColorImage();
 	CreateDepthImage();
@@ -683,7 +686,7 @@ void core::gpu::Device::Impl::CreateSyncObjects()
 		imageAvailable.emplace_back(device, semInfo);
 	}
 
-	uint32_t swapchainImageCount = swapchain->GetImages().size();
+	uint32_t swapchainImageCount = swapchain->GetImpl().images.size();
 	renderFinished.reserve(swapchainImageCount);
 	for (size_t i = 0; i < swapchainImageCount; ++i)
 	{
@@ -718,13 +721,11 @@ uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 {
 	if (frameIndex >= imageAvailable.size()) return UINT32_MAX;
 
-	vk::SwapchainKHR swapchainHandle = reinterpret_cast<VkSwapchainKHR>(swapchain->GetHandle());
-
 	try
 	{
 		vk::ResultValue<uint32_t> result = device.acquireNextImage2KHR(
 			vk::AcquireNextImageInfoKHR{
-				.swapchain = swapchainHandle,
+				.swapchain = swapchain->GetImpl().swapchain,
 				.timeout = UINT64_MAX,
 				.semaphore = *imageAvailable[frameIndex],
 				.fence = nullptr,
@@ -784,7 +785,7 @@ void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
 
 const core::gpu::Image* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
 {
-	return swapchain->GetImage(imageIndex);
+	return swapchain->GetImpl().images[imageIndex];
 }
 
 const core::gpu::Image* core::gpu::Device::Impl::GetColorImage() const
@@ -794,7 +795,7 @@ const core::gpu::Image* core::gpu::Device::Impl::GetColorImage() const
 
 void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
 {
-	const core::gpu::Image* swapchainImage = swapchain->GetImage(imageIndex);
+	const core::gpu::Image* swapchainImage = swapchain->GetImpl().images[imageIndex];
 
 	vk::CommandBufferAllocateInfo allocInfo{
 		.commandPool = commandPool->GetImpl().pool,
@@ -868,16 +869,15 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 	if (imageIndex >= renderFinished.size()) return;
 
 	vk::Semaphore presentWait = *renderFinished[imageIndex];
-	vk::SwapchainKHR vkSwapchain = reinterpret_cast<VkSwapchainKHR>(swapchain->GetHandle());
+	vk::SwapchainKHR swapchainHandle = swapchain->GetImpl().swapchain;
 
 	vk::PresentInfoKHR presentInfo{
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores = &presentWait,
 		.swapchainCount = 1,
-		.pSwapchains = &vkSwapchain,
+		.pSwapchains = &swapchainHandle,
 		.pImageIndices = &imageIndex
 	};
-
 	try
 	{
 		vk::Result result = graphicsQueue.presentKHR(presentInfo);
@@ -893,10 +893,10 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 void core::gpu::Device::Impl::CreateColorImage()
 {
 	SImageCreateInfo colorInfo{
-		.width = swapchain->GetWidth(),
-		.height = swapchain->GetHeight(),
+		.width = swapchain->GetImpl().extent.width,
+		.height = swapchain->GetImpl().extent.height,
 		.mipLevels = 1,
-		.format = swapchain->GetFormat(),
+		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
 		.tiling = ImageTiling::Optimal,
 		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc,
 		.memoryProperties = EMemoryProperty::DeviceLocal,
@@ -906,7 +906,7 @@ void core::gpu::Device::Impl::CreateColorImage()
 	colorImage = std::make_unique<Image>(parent, colorInfo);
 
 	SImageViewCreateInfo viewInfo{
-		.format = swapchain->GetFormat(),
+		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
 		.isDepth = false
 	};
 
@@ -916,8 +916,8 @@ void core::gpu::Device::Impl::CreateColorImage()
 void core::gpu::Device::Impl::CreateDepthImage()
 {
 	SImageCreateInfo depthInfo{
-		.width = swapchain->GetWidth(),
-		.height = swapchain->GetHeight(),
+		.width = swapchain->GetImpl().extent.width,
+		.height = swapchain->GetImpl().extent.height,
 		.mipLevels = 1,
 		.format = TextureFormat::Depth32F,
 		.tiling = ImageTiling::Optimal,
@@ -959,12 +959,6 @@ core::gpu::Buffer* core::gpu::Device::Impl::GetUniformBuffer(uint32_t frameIndex
 	return uniformBuffers[frameIndex].get();
 }
 
-//void* core::gpu::Device::Impl::GetDescriptorSet(uint32_t frameIndex) const
-//{
-//	if (frameIndex >= descriptorSets.size()) return nullptr;
-//	return static_cast<void*>(static_cast<VkDescriptorSet>(**descriptorSets[frameIndex]));
-//}
-
 const core::gpu::Pipeline* core::gpu::Device::Impl::GetGraphicsPipeline() const
 {
 	return graphicsPipeline.get();
@@ -972,12 +966,12 @@ const core::gpu::Pipeline* core::gpu::Device::Impl::GetGraphicsPipeline() const
 
 uint32_t core::gpu::Device::Impl::GetSwapchainWidth() const
 {
-	return swapchain->GetWidth();
+	return swapchain->GetImpl().extent.width;
 }
 
 uint32_t core::gpu::Device::Impl::GetSwapchainHeight() const
 {
-	return swapchain->GetHeight();
+	return swapchain->GetImpl().extent.height;
 }
 
 const core::gpu::Image* core::gpu::Device::Impl::GetDepthImage() const

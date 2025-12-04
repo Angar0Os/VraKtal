@@ -3,7 +3,6 @@
 #pragma once
 
 #include <core/gpu/texture.h>
-#include <vulkan/vulkan_raii.hpp>
 #include <memory>
 
 namespace core::gpu
@@ -42,11 +41,6 @@ namespace core::gpu
         bool LoadTextureIfExists(const core::gpu::Device* device, const std::string& filepath);
 
         ~Impl();
-
-        Image* GetImage() const;
-        uint32_t GetWidth() const { return width; }
-        uint32_t GetHeight() const { return height; }
-        uint32_t GetMipLevels() const { return mipLevels; }
     };
 }
 

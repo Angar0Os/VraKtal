@@ -11,12 +11,11 @@ namespace core::gpu
 
 	struct Swapchain::Impl
 	{
-	private:
 		Swapchain& parent;
-		vk::raii::Device& device;
-		vk::raii::PhysicalDevice& physicalDevice;
+		const core::gpu::Device* device;
 
 		vk::raii::SwapchainKHR swapchain;
+
 		std::vector<const Image*> images;
 		std::vector<vk::raii::ImageView> imageViews;
 
@@ -30,22 +29,8 @@ namespace core::gpu
 		vk::Extent2D ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities,
 			uint32_t width, uint32_t height);
 
-	public:
-		explicit Impl(Swapchain& p, vk::raii::Device& dev, vk::raii::PhysicalDevice& physDev,
-			const SwapchainCreateInfo& info);
+        explicit Impl(Swapchain& p, const core::gpu::Device* dev, const SwapchainCreateInfo& info);
 		~Impl();
-
-		vk::raii::SwapchainKHR& GetSwapchain();
-		const vk::raii::SwapchainKHR& GetSwapchain() const;
-
-		uint32_t GetImageCount() const;
-		const Image* GetImage(uint32_t index) const;
-
-		TextureFormat GetFormat() const;
-		uint32_t GetWidth() const;
-		uint32_t GetHeight() const;
-
-        std::vector<const Image*> GetImages() const;
 
 		uint32_t AcquireNextImage(vk::Semaphore semaphore, uint64_t timeout);
 	};

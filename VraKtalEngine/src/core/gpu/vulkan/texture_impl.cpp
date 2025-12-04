@@ -132,11 +132,6 @@ void core::gpu::Texture::Impl::EndSingleTimeCommands(std::unique_ptr<CommandBuff
     commandBuffer->SubmitAndWait(device);
 }
 
-core::gpu::Image* core::gpu::Texture::Impl::GetImage() const
-{
-    return image.get();
-}
-
 core::gpu::Texture::Texture(const core::gpu::Device* _device, 
                             const core::gpu::CommandPool* _commandPool,
                             const TextureCreateInfo& _info)
@@ -313,32 +308,7 @@ core::gpu::Texture::~Texture() = default;
 core::gpu::Texture::Texture(Texture&&) noexcept = default;
 core::gpu::Texture& core::gpu::Texture::operator=(Texture&&) noexcept = default;
 
-core::gpu::Image* core::gpu::Texture::GetImage() const
-{
-    return m_impl->GetImage();
-}
-
-uint32_t core::gpu::Texture::GetWidth() const
-{
-    return m_impl->GetWidth();
-}
-
-uint32_t core::gpu::Texture::GetHeight() const
-{
-    return m_impl->GetHeight();
-}
-
-uint32_t core::gpu::Texture::GetMipLevels() const
-{
-    return m_impl->GetMipLevels();
-}
-
-core::gpu::Texture::Impl& core::gpu::Texture::GetImpl()
-{
-    return *m_impl;
-}
-
-const core::gpu::Texture::Impl& core::gpu::Texture::GetImpl() const
+core::gpu::Texture::Impl& core::gpu::Texture::GetImpl() const
 {
     return *m_impl;
 }
