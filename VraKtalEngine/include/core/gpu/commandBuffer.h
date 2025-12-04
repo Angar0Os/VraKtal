@@ -49,7 +49,7 @@ namespace core::gpu
         void BindPipeline(const core::gpu::Pipeline* _pipeline);
         void BindVertexBuffer(const core::gpu::Buffer* _buffer, size_t _offset = 0);
         void BindIndexBuffer(const core::gpu::Buffer* _buffer, size_t _offset = 0);
-        void BindDescriptorSets(const core::gpu::Device* _device, const core::gpu::DescriptorSet* _descriptorSet, uint32_t _frameIndex, uint32_t _firstSet = 0);
+        void BindDescriptorSets(const core::gpu::Device* _device, uint32_t _frameIndex, uint32_t _firstSet = 0);
 
         void SetViewport(float _x, float _y, float _width, float _height, float _minDepth = 0.0f, float _maxDepth = 1.0f);
         void SetScissor(int32_t _x, int32_t _y, uint32_t _width, uint32_t _height);
@@ -57,7 +57,7 @@ namespace core::gpu
         void DrawIndexed(uint32_t _indexCount, uint32_t _instanceCount = 1,
                          uint32_t _firstIndex = 0, int32_t _vertexOffset = 0, uint32_t _firstInstance = 0);
 
-        void BeginRendering(uint32_t _width, uint32_t _height, void* _colorImageView, void* _depthImageView);
+        void BeginRendering(uint32_t _width, uint32_t _height, const core::gpu::Image* _colorImageView, const core::gpu::Image* _depthImageView);
         void EndRendering();
 
         void TransitionImageLayout(const core::gpu::Image* _image, ImageLayout _oldLayout, ImageLayout _newLayout, bool _isDepth = false);

@@ -3,13 +3,13 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 
 #include <core/enum.h>
 
 namespace core::gpu
 {
-    class Buffer;      
+    class Buffer;     
+    class Device;
     class Sampler;     
     class Texture;
 
@@ -20,7 +20,7 @@ namespace core::gpu
         std::unique_ptr<Impl> m_impl;
 
     public:
-        DescriptorSet(void* device, void* setsVector, size_t frame);
+        DescriptorSet(const core::gpu::Device* device, void* setsVector, size_t frame);
         ~DescriptorSet();
 
         DescriptorSet& BindBuffer(const Buffer& buffer, size_t offset, size_t range);

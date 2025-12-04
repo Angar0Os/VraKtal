@@ -1,10 +1,11 @@
 #include "../src/core/gpu/vulkan/descriptorSetLayout_impl.h"
+#include "../src/core/gpu/vulkan/device_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <stdexcept>
 
 core::gpu::DescriptorSetLayout::Impl::Impl(core::gpu::DescriptorSetLayout& p,
-	vk::raii::Device& dev, const DescriptorSetLayoutCreateInfo& info)
+	const core::gpu::Device* dev, const SDescriptorSetLayoutCreateInfo& info)
 	: parent(p), device(dev), layout(nullptr)
 {
 	std::vector<vk::DescriptorSetLayoutBinding> vkBindings;
@@ -26,25 +27,14 @@ core::gpu::DescriptorSetLayout::Impl::Impl(core::gpu::DescriptorSetLayout& p,
 	layoutInfo.bindingCount = static_cast<uint32_t>(vkBindings.size());
 	layoutInfo.pBindings = vkBindings.data();
 
-	layout = vk::raii::DescriptorSetLayout(device, layoutInfo);
+	layout = vk::raii::DescriptorSetLayout(device->GetImpl().device, layoutInfo);
 }
 
 core::gpu::DescriptorSetLayout::Impl::~Impl() = default;
 
-vk::raii::DescriptorSetLayout& core::gpu::DescriptorSetLayout::Impl::GetLayout()
+core::gpu::DescriptorSetLayout::DescriptorSetLayout(const core::gpu::Device* device, const SDescriptorSetLayoutCreateInfo& info)
 {
-	return layout;
-}
-
-const vk::raii::DescriptorSetLayout& core::gpu::DescriptorSetLayout::Impl::GetLayout() const
-{
-	return layout;
-}
-
-core::gpu::DescriptorSetLayout::DescriptorSetLayout(void* device, const DescriptorSetLayoutCreateInfo& info)
-{
-	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
-	m_impl = std::make_unique<Impl>(*this, vkDevice, info);
+	m_impl = std::make_unique<Impl>(*this, device, info);
 }
 
 core::gpu::DescriptorSetLayout::~DescriptorSetLayout() = default;
@@ -52,17 +42,7 @@ core::gpu::DescriptorSetLayout::~DescriptorSetLayout() = default;
 core::gpu::DescriptorSetLayout::DescriptorSetLayout(DescriptorSetLayout&& other) noexcept = default;
 core::gpu::DescriptorSetLayout& core::gpu::DescriptorSetLayout::operator=(DescriptorSetLayout&& other) noexcept = default;
 
-void* core::gpu::DescriptorSetLayout::GetHandle() const
-{
-	return reinterpret_cast<void*>(static_cast<VkDescriptorSetLayout>(*m_impl->GetLayout()));
-}
-
-core::gpu::DescriptorSetLayout::Impl& core::gpu::DescriptorSetLayout::GetImpl()
-{
-	return *m_impl;
-}
-
-const core::gpu::DescriptorSetLayout::Impl& core::gpu::DescriptorSetLayout::GetImpl() const
+core::gpu::DescriptorSetLayout::Impl& core::gpu::DescriptorSetLayout::GetImpl() const
 {
 	return *m_impl;
 }

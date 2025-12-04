@@ -6,7 +6,7 @@
 
 #include <stdexcept>
 
-core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _device, const ImageCreateInfo& info)
+core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _device, const SImageCreateInfo& info)
 	: parent(p), device(_device), image(nullptr), memory(nullptr), view(nullptr),
 	width(info.width), height(info.height),
 	mipLevels(info.mipLevels), arrayLayers(info.arrayLayers),
@@ -66,7 +66,7 @@ uint32_t core::gpu::Image::Impl::FindMemoryType(uint32_t typeFilter,
 	throw std::runtime_error("Failed to find suitable memory type for image");
 }
 
-void core::gpu::Image::Impl::CreateView(const ImageViewCreateInfo& info)
+void core::gpu::Image::Impl::CreateView(const SImageViewCreateInfo& info)
 {
 	vk::ImageViewCreateInfo viewInfo{};
 	viewInfo.image = *image;
@@ -232,70 +232,14 @@ void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
 	);
 }
 
-vk::raii::Image& core::gpu::Image::Impl::GetImage()
-{
-	return image;
-}
-
-const vk::raii::Image& core::gpu::Image::Impl::GetImage() const
-{
-	return image;
-}
-
-vk::raii::ImageView& core::gpu::Image::Impl::GetView()
-{
-	return view;
-}
-
-const vk::raii::ImageView& core::gpu::Image::Impl::GetView() const
-{
-	return view;
-}
-
-core::gpu::Image::Image(const core::gpu::Device* device, const ImageCreateInfo& info)
+core::gpu::Image::Image(const core::gpu::Device* device, const SImageCreateInfo& info)
 {
 	m_impl = std::make_unique<Impl>(*this, device, info);
 }
 
 core::gpu::Image::~Image() = default;
 
-void* core::gpu::Image::GetHandle() const
-{
-	VkImage nativeHandle = *m_impl->GetImage();
-	return reinterpret_cast<void*>(nativeHandle);
-}
-
-void* core::gpu::Image::GetViewHandle() const
-{
-	return reinterpret_cast<void*>(static_cast<VkImageView>(*m_impl->GetView()));
-}
-
-uint32_t core::gpu::Image::GetWidth() const
-{
-	return m_impl->GetWidth();
-}
-
-uint32_t core::gpu::Image::GetHeight() const
-{
-	return m_impl->GetHeight();
-}
-
-uint32_t core::gpu::Image::GetMipLevels() const
-{
-	return m_impl->GetMipLevels();
-}
-
-uint32_t core::gpu::Image::GetArrayLayers() const
-{
-	return m_impl->GetArrayLayers();
-}
-
-core::TextureFormat core::gpu::Image::GetFormat() const
-{
-	return m_impl->GetFormat();
-}
-
-void core::gpu::Image::CreateView(const ImageViewCreateInfo& info)
+void core::gpu::Image::CreateView(const SImageViewCreateInfo& info)
 {
 	m_impl->CreateView(info);
 }

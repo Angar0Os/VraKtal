@@ -271,7 +271,6 @@ void core::gpu::CommandBuffer::Impl::BindIndexBuffer(const core::gpu::Buffer* bu
 
 void core::gpu::CommandBuffer::Impl::BindDescriptorSets(
 	const core::gpu::Device* device,
-	const core::gpu::DescriptorSet* descriptorSet,
     uint32_t frameIndex,
 	uint32_t firstSet)
 {
@@ -279,7 +278,7 @@ void core::gpu::CommandBuffer::Impl::BindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,
 		device->GetImpl().graphicsPipeline->GetImpl().pipelineLayout,
 		firstSet,
-		**descriptorSet->GetImpl().descriptorSets[frameIndex],
+		**device->GetImpl().descriptorSets[frameIndex],
 		nullptr
 	);
 }
@@ -305,21 +304,18 @@ void core::gpu::CommandBuffer::Impl::DrawIndexed(uint32_t indexCount, uint32_t i
 
 void core::gpu::CommandBuffer::Impl::BeginRendering(uint32_t width,
 	uint32_t height,
-	void* colorImageView,
-	void* depthImageView)
+	const core::gpu::Image* colorImage,
+	const core::gpu::Image* depthImage)
 {
-	vk::ImageView vkColorView = reinterpret_cast<VkImageView>(colorImageView);
-	vk::ImageView vkDepthView = reinterpret_cast<VkImageView>(depthImageView);
-
 	vk::RenderingAttachmentInfo colorAttachment{};
-	colorAttachment.imageView = vkColorView;
+	colorAttachment.imageView = colorImage->GetImpl().view;
 	colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
 	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
 	colorAttachment.clearValue = vk::ClearColorValue(0.1f, 0.1f, 0.15f, 1.f);
 
 	vk::RenderingAttachmentInfo depthAttachment{};
-	depthAttachment.imageView = vkDepthView;
+	depthAttachment.imageView = depthImage->GetImpl().view;
 	depthAttachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
 	depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
 	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
@@ -393,9 +389,6 @@ void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
 
 void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, uint32_t width, uint32_t height)
 {
-	vk::Image vkSrcImage = *static_cast<const vk::Image*>(srcImage->GetHandle());
-	vk::Image vkDstImage = *static_cast<const vk::Image*>(dstImage->GetHandle());
-
 	vk::ImageResolve resolveRegion{};
 	vk::ImageSubresourceLayers subRange{};
 	subRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -420,8 +413,8 @@ void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcIma
 	resolveRegion.extent = ext3D;
 
 	GetCommandBuffer(currentIndex).resolveImage(
-		vkSrcImage, vk::ImageLayout::eTransferSrcOptimal,
-		vkDstImage, vk::ImageLayout::eTransferDstOptimal,
+		srcImage->GetImpl().image, vk::ImageLayout::eTransferSrcOptimal,
+		dstImage->GetImpl().image, vk::ImageLayout::eTransferDstOptimal,
 		resolveRegion
 	);
 }
@@ -476,9 +469,9 @@ void core::gpu::CommandBuffer::BindIndexBuffer(const core::gpu::Buffer* buffer, 
 	m_impl->BindIndexBuffer(buffer, offset);
 }
 
-void core::gpu::CommandBuffer::BindDescriptorSets(const core::gpu::Device* device, const core::gpu::DescriptorSet* descriptorSet, uint32_t frameIndex, uint32_t firstSet)
+void core::gpu::CommandBuffer::BindDescriptorSets(const core::gpu::Device* device, uint32_t frameIndex, uint32_t firstSet)
 {
-	m_impl->BindDescriptorSets(device, descriptorSet, frameIndex, firstSet);
+	m_impl->BindDescriptorSets(device, frameIndex, firstSet);
 }
 
 void core::gpu::CommandBuffer::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
@@ -496,7 +489,7 @@ void core::gpu::CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanc
 	m_impl->DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void core::gpu::CommandBuffer::BeginRendering(uint32_t width, uint32_t height, void* colorImageView, void* depthImageView)
+void core::gpu::CommandBuffer::BeginRendering(uint32_t width, uint32_t height, const core::gpu::Image* colorImageView, const core::gpu::Image* depthImageView)
 {
 	m_impl->BeginRendering(width, height, colorImageView, depthImageView);
 }

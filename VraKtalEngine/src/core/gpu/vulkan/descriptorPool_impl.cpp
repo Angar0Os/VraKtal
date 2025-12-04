@@ -100,7 +100,7 @@ std::vector<void*> core::gpu::DescriptorPool::AllocateDescriptorSets(
 
 	for (auto* layout : layouts)
 	{
-		vkLayouts.push_back(&layout->GetImpl().GetLayout());
+		vkLayouts.push_back(&layout->GetImpl().layout);
 	}
 
 	auto descriptorSets = m_impl->AllocateDescriptorSets(vkLayouts, count);

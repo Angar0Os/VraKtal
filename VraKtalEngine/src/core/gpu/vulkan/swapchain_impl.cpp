@@ -1,4 +1,5 @@
 #include "../src/core/gpu/vulkan/swapchain_impl.h"
+#include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <core/gpu/image.h>
@@ -55,7 +56,7 @@ core::gpu::Swapchain::Impl::Impl(core::gpu::Swapchain& p, vk::raii::Device& dev,
 	{
 		vk::ImageViewCreateInfo viewInfo{};
 		vk::ImageSubresourceRange viewInfoSubResource{};
-		viewInfo.image = *reinterpret_cast<vk::Image*>(image->GetHandle());
+		viewInfo.image = image->GetImpl().image;
 		viewInfo.viewType = vk::ImageViewType::e2D;
 		viewInfo.format = format;
 

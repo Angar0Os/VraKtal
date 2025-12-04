@@ -80,7 +80,7 @@ int main()
 
 		light->position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
 		
-		uint32_t imageIndex = device.AcquireNextImage(frameCounter);
+		//uint32_t imageIndex = device.AcquireNextImage(frameCounter);
 		//core::gpu::Image* swapchainImage = device.GetSwapchainImage(imageIndex);
 		//
 		//scene->Render(renderer);

@@ -272,11 +272,11 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	cmd->BeginRendering(
 		width, height,
-        colorImageHandle->GetViewHandle(),
-        depthImageHandle->GetViewHandle()
+        colorImageHandle,
+        depthImageHandle
 	);
 
-	//cmd->BindPipeline(pipelineHandle); /* Note : we will need to remove the vk::raii::Pipeline on device and make it a real pipeline*/
+	cmd->BindPipeline(m_device.GetGraphicsPipeline());
 	cmd->SetViewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
 	cmd->SetScissor(0, 0, width, height);
 
@@ -297,27 +297,25 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 			if (material.get() != lastMaterial)
 			{
 				UpdateUniformBuffer(frameIndex, material);
-				
-				// TODO : We need to make the descriptor sets a real descriptorSet type on device.
-				/*cmd->BindDescriptorSets(
-					&m_device.GetDescriptorSet(),
+	
+				cmd->BindDescriptorSets(
+					&m_device,
                     frameIndex,
 					0
-				);*/
+				);
 				lastMaterial = material.get();
 			}
 
 			PushConstants pushConstants;
 			pushConstants.model = staticMesh->GetTransformMatrix();
 
-			// TODO : We need to make the descriptor sets a real pipeline type on device.
-			/*cmd->PushConstants(
-				m_device.GetPipelineLayout(),
+			cmd->PushConstants(
+				m_device.GetGraphicsPipeline(),
 				static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
 				0,
 				sizeof(PushConstants),
 				&pushConstants
-			);*/
+			);
 
 			auto it = m_meshBuffers.find(mesh.get());
 			if (it != m_meshBuffers.end())

@@ -36,7 +36,7 @@ namespace core::gpu
 {
 	struct Device::Impl
 	{
-        Device*								parent = nullptr;
+        const core::gpu::Device*			parent = nullptr;
 
 		vk::raii::Context					context;
 		vk::raii::Instance					instance = nullptr;
@@ -85,8 +85,10 @@ namespace core::gpu
 
 		std::vector<char> ReadFile(const std::string& filename);
 
-		explicit Impl(Window& window);
+		explicit Impl(Window& window, const core::gpu::Device* parent);
 		~Impl();
+
+		void Initialize();
 
 		void CreateInstance();
 		void SetupDebugMessenger();
@@ -119,10 +121,6 @@ namespace core::gpu
 		void Present(uint32_t imageIndex);
 		void Cleanup();
 
-		void* GetGraphicsQueue() const;
-		void* GetPipeline() const;
-		void* GetPipelineLayout() const;
-		void* GetDescriptorSet(uint32_t frameIndex) const;
 		uint32_t GetSwapchainWidth() const;
 		uint32_t GetSwapchainHeight() const;
 		Buffer* GetUniformBuffer(uint32_t frameIndex) const;
@@ -132,6 +130,8 @@ namespace core::gpu
 		const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
 		const core::gpu::Image* GetColorImage() const;
 		const core::gpu::Image* GetDepthImage() const;
+
+        const core::gpu::Pipeline* GetGraphicsPipeline() const;
 
 		void WaitIdle();
 

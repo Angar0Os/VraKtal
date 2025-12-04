@@ -2,9 +2,9 @@
 #define LAB_TASK_LEVEL 1
 
 #include "../src/core/gpu/vulkan/device_impl.h"
-
 #include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
 #include "../src/core/gpu/vulkan/commandPool_impl.h"
+#include "../src/core/gpu/vulkan/image_impl.h"
 
 #include <core/gpu/descriptorSet.h>
 #include <core/enum.h>
@@ -45,8 +45,9 @@ core::gpu::Device::Impl& core::gpu::Device::GetImpl() const
 
 core::gpu::Device::Device(core::Window& window)
 {
-	m_impl = std::make_unique<Impl>(window);
+	m_impl = std::make_unique<Impl>(window, nullptr);
 	m_impl->parent = this;
+	m_impl->Initialize();
 }
 
 core::gpu::Device::~Device()
@@ -54,8 +55,12 @@ core::gpu::Device::~Device()
 
 }
 
-core::gpu::Device::Impl::Impl(core::Window& window)
-	: m_window(window)
+core::gpu::Device::Impl::Impl(core::Window& _window, const core::gpu::Device* _parent)
+	: m_window(_window), parent(_parent)
+{
+}
+
+void core::gpu::Device::Impl::Initialize()
 {
 	CreateInstance();
 	SetupDebugMessenger();
@@ -382,7 +387,7 @@ void core::gpu::Device::Impl::CreateLogicalDevice()
 
 void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 {
-	DescriptorSetLayoutCreateInfo layoutInfo;
+	SDescriptorSetLayoutCreateInfo layoutInfo;
 	layoutInfo.bindings =
 	{
 		{0, EDescriptorType::UniformBuffer, 1, core::ShaderStage::Vertex | core::ShaderStage::Fragment},
@@ -396,7 +401,7 @@ void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 		{8, EDescriptorType::AccelerationStructure, 1, core::ShaderStage::Fragment}
 	};
 
-	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(&device, layoutInfo);
+	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(parent, layoutInfo);
 }
 
 void core::gpu::Device::Impl::CreateDescriptorPool()
@@ -544,13 +549,13 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 {
 	auto shaderCode = ReadFile("../bin/assets/shaders/slang.spv");
 
-	VertexInputBinding vertexBinding{
+	SVertexInputBinding vertexBinding{
 		.binding = 0,
 		.stride = sizeof(graphics::resources::object::Vertex),
 		.inputRate = VertexInputRate::Vertex
 	};
 
-	std::vector<VertexInputAttribute> vertexAttributes = {
+	std::vector<SVertexInputAttribute> vertexAttributes = {
 		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, position)},
 		{1, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, normal)},
 		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::object::Vertex, uv)}
@@ -588,7 +593,7 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 	pipelineInfo.pushConstantRanges = pushConstants;
 	pipelineInfo.dynamicStates = { DynamicState::Viewport, DynamicState::Scissor };
 
-	graphicsPipeline = std::make_unique<Pipeline>(&device, pipelineInfo);
+	graphicsPipeline = std::make_unique<Pipeline>(parent, pipelineInfo);
 }
 
 std::vector<char> core::gpu::Device::Impl::ReadFile(const std::string& filename)
@@ -651,7 +656,7 @@ void core::gpu::Device::Impl::CreateDescriptorSets()
 {
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		DescriptorSet(&device, &descriptorSets, i)
+		DescriptorSet(parent, &descriptorSets, i)
 			.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
 			.BindImage(*textureSampler, albedoTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, normalTexture.get(), *defaultNormalTexture)
@@ -816,7 +821,7 @@ void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uin
 			.newLayout = vk::ImageLayout::ePresentSrcKHR,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = *static_cast<vk::Image*>(swapchainImage->GetHandle()),
+			.image = swapchainImage->GetImpl().image,
 			.subresourceRange = {
 				.aspectMask = vk::ImageAspectFlagBits::eColor,
 				.baseMipLevel = 0,
@@ -887,7 +892,7 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 
 void core::gpu::Device::Impl::CreateColorImage()
 {
-	ImageCreateInfo colorInfo{
+	SImageCreateInfo colorInfo{
 		.width = swapchain->GetWidth(),
 		.height = swapchain->GetHeight(),
 		.mipLevels = 1,
@@ -900,7 +905,7 @@ void core::gpu::Device::Impl::CreateColorImage()
 
 	colorImage = std::make_unique<Image>(parent, colorInfo);
 
-	ImageViewCreateInfo viewInfo{
+	SImageViewCreateInfo viewInfo{
 		.format = swapchain->GetFormat(),
 		.isDepth = false
 	};
@@ -910,7 +915,7 @@ void core::gpu::Device::Impl::CreateColorImage()
 
 void core::gpu::Device::Impl::CreateDepthImage()
 {
-	ImageCreateInfo depthInfo{
+	SImageCreateInfo depthInfo{
 		.width = swapchain->GetWidth(),
 		.height = swapchain->GetHeight(),
 		.mipLevels = 1,
@@ -923,7 +928,7 @@ void core::gpu::Device::Impl::CreateDepthImage()
 
 	depthImage = std::make_unique<Image>(parent, depthInfo);
 
-	ImageViewCreateInfo viewInfo{
+	SImageViewCreateInfo viewInfo{
 		.format = TextureFormat::Depth32F,
 		.isDepth = true
 	};
@@ -954,25 +959,15 @@ core::gpu::Buffer* core::gpu::Device::Impl::GetUniformBuffer(uint32_t frameIndex
 	return uniformBuffers[frameIndex].get();
 }
 
-void* core::gpu::Device::Impl::GetGraphicsQueue() const
-{
-	return static_cast<void*>(const_cast<vk::Queue*>(&*graphicsQueue));
-}
+//void* core::gpu::Device::Impl::GetDescriptorSet(uint32_t frameIndex) const
+//{
+//	if (frameIndex >= descriptorSets.size()) return nullptr;
+//	return static_cast<void*>(static_cast<VkDescriptorSet>(**descriptorSets[frameIndex]));
+//}
 
-void* core::gpu::Device::Impl::GetPipeline() const
+const core::gpu::Pipeline* core::gpu::Device::Impl::GetGraphicsPipeline() const
 {
-	return graphicsPipeline->GetHandle();
-}
-
-void* core::gpu::Device::Impl::GetPipelineLayout() const
-{
-	return graphicsPipeline->GetLayoutHandle();
-}
-
-void* core::gpu::Device::Impl::GetDescriptorSet(uint32_t frameIndex) const
-{
-	if (frameIndex >= descriptorSets.size()) return nullptr;
-	return static_cast<void*>(static_cast<VkDescriptorSet>(**descriptorSets[frameIndex]));
+	return graphicsPipeline.get();
 }
 
 uint32_t core::gpu::Device::Impl::GetSwapchainWidth() const
@@ -1035,26 +1030,6 @@ void core::gpu::Device::Cleanup()
 	if (m_impl) m_impl->Cleanup();
 }
 
-void* core::gpu::Device::GetGraphicsQueue() const
-{
-	return m_impl ? m_impl->GetGraphicsQueue() : nullptr;
-}
-
-void* core::gpu::Device::GetPipeline() const
-{
-	return m_impl ? m_impl->GetPipeline() : nullptr;
-}
-
-void* core::gpu::Device::GetPipelineLayout() const
-{
-	return m_impl ? m_impl->GetPipelineLayout() : nullptr;
-}
-
-void* core::gpu::Device::GetDescriptorSet(uint32_t frameIndex) const
-{
-	return m_impl->GetDescriptorSet(frameIndex);
-}
-
 uint32_t core::gpu::Device::GetSwapchainWidth() const
 {
 	return m_impl ? m_impl->GetSwapchainWidth() : 0;
@@ -1103,6 +1078,11 @@ void core::gpu::Device::WaitIdle()
 void core::gpu::Device::RecreateSwapchain()
 {
 	if (m_impl) m_impl->RecreateSwapchain();
+}
+
+const core::gpu::Pipeline* core::gpu::Device::GetGraphicsPipeline() const
+{
+	return m_impl ? m_impl->GetGraphicsPipeline() : nullptr;
 }
 
 void core::gpu::Device::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)

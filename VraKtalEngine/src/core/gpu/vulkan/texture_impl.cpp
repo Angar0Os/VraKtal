@@ -72,7 +72,7 @@ void core::gpu::Texture::Impl::LoadFromFile(const TextureCreateInfo& info)
 
     stbi_image_free(pixels);
 
-    ImageCreateInfo imageInfo{};
+    SImageCreateInfo imageInfo{};
     imageInfo.width = width;
     imageInfo.height = height;
     imageInfo.mipLevels = mipLevels;
@@ -101,7 +101,7 @@ void core::gpu::Texture::Impl::LoadFromFile(const TextureCreateInfo& info)
 
     EndSingleTimeCommands(commandBuffer);
 
-    ImageViewCreateInfo viewInfo{};
+    SImageViewCreateInfo viewInfo{};
     viewInfo.format = info.format;
     viewInfo.baseMipLevel = 0;
     viewInfo.levelCount = mipLevels;
@@ -181,7 +181,7 @@ std::unique_ptr<core::gpu::Image> core::gpu::Texture::Impl::CreateSolidColorImag
     Buffer stagingBuffer(device, stagingBufferInfo);
     stagingBuffer.CopyFrom(pixelData, imageSize, 0);
 
-    ImageCreateInfo imageInfo{
+    SImageCreateInfo imageInfo{
         .width = width,
         .height = height,
         .mipLevels = 1,
@@ -210,7 +210,7 @@ std::unique_ptr<core::gpu::Image> core::gpu::Texture::Impl::CreateSolidColorImag
     cmdBuffer.End(0);
     cmdBuffer.SubmitAndWait(device);
 
-    ImageViewCreateInfo viewInfo{
+    SImageViewCreateInfo viewInfo{
         .format = format,
         .baseMipLevel = 0,
         .levelCount = 1,
@@ -261,7 +261,7 @@ bool core::gpu::Texture::Impl::LoadTextureIfExists(const core::gpu::Device* devi
 
     stbi_image_free(pixels);
 
-    ImageCreateInfo imageInfo{
+    SImageCreateInfo imageInfo{
         .width = width,
         .height = height,
         .mipLevels = mipLevels,
@@ -295,7 +295,7 @@ bool core::gpu::Texture::Impl::LoadTextureIfExists(const core::gpu::Device* devi
     cmdBuffer.End(0);
     cmdBuffer.SubmitAndWait(device);
 
-    ImageViewCreateInfo viewInfo{
+    SImageViewCreateInfo viewInfo{
         .format = TextureFormat::RGBA8_SRGB,
         .baseMipLevel = 0,
         .levelCount = mipLevels,
@@ -316,11 +316,6 @@ core::gpu::Texture& core::gpu::Texture::operator=(Texture&&) noexcept = default;
 core::gpu::Image* core::gpu::Texture::GetImage() const
 {
     return m_impl->GetImage();
-}
-
-void* core::gpu::Texture::GetImageView() const
-{
-    return m_impl->GetImage()->GetViewHandle();
 }
 
 uint32_t core::gpu::Texture::GetWidth() const

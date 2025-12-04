@@ -1,5 +1,7 @@
 #include "../src/core/gpu/vulkan/descriptorSet_impl.h"
 #include "../src/core/gpu/vulkan/buffer_impl.h"
+#include "../src/core/gpu/vulkan/device_impl.h"
+#include "../src/core/gpu/vulkan/sampler_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <core/gpu/buffer.h>
@@ -8,7 +10,7 @@
 
 #include <core/enum.h>
 
-core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, vk::raii::Device& dev, std::vector<vk::raii::DescriptorSet*>& sets, size_t frame)
+core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gpu::Device* dev, std::vector<vk::raii::DescriptorSet*>& sets, size_t frame)
 	: parent(p), device(dev), descriptorSets(sets), currentFrame(frame)
 {
 	bufferInfos.reserve(8);
@@ -40,9 +42,6 @@ core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindBuffer(const Buffe
 core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindImage(const Sampler& sampler, const Texture* texture,
 	const Texture& defaultTexture, ImageLayout layout)
 {
-	VkSampler vkSamplerHandle = reinterpret_cast<VkSampler>(sampler.GetHandle());
-	vk::Sampler vkSampler(vkSamplerHandle);
-
 	const Texture* selectedTexture = (texture && texture->IsValid())
 		? texture
 		: &defaultTexture;
@@ -52,7 +51,7 @@ core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindImage(const Sample
 
 	size_t infoIndex = imageInfos.size();
 	imageInfos.emplace_back(
-		vkSampler,
+		sampler.GetImpl().sampler,
 		vkImageView,
 		core::gpu_detail::ToVulkan(layout)
 	);
@@ -105,7 +104,7 @@ void core::gpu::DescriptorSet::Impl::Update()
 		writes.push_back(write);
 	}
 
-	device.updateDescriptorSets(writes, {});
+	device->GetImpl().device.updateDescriptorSets(writes, {});
 
 	currentBinding = 0;
 	bufferInfos.clear();
@@ -114,12 +113,11 @@ void core::gpu::DescriptorSet::Impl::Update()
 	bindingInfos.clear();
 }
 
-core::gpu::DescriptorSet::DescriptorSet(void* device, void* setsVector, size_t frame)
+core::gpu::DescriptorSet::DescriptorSet(const core::gpu::Device* device, void* setsVector, size_t frame)
 {
-	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
 	auto& vkSets = *static_cast<std::vector<vk::raii::DescriptorSet*>*>(setsVector);
 
-	m_impl = std::make_unique<Impl>(*this, vkDevice, vkSets, frame);
+	m_impl = std::make_unique<Impl>(*this, device, vkSets, frame);
 }
 
 core::gpu::DescriptorSet::~DescriptorSet() = default;
