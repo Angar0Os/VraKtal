@@ -964,24 +964,9 @@ const core::gpu::Pipeline* core::gpu::Device::Impl::GetGraphicsPipeline() const
 	return graphicsPipeline.get();
 }
 
-uint32_t core::gpu::Device::Impl::GetSwapchainWidth() const
-{
-	return swapchain->GetImpl().extent.width;
-}
-
-uint32_t core::gpu::Device::Impl::GetSwapchainHeight() const
-{
-	return swapchain->GetImpl().extent.height;
-}
-
 const core::gpu::Image* core::gpu::Device::Impl::GetDepthImage() const
 {
 	return depthImage.get();
-}
-
-void* core::gpu::Device::Impl::GetPhysicalDevice() const
-{
-	return static_cast<void*>(const_cast<vk::PhysicalDevice*>(&*physicalDevice));
 }
 
 void core::gpu::Device::Impl::WaitIdle()
@@ -1022,21 +1007,6 @@ void core::gpu::Device::Present(uint32_t imageIndex)
 void core::gpu::Device::Cleanup()
 {
 	if (m_impl) m_impl->Cleanup();
-}
-
-uint32_t core::gpu::Device::GetSwapchainWidth() const
-{
-	return m_impl ? m_impl->GetSwapchainWidth() : 0;
-}
-
-uint32_t core::gpu::Device::GetSwapchainHeight() const
-{
-	return m_impl ? m_impl->GetSwapchainHeight() : 0;
-}
-
-void* core::gpu::Device::GetPhysicalDevice() const
-{
-	return m_impl ? m_impl->GetPhysicalDevice() : nullptr;
 }
 
 core::gpu::Buffer* core::gpu::Device::GetUniformBuffer(uint32_t frameIndex)

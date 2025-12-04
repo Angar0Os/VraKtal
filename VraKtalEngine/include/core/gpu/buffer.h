@@ -26,8 +26,6 @@ namespace core::gpu
         Buffer(const core::gpu::Device* _device, const SBufferCreateInfo& _info);
         ~Buffer();
 
-        size_t GetSize() const;
-
         uint64_t GetDeviceAddress() const;
 
         void Map(void** data);

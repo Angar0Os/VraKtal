@@ -242,9 +242,6 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	cmd->Begin(0);
 
-	uint32_t width = m_device.GetSwapchainWidth();
-	uint32_t height = m_device.GetSwapchainHeight();
-
 	const auto* colorImageHandle = m_device.GetColorImage();
 	const auto* swapchainImageHandle = m_device.GetSwapchainImage(imageIndex);
 	const auto* depthImageHandle = m_device.GetDepthImage();
@@ -271,14 +268,14 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 	);
 
 	cmd->BeginRendering(
-		width, height,
+		&m_device,
         colorImageHandle,
         depthImageHandle
 	);
 
 	cmd->BindPipeline(m_device.GetGraphicsPipeline());
-	cmd->SetViewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
-	cmd->SetScissor(0, 0, width, height);
+	cmd->SetViewport(0.0f, 0.0f, &m_device);
+	cmd->SetScissor(0, 0, &m_device);
 
 	if (m_scene)
 	{
@@ -340,8 +337,7 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 	cmd->ResolveImage(
 		colorImageHandle,
 		swapchainImageHandle,
-		width,
-		height
+		&m_device
 	);
 
 	cmd->TransitionImageLayout(

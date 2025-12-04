@@ -51,17 +51,17 @@ namespace core::gpu
         void BindIndexBuffer(const core::gpu::Buffer* _buffer, size_t _offset = 0);
         void BindDescriptorSets(const core::gpu::Device* _device, uint32_t _frameIndex, uint32_t _firstSet = 0);
 
-        void SetViewport(float _x, float _y, float _width, float _height, float _minDepth = 0.0f, float _maxDepth = 1.0f);
-        void SetScissor(int32_t _x, int32_t _y, uint32_t _width, uint32_t _height);
+        void SetViewport(float _x, float _y, const core::gpu::Device* device, float _minDepth = 0.0f, float _maxDepth = 1.0f);
+        void SetScissor(int32_t _x, int32_t _y, const core::gpu::Device* device);
 
         void DrawIndexed(uint32_t _indexCount, uint32_t _instanceCount = 1,
                          uint32_t _firstIndex = 0, int32_t _vertexOffset = 0, uint32_t _firstInstance = 0);
 
-        void BeginRendering(uint32_t _width, uint32_t _height, const core::gpu::Image* _colorImageView, const core::gpu::Image* _depthImageView);
+        void BeginRendering(const core::gpu::Device* device, const core::gpu::Image* _colorImageView, const core::gpu::Image* _depthImageView);
         void EndRendering();
 
         void TransitionImageLayout(const core::gpu::Image* _image, ImageLayout _oldLayout, ImageLayout _newLayout, bool _isDepth = false);
-        void ResolveImage(const core::gpu::Image* _srcImage, const core::gpu::Image* _dstImage, uint32_t _width, uint32_t _height);
+        void ResolveImage(const core::gpu::Image* _srcImage, const core::gpu::Image* _dstImage, const core::gpu::Device* device);
 
         void CopyBuffer(const core::gpu::Buffer* _srcBuffer, const core::gpu::Buffer* _dstBuffer, size_t _size);
 

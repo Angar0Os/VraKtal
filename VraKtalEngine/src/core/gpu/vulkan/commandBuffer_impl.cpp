@@ -6,6 +6,7 @@
 #include "../src/core/gpu/vulkan/device_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu/vulkan/pipeline_impl.h"
+#include "../src/core/gpu/vulkan/swapchain_impl.h"
 
 #include <stdexcept>
 
@@ -283,14 +284,20 @@ void core::gpu::CommandBuffer::Impl::BindDescriptorSets(
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
+void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth)
 {
+    uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+    uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+
 	vk::Viewport viewport(x, y, width, height, minDepth, maxDepth);
 	GetCommandBuffer(currentIndex).setViewport(0, viewport);
 }
 
-void core::gpu::CommandBuffer::Impl::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
+void core::gpu::CommandBuffer::Impl::SetScissor(int32_t x, int32_t y, const core::gpu::Device* device)
 {
+	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+    uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+
 	vk::Rect2D scissor({ x, y }, { width, height });
 	GetCommandBuffer(currentIndex).setScissor(0, scissor);
 }
@@ -302,8 +309,8 @@ void core::gpu::CommandBuffer::Impl::DrawIndexed(uint32_t indexCount, uint32_t i
 		indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void core::gpu::CommandBuffer::Impl::BeginRendering(uint32_t width,
-	uint32_t height,
+void core::gpu::CommandBuffer::Impl::BeginRendering(
+	const core::gpu::Device* device,
 	const core::gpu::Image* colorImage,
 	const core::gpu::Image* depthImage)
 {
@@ -321,8 +328,11 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(uint32_t width,
 	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
 	depthAttachment.clearValue = vk::ClearDepthStencilValue(1.f, 0);
 
+    uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+    uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+
 	vk::RenderingInfo info{};
-	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });
+	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height});
 	info.layerCount = 1;
 	info.colorAttachmentCount = 1;
 	info.pColorAttachments = &colorAttachment;
@@ -387,7 +397,7 @@ void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, uint32_t width, uint32_t height)
+void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, const core::gpu::Device* device)
 {
 	vk::ImageResolve resolveRegion{};
 	vk::ImageSubresourceLayers subRange{};
@@ -408,6 +418,9 @@ void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcIma
 
 	vk::Offset3D dstOffset = { 0, 0, 0 };
 	resolveRegion.dstOffset = dstOffset;
+
+    uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+    uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
 
 	vk::Extent3D ext3D = { width, height, 1 };
 	resolveRegion.extent = ext3D;
@@ -474,14 +487,14 @@ void core::gpu::CommandBuffer::BindDescriptorSets(const core::gpu::Device* devic
 	m_impl->BindDescriptorSets(device, frameIndex, firstSet);
 }
 
-void core::gpu::CommandBuffer::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
+void core::gpu::CommandBuffer::SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth)
 {
-	m_impl->SetViewport(x, y, width, height, minDepth, maxDepth);
+	m_impl->SetViewport(x, y, device, minDepth, maxDepth);
 }
 
-void core::gpu::CommandBuffer::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
+void core::gpu::CommandBuffer::SetScissor(int32_t x, int32_t y, const core::gpu::Device* device)
 {
-	m_impl->SetScissor(x, y, width, height);
+	m_impl->SetScissor(x, y, device);
 }
 
 void core::gpu::CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
@@ -489,9 +502,9 @@ void core::gpu::CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanc
 	m_impl->DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void core::gpu::CommandBuffer::BeginRendering(uint32_t width, uint32_t height, const core::gpu::Image* colorImageView, const core::gpu::Image* depthImageView)
+void core::gpu::CommandBuffer::BeginRendering(const core::gpu::Device* device, const core::gpu::Image* colorImageView, const core::gpu::Image* depthImageView)
 {
-	m_impl->BeginRendering(width, height, colorImageView, depthImageView);
+	m_impl->BeginRendering(device, colorImageView, depthImageView);
 }
 
 void core::gpu::CommandBuffer::EndRendering()
@@ -581,9 +594,9 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 	m_impl->TransitionImageLayout(image, vkOldLayout, vkNewLayout, srcAccess, dstAccess, srcStage, dstStage, isDepth);
 }
 
-void core::gpu::CommandBuffer::ResolveImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, uint32_t width, uint32_t height)
+void core::gpu::CommandBuffer::ResolveImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, const core::gpu::Device* device)
 {
-	m_impl->ResolveImage(srcImage, dstImage, width, height);
+	m_impl->ResolveImage(srcImage, dstImage, device);
 }
 
 void core::gpu::CommandBuffer::CopyBuffer(const core::gpu::Buffer* srcBuffer, const core::gpu::Buffer* dstBuffer, size_t size)

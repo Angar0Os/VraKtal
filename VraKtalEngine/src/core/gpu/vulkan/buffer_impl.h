@@ -28,8 +28,6 @@ namespace core::gpu
 
 		~Impl();
 
-		size_t GetSize() const;
-
 		uint64_t GetDeviceAddress() const;
 
 		void Map(void** data);

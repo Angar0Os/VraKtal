@@ -72,11 +72,6 @@ uint32_t core::gpu::Buffer::Impl::FindMemoryType(uint32_t typeFilter, vk::Memory
 	throw std::runtime_error("Failed to find suitable memory type");
 }
 
-size_t core::gpu::Buffer::Impl::GetSize() const
-{
-	return bufferSize;
-}
-
 void core::gpu::Buffer::Impl::Map(void** data)
 {
 	if (mappedData)
@@ -129,11 +124,6 @@ core::gpu::Buffer::Buffer(const core::gpu::Device* device, const SBufferCreateIn
 }
 
 core::gpu::Buffer::~Buffer() = default;
-
-size_t core::gpu::Buffer::GetSize() const
-{
-	return m_impl->GetSize();
-}
 
 void core::gpu::Buffer::Map(void** data)
 {
