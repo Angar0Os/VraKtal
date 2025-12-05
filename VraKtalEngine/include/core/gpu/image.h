@@ -43,6 +43,10 @@ namespace core::gpu
 
 	public:
 		Image(const core::gpu::Device* device, const SImageCreateInfo& info);
+
+		Image(const core::gpu::Device* device, void* image, uint32_t width,
+              uint32_t height, TextureFormat format);
+
 		~Image();
 
 		void CreateView(const SImageViewCreateInfo& info);

@@ -16,7 +16,7 @@ namespace core::gpu
 
 		vk::raii::SwapchainKHR swapchain;
 
-		std::vector<const Image*> images;
+		std::vector<std::unique_ptr<Image>> images;
 		std::vector<vk::raii::ImageView> imageViews;
 
 		vk::Format format;

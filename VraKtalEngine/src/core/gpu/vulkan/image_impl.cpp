@@ -47,6 +47,19 @@ core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _devi
 	image.bindMemory(*memory, 0);
 }
 
+core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _device,
+							 vk::Image swapchainImage, uint32_t w, uint32_t h, TextureFormat fmt)
+	: parent(p), device(_device),
+	image(_device->GetImpl().device, swapchainImage),
+	memory(nullptr),
+	view(nullptr),
+	width(w), height(h),
+	mipLevels(1), arrayLayers(1),
+	format(fmt), samples(SampleCount::e1),
+	ownsImage(false)  
+{
+}
+
 core::gpu::Image::Impl::~Impl() = default;
 
 uint32_t core::gpu::Image::Impl::FindMemoryType(uint32_t typeFilter,
@@ -265,4 +278,11 @@ void core::gpu::Image::GenerateMipmaps(CommandBuffer& commandBuffer,
 core::gpu::Image::Impl& core::gpu::Image::GetImpl() const
 {
 	return *m_impl;
+}
+
+core::gpu::Image::Image(const core::gpu::Device* device, void* swapchainImage,
+						uint32_t width, uint32_t height, TextureFormat format)
+{
+	vk::Image vkImage = static_cast<vk::Image>(reinterpret_cast<VkImage>(swapchainImage));
+	m_impl = std::make_unique<Impl>(*this, device, vkImage, width, height, format);
 }

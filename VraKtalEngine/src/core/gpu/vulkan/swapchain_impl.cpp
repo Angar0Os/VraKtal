@@ -64,28 +64,36 @@ core::gpu::Swapchain::Impl::Impl(core::gpu::Swapchain& p, const core::gpu::Devic
 
     swapchain = vk::raii::SwapchainKHR(device->GetImpl().device, createInfo);
 
-    images = GetImages(images);
+    std::vector<vk::Image> vkImages = swapchain.getImages();
 
     imageViews.clear();
-    imageViews.reserve(images.size());
+    imageViews.reserve(vkImages.size());
+    images.clear();
+    images.reserve(vkImages.size());
 
-    for(const core::gpu::Image* image : images)
+    TextureFormat coreFormat = core::gpu_detail::FromVulkan(format);
+
+    for(vk::Image image : vkImages)
     {
         vk::ImageViewCreateInfo viewInfo{};
-        vk::ImageSubresourceRange viewInfoSubResource{};
-        viewInfo.image = image->GetImpl().image;
+        viewInfo.image = image;
         viewInfo.viewType = vk::ImageViewType::e2D;
         viewInfo.format = format;
-
-        viewInfoSubResource.aspectMask = vk::ImageAspectFlagBits::eColor;
-        viewInfoSubResource.baseMipLevel = 0;
-        viewInfoSubResource.levelCount = 1;
-        viewInfoSubResource.baseArrayLayer = 0;
-        viewInfoSubResource.layerCount = 1;
-
-        viewInfo.subresourceRange = viewInfoSubResource;
+        viewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
 
         imageViews.emplace_back(device->GetImpl().device, viewInfo);
+
+        images.push_back(std::make_unique<core::gpu::Image>(
+            device,
+            image,
+            extent.width,
+            extent.height,
+            coreFormat
+        ));
     }
 }
 

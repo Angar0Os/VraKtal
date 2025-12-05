@@ -25,10 +25,17 @@ namespace core::gpu
 
 		SampleCount samples;
 
+		bool ownsImage = true;
+
 		uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
         explicit Impl(Image& p, const core::gpu::Device* device,
 			const SImageCreateInfo& info);
+
+		explicit Impl(Image& p, const core::gpu::Device* device,
+					  vk::Image swapchainImage, uint32_t width, uint32_t height,
+					  TextureFormat format);
+
 		~Impl();
 
 		void CreateView(const SImageViewCreateInfo& info);

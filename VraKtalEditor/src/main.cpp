@@ -77,18 +77,7 @@ int main()
 	while (!window.ShouldClose())
 	{
 		window.PollEvents();
-
-		light->position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
-		
-		/*uint32_t imageIndex = device.AcquireNextImage(frameCounter);
-		const core::gpu::Image* swapchainImage = device.GetSwapchainImage(imageIndex);*/
-		
-		//scene->Render(renderer);
-		//renderer.DrawFrame(swapchainImage /*destination de rendu*/);
-		//
-		//device.Present(imageIndex);
-		//t += 1.0f / 60.0f;
-		//++frameCounter %= core::gpu::Device::FRAMES_IN_FLIGHT;
+		renderer.DrawFrame();
 	}
 
 	renderer.Cleanup();

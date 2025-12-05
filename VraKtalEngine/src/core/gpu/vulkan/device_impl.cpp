@@ -785,7 +785,7 @@ void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
 
 const core::gpu::Image* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
 {
-	return swapchain->GetImpl().images[imageIndex];
+	return swapchain->GetImpl().images[imageIndex].get();
 }
 
 const core::gpu::Image* core::gpu::Device::Impl::GetColorImage() const
@@ -795,7 +795,7 @@ const core::gpu::Image* core::gpu::Device::Impl::GetColorImage() const
 
 void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
 {
-	const core::gpu::Image* swapchainImage = swapchain->GetImpl().images[imageIndex];
+	const core::gpu::Image* swapchainImage = swapchain->GetImpl().images[imageIndex].get();
 
 	vk::CommandBufferAllocateInfo allocInfo{
 		.commandPool = commandPool->GetImpl().pool,
