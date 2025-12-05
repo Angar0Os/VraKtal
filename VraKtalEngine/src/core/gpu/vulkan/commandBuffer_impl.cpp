@@ -381,7 +381,7 @@ void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
 	barrier.newLayout = newLayout;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = *image->GetImpl().image;
+	barrier.image = image->GetImpl().GetVkImage();
 
 	vk::ImageSubresourceRange subRange{};
 	subRange.aspectMask = isDepth ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
@@ -426,8 +426,8 @@ void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcIma
 	resolveRegion.extent = ext3D;
 
 	GetCommandBuffer(currentIndex).resolveImage(
-		srcImage->GetImpl().image, vk::ImageLayout::eTransferSrcOptimal,
-		dstImage->GetImpl().image, vk::ImageLayout::eTransferDstOptimal,
+		srcImage->GetImpl().GetVkImage(), vk::ImageLayout::eTransferSrcOptimal,
+		dstImage->GetImpl().GetVkImage(), vk::ImageLayout::eTransferDstOptimal,
 		resolveRegion
 	);
 }

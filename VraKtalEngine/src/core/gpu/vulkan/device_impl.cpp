@@ -822,7 +822,7 @@ void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uin
 			.newLayout = vk::ImageLayout::ePresentSrcKHR,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = swapchainImage->GetImpl().image,
+			.image = swapchainImage->GetImpl().GetVkImage(),
 			.subresourceRange = {
 				.aspectMask = vk::ImageAspectFlagBits::eColor,
 				.baseMipLevel = 0,

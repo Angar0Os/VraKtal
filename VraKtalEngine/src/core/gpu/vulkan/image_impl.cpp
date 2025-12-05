@@ -7,7 +7,7 @@
 #include <stdexcept>
 
 core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _device, const SImageCreateInfo& info)
-	: parent(p), device(_device), image(nullptr), memory(nullptr), view(nullptr),
+	: parent(p), device(_device), image(vk::raii::Image(nullptr)), memory(nullptr), view(nullptr),
 	width(info.width), height(info.height),
 	mipLevels(info.mipLevels), arrayLayers(info.arrayLayers),
 	format(info.format), samples(info.samples)
@@ -33,7 +33,7 @@ core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _devi
 
 	image = vk::raii::Image(device->GetImpl().device, imageInfo);
 
-	vk::MemoryRequirements memRequirements = image.getMemoryRequirements();
+	vk::MemoryRequirements memRequirements = std::get<vk::raii::Image>(image).getMemoryRequirements();
 
 	vk::MemoryAllocateInfo allocInfo{};
 	allocInfo.allocationSize = memRequirements.size;
@@ -44,13 +44,13 @@ core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _devi
 
 	memory = vk::raii::DeviceMemory(device->GetImpl().device, allocInfo);
 
-	image.bindMemory(*memory, 0);
+	std::get<vk::raii::Image>(image).bindMemory(*memory, 0);
 }
 
 core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _device,
 							 vk::Image swapchainImage, uint32_t w, uint32_t h, TextureFormat fmt)
 	: parent(p), device(_device),
-	image(_device->GetImpl().device, swapchainImage),
+	image(swapchainImage),
 	memory(nullptr),
 	view(nullptr),
 	width(w), height(h),
@@ -82,7 +82,7 @@ uint32_t core::gpu::Image::Impl::FindMemoryType(uint32_t typeFilter,
 void core::gpu::Image::Impl::CreateView(const SImageViewCreateInfo& info)
 {
 	vk::ImageViewCreateInfo viewInfo{};
-	viewInfo.image = *image;
+	viewInfo.image = GetVkImage();
 	viewInfo.viewType = vk::ImageViewType::e2D;
 	viewInfo.format = core::gpu_detail::ToVulkan(info.format);
 	viewInfo.subresourceRange.aspectMask = info.isDepth ?
@@ -103,7 +103,7 @@ void core::gpu::Image::Impl::TransitionLayout(CommandBuffer& commandBuffer,
 	barrier.newLayout = core::gpu_detail::ToVulkan(newLayout);
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = *image;
+	barrier.image = GetVkImage();
 	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 	barrier.subresourceRange.baseMipLevel = 0;
 	barrier.subresourceRange.levelCount = mipLevels;
@@ -151,7 +151,7 @@ void core::gpu::Image::Impl::CopyFromBuffer(CommandBuffer& commandBuffer,
 	region.imageExtent = vk::Extent3D{ width, height, 1 };
 
 	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
-	cmdBuf.copyBufferToImage(*buffer.GetImpl().buffer, *image, vk::ImageLayout::eTransferDstOptimal, region);
+	cmdBuf.copyBufferToImage(*buffer.GetImpl().buffer, GetVkImage(), vk::ImageLayout::eTransferDstOptimal, region);
 }
 
 void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
@@ -168,7 +168,7 @@ void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
 	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
 
 	vk::ImageMemoryBarrier barrier{};
-	barrier.image = *image;
+	barrier.image = GetVkImage();
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -212,8 +212,8 @@ void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
 		blit.dstSubresource.layerCount = 1;
 
 		cmdBuf.blitImage(
-			*image, vk::ImageLayout::eTransferSrcOptimal,
-			*image, vk::ImageLayout::eTransferDstOptimal,
+			GetVkImage(), vk::ImageLayout::eTransferSrcOptimal,
+			GetVkImage(), vk::ImageLayout::eTransferDstOptimal,
 			blit, vk::Filter::eLinear
 		);
 

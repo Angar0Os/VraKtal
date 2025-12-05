@@ -2,6 +2,8 @@
 #define VRAKTAL_CORE_GPU_VULKAN_IMAGE_H
 #pragma once
 
+#include <variant>
+
 #include <core/gpu/image.h>
 #include <vulkan/vulkan_raii.hpp>
 
@@ -12,7 +14,7 @@ namespace core::gpu
 		Image& parent;
 		const Device* device;
 
-		vk::raii::Image image;
+		std::variant< vk::raii::Image, vk::Image> image;
 		vk::raii::DeviceMemory memory;
 		vk::raii::ImageView view;
 
@@ -26,6 +28,14 @@ namespace core::gpu
 		SampleCount samples;
 
 		bool ownsImage = true;
+
+		vk::Image GetVkImage() const
+		{
+			if(ownsImage)
+				return *std::get<vk::raii::Image>(image);
+			else
+				return std::get<vk::Image>(image);
+		}
 
 		uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
