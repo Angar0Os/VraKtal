@@ -5,6 +5,9 @@
 #include <graphics/resources/object/object.h>
 #include <graphics/resources/object/mesh.h>
 #include <graphics/resources/object/material.h>
+
+#include <graphics/renderer.h>
+
 #include <memory>
 
 namespace graphics::resources::object
@@ -25,6 +28,8 @@ namespace graphics::resources::object
 		}
 
 		ObjectType GetType() const override { return ObjectType::StaticMesh; }
+
+		void Render(graphics::Renderer& renderer) override;
 	};
 }
 

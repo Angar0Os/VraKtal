@@ -3,6 +3,8 @@
 #pragma once
 
 #include <graphics/resources/property/transform.h>
+#include <graphics/renderer.h>
+
 #include <memory>
 #include <string>
 
@@ -34,6 +36,9 @@ namespace graphics::resources::object
 		void Translate(const glm::vec3& offset) { transform.Translate(offset); }
 
 		glm::mat4 GetTransformMatrix() const { return transform.GetMatrix(); }
+
+		virtual void Update(float t, float dt) {}
+		virtual void Render(graphics::Renderer& renderer) {}
 	};
 }
 

@@ -44,6 +44,16 @@ void Renderer::CreateCommandBuffers()
 	}
 }
 
+void Renderer::PushObject(ObjectData objectData)
+{
+	m_objectsPushed.push_back(objectData);
+}
+
+void Renderer::ClearPushedObjects()
+{
+	m_objectsPushed.clear();
+}
+
 void Renderer::SetScene(std::shared_ptr<resources::Scene> scene)
 {
 	m_scene = scene;
@@ -277,50 +287,15 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 	cmd->SetViewport(0.0f, 0.0f, &m_device);
 	cmd->SetScissor(0, 0, &m_device);
 
-	if (m_scene)
+	if(!m_objectsPushed.empty())
 	{
-		const resources::object::Material* lastMaterial = nullptr;
-
-		auto staticMeshes = m_scene->GetStaticMeshes();
-		for (auto* staticMesh : staticMeshes)
+        for(int i = 0; i < m_objectsPushed.size(); i++)
 		{
-			if (!staticMesh->visible) continue;
-
-			auto& mesh = staticMesh->mesh;
-			auto& material = staticMesh->material;
-
-			if (!mesh || !material) continue;
-
-			if (material.get() != lastMaterial)
+			auto& objData = m_objectsPushed[i];
+			if(objData.object.GetType() == graphics::resources::object::ObjectType::StaticMesh)
 			{
-				UpdateUniformBuffer(frameIndex, material);
-	
-				cmd->BindDescriptorSets(
-					&m_device,
-                    frameIndex,
-					0
-				);
-				lastMaterial = material.get();
-			}
-
-			PushConstants pushConstants;
-			pushConstants.model = staticMesh->GetTransformMatrix();
-
-			cmd->PushConstants(
-				m_device.GetGraphicsPipeline(),
-				static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
-				0,
-				sizeof(PushConstants),
-				&pushConstants
-			);
-
-			auto it = m_meshBuffers.find(mesh.get());
-			if (it != m_meshBuffers.end())
-			{
-				const auto& buffers = it->second;
-				cmd->BindVertexBuffer(buffers.vertexBuffer.get());
-				cmd->BindIndexBuffer(buffers.indexBuffer.get());
-				cmd->DrawIndexed(buffers.indexCount);
+				auto staticMesh = reinterpret_cast<graphics::resources::object::StaticMesh*>(&objData.object);
+				staticMesh->Render(*this);
 			}
 		}
 	}
@@ -349,6 +324,7 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	cmd->End(0);
 }
+
 void Renderer::DrawFrame()
 {
 	if (!m_running) return;
