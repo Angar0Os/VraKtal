@@ -3,7 +3,6 @@
 #pragma once
 
 #include <graphics/resources/object/object.h>
-#include <graphics/renderer.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace graphics::resources::object
@@ -21,10 +20,6 @@ namespace graphics::resources::object
 		explicit Camera(const std::string& name) : Object(name)
 		{
 		}
-
-		void Render(graphics::Renderer& renderer) override;
-		void Update(float t, float dt) override;
-
 
 		glm::mat4 GetViewMatrix() const
 		{

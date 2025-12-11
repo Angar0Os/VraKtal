@@ -25,15 +25,9 @@ namespace graphics
 		glm::mat4 model;
 	};
 
-	struct ObjectData
-	{
-		graphics::resources::object::Object object;
-        glm::mat4 transform;
-	};
-
 	class Renderer
 	{
-	public:
+	private:
 		struct MeshBuffers
 		{
 			std::unique_ptr<core::gpu::Buffer> vertexBuffer;
@@ -50,8 +44,6 @@ namespace graphics
 
 		core::Window& m_window;
 		core::gpu::Device& m_device;
-
-		std::vector<ObjectData> m_objectsPushed;
 
 		std::vector<std::unique_ptr<core::gpu::CommandBuffer>> m_commandBuffers;
 		std::unordered_map<resources::object::Mesh*, MeshBuffers> m_meshBuffers;
@@ -84,9 +76,6 @@ namespace graphics
 	public:
 		Renderer(core::Window& window, core::gpu::Device& device);
 		~Renderer();
-
-		void PushObject(ObjectData objectData);
-        void ClearPushedObjects();
 
 		void SetScene(std::shared_ptr<resources::Scene> scene);
 		void UpdateCameraFromScene();

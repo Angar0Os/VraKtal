@@ -55,12 +55,6 @@
     <Filter Include="Header Files\graphics\resources\property">
       <UniqueIdentifier>{3737e3eb-bce0-4260-9680-a11a37364864}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\graphics\resources">
-      <UniqueIdentifier>{31e309d9-9b91-4db9-81f4-841093185cec}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\graphics\resources\object">
-      <UniqueIdentifier>{9920178a-b523-43c3-9fa7-82c314ab8332}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -235,18 +229,6 @@
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\accelerationStructure_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\graphics\resources\scene.cpp">
-      <Filter>Source Files\graphics\resources</Filter>
-    </ClCompile>
-    <ClCompile Include="src\graphics\resources\object\staticMesh.cpp">
-      <Filter>Source Files\graphics\resources\object</Filter>
-    </ClCompile>
-    <ClCompile Include="src\graphics\resources\object\light.cpp">
-      <Filter>Source Files\graphics\resources\object</Filter>
-    </ClCompile>
-    <ClCompile Include="src\graphics\resources\object\camera.cpp">
-      <Filter>Source Files\graphics\resources\object</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

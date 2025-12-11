@@ -5,8 +5,6 @@
 #include <glm/glm.hpp>
 #include <string>
 
-#include <graphics/renderer.h>
-
 namespace graphics::resources::object
 {
 	enum class LightType
@@ -54,8 +52,7 @@ namespace graphics::resources::object
 		{
 		}
 
-		static Light CreatePointLight(const glm::vec3& position, const glm::vec3& color, 
-									  float intensity, const std::string& name = "PointLight")
+		static Light CreatePointLight(const glm::vec3& position, const glm::vec3& color, float intensity, const std::string& name = "PointLight")
 		{
 			Light light;
 			light.name = name;
@@ -67,8 +64,7 @@ namespace graphics::resources::object
 			return light;
 		}
 
-		static Light CreateDirectionalLight(const glm::vec3& direction, const glm::vec3& color, 
-											float intensity, const std::string& name = "DirectionalLight")
+		static Light CreateDirectionalLight(const glm::vec3& direction, const glm::vec3& color, float intensity, const std::string& name = "DirectionalLight")
 		{
 			Light light;
 			light.name = name;

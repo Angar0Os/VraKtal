@@ -226,10 +226,6 @@
     <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp" />
     <ClCompile Include="src\core\gpu_detail\converters.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
-    <ClCompile Include="src\graphics\resources\object\camera.cpp" />
-    <ClCompile Include="src\graphics\resources\object\light.cpp" />
-    <ClCompile Include="src\graphics\resources\object\staticMesh.cpp" />
-    <ClCompile Include="src\graphics\resources\scene.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
