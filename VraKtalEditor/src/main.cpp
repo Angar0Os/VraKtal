@@ -39,7 +39,7 @@ int main()
 	vikingMaterial->roughness = 0.04f;
 	vikingMaterial->useAlbedoTexture = true;
 	vikingMaterial->albedoTexture = "assets/textures/viking_room.png";
-    vikingMaterial->emissive = glm::vec3(0.0f);
+	vikingMaterial->emissive = glm::vec3(0.0f);
 
 	auto meshObj1 = scene->AddStaticMesh("VikingRoom1", vikingRoomMesh, vikingMaterial);
 	meshObj1->SetPosition(glm::vec3(-1.5f, 0.5f, 0.0f));
@@ -62,8 +62,8 @@ int main()
 	renderer.SetScene(scene);
 	renderer.EnableRayTracing();
 
-    float t = 0.0f;
-	
+	float t = 0.0f;
+
 	graphics::resources::object::Light mainLight;
 	mainLight.position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
 	mainLight.color = glm::vec3(1.0f, 0.0f, 0.0f);
@@ -72,25 +72,27 @@ int main()
 	mainLight.radius = 0.2f + 0.2f * glm::sin(t * 2.0f);
 	auto light = scene->AddLight(mainLight);
 
-    uint32_t frameCounter = 0;
+	uint32_t frameCounter = 0;
 
 	while (!window.ShouldClose())
 	{
+#ifndef NEW_RENDERER
 		window.PollEvents();
-
-		//light->position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
-
-		//uint32_t imageIndex = device.AcquireNextImage(frameCounter);
-		//const core::gpu::Image* swapchainImage = device.GetSwapchainImage(imageIndex);
-
-		//scene->Render(renderer);
-		//renderer.DrawFrame(swapchainImage /*destination de rendu*/);
-		//
-		//device.Present(imageIndex);
-		//t += 1.0f / 60.0f;
-		//++frameCounter %= core::gpu::Device::FRAMES_IN_FLIGHT;
-		
 		renderer.DrawFrame();
+#endif
+#ifdef NEW_RENDERER
+		light->position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
+
+		uint32_t imageIndex = device.AcquireNextImage(frameCounter);
+		const core::gpu::Image* swapchainImage = device.GetSwapchainImage(imageIndex);
+
+		scene->Render(renderer);
+		renderer.DrawFrame(swapchainImage /*destination de rendu*/);
+
+		device.Present(imageIndex);
+		t += 1.0f / 60.0f;
+		++frameCounter %= core::gpu::Device::FRAMES_IN_FLIGHT;
+#endif
 	}
 
 	renderer.Cleanup();
