@@ -92,7 +92,7 @@ void core::gpu::CommandBuffer::Impl::TraceRays(
 	vk::StridedDeviceAddressRegionKHR raygenRegion{};
 	if (raygenSBT)
 	{
-		vk::Buffer raygenBuffer = reinterpret_cast<VkBuffer>(raygenSBT);
+		vk::Buffer raygenBuffer = static_cast<VkBuffer>(raygenSBT);
 		vk::BufferDeviceAddressInfo addressInfo{};
 		addressInfo.buffer = raygenBuffer;
 
@@ -104,7 +104,7 @@ void core::gpu::CommandBuffer::Impl::TraceRays(
 	vk::StridedDeviceAddressRegionKHR missRegion{};
 	if (missSBT && missCount > 0)
 	{
-		vk::Buffer missBuffer = reinterpret_cast<VkBuffer>(missSBT);
+		vk::Buffer missBuffer = static_cast<VkBuffer>(missSBT);
 		vk::BufferDeviceAddressInfo addressInfo{};
 		addressInfo.buffer = missBuffer;
 
@@ -116,7 +116,7 @@ void core::gpu::CommandBuffer::Impl::TraceRays(
 	vk::StridedDeviceAddressRegionKHR hitRegion{};
 	if (hitSBT && hitCount > 0)
 	{
-		vk::Buffer hitBuffer = reinterpret_cast<VkBuffer>(hitSBT);
+		vk::Buffer hitBuffer = static_cast<VkBuffer>(hitSBT);
 		vk::BufferDeviceAddressInfo addressInfo{};
 		addressInfo.buffer = hitBuffer;
 
@@ -128,7 +128,7 @@ void core::gpu::CommandBuffer::Impl::TraceRays(
 	vk::StridedDeviceAddressRegionKHR callableRegion{};
 	if (callableSBT && callableCount > 0)
 	{
-		vk::Buffer callableBuffer = reinterpret_cast<VkBuffer>(callableSBT);
+		vk::Buffer callableBuffer = static_cast<VkBuffer>(callableSBT);
 		vk::BufferDeviceAddressInfo addressInfo{};
 		addressInfo.buffer = callableBuffer;
 
@@ -206,7 +206,7 @@ void core::gpu::CommandBuffer::Impl::Submit(const core::gpu::Device* device, voi
 
 	if (waitSemaphore)
 	{
-		vkWaitSemaphore = reinterpret_cast<VkSemaphore>(waitSemaphore);
+		vkWaitSemaphore = static_cast<VkSemaphore>(waitSemaphore);
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = &vkWaitSemaphore;
 		submitInfo.pWaitDstStageMask = &waitStage;
@@ -214,12 +214,12 @@ void core::gpu::CommandBuffer::Impl::Submit(const core::gpu::Device* device, voi
 
 	if (signalSemaphore)
 	{
-		vkSignalSemaphore = reinterpret_cast<VkSemaphore>(signalSemaphore);
+		vkSignalSemaphore = static_cast<VkSemaphore>(signalSemaphore);
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = &vkSignalSemaphore;
 	}
 
-	vk::Fence vkFence = fence ? reinterpret_cast<VkFence>(fence) : nullptr;
+	vk::Fence vkFence = fence ? static_cast<VkFence>(fence) : nullptr;
 
 	device->GetImpl().graphicsQueue.submit(submitInfo, vkFence);
 }
@@ -272,7 +272,7 @@ void core::gpu::CommandBuffer::Impl::BindIndexBuffer(const core::gpu::Buffer* bu
 
 void core::gpu::CommandBuffer::Impl::BindDescriptorSets(
 	const core::gpu::Device* device,
-    uint32_t frameIndex,
+	uint32_t frameIndex,
 	uint32_t firstSet)
 {
 	GetCommandBuffer(currentIndex).bindDescriptorSets(
@@ -286,17 +286,17 @@ void core::gpu::CommandBuffer::Impl::BindDescriptorSets(
 
 void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth)
 {
-    uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-    uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
 
-	vk::Viewport viewport(x, y, width, height, minDepth, maxDepth);
+	vk::Viewport viewport(x, y, static_cast<float>(width), static_cast<float>(height), minDepth, maxDepth);
 	GetCommandBuffer(currentIndex).setViewport(0, viewport);
 }
 
 void core::gpu::CommandBuffer::Impl::SetScissor(int32_t x, int32_t y, const core::gpu::Device* device)
 {
 	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-    uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
 
 	vk::Rect2D scissor({ x, y }, { width, height });
 	GetCommandBuffer(currentIndex).setScissor(0, scissor);
@@ -328,11 +328,11 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
 	depthAttachment.clearValue = vk::ClearDepthStencilValue(1.f, 0);
 
-    uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-    uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
 
 	vk::RenderingInfo info{};
-	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height});
+	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });
 	info.layerCount = 1;
 	info.colorAttachmentCount = 1;
 	info.pColorAttachments = &colorAttachment;
@@ -419,8 +419,8 @@ void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcIma
 	vk::Offset3D dstOffset = { 0, 0, 0 };
 	resolveRegion.dstOffset = dstOffset;
 
-    uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-    uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
 
 	vk::Extent3D ext3D = { width, height, 1 };
 	resolveRegion.extent = ext3D;
@@ -629,7 +629,7 @@ void core::gpu::CommandBuffer::BindRayTracingPipeline(const core::gpu::Pipeline*
 }
 
 void core::gpu::CommandBuffer::TraceRays(
-    const core::gpu::Device* device,
+	const core::gpu::Device* device,
 	void* raygenSBT, uint32_t raygenOffset, uint32_t raygenStride,
 	void* missSBT, uint32_t missOffset, uint32_t missStride, uint32_t missCount,
 	void* hitSBT, uint32_t hitOffset, uint32_t hitStride, uint32_t hitCount,
