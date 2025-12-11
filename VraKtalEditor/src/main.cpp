@@ -79,8 +79,7 @@ int main()
 #ifndef NEW_RENDERER
 		window.PollEvents();
 		renderer.DrawFrame();
-#endif
-#ifdef NEW_RENDERER
+#else
 		light->position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
 
 		uint32_t imageIndex = device.AcquireNextImage(frameCounter);

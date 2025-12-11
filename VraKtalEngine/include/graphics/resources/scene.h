@@ -9,6 +9,8 @@
 #include <graphics/resources/object/material.h>
 #include <graphics/resources/object/light.h>
 
+#include <core/gpu/buffer.h>
+
 #include <memory>
 #include <vector>
 #include <string>
@@ -27,116 +29,40 @@ namespace graphics::resources
 		Scene() = default;
 		explicit Scene(const std::string& sceneName) : name(sceneName) {}
 
-		object::Object* AddObject(std::shared_ptr<object::Object> obj)
-		{
-			objects.push_back(obj);
-			return objects.back().get();
-		}
+		object::Object* AddObject(std::shared_ptr<object::Object> obj);
 
 		object::StaticMesh* AddStaticMesh(
 			const std::string& objectName,
 			std::shared_ptr<object::Mesh> mesh,
-			std::shared_ptr<object::Material> material)
-		{
-			auto staticMesh = std::make_shared<object::StaticMesh>(objectName, mesh, material);
-			objects.push_back(staticMesh);
-			return staticMesh.get();
-		}
+			std::shared_ptr<object::Material> material);
 
-		object::Camera* AddCamera(const std::string& cameraName)
-		{
-			auto camera = std::make_shared<object::Camera>(cameraName);
-			objects.push_back(camera);
+		object::Camera* AddCamera(const std::string& cameraName);
 
-			if (!activeCamera)
-				activeCamera = camera;
+		object::Object* FindObjectByName(const std::string& objectName);
 
-			return camera.get();
-		}
+		std::vector<object::StaticMesh*> GetStaticMeshes();
 
-		object::Object* FindObjectByName(const std::string& objectName)
-		{
-			auto it = std::find_if(objects.begin(), objects.end(),
-				[&objectName](const auto& obj) { return obj->name == objectName; });
-			return (it != objects.end()) ? it->get() : nullptr;
-		}
+		std::vector<object::Camera*> GetCameras();
 
-		std::vector<object::StaticMesh*> GetStaticMeshes()
-		{
-			std::vector<object::StaticMesh*> meshes;
-			for (auto& obj : objects)
-			{
-				if (obj->GetType() == object::ObjectType::StaticMesh)
-					meshes.push_back(static_cast<object::StaticMesh*>(obj.get()));
-			}
-			return meshes;
-		}
+		void RemoveObject(const std::string& objectName);
 
-		std::vector<object::Camera*> GetCameras()
-		{
-			std::vector<object::Camera*> cameras;
-			for (auto& obj : objects)
-			{
-				if (obj->GetType() == object::ObjectType::Camera)
-					cameras.push_back(static_cast<object::Camera*>(obj.get()));
-			}
-			return cameras;
-		}
+		void RemoveObjectByIndex(size_t index);
 
-		void RemoveObject(const std::string& objectName)
-		{
-			auto it = std::remove_if(objects.begin(), objects.end(),
-				[&objectName](const auto& obj) { return obj->name == objectName; });
-			objects.erase(it, objects.end());
-		}
+		size_t GetObjectCount() const;
 
-		void RemoveObjectByIndex(size_t index)
-		{
-			if (index < objects.size())
-				objects.erase(objects.begin() + index);
-		}
+		size_t GetVisibleObjectCount() const;
 
-		size_t GetObjectCount() const { return objects.size(); }
+		object::Light* AddLight(const object::Light& light);
 
-		size_t GetVisibleObjectCount() const
-		{
-			return std::count_if(objects.begin(), objects.end(),
-				[](const auto& obj) { return obj->visible; });
-		}
+		void RemoveLight(size_t index);
 
-		object::Light* AddLight(const object::Light& light)
-		{
-			lights.push_back(light);
-            return &lights.back();
-		}
+		object::Light* FindLightByName(const std::string& lightName);
 
-		void RemoveLight(size_t index)
-		{
-			if (index < lights.size())
-				lights.erase(lights.begin() + index);
-		}
+		size_t GetLightCount() const;
 
-		object::Light* FindLightByName(const std::string& lightName)
-		{
-			auto it = std::find_if(lights.begin(), lights.end(),
-				[&lightName](const object::Light& light) { return light.name == lightName; });
-			return (it != lights.end()) ? &(*it) : nullptr;
-		}
+		void Clear();
 
-		size_t GetLightCount() const { return lights.size(); }
-
-		void Clear()
-		{
-			objects.clear();
-			lights.clear();
-			activeCamera.reset();
-		}
-
-		void SetAllObjectsVisible(bool visible)
-		{
-			for (auto& obj : objects)
-				obj->visible = visible;
-		}
+		void SetAllObjectsVisible(bool visible);
 	};
 }
 
