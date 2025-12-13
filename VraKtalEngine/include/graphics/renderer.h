@@ -9,7 +9,9 @@
 #include <core/gpu/accelerationStructure.h>
 #include <core/gpu/image.h>
 
-#include <graphics/resources/scene.h>
+#include <graphics/resources/object/staticMesh.h>
+#include <graphics/resources/object/camera.h>
+#include <graphics/resources/object/light.h>
 #include <graphics/resources/object/mesh.h>
 
 #include <glm/glm.hpp>
@@ -23,6 +25,21 @@ namespace graphics
 	struct PushConstants
 	{
 		glm::mat4 model;
+	};
+
+	struct RenderableStaticMesh
+	{
+		resources::object::StaticMesh* staticMesh;
+		glm::mat4 transform;
+	};
+
+	struct LightData
+	{
+		glm::vec3 position;
+		glm::vec3 color;
+		float intensity;
+		float radius;
+		bool enabled;
 	};
 
 	class Renderer
@@ -52,34 +69,35 @@ namespace graphics
 		std::unique_ptr<core::gpu::AccelerationStructure> m_tlas;
 		bool m_rayTracingEnabled = false;
 
-		std::shared_ptr<resources::Scene> m_scene;
+		std::vector<RenderableStaticMesh> m_staticMeshes;
+		std::vector<LightData> m_lights;
+		glm::mat4 m_viewMatrix;
+		glm::mat4 m_projMatrix;
+		glm::vec3 m_cameraPosition;
 
 		uint32_t m_currentFrame;
 		uint64_t m_frameCounter;
 		bool m_running;
 
-		glm::mat4 m_viewMatrix;
-		glm::mat4 m_projMatrix;
-		glm::vec3 m_cameraPosition;
-
 		void CreateCommandBuffers();
 		void CreateMeshBuffers(std::shared_ptr<resources::object::Mesh> mesh);
 		void UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<resources::object::Material>& material);
-		void RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
 
 		void CreateRTMeshBuffers(std::shared_ptr<resources::object::Mesh> mesh);
 		void CreateBLAS(resources::object::Mesh* mesh);
 		void BuildTLAS();
 		void RebuildAccelerationStructures();
-		void UpdateCamera(const glm::mat4& view, const glm::mat4& proj, const glm::vec3& position);
 
 	public:
 		Renderer(core::Window& window, core::gpu::Device& device);
 		~Renderer();
 
-		void SetScene(std::shared_ptr<resources::Scene> scene);
-		void UpdateCameraFromScene();
-		void DrawFrame();
+		void PushObject(resources::object::StaticMesh& staticMesh, const glm::mat4& transform);
+		void PushLight(const resources::object::Light& light);
+		void SetActiveCamera(resources::object::Camera& camera, const glm::mat4& transform);
+
+		void DrawFrame(const core::gpu::Image* swapchainImage, uint32_t frameIndex, uint32_t imageIndex);
+
 		void Cleanup();
 
 		void EnableRayTracing();
@@ -87,8 +105,6 @@ namespace graphics
 		bool IsRayTracingEnabled() const { return m_rayTracingEnabled; }
 
 		core::gpu::AccelerationStructure* GetTLAS() const { return m_tlas.get(); }
-
-		std::shared_ptr<resources::Scene> GetScene() { return m_scene; }
 	};
 }
 

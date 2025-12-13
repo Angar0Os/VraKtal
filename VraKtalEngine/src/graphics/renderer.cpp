@@ -44,28 +44,44 @@ void Renderer::CreateCommandBuffers()
 	}
 }
 
-void Renderer::SetScene(std::shared_ptr<resources::Scene> scene)
+void Renderer::PushObject(resources::object::StaticMesh& staticMesh, const glm::mat4& transform)
 {
-	m_scene = scene;
+	if (!staticMesh.visible) return;
+	if (!staticMesh.mesh || !staticMesh.material) return;
 
-	if (m_scene)
+	if (m_meshBuffers.find(staticMesh.mesh.get()) == m_meshBuffers.end())
 	{
-		auto staticMeshes = m_scene->GetStaticMeshes();
-		for (auto* staticMesh : staticMeshes)
-		{
-			if (staticMesh->mesh &&
-				m_meshBuffers.find(staticMesh->mesh.get()) == m_meshBuffers.end())
-			{
-				CreateMeshBuffers(staticMesh->mesh);
-			}
-		}
-
-		if (m_rayTracingEnabled)
-		{
-			DisableRayTracing();
-			EnableRayTracing();
-		}
+		CreateMeshBuffers(staticMesh.mesh);
 	}
+
+	if (m_rayTracingEnabled && m_rtMeshData.find(staticMesh.mesh.get()) == m_rtMeshData.end())
+	{
+		CreateRTMeshBuffers(staticMesh.mesh);
+		CreateBLAS(staticMesh.mesh.get());
+	}
+
+	m_staticMeshes.push_back({ &staticMesh, transform });
+}
+
+void Renderer::PushLight(const resources::object::Light& light)
+{
+	if (!light.enabled) return;
+
+	LightData lightData;
+	lightData.position = light.position;
+	lightData.color = light.color;
+	lightData.intensity = light.intensity;
+	lightData.radius = light.radius;
+	lightData.enabled = light.enabled;
+
+	m_lights.push_back(lightData);
+}
+
+void Renderer::SetActiveCamera(resources::object::Camera& camera, const glm::mat4& transform)
+{
+	m_viewMatrix = camera.GetViewMatrix();
+	m_projMatrix = camera.GetProjectionMatrix();
+	m_cameraPosition = camera.GetPosition();
 }
 
 void Renderer::CreateMeshBuffers(std::shared_ptr<resources::object::Mesh> mesh)
@@ -160,13 +176,6 @@ void Renderer::CreateMeshBuffers(std::shared_ptr<resources::object::Mesh> mesh)
 	m_meshBuffers[mesh.get()] = std::move(buffers);
 }
 
-void Renderer::UpdateCamera(const glm::mat4& view, const glm::mat4& proj, const glm::vec3& position)
-{
-	m_viewMatrix = view;
-	m_projMatrix = proj;
-	m_cameraPosition = position;
-}
-
 void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<resources::object::Material>& material)
 {
 	core::gpu::UniformBufferObject ubo{};
@@ -175,25 +184,17 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<re
 	ubo.proj = m_projMatrix;
 	ubo.viewPos = m_cameraPosition;
 
-	if (m_scene)
-	{
-		ubo.numLights = std::min(static_cast<int>(m_scene->lights.size()),
-			core::gpu::MAX_LIGHTS);
+	ubo.numLights = std::min(static_cast<int>(m_lights.size()), core::gpu::MAX_LIGHTS);
 
-		for (int i = 0; i < ubo.numLights; i++)
-		{
-			const auto& light = m_scene->lights[i];
-			ubo.lights[i].position = light.position;
-			ubo.lights[i].color = light.color;
-			ubo.lights[i].intensity = light.intensity;
-			ubo.lights[i].enabled = light.enabled ? 1 : 0;
-			ubo.lights[i].type = 0;
-			ubo.lights[i].lightRadius = light.radius;
-		}
-	}
-	else
+	for (int i = 0; i < ubo.numLights; i++)
 	{
-		ubo.numLights = 0;
+		const auto& light = m_lights[i];
+		ubo.lights[i].position = light.position;
+		ubo.lights[i].color = light.color;
+		ubo.lights[i].intensity = light.intensity;
+		ubo.lights[i].enabled = light.enabled ? 1 : 0;
+		ubo.lights[i].type = 0;
+		ubo.lights[i].lightRadius = light.radius;
 	}
 
 	if (material)
@@ -236,14 +237,29 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex, const std::shared_ptr<re
 	}
 }
 
-void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
+void Renderer::DrawFrame(const core::gpu::Image* swapchainImage, uint32_t frameIndex, uint32_t imageIndex)
 {
+	if (!m_running) return;
+
+	void* fence = m_device.GetInFlightFence(frameIndex);
+
+	if (m_rayTracingEnabled && !m_staticMeshes.empty())
+	{
+		BuildTLAS();
+		if (m_tlas)
+		{
+			for (uint32_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; i++)
+			{
+				m_device.UpdateDescriptorWithTLAS(i, m_tlas.get());
+			}
+		}
+	}
+
 	auto& cmd = m_commandBuffers[frameIndex];
 
 	cmd->Begin(0);
 
 	const auto* colorImageHandle = m_device.GetColorImage();
-	const auto* swapchainImageHandle = m_device.GetSwapchainImage(imageIndex);
 	const auto* depthImageHandle = m_device.GetDepthImage();
 
 	cmd->TransitionImageLayout(
@@ -254,7 +270,7 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 	);
 
 	cmd->TransitionImageLayout(
-		swapchainImageHandle,
+		swapchainImage,
 		core::ImageLayout::Undefined,
 		core::ImageLayout::TransferDst,
 		false
@@ -269,59 +285,52 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	cmd->BeginRendering(
 		&m_device,
-        colorImageHandle,
-        depthImageHandle
+		colorImageHandle,
+		depthImageHandle
 	);
 
 	cmd->BindPipeline(m_device.GetGraphicsPipeline());
 	cmd->SetViewport(0.0f, 0.0f, &m_device);
 	cmd->SetScissor(0, 0, &m_device);
 
-	if (m_scene)
+	const resources::object::Material* lastMaterial = nullptr;
+
+	for (const auto& renderable : m_staticMeshes)
 	{
-		const resources::object::Material* lastMaterial = nullptr;
+		auto* staticMesh = renderable.staticMesh;
+		auto& mesh = staticMesh->mesh;
+		auto& material = staticMesh->material;
 
-		auto staticMeshes = m_scene->GetStaticMeshes();
-		for (auto* staticMesh : staticMeshes)
+		if (material.get() != lastMaterial)
 		{
-			if (!staticMesh->visible) continue;
+			UpdateUniformBuffer(frameIndex, material);
 
-			auto& mesh = staticMesh->mesh;
-			auto& material = staticMesh->material;
-
-			if (!mesh || !material) continue;
-
-			if (material.get() != lastMaterial)
-			{
-				UpdateUniformBuffer(frameIndex, material);
-	
-				cmd->BindDescriptorSets(
-					&m_device,
-                    frameIndex,
-					0
-				);
-				lastMaterial = material.get();
-			}
-
-			PushConstants pushConstants;
-			pushConstants.model = staticMesh->GetTransformMatrix();
-
-			cmd->PushConstants(
-				m_device.GetGraphicsPipeline(),
-				static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
-				0,
-				sizeof(PushConstants),
-				&pushConstants
+			cmd->BindDescriptorSets(
+				&m_device,
+				frameIndex,
+				0
 			);
+			lastMaterial = material.get();
+		}
 
-			auto it = m_meshBuffers.find(mesh.get());
-			if (it != m_meshBuffers.end())
-			{
-				const auto& buffers = it->second;
-				cmd->BindVertexBuffer(buffers.vertexBuffer.get());
-				cmd->BindIndexBuffer(buffers.indexBuffer.get());
-				cmd->DrawIndexed(buffers.indexCount);
-			}
+		PushConstants pushConstants;
+		pushConstants.model = renderable.transform;
+
+		cmd->PushConstants(
+			m_device.GetGraphicsPipeline(),
+			static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
+			0,
+			sizeof(PushConstants),
+			&pushConstants
+		);
+
+		auto it = m_meshBuffers.find(mesh.get());
+		if (it != m_meshBuffers.end())
+		{
+			const auto& buffers = it->second;
+			cmd->BindVertexBuffer(buffers.vertexBuffer.get());
+			cmd->BindIndexBuffer(buffers.indexBuffer.get());
+			cmd->DrawIndexed(buffers.indexCount);
 		}
 	}
 
@@ -336,45 +345,28 @@ void Renderer::RecordCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
 
 	cmd->ResolveImage(
 		colorImageHandle,
-		swapchainImageHandle,
+		swapchainImage,
 		&m_device
 	);
 
 	cmd->TransitionImageLayout(
-		swapchainImageHandle,
+		swapchainImage,
 		core::ImageLayout::TransferDst,
 		core::ImageLayout::Present,
 		false
 	);
 
 	cmd->End(0);
-}
-void Renderer::DrawFrame()
-{
-	if (!m_running) return;
 
-	UpdateCameraFromScene();
-	m_device.BeginFrame(m_currentFrame);
+	void* waitSemaphore = m_device.GetImageAvailableSemaphore(frameIndex);
+	void* signalSemaphore = m_device.GetRenderFinishedSemaphore(frameIndex);
 
-	uint32_t imageIndex = m_device.AcquireNextImage(m_currentFrame);
-	if (imageIndex == UINT32_MAX)
-	{
-		m_device.RecreateSwapchain();
-		return;
-	}
+	m_commandBuffers[frameIndex]->Submit(&m_device, waitSemaphore, signalSemaphore, fence);
 
-	RecordCommandBuffer(m_currentFrame, imageIndex);
-
-	void* waitSemaphore = m_device.GetImageAvailableSemaphore(m_currentFrame);
-	void* signalSemaphore = m_device.GetRenderFinishedSemaphore(imageIndex);
-	void* fence = m_device.GetInFlightFence(m_currentFrame);
-
-	m_commandBuffers[m_currentFrame]->Submit(&m_device, waitSemaphore, signalSemaphore, fence);
-
-	m_device.Present(imageIndex);
-
-	m_currentFrame = (m_currentFrame + 1) % core::gpu::Device::s_FRAMES_IN_FLIGHT;
 	m_frameCounter++;
+
+	m_staticMeshes.clear();
+	m_lights.clear();
 }
 
 void Renderer::Cleanup()
@@ -385,6 +377,8 @@ void Renderer::Cleanup()
 	m_running = false;
 	m_meshBuffers.clear();
 	m_commandBuffers.clear();
+	m_staticMeshes.clear();
+	m_lights.clear();
 	m_device.Cleanup();
 }
 
@@ -479,70 +473,34 @@ void Renderer::EnableRayTracing()
 {
 	if (m_rayTracingEnabled) return;
 
-	if (!m_scene)
-	{
-		std::cerr << "Cannot enable ray tracing: no scene set!" << std::endl;
-		return;
-	}
-
-	auto staticMeshes = m_scene->GetStaticMeshes();
-	for (auto* staticMesh : staticMeshes)
-	{
-		if (!staticMesh->mesh) continue;
-
-		if (m_rtMeshData.find(staticMesh->mesh.get()) == m_rtMeshData.end())
-		{
-			CreateRTMeshBuffers(staticMesh->mesh);
-			CreateBLAS(staticMesh->mesh.get());
-		}
-	}
-
-	BuildTLAS();
-	RebuildAccelerationStructures();
-
-	if (m_tlas)
-	{
-		for (uint32_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; i++)
-		{
-			m_device.UpdateDescriptorWithTLAS(i, m_tlas.get());
-		}
-	}
-
 	m_rayTracingEnabled = true;
+	std::cout << "Ray tracing enabled." << std::endl;
 }
 
 void Renderer::BuildTLAS()
 {
-	if (!m_scene)
+	if (m_staticMeshes.empty())
 	{
-		std::cerr << "Cannot build TLAS: no scene set!" << std::endl;
-		return;
-	}
-
-	auto staticMeshes = m_scene->GetStaticMeshes();
-	if (staticMeshes.empty())
-	{
-		std::cerr << "Cannot build TLAS: no mesh instances!" << std::endl;
 		return;
 	}
 
 	std::vector<core::gpu::SAccelerationStructureInstance> instances;
-	instances.reserve(staticMeshes.size());
+	instances.reserve(m_staticMeshes.size());
 
 	uint32_t instanceIndex = 0;
 
-	for (auto* staticMesh : staticMeshes)
+	for (const auto& renderable : m_staticMeshes)
 	{
-		if (!staticMesh->visible || !staticMesh->mesh) continue;
+		auto* mesh = renderable.staticMesh->mesh.get();
 
-		auto it = m_rtMeshData.find(staticMesh->mesh.get());
+		auto it = m_rtMeshData.find(mesh);
 		if (it == m_rtMeshData.end() || !it->second.blas)
 		{
 			std::cerr << "Warning: BLAS not found for mesh instance!" << std::endl;
 			continue;
 		}
 
-		const glm::mat4 mat = staticMesh->GetTransformMatrix();
+		const glm::mat4 mat = renderable.transform;
 
 		float transform[3][4] = {
 			{mat[0][0], mat[1][0], mat[2][0], mat[3][0]},
@@ -562,7 +520,6 @@ void Renderer::BuildTLAS()
 
 	if (instances.empty())
 	{
-		std::cerr << "No valid instances for TLAS!" << std::endl;
 		return;
 	}
 
@@ -576,6 +533,8 @@ void Renderer::BuildTLAS()
 		&m_device,
 		tlasInfo
 	);
+
+	RebuildAccelerationStructures();
 }
 
 void Renderer::RebuildAccelerationStructures()
@@ -611,16 +570,4 @@ void Renderer::RebuildAccelerationStructures()
 	cmdBuffer.SubmitAndWait(&m_device);
 
 	std::cout << "Acceleration structures built successfully!" << std::endl;
-}
-
-void Renderer::UpdateCameraFromScene()
-{
-	if (m_scene && m_scene->activeCamera)
-	{
-		UpdateCamera(
-			m_scene->activeCamera->GetViewMatrix(),
-			m_scene->activeCamera->GetProjectionMatrix(),
-			m_scene->activeCamera->GetPosition()
-		);
-	}
 }

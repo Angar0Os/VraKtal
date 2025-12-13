@@ -129,12 +129,7 @@ void Scene::SetAllObjectsVisible(bool visible)
 
 void Scene::Render(graphics::Renderer& renderer)
 {
-	if (activeCamera)
-	{
-		renderer.SetActiveCamera(*activeCamera, activeCamera->GetTransformMatrix());
-	}
-
-	for (auto& object : objects)
+	for (auto object : objects)
 	{
 		switch (object->GetType())
 		{
@@ -143,28 +138,46 @@ void Scene::Render(graphics::Renderer& renderer)
 		case ObjectType::StaticMesh:
 		{
 			auto* sm = dynamic_cast<object::StaticMesh*>(object.get());
-			renderer.PushObject(*sm, sm->GetTransformMatrix());
+			if (sm)
+			{
+				renderer.PushObject(*sm, sm->GetTransformMatrix());
+			}
+			else
+			{
+				std::cerr << "Scene::Render: failed to cast to staticMesh";
+			}
 		}
 		break;
-
 		case ObjectType::Camera:
+		{
+			auto* cam = dynamic_cast<object::Camera*>(object.get());
+			if (cam)
+			{
+				renderer.SetActiveCamera(*cam, cam->GetTransformMatrix());
+			}
+			else
+			{
+				std::cerr << "Scene::Render: failed to cast to Camera\n";
+			}
 			break;
-
+		}
 		case ObjectType::Light:
 		{
 			auto* light = dynamic_cast<object::Light*>(object.get());
-			renderer.PushLight(*light);
-		}
-		break;
-
-		case ObjectType::Empty:
-		default:
+			if (light)
+			{
+				renderer.PushLight(*light);
+			}
+			else
+			{
+				std::cerr << "Scene::Render: failed to cast to Light\n";
+			}
 			break;
 		}
-	}
-
-	for (auto& light : lights)
-	{
-		renderer.PushLight(light);
+		case ObjectType::Empty:
+		default:
+			std::cerr << "Scene::Render: unsupported object type\n";
+			break;
+		}
 	}
 }
