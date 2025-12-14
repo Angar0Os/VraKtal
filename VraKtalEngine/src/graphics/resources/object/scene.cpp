@@ -1,6 +1,4 @@
 #include <graphics/resources/scene.h>
-#include <graphics/renderer.h>
-#include <iostream>
 
 using namespace graphics::resources;
 
@@ -124,47 +122,5 @@ void Scene::SetAllObjectsVisible(bool visible)
 	for (auto& obj : objects)
 	{
 		obj->visible = visible;
-	}
-}
-
-void Scene::Render(graphics::Renderer& renderer)
-{
-	if (activeCamera)
-	{
-		renderer.SetActiveCamera(*activeCamera, activeCamera->GetTransformMatrix());
-	}
-
-	for (auto& object : objects)
-	{
-		switch (object->GetType())
-		{
-			using graphics::resources::object::ObjectType;
-
-		case ObjectType::StaticMesh:
-		{
-			auto* sm = dynamic_cast<object::StaticMesh*>(object.get());
-			renderer.PushObject(*sm, sm->GetTransformMatrix());
-		}
-		break;
-
-		case ObjectType::Camera:
-			break;
-
-		case ObjectType::Light:
-		{
-			auto* light = dynamic_cast<object::Light*>(object.get());
-			renderer.PushLight(*light);
-		}
-		break;
-
-		case ObjectType::Empty:
-		default:
-			break;
-		}
-	}
-
-	for (auto& light : lights)
-	{
-		renderer.PushLight(light);
 	}
 }

@@ -16,8 +16,6 @@
 #include <string>
 #include <algorithm>
 
-namespace graphics { class Renderer; }
-
 namespace graphics::resources
 {
 	class Scene
@@ -65,8 +63,6 @@ namespace graphics::resources
 		void Clear();
 
 		void SetAllObjectsVisible(bool visible);
-
-		void Render(graphics::Renderer& renderer);
 	};
 }
 

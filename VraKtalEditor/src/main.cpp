@@ -59,6 +59,7 @@ int main()
 
 	auto planeObj = scene->AddStaticMesh("Ground", planeMesh, planeMaterial);
 
+	renderer.SetScene(scene);
 	renderer.EnableRayTracing();
 
 	float t = 0.0f;
@@ -75,30 +76,22 @@ int main()
 
 	while (!window.ShouldClose())
 	{
+#ifndef NEW_RENDERER
 		window.PollEvents();
-
+		renderer.DrawFrame();
+#else
 		light->position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
-		light->radius = 0.2f + 0.2f * glm::sin(t * 2.0f);
-
-		device.BeginFrame(frameCounter);
 
 		uint32_t imageIndex = device.AcquireNextImage(frameCounter);
-		if (imageIndex == UINT32_MAX)
-		{
-			device.RecreateSwapchain();
-			continue;
-		}
-
 		const core::gpu::Image* swapchainImage = device.GetSwapchainImage(imageIndex);
 
 		scene->Render(renderer);
-
-		renderer.DrawFrame(swapchainImage, frameCounter, imageIndex);
+		renderer.DrawFrame(swapchainImage /*destination de rendu*/);
 
 		device.Present(imageIndex);
-
 		t += 1.0f / 60.0f;
-		frameCounter = (frameCounter + 1) % core::gpu::Device::s_FRAMES_IN_FLIGHT;
+		++frameCounter %= core::gpu::Device::FRAMES_IN_FLIGHT;
+#endif
 	}
 
 	renderer.Cleanup();

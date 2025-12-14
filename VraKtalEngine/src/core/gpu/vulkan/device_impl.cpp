@@ -427,7 +427,7 @@ void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, cons
 	if (frameIndex >= descriptorSets.size() || !tlasHandle) return;
 
 	vk::DescriptorSet descSet = **descriptorSets[frameIndex];
-	vk::AccelerationStructureKHR accelStructHandle = **tlasHandle->GetImpl().accelerationStructure;
+    vk::AccelerationStructureKHR accelStructHandle = **tlasHandle->GetImpl().accelerationStructure;
 
 	vk::WriteDescriptorSetAccelerationStructureKHR accelInfo{};
 	accelInfo.accelerationStructureCount = 1;
@@ -442,6 +442,8 @@ void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, cons
 	writeDesc.pNext = &accelInfo;
 
 	device.updateDescriptorSets(writeDesc, nullptr);
+
+	std::cout << "TLAS updated in descriptor set " << frameIndex << std::endl;
 }
 
 void core::gpu::Device::Impl::AllocateDescriptorSets()
