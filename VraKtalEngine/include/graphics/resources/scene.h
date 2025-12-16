@@ -23,7 +23,7 @@ namespace graphics::resources
 	public:
 		std::string name;
 		std::vector<std::shared_ptr<object::Object>> objects;
-		std::vector<object::Light> lights;
+		std::vector<Light> lights;
 		std::shared_ptr<object::Camera> activeCamera;
 
 		Scene() = default;
@@ -33,7 +33,7 @@ namespace graphics::resources
 
 		object::StaticMesh* AddStaticMesh(
 			const std::string& objectName,
-			std::shared_ptr<object::Mesh> mesh,
+			std::shared_ptr<Mesh> mesh,
 			std::shared_ptr<object::Material> material);
 
 		object::Camera* AddCamera(const std::string& cameraName);
@@ -52,11 +52,11 @@ namespace graphics::resources
 
 		size_t GetVisibleObjectCount() const;
 
-		object::Light* AddLight(const object::Light& light);
+		Light* AddLight(const Light& light);
 
 		void RemoveLight(size_t index);
 
-		object::Light* FindLightByName(const std::string& lightName);
+		Light* FindLightByName(const std::string& lightName);
 
 		size_t GetLightCount() const;
 

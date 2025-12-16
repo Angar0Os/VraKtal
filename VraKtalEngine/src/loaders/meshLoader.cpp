@@ -1,4 +1,6 @@
 #include <loaders/meshLoader.h>
+#include <core/gpu/commandBuffer.h>
+#include <core/gpu/accelerationStructure.h>
 
 #include <algorithm>
 #include <stdexcept>
@@ -12,26 +14,204 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadMesh(const std::string& filepath)
+loaders::MeshLoader::MeshLoader(core::gpu::Device* device)
+	: m_device(device)
+{
+}
+
+void loaders::MeshLoader::CreateBuffersForMesh(graphics::resources::Mesh* mesh)
+{
+	if (!mesh || mesh->vertices.empty() || mesh->indices.empty())
+	{
+		std::cerr << "ERROR: Invalid mesh data for buffer creation!" << std::endl;
+		return;
+	}
+
+	size_t vertexBufferSize = mesh->vertices.size() * sizeof(graphics::resources::Vertex);
+	size_t indexBufferSize = mesh->indices.size() * sizeof(uint32_t);
+
+	core::gpu::SBufferCreateInfo stagingVertexInfo{
+		.size = vertexBufferSize,
+		.usage = core::EBufferUsage::TransferSrc,
+		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
+	};
+
+	auto stagingVertexBuffer = std::make_unique<core::gpu::Buffer>(
+		m_device,
+		stagingVertexInfo
+	);
+
+	core::gpu::SBufferCreateInfo stagingIndexInfo{
+		.size = indexBufferSize,
+		.usage = core::EBufferUsage::TransferSrc,
+		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
+	};
+
+	auto stagingIndexBuffer = std::make_unique<core::gpu::Buffer>(
+		m_device,
+		stagingIndexInfo
+	);
+
+	stagingVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
+	stagingIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
+
+	core::gpu::SBufferCreateInfo vertexInfo{
+		.size = vertexBufferSize,
+		.usage = core::EBufferUsage::VertexBuffer | core::EBufferUsage::TransferDst,
+		.memoryProperties = core::EMemoryProperty::DeviceLocal
+	};
+
+	mesh->vertexBuffer = std::make_unique<core::gpu::Buffer>(
+		m_device,
+		vertexInfo
+	);
+
+	core::gpu::SBufferCreateInfo indexInfo{
+		.size = indexBufferSize,
+		.usage = core::EBufferUsage::IndexBuffer | core::EBufferUsage::TransferDst,
+		.memoryProperties = core::EMemoryProperty::DeviceLocal
+	};
+
+	mesh->indexBuffer = std::make_unique<core::gpu::Buffer>(
+		m_device,
+		indexInfo
+	);
+
+	core::gpu::SBufferCreateInfo rtVertexInfo{
+		.size = vertexBufferSize,
+		.usage = core::EBufferUsage::AccelerationStructureBuildInput |
+				 core::EBufferUsage::ShaderDeviceAddress |
+				 core::EBufferUsage::StorageBuffer,
+		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
+	};
+
+	mesh->rtVertexBuffer = std::make_unique<core::gpu::Buffer>(
+		m_device,
+		rtVertexInfo
+	);
+	mesh->rtVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
+
+	core::gpu::SBufferCreateInfo rtIndexInfo{
+		.size = indexBufferSize,
+		.usage = core::EBufferUsage::AccelerationStructureBuildInput |
+				 core::EBufferUsage::ShaderDeviceAddress |
+				 core::EBufferUsage::StorageBuffer,
+		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
+	};
+
+	mesh->rtIndexBuffer = std::make_unique<core::gpu::Buffer>(
+		m_device,
+		rtIndexInfo
+	);
+	mesh->rtIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
+
+	core::gpu::SCommandBufferCreateInfo cmdInfo{};
+	cmdInfo.device = m_device;
+	cmdInfo.level = core::ECommandBufferLevel::Primary;
+	cmdInfo.count = 1;
+	cmdInfo.singleTime = true;
+
+	auto transferCmd = std::make_unique<core::gpu::CommandBuffer>(
+		m_device,
+		cmdInfo
+	);
+
+	transferCmd->Begin(0);
+	transferCmd->CopyBuffer(
+		stagingVertexBuffer.get(),
+		mesh->vertexBuffer.get(),
+		vertexBufferSize
+	);
+
+	transferCmd->CopyBuffer(
+		stagingIndexBuffer.get(),
+		mesh->indexBuffer.get(),
+		indexBufferSize
+	);
+	transferCmd->End(0);
+
+	transferCmd->SubmitAndWait(m_device);
+
+	mesh->indexCount = static_cast<uint32_t>(mesh->indices.size());
+}
+
+void loaders::MeshLoader::CreateBLASForMesh(graphics::resources::Mesh* mesh)
+{
+	if (!mesh || !mesh->rtVertexBuffer || !mesh->rtIndexBuffer)
+	{
+		std::cerr << "ERROR: RT buffers not found for BLAS creation!" << std::endl;
+		return;
+	}
+
+	core::gpu::SAccelerationStructureGeometry geometry{};
+	geometry.vertexBuffer = mesh->rtVertexBuffer.get();
+	geometry.vertexCount = static_cast<uint32_t>(mesh->vertices.size());
+	geometry.vertexStride = sizeof(graphics::resources::Vertex);
+	geometry.indexBuffer = mesh->rtIndexBuffer.get();
+	geometry.indexCount = static_cast<uint32_t>(mesh->indices.size());
+	geometry.triangleCount = geometry.indexCount / 3;
+	geometry.opaque = true;
+
+	core::gpu::SAccelerationStructureCreateInfo blasInfo{};
+	blasInfo.type = core::gpu::EAccelerationStructureType::BottomLevel;
+	blasInfo.geometries.push_back(geometry);
+	blasInfo.preferFastTrace = true;
+	blasInfo.allowUpdate = false;
+
+	mesh->blas = std::make_unique<core::gpu::AccelerationStructure>(
+		m_device,
+		blasInfo
+	);
+
+	core::gpu::SCommandBufferCreateInfo cmdInfo{};
+	cmdInfo.device = m_device;
+	cmdInfo.count = 1;
+	cmdInfo.singleTime = true;
+	cmdInfo.level = core::ECommandBufferLevel::Primary;
+
+	core::gpu::CommandBuffer cmdBuffer(
+		m_device,
+		cmdInfo
+	);
+
+	cmdBuffer.Begin(0);
+	cmdBuffer.BuildAccelerationStructure(mesh->blas.get());
+	cmdBuffer.End(0);
+	cmdBuffer.SubmitAndWait(m_device);
+
+	std::cout << "BLAS built for mesh during loading" << std::endl;
+}
+
+std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadMesh(const std::string& filepath)
 {
 	std::string ext = std::filesystem::path(filepath).extension().string();
 	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
+	std::shared_ptr<graphics::resources::Mesh> mesh;
+
 	if (ext == ".gltf" || ext == ".glb")
 	{
-		return LoadGLTF(filepath);
+		mesh = LoadGLTF(filepath);
 	}
 	else if (ext == ".obj")
 	{
-		return LoadOBJ(filepath);
+		mesh = LoadOBJ(filepath);
 	}
 	else
 	{
 		throw std::runtime_error("Unsupported mesh format : " + ext);
 	}
+
+	if (mesh && m_device)
+	{
+		CreateBuffersForMesh(mesh.get());
+		CreateBLASForMesh(mesh.get());
+	}
+
+	return mesh;
 }
 
-std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadGLTF(const std::string& filepath)
+std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const std::string& filepath)
 {
 	tinygltf::Model model;
 	tinygltf::TinyGLTF loader;
@@ -55,8 +235,8 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadGLTF
 	if (!err.empty())  std::cerr << "GLTF Error: " << err << "\n";
 	if (!ret) throw std::runtime_error("Failed to load GLTF: " + filepath);
 
-	auto mesh = std::make_shared<graphics::resources::object::Mesh>();
-	std::unordered_map<graphics::resources::object::Vertex, uint32_t> uniqueVertices{};
+	auto mesh = std::make_shared<graphics::resources::Mesh>();
+	std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
 
 	if (model.meshes.empty())
 	{
@@ -124,12 +304,12 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadGLTF
 			}
 		}
 
-		std::unordered_map<graphics::resources::object::Vertex, uint32_t> localVertexMap;
+		std::unordered_map<graphics::resources::Vertex, uint32_t> localVertexMap;
 		uint32_t localVertexCount = 0;
 
 		for (size_t i = 0; i < positions.size() / 3; i++)
 		{
-			graphics::resources::object::Vertex v{};
+			graphics::resources::Vertex v{};
 			v.position = { positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2] };
 			if (!normals.empty())
 				v.normal = { normals[i * 3 + 0], normals[i * 3 + 1], normals[i * 3 + 2] };
@@ -155,7 +335,7 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadGLTF
 		{
 			for (auto idx : primitiveIndices)
 			{
-				graphics::resources::object::Vertex originalVertex{};
+				graphics::resources::Vertex originalVertex{};
 				originalVertex.position = {
 					positions[idx * 3 + 0],
 					positions[idx * 3 + 1],
@@ -181,7 +361,7 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadGLTF
 			}
 		}
 
-		graphics::resources::object::SubMesh submesh;
+		graphics::resources::SubMesh submesh;
 		submesh.firstIndex = submeshFirstIndex;
 		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
 		submesh.vertexOffset = submeshVertexOffset;
@@ -194,7 +374,7 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadGLTF
 	return mesh;
 }
 
-std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadOBJ(const std::string& filepath)
+std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const std::string& filepath)
 {
 	tinyobj::attrib_t attrib;
 	std::vector<tinyobj::shape_t> shapes;
@@ -203,8 +383,8 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadOBJ(
 
 	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filepath.c_str());
 
-	auto mesh = std::make_shared<graphics::resources::object::Mesh>();
-	std::unordered_map<graphics::resources::object::Vertex, uint32_t> uniqueVertices{};
+	auto mesh = std::make_shared<graphics::resources::Mesh>();
+	std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
 
 	for (size_t shapeIdx = 0; shapeIdx < shapes.size(); ++shapeIdx)
 	{
@@ -215,7 +395,7 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadOBJ(
 
 		for (const auto& index : shape.mesh.indices)
 		{
-			graphics::resources::object::Vertex vertex{};
+			graphics::resources::Vertex vertex{};
 
 			if (index.vertex_index >= 0)
 			{
@@ -262,7 +442,7 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadOBJ(
 			mesh->indices.push_back(uniqueVertices[vertex]);
 		}
 
-		graphics::resources::object::SubMesh submesh;
+		graphics::resources::SubMesh submesh;
 		submesh.firstIndex = submeshFirstIndex;
 		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
 		submesh.vertexOffset = submeshVertexOffset;
@@ -275,10 +455,10 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::LoadOBJ(
 	return mesh;
 }
 
-std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::CreatePlane(
+std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::CreatePlane(
 	float width, float height, int subdivisionsX, int subdivisionsZ)
 {
-	auto mesh = std::make_shared<graphics::resources::object::Mesh>();
+	auto mesh = std::make_shared<graphics::resources::Mesh>();
 
 	int vertCountX = subdivisionsX + 1;
 	int vertCountZ = subdivisionsZ + 1;
@@ -296,7 +476,7 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::CreatePl
 	{
 		for (int x = 0; x < vertCountX; x++)
 		{
-			graphics::resources::object::Vertex vertex;
+			graphics::resources::Vertex vertex;
 
 			vertex.position = glm::vec3(
 				-halfWidth + x * deltaX,
@@ -330,6 +510,12 @@ std::shared_ptr<graphics::resources::object::Mesh> loaders::MeshLoader::CreatePl
 			mesh->indices.push_back(bottomLeft);
 			mesh->indices.push_back(bottomRight);
 		}
+	}
+
+	if (m_device)
+	{
+		CreateBuffersForMesh(mesh.get());
+		CreateBLASForMesh(mesh.get());
 	}
 
 	return mesh;

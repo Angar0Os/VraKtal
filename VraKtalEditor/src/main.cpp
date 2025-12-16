@@ -5,9 +5,7 @@
 #include <core/gpu/image.h>
 
 #include <graphics/renderer.h>
-#include <graphics/resources/scene.h>
-#include <graphics/resources/object/material.h>
-#include <graphics/resources/object/camera.h>
+#include <graphics/resources/object/light.h>
 
 #include <loaders/meshLoader.h>
 
@@ -18,82 +16,99 @@ int main()
 	core::Window window(800, 600, "VraKtal Engine");
 	core::gpu::Device device(window);
 	graphics::Renderer renderer(window, device);
-	loaders::MeshLoader loader;
 
-	auto scene = std::make_shared<graphics::resources::Scene>("MainScene");
-
-	auto camera = scene->AddCamera("MainCamera");
-	camera->SetPosition(glm::vec3(0.0f, 1.5f, 5.0f));
-	camera->LookAt(glm::vec3(0.0f, 0.5f, 0.0f));
-	camera->fov = 45.0f;
-	camera->aspectRatio = 800.0f / 600.0f;
-	camera->zNear = 0.1f;
-	camera->zFar = 100.0f;
+	loaders::MeshLoader loader(&device);
 
 	auto vikingRoomMesh = loader.LoadMesh("assets/models/viking_room.obj");
+	auto planeMesh = loader.CreatePlane(10.0f, 10.0f, 10, 10);
 
-	auto vikingMaterial = std::make_shared<graphics::resources::object::Material>();
-	vikingMaterial->name = "VikingRoomMaterial";
-	vikingMaterial->albedo = glm::vec3(1.0f);
-	vikingMaterial->metallic = 0.0f;
-	vikingMaterial->roughness = 0.04f;
-	vikingMaterial->useAlbedoTexture = true;
-	vikingMaterial->albedoTexture = "assets/textures/viking_room.png";
-	vikingMaterial->emissive = glm::vec3(0.0f);
+	const float aspectRatio = 800.0f / 600.0f;
 
-	auto meshObj1 = scene->AddStaticMesh("VikingRoom1", vikingRoomMesh, vikingMaterial);
-	meshObj1->SetPosition(glm::vec3(-1.5f, 0.5f, 0.0f));
+	glm::mat4 projection = glm::perspectiveLH_ZO(
+		glm::radians(45.0f),
+		aspectRatio,
+		0.1f,
+		100.0f
+	);
+	projection[1][1] *= -1;
 
-	auto meshObj2 = scene->AddStaticMesh("VikingRoom2", vikingRoomMesh, vikingMaterial);
-	meshObj2->SetPosition(glm::vec3(1.5f, 0.5f, 0.0f));
+	glm::vec3 cameraPosition = glm::vec3(0.0f, 3.0f, -5.0f);
 
-	auto planeMesh = loaders::MeshLoader::CreatePlane(10.0f, 10.0f, 10, 10);
+	glm::mat4 view = glm::lookAtLH(
+		cameraPosition,
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f)
+	);
 
-	auto planeMaterial = std::make_shared<graphics::resources::object::Material>();
-	planeMaterial->name = "GroundMaterial";
-	planeMaterial->albedo = glm::vec3(0.8f, 0.8f, 0.8f);
-	planeMaterial->metallic = 0.0f;
-	planeMaterial->roughness = 0.04f;
-	planeMaterial->ao = 1.0f;
-	planeMaterial->emissive = glm::vec3(0.0f);
+	float time = 0.0f;
+	float timeStepT = 1.0f / 240.0f;
+	const float timeStep = timeStepT / 5.0f;
 
-	auto planeObj = scene->AddStaticMesh("Ground", planeMesh, planeMaterial);
-
-	renderer.SetScene(scene);
-	renderer.EnableRayTracing();
-
-	float t = 0.0f;
-
-	graphics::resources::object::Light mainLight;
-	mainLight.position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
-	mainLight.color = glm::vec3(1.0f, 0.0f, 0.0f);
-	mainLight.intensity = 5.0f;
-	mainLight.enabled = true;
-	mainLight.radius = 0.2f + 0.2f * glm::sin(t * 2.0f);
-	auto light = scene->AddLight(mainLight);
-
+	uint32_t currentFrameIndex = 0;
 	uint32_t frameCounter = 0;
 
 	while (!window.ShouldClose())
 	{
-#ifndef NEW_RENDERER
 		window.PollEvents();
-		renderer.DrawFrame();
-#else
-		light->position = glm::vec3(3.0f * glm::cos(t), 4.0f, 3.0f * glm::sin(t));
 
-		uint32_t imageIndex = device.AcquireNextImage(frameCounter);
+		uint32_t imageIndex = device.AcquireNextImage(currentFrameIndex);
+		if (imageIndex == UINT32_MAX)
+		{
+			device.RecreateSwapchain();
+			continue;
+		}
+
 		const core::gpu::Image* swapchainImage = device.GetSwapchainImage(imageIndex);
+		if (!swapchainImage)
+			continue;
 
-		scene->Render(renderer);
-		renderer.DrawFrame(swapchainImage /*destination de rendu*/);
+		time += timeStep;
 
+		renderer.SetCamera(view, projection);
+
+		glm::mat4 planeTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+		renderer.PushMesh(planeMesh.get(), planeTransform);
+
+		glm::mat4 meshTransform1 = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 0.1f, 0.0f));
+		meshTransform1 = glm::rotate(meshTransform1, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		renderer.PushMesh(vikingRoomMesh.get(), meshTransform1);
+
+		glm::mat4 meshTransform2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.5f, 0.1f, 0.0f));
+		meshTransform2 = glm::rotate(meshTransform2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		renderer.PushMesh(vikingRoomMesh.get(), meshTransform2);
+
+		graphics::resources::Light mainLight;
+		mainLight.name = "Main Light";
+		mainLight.position = glm::vec3(
+			3.0f * glm::cos(time),
+			4.0f,
+			3.0f * glm::sin(time)
+		);
+		mainLight.color = glm::vec3(1.0f, 1.0f, 0.0f);
+		mainLight.intensity = 5.0f;
+		mainLight.radius = 0.2f + 0.2f * glm::sin(time * 2.0f);
+		mainLight.enabled = true;
+
+		renderer.PushLight(mainLight);
+
+		graphics::resources::Light closeLight;
+		closeLight.name = "Close Light";
+		closeLight.position = glm::vec3(0.0f, 1.0f, 0.5f);
+		closeLight.color = glm::vec3(1.0f, 0.0f, 0.0f);
+		closeLight.intensity = 10.0f;
+		closeLight.radius = 0.1f;
+		closeLight.enabled = true;
+
+		renderer.PushLight(closeLight);
+
+		renderer.Render(swapchainImage, imageIndex);
 		device.Present(imageIndex);
-		t += 1.0f / 60.0f;
-		++frameCounter %= core::gpu::Device::FRAMES_IN_FLIGHT;
-#endif
+
+		currentFrameIndex = (currentFrameIndex + 1) % core::gpu::Device::s_FRAMES_IN_FLIGHT;
+		frameCounter++;
 	}
 
+	device.WaitIdle();
 	renderer.Cleanup();
 
 	return 0;

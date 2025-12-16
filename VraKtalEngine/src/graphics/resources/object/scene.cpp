@@ -10,7 +10,7 @@ object::Object* Scene::AddObject(std::shared_ptr<object::Object> obj)
 
 object::StaticMesh* Scene::AddStaticMesh(
 	const std::string& objectName,
-	std::shared_ptr<object::Mesh> mesh,
+	std::shared_ptr<Mesh> mesh,
 	std::shared_ptr<object::Material> material)
 {
 	auto staticMesh = std::make_shared<object::StaticMesh>(objectName, mesh, material);
@@ -84,7 +84,7 @@ size_t Scene::GetVisibleObjectCount() const
 		[](const auto& obj) { return obj->visible; });
 }
 
-object::Light* Scene::AddLight(const object::Light& light)
+Light* Scene::AddLight(const Light& light)
 {
 	lights.push_back(light);
 	return &lights.back();
@@ -98,10 +98,10 @@ void Scene::RemoveLight(size_t index)
 	}
 }
 
-object::Light* Scene::FindLightByName(const std::string& lightName)
+Light* Scene::FindLightByName(const std::string& lightName)
 {
 	auto it = std::find_if(lights.begin(), lights.end(),
-		[&lightName](const object::Light& light) { return light.name == lightName; });
+		[&lightName](const Light& light) { return light.name == lightName; });
 	return (it != lights.end()) ? &(*it) : nullptr;
 }
 

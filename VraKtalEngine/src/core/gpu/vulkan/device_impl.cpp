@@ -427,7 +427,7 @@ void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, cons
 	if (frameIndex >= descriptorSets.size() || !tlasHandle) return;
 
 	vk::DescriptorSet descSet = **descriptorSets[frameIndex];
-    vk::AccelerationStructureKHR accelStructHandle = **tlasHandle->GetImpl().accelerationStructure;
+	vk::AccelerationStructureKHR accelStructHandle = **tlasHandle->GetImpl().accelerationStructure;
 
 	vk::WriteDescriptorSetAccelerationStructureKHR accelInfo{};
 	accelInfo.accelerationStructureCount = 1;
@@ -442,8 +442,6 @@ void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, cons
 	writeDesc.pNext = &accelInfo;
 
 	device.updateDescriptorSets(writeDesc, nullptr);
-
-	std::cout << "TLAS updated in descriptor set " << frameIndex << std::endl;
 }
 
 void core::gpu::Device::Impl::AllocateDescriptorSets()
@@ -554,14 +552,14 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 
 	SVertexInputBinding vertexBinding{
 		.binding = 0,
-		.stride = sizeof(graphics::resources::object::Vertex),
+		.stride = sizeof(graphics::resources::Vertex),
 		.inputRate = VertexInputRate::Vertex
 	};
 
 	std::vector<SVertexInputAttribute> vertexAttributes = {
-		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, position)},
-		{1, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, normal)},
-		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::object::Vertex, uv)}
+		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, position)},
+		{1, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, normal)},
+		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::Vertex, uv)}
 	};
 
 	std::vector<ShaderStage> shaderStages = {
@@ -706,9 +704,13 @@ void core::gpu::Device::Impl::CreateSyncObjects()
 
 void core::gpu::Device::Impl::BeginFrame(uint32_t frameIndex)
 {
-	if (frameIndex >= inFlightFences.size()) return;
+	if (frameIndex >= inFlightFences.size())
+	{
+		return;
+	}
 
 	device.waitForFences(*inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
+	device.resetFences(*inFlightFences[frameIndex]);
 
 	if (frameIndex < tempCmdBufs.size())
 	{
@@ -719,7 +721,10 @@ void core::gpu::Device::Impl::BeginFrame(uint32_t frameIndex)
 
 uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 {
-	if (frameIndex >= imageAvailable.size()) return UINT32_MAX;
+	if (frameIndex >= imageAvailable.size())
+	{
+		return UINT32_MAX;
+	}
 
 	try
 	{
@@ -750,7 +755,6 @@ uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 			device.waitForFences(**imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
 		}
 
-		device.resetFences(*inFlightFences[frameIndex]);
 		imagesInFlight[imageIndex] = &inFlightFences[frameIndex];
 
 		return imageIndex;
@@ -785,6 +789,20 @@ void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
 
 const core::gpu::Image* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
 {
+	if (!swapchain)
+	{
+		std::cerr << "ERROR: Swapchain is null!" << std::endl;
+		return nullptr;
+	}
+
+	if (imageIndex >= swapchain->GetImpl().images.size())
+	{
+		std::cerr << "ERROR: Image index " << imageIndex
+			<< " out of range (swapchain has "
+			<< swapchain->GetImpl().images.size() << " images)" << std::endl;
+		return nullptr;
+	}
+
 	return swapchain->GetImpl().images[imageIndex].get();
 }
 
