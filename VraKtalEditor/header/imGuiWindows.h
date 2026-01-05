@@ -13,6 +13,7 @@ public:
     void PrepareImGuiWindows();
 
 private:
+	void SetMenuBar();
 
     void HierarchyWindow();
     void testWindow();

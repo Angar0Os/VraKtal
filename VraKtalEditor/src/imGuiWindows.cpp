@@ -41,7 +41,8 @@ void ImGuiWindows::HierarchyWindow()
 
 void ImGuiWindows::testWindow()
 {
-	ImGui::Begin("Hello ImGui + Vulkan");
+	ImGui::Begin("Hello ImGui + Vulkan", nullptr, ImGuiWindowFlags_MenuBar);
+	SetMenuBar();
 	ImGui::Text("If you see this, ImGui works!");
 	ImGui::Separator();
 	static float f = 0.0f;
@@ -110,3 +111,46 @@ void ImGuiWindows::EditTransformByIndice(const float* cameraView, const float* c
     object->transform.SetScale(scale);*/
 }
 
+
+void ImGuiWindows::SetMenuBar() {
+	if (ImGui::BeginMenuBar()) {
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("New Project")) {}
+
+			if (ImGui::MenuItem("Open Project")) {}
+
+			if (ImGui::MenuItem("Save Project")) {}
+
+			if (ImGui::MenuItem("Quit")) {}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Edit")) {
+			if (ImGui::MenuItem("Undo (CTRL + Z)")) {}
+
+			if (ImGui::MenuItem("Redo (CTRL + Y)")) {}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Tools")) {
+			if (ImGui::MenuItem("Timeline")) {}
+
+			if (ImGui::MenuItem("CameraSplineEditor")) {}
+
+			if (ImGui::MenuItem("Tracy")) {}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::MenuItem("Build")) {
+			ImGui::OpenPopup("build_popup");
+		}
+		if (ImGui::BeginPopup("build_popup"))
+		{
+			if (ImGui::Button("Build")) {}; ImGui::SameLine();
+			if (ImGui::Button("Build & Run")) {}
+
+			ImGui::EndPopup();
+		}
+		ImGui::EndMenuBar();
+	}
+}
