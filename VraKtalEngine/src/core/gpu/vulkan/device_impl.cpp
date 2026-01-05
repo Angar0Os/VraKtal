@@ -2,15 +2,21 @@
 #define LAB_TASK_LEVEL 1
 
 #include "../src/core/gpu/vulkan/device_impl.h"
+#include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
+#include "../src/core/gpu/vulkan/commandPool_impl.h"
+#include "../src/core/gpu/vulkan/image_impl.h"
+#include "../src/core/gpu/vulkan/swapchain_impl.h"
+
+#include "../src/core/gpu_detail/converters.h"
+
+#include <core/gpu/descriptorSet.h>
+#include <core/enum.h>
+
+#include <graphics/resources/object/mesh.h>
 
 #include <iostream>
 #include <stdexcept>
 #include <GLFW/glfw3.h>
-
-#include <core/enum.h>
-#include <core/gpu/descriptorSet.h>
-
-#include <graphics/resources/object/mesh.h>
 
 #include <fstream>
 
@@ -35,14 +41,16 @@ std::vector<const char*> GetRequiredExtensions()
 	return extensions;
 }
 
-core::gpu::Device::Impl& core::gpu::Device::GetImpl()
+core::gpu::Device::Impl& core::gpu::Device::GetImpl() const
 {
 	return *m_impl;
 }
 
 core::gpu::Device::Device(core::Window& window)
 {
-	m_impl = std::make_unique<Impl>(window);
+	m_impl = std::make_unique<Impl>(window, nullptr);
+	m_impl->parent = this;
+	m_impl->Initialize();
 }
 
 core::gpu::Device::~Device()
@@ -50,8 +58,12 @@ core::gpu::Device::~Device()
 
 }
 
-core::gpu::Device::Impl::Impl(core::Window& window)
-	: m_window(window)
+core::gpu::Device::Impl::Impl(core::Window& _window, const core::gpu::Device* _parent)
+	: m_window(_window), parent(_parent)
+{
+}
+
+void core::gpu::Device::Impl::Initialize()
 {
 	CreateInstance();
 	SetupDebugMessenger();
@@ -378,50 +390,48 @@ void core::gpu::Device::Impl::CreateLogicalDevice()
 
 void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 {
-	DescriptorSetLayoutCreateInfo layoutInfo;
+	SDescriptorSetLayoutCreateInfo layoutInfo;
 	layoutInfo.bindings =
 	{
-		{0, DescriptorType::UniformBuffer, 1, core::ShaderStage::Vertex | core::ShaderStage::Fragment},
+		{0, EDescriptorType::UniformBuffer, 1, core::ShaderStage::Vertex | core::ShaderStage::Fragment},
 
-		{1, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{2, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{3, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{4, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{5, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{6, DescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{8, DescriptorType::AccelerationStructure, 1, core::ShaderStage::Fragment}
+		{1, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{2, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{3, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{4, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{5, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{6, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
+		{8, EDescriptorType::AccelerationStructure, 1, core::ShaderStage::Fragment}
 	};
 
-	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(&device, layoutInfo);
+	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(parent, layoutInfo);
 }
 
 void core::gpu::Device::Impl::CreateDescriptorPool()
 {
-	DescriptorPoolCreateInfo poolInfo;
+	SDescriptorPoolCreateInfo poolInfo;
 	poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 2;
 	poolInfo.poolSizes =
 	{
-		{DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT * 2},
-		{DescriptorType::CombinedImageSampler, MAX_FRAMES_IN_FLIGHT * 7},
-		{DescriptorType::AccelerationStructure, MAX_FRAMES_IN_FLIGHT}
+		{EDescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT * 2},
+		{EDescriptorType::CombinedImageSampler, MAX_FRAMES_IN_FLIGHT * 7},
+		{EDescriptorType::AccelerationStructure, MAX_FRAMES_IN_FLIGHT}
 	};
 	poolInfo.allowFreeDescriptorSet = true;
 
-	descriptorPool = std::make_unique<DescriptorPool>(&device, poolInfo);
+	descriptorPool = std::make_unique<DescriptorPool>(parent, poolInfo);
 }
 
-void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, void* tlasHandle)
+void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)
 {
 	if (frameIndex >= descriptorSets.size() || !tlasHandle) return;
 
 	vk::DescriptorSet descSet = **descriptorSets[frameIndex];
-
-	VkAccelerationStructureKHR rawHandle = static_cast<VkAccelerationStructureKHR>(tlasHandle);
-	const vk::AccelerationStructureKHR vkAccel(rawHandle);
+	vk::AccelerationStructureKHR accelStructHandle = **tlasHandle->GetImpl().accelerationStructure;
 
 	vk::WriteDescriptorSetAccelerationStructureKHR accelInfo{};
 	accelInfo.accelerationStructureCount = 1;
-	accelInfo.pAccelerationStructures = &vkAccel;
+	accelInfo.pAccelerationStructures = &accelStructHandle;
 
 	vk::WriteDescriptorSet writeDesc{};
 	writeDesc.dstSet = descSet;
@@ -432,8 +442,6 @@ void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, void
 	writeDesc.pNext = &accelInfo;
 
 	device.updateDescriptorSets(writeDesc, nullptr);
-
-	std::cout << "TLAS updated in descriptor set " << frameIndex << std::endl;
 }
 
 void core::gpu::Device::Impl::AllocateDescriptorSets()
@@ -456,12 +464,12 @@ void core::gpu::Device::Impl::CreateUniformBuffers()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		BufferCreateInfo bufferInfo{
+		SBufferCreateInfo bufferInfo{
 			.size = sizeof(UniformBufferObject),
-			.usage = BufferUsage::UniformBuffer,
-			.memoryProperties = MemoryProperty::HostVisible | MemoryProperty::HostCoherent
+			.usage = EBufferUsage::UniformBuffer,
+			.memoryProperties = EMemoryProperty::HostVisible | EMemoryProperty::HostCoherent
 		};
-		uniformBuffers.push_back(std::make_unique<Buffer>(&device, &physicalDevice, bufferInfo));
+		uniformBuffers.push_back(std::make_unique<Buffer>(parent, bufferInfo));
 	}
 }
 
@@ -482,7 +490,7 @@ void core::gpu::Device::Impl::CreateSamplers()
 		.minLod = 0.0f,
 		.maxLod = 1000.0f
 	};
-	textureSampler = std::make_unique<Sampler>(&device, samplerInfo);
+	textureSampler = std::make_unique<Sampler>(parent, samplerInfo);
 }
 
 void core::gpu::Device::Impl::CreateCommandPool()
@@ -492,43 +500,32 @@ void core::gpu::Device::Impl::CreateCommandPool()
 		.flags = CommandPoolCreateFlags::ResetCommandBuffer
 	};
 
-	commandPool = std::make_unique<CommandPool>(&device, poolInfo);
+	commandPool = std::make_unique<CommandPool>(parent, poolInfo);
 }
 
 
 void core::gpu::Device::Impl::CreateDefaultTextures()
 {
-	defaultWhiteTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
-	defaultBlackTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
-	defaultNormalTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue, commandPool->GetHandle(), 0.5f, 0.5f, 1.0f, 1.0f);
+	defaultWhiteTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
+	defaultBlackTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
+	defaultNormalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
 }
 
 void core::gpu::Device::Impl::LoadMaterialTextures()
 {
-	albedoTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
-		commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
+	albedoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
+	normalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
+	metallicTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
+	roughnessTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
+	aoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
+	emissiveTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
 
-	normalTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
-		commandPool->GetHandle(), 0.5f, 0.5f, 1.0f, 1.0f);
-
-	metallicTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
-		commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
-
-	roughnessTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
-		commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
-
-	aoTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
-		commandPool->GetHandle(), 1.0f, 1.0f, 1.0f, 1.0f);
-
-	emissiveTexture = std::make_unique<Texture>(&device, &physicalDevice, &graphicsQueue,
-		commandPool->GetHandle(), 0.0f, 0.0f, 0.0f, 1.0f);
-
-	albedoTexture->LoadTextureIfExists("../bin/assets/textures/viking_room.png");
-	normalTexture->LoadTextureIfExists("assets/textures/normal.png");
-	metallicTexture->LoadTextureIfExists("assets/textures/metallic.png");
-	roughnessTexture->LoadTextureIfExists("assets/textures/roughness.png");
-	aoTexture->LoadTextureIfExists("assets/textures/ao.png");
-	emissiveTexture->LoadTextureIfExists("assets/textures/emissive.png");
+	albedoTexture->LoadTextureIfExists(parent, "../bin/assets/textures/viking_room.png");
+	normalTexture->LoadTextureIfExists(parent, "assets/textures/normal.png");
+	metallicTexture->LoadTextureIfExists(parent, "assets/textures/metallic.png");
+	roughnessTexture->LoadTextureIfExists(parent, "assets/textures/roughness.png");
+	aoTexture->LoadTextureIfExists(parent, "assets/textures/ao.png");
+	emissiveTexture->LoadTextureIfExists(parent, "assets/textures/emissive.png");
 }
 
 void core::gpu::Device::Impl::CreateSwapchain()
@@ -546,23 +543,23 @@ void core::gpu::Device::Impl::CreateSwapchain()
 		.oldSwapchain = nullptr
 	};
 
-	swapchain = std::make_unique<Swapchain>(&device, &physicalDevice, swapchainInfo);
+	swapchain = std::make_unique<Swapchain>(parent, swapchainInfo);
 }
 
 void core::gpu::Device::Impl::CreateGraphicsPipeline()
 {
 	auto shaderCode = ReadFile("../bin/assets/shaders/slang.spv");
 
-	VertexInputBinding vertexBinding{
+	SVertexInputBinding vertexBinding{
 		.binding = 0,
-		.stride = sizeof(graphics::resources::object::Vertex),
+		.stride = sizeof(graphics::resources::Vertex),
 		.inputRate = VertexInputRate::Vertex
 	};
 
-	std::vector<VertexInputAttribute> vertexAttributes = {
-		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, position)},
-		{1, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::object::Vertex, normal)},
-		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::object::Vertex, uv)}
+	std::vector<SVertexInputAttribute> vertexAttributes = {
+		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, position)},
+		{1, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, normal)},
+		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::Vertex, uv)}
 	};
 
 	std::vector<ShaderStage> shaderStages = {
@@ -591,13 +588,13 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 	pipelineInfo.depthCompareOp = CompareOp::Less;
 	pipelineInfo.blendEnable = false;
 	pipelineInfo.samples = SampleCount::e4;
-	pipelineInfo.colorAttachmentFormats = { swapchain->GetFormat() };
+	pipelineInfo.colorAttachmentFormats = { core::gpu_detail::FromVulkan(swapchain->GetImpl().format) };
 	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
 	pipelineInfo.descriptorSetLayouts = { descriptorSetLayout.get() };
 	pipelineInfo.pushConstantRanges = pushConstants;
 	pipelineInfo.dynamicStates = { DynamicState::Viewport, DynamicState::Scissor };
 
-	graphicsPipeline = std::make_unique<Pipeline>(&device, pipelineInfo);
+	graphicsPipeline = std::make_unique<Pipeline>(parent, pipelineInfo);
 }
 
 std::vector<char> core::gpu::Device::Impl::ReadFile(const std::string& filename)
@@ -645,9 +642,9 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 		.preferredFormat = TextureFormat::RGBA8_SRGB,
 		.presentMode = PresentMode::Mailbox,
 		.minImageCount = 3,
-		.oldSwapchain = swapchain->GetHandle()
+		.oldSwapchain = swapchain.get()
 	};
-	swapchain = std::make_unique<Swapchain>(&device, &physicalDevice, swapchainInfo);
+	swapchain = std::make_unique<Swapchain>(parent, swapchainInfo);
 
 	CreateColorImage();
 	CreateDepthImage();
@@ -660,7 +657,7 @@ void core::gpu::Device::Impl::CreateDescriptorSets()
 {
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		DescriptorSet(&device, &descriptorSets, i)
+		DescriptorSet(parent, &descriptorSets, i)
 			.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
 			.BindImage(*textureSampler, albedoTexture.get(), *defaultWhiteTexture)
 			.BindImage(*textureSampler, normalTexture.get(), *defaultNormalTexture)
@@ -687,7 +684,7 @@ void core::gpu::Device::Impl::CreateSyncObjects()
 		imageAvailable.emplace_back(device, semInfo);
 	}
 
-	uint32_t swapchainImageCount = swapchain->GetImages().size();
+	uint32_t swapchainImageCount = swapchain->GetImpl().images.size();
 	renderFinished.reserve(swapchainImageCount);
 	for (size_t i = 0; i < swapchainImageCount; ++i)
 	{
@@ -707,9 +704,13 @@ void core::gpu::Device::Impl::CreateSyncObjects()
 
 void core::gpu::Device::Impl::BeginFrame(uint32_t frameIndex)
 {
-	if (frameIndex >= inFlightFences.size()) return;
+	if (frameIndex >= inFlightFences.size())
+	{
+		return;
+	}
 
 	device.waitForFences(*inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
+	device.resetFences(*inFlightFences[frameIndex]);
 
 	if (frameIndex < tempCmdBufs.size())
 	{
@@ -720,15 +721,16 @@ void core::gpu::Device::Impl::BeginFrame(uint32_t frameIndex)
 
 uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 {
-	if (frameIndex >= imageAvailable.size()) return UINT32_MAX;
-
-	vk::SwapchainKHR swapchainHandle = reinterpret_cast<VkSwapchainKHR>(swapchain->GetHandle());
+	if (frameIndex >= imageAvailable.size())
+	{
+		return UINT32_MAX;
+	}
 
 	try
 	{
 		vk::ResultValue<uint32_t> result = device.acquireNextImage2KHR(
 			vk::AcquireNextImageInfoKHR{
-				.swapchain = swapchainHandle,
+				.swapchain = swapchain->GetImpl().swapchain,
 				.timeout = UINT64_MAX,
 				.semaphore = *imageAvailable[frameIndex],
 				.fence = nullptr,
@@ -753,7 +755,6 @@ uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 			device.waitForFences(**imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
 		}
 
-		device.resetFences(*inFlightFences[frameIndex]);
 		imagesInFlight[imageIndex] = &inFlightFences[frameIndex];
 
 		return imageIndex;
@@ -786,42 +787,36 @@ void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
 	return static_cast<void*>(static_cast<VkFence>(*inFlightFences[frameIndex]));
 }
 
-void* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
+const core::gpu::Image* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
 {
-	return swapchain->GetImage(imageIndex).image;
+	if (!swapchain)
+	{
+		std::cerr << "ERROR: Swapchain is null!" << std::endl;
+		return nullptr;
+	}
+
+	if (imageIndex >= swapchain->GetImpl().images.size())
+	{
+		std::cerr << "ERROR: Image index " << imageIndex
+			<< " out of range (swapchain has "
+			<< swapchain->GetImpl().images.size() << " images)" << std::endl;
+		return nullptr;
+	}
+
+	return swapchain->GetImpl().images[imageIndex].get();
 }
 
-void* core::gpu::Device::Impl::GetColorImage() const
+const core::gpu::Image* core::gpu::Device::Impl::GetColorImage() const
 {
-	return colorImage ? colorImage->GetHandle() : nullptr;
+	return colorImage.get();
 }
 
 void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
 {
-	SwapchainImage swapImageStruct = swapchain->GetImage(imageIndex);
-
-	vk::Image swapImage = VK_NULL_HANDLE;
-	if (swapImageStruct.image)
-	{
-		vk::Image* imagePtr = static_cast<vk::Image*>(swapImageStruct.image);
-		if (imagePtr)
-		{
-			swapImage = *imagePtr;
-		}
-	}
-
-	if (swapImage == VK_NULL_HANDLE)
-	{
-		std::cerr << "Invalid swapchain image handle!\n";
-		return;
-	}
-
-	void* poolPtr = commandPool->GetHandle();
-	vk::raii::CommandPool* raiiPool = static_cast<vk::raii::CommandPool*>(poolPtr);
-	vk::CommandPool poolHandle = **raiiPool;
+	const core::gpu::Image* swapchainImage = swapchain->GetImpl().images[imageIndex].get();
 
 	vk::CommandBufferAllocateInfo allocInfo{
-		.commandPool = poolHandle,
+		.commandPool = commandPool->GetImpl().pool,
 		.level = vk::CommandBufferLevel::ePrimary,
 		.commandBufferCount = 1
 	};
@@ -845,7 +840,7 @@ void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uin
 			.newLayout = vk::ImageLayout::ePresentSrcKHR,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = swapImage,
+			.image = swapchainImage->GetImpl().GetVkImage(),
 			.subresourceRange = {
 				.aspectMask = vk::ImageAspectFlagBits::eColor,
 				.baseMipLevel = 0,
@@ -892,16 +887,15 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 	if (imageIndex >= renderFinished.size()) return;
 
 	vk::Semaphore presentWait = *renderFinished[imageIndex];
-	vk::SwapchainKHR vkSwapchain = reinterpret_cast<VkSwapchainKHR>(swapchain->GetHandle());
+	vk::SwapchainKHR swapchainHandle = swapchain->GetImpl().swapchain;
 
 	vk::PresentInfoKHR presentInfo{
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores = &presentWait,
 		.swapchainCount = 1,
-		.pSwapchains = &vkSwapchain,
+		.pSwapchains = &swapchainHandle,
 		.pImageIndices = &imageIndex
 	};
-
 	try
 	{
 		vk::Result result = graphicsQueue.presentKHR(presentInfo);
@@ -916,21 +910,21 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 
 void core::gpu::Device::Impl::CreateColorImage()
 {
-	ImageCreateInfo colorInfo{
-		.width = swapchain->GetWidth(),
-		.height = swapchain->GetHeight(),
+	SImageCreateInfo colorInfo{
+		.width = swapchain->GetImpl().extent.width,
+		.height = swapchain->GetImpl().extent.height,
 		.mipLevels = 1,
-		.format = swapchain->GetFormat(),
+		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
 		.tiling = ImageTiling::Optimal,
 		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc,
-		.memoryProperties = MemoryProperty::DeviceLocal,
+		.memoryProperties = EMemoryProperty::DeviceLocal,
 		.samples = SampleCount::e4
 	};
 
-	colorImage = std::make_unique<Image>(&device, &physicalDevice, colorInfo);
+	colorImage = std::make_unique<Image>(parent, colorInfo);
 
-	ImageViewCreateInfo viewInfo{
-		.format = swapchain->GetFormat(),
+	SImageViewCreateInfo viewInfo{
+		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
 		.isDepth = false
 	};
 
@@ -939,20 +933,20 @@ void core::gpu::Device::Impl::CreateColorImage()
 
 void core::gpu::Device::Impl::CreateDepthImage()
 {
-	ImageCreateInfo depthInfo{
-		.width = swapchain->GetWidth(),
-		.height = swapchain->GetHeight(),
+	SImageCreateInfo depthInfo{
+		.width = swapchain->GetImpl().extent.width,
+		.height = swapchain->GetImpl().extent.height,
 		.mipLevels = 1,
 		.format = TextureFormat::Depth32F,
 		.tiling = ImageTiling::Optimal,
 		.usage = ImageUsage::DepthStencilAttachment,
-		.memoryProperties = MemoryProperty::DeviceLocal,
+		.memoryProperties = EMemoryProperty::DeviceLocal,
 		.samples = SampleCount::e4
 	};
 
-	depthImage = std::make_unique<Image>(&device, &physicalDevice, depthInfo);
+	depthImage = std::make_unique<Image>(parent, depthInfo);
 
-	ImageViewCreateInfo viewInfo{
+	SImageViewCreateInfo viewInfo{
 		.format = TextureFormat::Depth32F,
 		.isDepth = true
 	};
@@ -983,71 +977,14 @@ core::gpu::Buffer* core::gpu::Device::Impl::GetUniformBuffer(uint32_t frameIndex
 	return uniformBuffers[frameIndex].get();
 }
 
-void* core::gpu::Device::Impl::GetCommandPool() const
+const core::gpu::Pipeline* core::gpu::Device::Impl::GetGraphicsPipeline() const
 {
-	return commandPool->GetHandle();
+	return graphicsPipeline.get();
 }
 
-void* core::gpu::Device::Impl::GetGraphicsQueue() const
+const core::gpu::Image* core::gpu::Device::Impl::GetDepthImage() const
 {
-	return static_cast<void*>(const_cast<vk::Queue*>(&*graphicsQueue));
-}
-
-void* core::gpu::Device::Impl::GetPipeline() const
-{
-	return graphicsPipeline->GetHandle();
-}
-
-void* core::gpu::Device::Impl::GetPipelineLayout() const
-{
-	return graphicsPipeline->GetLayoutHandle();
-}
-
-void* core::gpu::Device::Impl::GetDescriptorSet(uint32_t frameIndex) const
-{
-	if (frameIndex >= descriptorSets.size()) return nullptr;
-	return static_cast<void*>(static_cast<VkDescriptorSet>(**descriptorSets[frameIndex]));
-}
-
-void* core::gpu::Device::Impl::GetHandle() const
-{
-	return static_cast<void*>(const_cast<vk::Device*>(&*device));
-}
-
-uint32_t core::gpu::Device::Impl::GetSwapchainWidth() const
-{
-	return swapchain->GetWidth();
-}
-
-uint32_t core::gpu::Device::Impl::GetSwapchainHeight() const
-{
-	return swapchain->GetHeight();
-}
-
-void* core::gpu::Device::Impl::GetSwapchainImageView(uint32_t imageIndex) const
-{
-	return swapchain->GetImage(imageIndex).imageView;
-}
-
-void* core::gpu::Device::Impl::GetDepthImage() const
-{
-	return depthImage ? depthImage->GetHandle() : nullptr;
-}
-
-void* core::gpu::Device::Impl::GetDepthImageView() const
-{
-	return depthImage ? depthImage->GetViewHandle() : nullptr;
-}
-
-void* core::gpu::Device::Impl::GetColorImageView() const
-{
-	if (!colorImage) return nullptr;
-	return colorImage->GetViewHandle();
-}
-
-void* core::gpu::Device::Impl::GetPhysicalDevice() const
-{
-	return static_cast<void*>(const_cast<vk::PhysicalDevice*>(&*physicalDevice));
+	return depthImage.get();
 }
 
 void core::gpu::Device::Impl::WaitIdle()
@@ -1090,69 +1027,9 @@ void core::gpu::Device::Cleanup()
 	if (m_impl) m_impl->Cleanup();
 }
 
-void* core::gpu::Device::GetCommandPool() const
-{
-	return m_impl ? m_impl->GetCommandPool() : nullptr;
-}
-
-void* core::gpu::Device::GetGraphicsQueue() const
-{
-	return m_impl ? m_impl->GetGraphicsQueue() : nullptr;
-}
-
-void* core::gpu::Device::GetPipeline() const
-{
-	return m_impl ? m_impl->GetPipeline() : nullptr;
-}
-
-void* core::gpu::Device::GetPipelineLayout() const
-{
-	return m_impl ? m_impl->GetPipelineLayout() : nullptr;
-}
-
-void* core::gpu::Device::GetDescriptorSet(uint32_t frameIndex) const
-{
-	return m_impl->GetDescriptorSet(frameIndex);
-}
-
-uint32_t core::gpu::Device::GetSwapchainWidth() const
-{
-	return m_impl ? m_impl->GetSwapchainWidth() : 0;
-}
-
-uint32_t core::gpu::Device::GetSwapchainHeight() const
-{
-	return m_impl ? m_impl->GetSwapchainHeight() : 0;
-}
-
-void* core::gpu::Device::GetSwapchainImageView(uint32_t imageIndex) const
-{
-	return m_impl ? m_impl->GetSwapchainImageView(imageIndex) : nullptr;
-}
-
-void* core::gpu::Device::GetDepthImageView() const
-{
-	return m_impl ? m_impl->GetDepthImageView() : nullptr;
-}
-
-void* core::gpu::Device::GetColorImageView() const
-{
-	return m_impl ? m_impl->GetColorImageView() : nullptr;
-}
-
-void* core::gpu::Device::GetPhysicalDevice() const
-{
-	return m_impl ? m_impl->GetPhysicalDevice() : nullptr;
-}
-
 core::gpu::Buffer* core::gpu::Device::GetUniformBuffer(uint32_t frameIndex)
 {
 	return m_impl ? m_impl->GetUniformBuffer(frameIndex) : nullptr;
-}
-
-void* core::gpu::Device::GetHandle() const
-{
-	return m_impl ? m_impl->GetHandle() : nullptr;
 }
 
 void core::gpu::Device::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
@@ -1160,17 +1037,17 @@ void core::gpu::Device::TransitionImageForPresent(uint32_t frameIndex, uint32_t 
 	if (m_impl) m_impl->TransitionImageForPresent(frameIndex, imageIndex);
 }
 
-void* core::gpu::Device::GetSwapchainImage(uint32_t imageIndex) const
+const core::gpu::Image* core::gpu::Device::GetSwapchainImage(uint32_t imageIndex) const
 {
 	return m_impl ? m_impl->GetSwapchainImage(imageIndex) : nullptr;
 }
 
-void* core::gpu::Device::GetColorImage() const
+const core::gpu::Image* core::gpu::Device::GetColorImage() const
 {
 	return m_impl ? m_impl->GetColorImage() : nullptr;
 }
 
-void* core::gpu::Device::GetDepthImage() const
+const core::gpu::Image* core::gpu::Device::GetDepthImage() const
 {
 	return m_impl ? m_impl->GetDepthImage() : nullptr;
 }
@@ -1185,7 +1062,13 @@ void core::gpu::Device::RecreateSwapchain()
 	if (m_impl) m_impl->RecreateSwapchain();
 }
 
-void core::gpu::Device::UpdateDescriptorWithTLAS(uint32_t frameIndex, void* tlasHandle)
+const core::gpu::Pipeline* core::gpu::Device::GetGraphicsPipeline() const
+{
+	return m_impl ? m_impl->GetGraphicsPipeline() : nullptr;
+}
+
+void core::gpu::Device::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)
 {
 	if (m_impl) m_impl->UpdateDescriptorWithTLAS(frameIndex, tlasHandle);
 }
+

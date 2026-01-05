@@ -55,6 +55,15 @@
     <Filter Include="Header Files\graphics\resources\property">
       <UniqueIdentifier>{3737e3eb-bce0-4260-9680-a11a37364864}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\graphics\resources">
+      <UniqueIdentifier>{b4a0c190-bc26-44b7-8c28-2f484b846e7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphics\resources\object">
+      <UniqueIdentifier>{d56ec7a4-a8cf-444c-9ed0-19a13584f0f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphics\resources\property">
+      <UniqueIdentifier>{2eab3814-ab48-462b-a881-0f5a08f2d551}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -229,6 +238,9 @@
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\accelerationStructure_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\resources\object\scene.cpp">
+      <Filter>Source Files\graphics\resources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

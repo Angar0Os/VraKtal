@@ -1,4 +1,9 @@
 #include "../src/core/gpu/vulkan/descriptorSet_impl.h"
+#include "../src/core/gpu/vulkan/buffer_impl.h"
+#include "../src/core/gpu/vulkan/device_impl.h"
+#include "../src/core/gpu/vulkan/image_impl.h"
+#include "../src/core/gpu/vulkan/sampler_impl.h"
+#include "../src/core/gpu/vulkan/texture_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <core/gpu/buffer.h>
@@ -7,7 +12,7 @@
 
 #include <core/enum.h>
 
-core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, vk::raii::Device& dev, std::vector<vk::raii::DescriptorSet*>& sets, size_t frame)
+core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gpu::Device* dev, std::vector<vk::raii::DescriptorSet*>& sets, size_t frame)
 	: parent(p), device(dev), descriptorSets(sets), currentFrame(frame)
 {
 	bufferInfos.reserve(8);
@@ -20,12 +25,9 @@ core::gpu::DescriptorSet::Impl::~Impl() = default;
 
 core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindBuffer(const Buffer& buffer, size_t offset, size_t range)
 {
-	VkBuffer vkBufferHandle = reinterpret_cast<VkBuffer>(buffer.GetHandle());
-	vk::Buffer vkBuffer(vkBufferHandle);
-
 	size_t infoIndex = bufferInfos.size();
 	bufferInfos.emplace_back(
-		vkBuffer,
+		buffer.GetImpl().buffer,
 		static_cast<vk::DeviceSize>(offset),
 		static_cast<vk::DeviceSize>(range)
 	);
@@ -42,20 +44,14 @@ core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindBuffer(const Buffe
 core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindImage(const Sampler& sampler, const Texture* texture,
 	const Texture& defaultTexture, ImageLayout layout)
 {
-	VkSampler vkSamplerHandle = reinterpret_cast<VkSampler>(sampler.GetHandle());
-	vk::Sampler vkSampler(vkSamplerHandle);
-
-	const Texture* selectedTexture = (texture && texture->IsValid())
+	const Texture* selectedTexture = (texture && texture != nullptr)
 		? texture
 		: &defaultTexture;
 
-	VkImageView vkImageViewHandle = reinterpret_cast<VkImageView>(selectedTexture->GetImageView());
-	vk::ImageView vkImageView(vkImageViewHandle);
-
 	size_t infoIndex = imageInfos.size();
 	imageInfos.emplace_back(
-		vkSampler,
-		vkImageView,
+		sampler.GetImpl().sampler,
+		selectedTexture->GetImpl().image->GetImpl().view,
 		core::gpu_detail::ToVulkan(layout)
 	);
 
@@ -107,7 +103,7 @@ void core::gpu::DescriptorSet::Impl::Update()
 		writes.push_back(write);
 	}
 
-	device.updateDescriptorSets(writes, {});
+	device->GetImpl().device.updateDescriptorSets(writes, {});
 
 	currentBinding = 0;
 	bufferInfos.clear();
@@ -116,12 +112,11 @@ void core::gpu::DescriptorSet::Impl::Update()
 	bindingInfos.clear();
 }
 
-core::gpu::DescriptorSet::DescriptorSet(void* device, void* setsVector, size_t frame)
+core::gpu::DescriptorSet::DescriptorSet(const core::gpu::Device* device, void* setsVector, size_t frame)
 {
-	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
 	auto& vkSets = *static_cast<std::vector<vk::raii::DescriptorSet*>*>(setsVector);
 
-	m_impl = std::make_unique<Impl>(*this, vkDevice, vkSets, frame);
+	m_impl = std::make_unique<Impl>(*this, device, vkSets, frame);
 }
 
 core::gpu::DescriptorSet::~DescriptorSet() = default;
@@ -144,7 +139,7 @@ void core::gpu::DescriptorSet::Update()
 	m_impl->Update();
 }
 
-core::gpu::DescriptorSet::Impl& core::gpu::DescriptorSet::GetImpl()
+core::gpu::DescriptorSet::Impl& core::gpu::DescriptorSet::GetImpl() const
 {
 	return *m_impl;
 }

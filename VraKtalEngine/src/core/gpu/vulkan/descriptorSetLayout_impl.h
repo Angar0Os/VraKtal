@@ -9,18 +9,13 @@ namespace core::gpu
 {
 	struct DescriptorSetLayout::Impl
 	{
-	private:
 		DescriptorSetLayout& parent;
-		vk::raii::Device& device;
+		const core::gpu::Device* device;
 		vk::raii::DescriptorSetLayout layout;
 
-	public:
-		explicit Impl(DescriptorSetLayout& p, vk::raii::Device& dev,
-			const DescriptorSetLayoutCreateInfo& info);
+		explicit Impl(DescriptorSetLayout& p, const core::gpu::Device* device,
+			const SDescriptorSetLayoutCreateInfo& info);
 		~Impl();
-
-		vk::raii::DescriptorSetLayout& GetLayout();
-		const vk::raii::DescriptorSetLayout& GetLayout() const;
 	};
 }
 

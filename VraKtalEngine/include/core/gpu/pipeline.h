@@ -9,16 +9,17 @@
 
 namespace core::gpu
 {
+	class Device;
 	class DescriptorSetLayout;
 
-	struct VertexInputBinding
+	struct SVertexInputBinding
 	{
 		uint32_t binding;
 		uint32_t stride;
 		VertexInputRate inputRate;
 	};
 
-	struct VertexInputAttribute
+	struct SVertexInputAttribute
 	{
 		uint32_t location;
 		uint32_t binding;
@@ -43,8 +44,8 @@ namespace core::gpu
 	struct PipelineCreateInfo
 	{
 		std::vector<ShaderStage> shaderStages;
-		std::vector<VertexInputBinding> vertexBindings;
-		std::vector<VertexInputAttribute> vertexAttributes;
+		std::vector<SVertexInputBinding> vertexBindings;
+		std::vector<SVertexInputAttribute> vertexAttributes;
 
 		PrimitiveTopology topology;
 
@@ -76,7 +77,7 @@ namespace core::gpu
 		std::unique_ptr<Impl> m_impl;
 
 	public:
-		Pipeline(void* device, const PipelineCreateInfo& info);
+		Pipeline(const core::gpu::Device* device, const PipelineCreateInfo& info);
 		~Pipeline();
 
 		Pipeline(const Pipeline&) = delete;
@@ -85,11 +86,7 @@ namespace core::gpu
 		Pipeline(Pipeline&&) noexcept;
 		Pipeline& operator=(Pipeline&&) noexcept;
 
-		void* GetHandle() const;
-		void* GetLayoutHandle() const;
-
-		Impl& GetImpl();
-		const Impl& GetImpl() const;
+		Impl& GetImpl() const;
 	};
 }
 

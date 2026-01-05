@@ -62,57 +62,57 @@ vk::ImageLayout core::gpu_detail::ToVulkan(core::ImageLayout layout)
 	}
 }
 
-vk::BufferUsageFlags core::gpu_detail::ToVulkan(core::BufferUsage usage)
+vk::BufferUsageFlags core::gpu_detail::ToVulkan(core::EBufferUsage usage)
 {
 	vk::BufferUsageFlags flags;
 
-	if ((usage & core::BufferUsage::TransferSrc) != core::BufferUsage::None)
+	if ((usage & core::EBufferUsage::TransferSrc) != core::EBufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eTransferSrc;
 
-	if ((usage & core::BufferUsage::TransferDst) != core::BufferUsage::None)
+	if ((usage & core::EBufferUsage::TransferDst) != core::EBufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eTransferDst;
 
-	if ((usage & core::BufferUsage::UniformBuffer) != core::BufferUsage::None)
+	if ((usage & core::EBufferUsage::UniformBuffer) != core::EBufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eUniformBuffer;
 
-	if ((usage & core::BufferUsage::StorageBuffer) != core::BufferUsage::None)
+	if ((usage & core::EBufferUsage::StorageBuffer) != core::EBufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eStorageBuffer;
 
-	if ((usage & core::BufferUsage::IndexBuffer) != core::BufferUsage::None)
+	if ((usage & core::EBufferUsage::IndexBuffer) != core::EBufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eIndexBuffer;
 
-	if ((usage & core::BufferUsage::VertexBuffer) != core::BufferUsage::None)
+	if ((usage & core::EBufferUsage::VertexBuffer) != core::EBufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eVertexBuffer;
 
-	if ((usage & core::BufferUsage::IndirectBuffer) != core::BufferUsage::None)
+	if ((usage & core::EBufferUsage::IndirectBuffer) != core::EBufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
 
-	if ((usage & core::BufferUsage::ShaderDeviceAddress) != core::BufferUsage::None)
+	if ((usage & core::EBufferUsage::ShaderDeviceAddress) != core::EBufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eShaderDeviceAddress;
 
-	if ((usage & core::BufferUsage::AccelerationStructureStorage) != core::BufferUsage::None)
+	if ((usage & core::EBufferUsage::AccelerationStructureStorage) != core::EBufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eAccelerationStructureStorageKHR;
 
-	if ((usage & core::BufferUsage::AccelerationStructureBuildInput) != core::BufferUsage::None)
+	if ((usage & core::EBufferUsage::AccelerationStructureBuildInput) != core::EBufferUsage::None)
 		flags |= vk::BufferUsageFlagBits::eAccelerationStructureBuildInputReadOnlyKHR;
 
 	return flags;
 }
 
-vk::MemoryPropertyFlags core::gpu_detail::ToVulkan(core::MemoryProperty properties)
+vk::MemoryPropertyFlags core::gpu_detail::ToVulkan(core::EMemoryProperty properties)
 {
 	vk::MemoryPropertyFlags flags;
 
-	if ((properties & core::MemoryProperty::DeviceLocal) != core::MemoryProperty::None)
+	if ((properties & core::EMemoryProperty::DeviceLocal) != core::EMemoryProperty::None)
 		flags |= vk::MemoryPropertyFlagBits::eDeviceLocal;
 
-	if ((properties & core::MemoryProperty::HostVisible) != core::MemoryProperty::None)
+	if ((properties & core::EMemoryProperty::HostVisible) != core::EMemoryProperty::None)
 		flags |= vk::MemoryPropertyFlagBits::eHostVisible;
 
-	if ((properties & core::MemoryProperty::HostCoherent) != core::MemoryProperty::None)
+	if ((properties & core::EMemoryProperty::HostCoherent) != core::EMemoryProperty::None)
 		flags |= vk::MemoryPropertyFlagBits::eHostCoherent;
 
-	if ((properties & core::MemoryProperty::HostCached) != core::MemoryProperty::None)
+	if ((properties & core::EMemoryProperty::HostCached) != core::EMemoryProperty::None)
 		flags |= vk::MemoryPropertyFlagBits::eHostCached;
 
 	return flags;
@@ -200,19 +200,19 @@ vk::Format core::gpu_detail::ToVulkan(core::TextureFormat format)
 	}
 }
 
-vk::DescriptorType core::gpu_detail::ToVulkan(core::DescriptorType type)
+vk::DescriptorType core::gpu_detail::ToVulkan(core::EDescriptorType type)
 {
 	switch (type)
 	{
-	case core::DescriptorType::UniformBuffer:
+	case core::EDescriptorType::UniformBuffer:
 		return vk::DescriptorType::eUniformBuffer;
-	case core::DescriptorType::CombinedImageSampler:
+	case core::EDescriptorType::CombinedImageSampler:
 		return vk::DescriptorType::eCombinedImageSampler;
-	case core::DescriptorType::StorageBuffer:
+	case core::EDescriptorType::StorageBuffer:
 		return vk::DescriptorType::eStorageBuffer;
-	case core::DescriptorType::StorageImage:
+	case core::EDescriptorType::StorageImage:
 		return vk::DescriptorType::eStorageImage;
-	case core::DescriptorType::AccelerationStructure:
+	case core::EDescriptorType::AccelerationStructure:
 		return vk::DescriptorType::eAccelerationStructureKHR;
 	default:
 		throw std::runtime_error("Unknown descriptor type");

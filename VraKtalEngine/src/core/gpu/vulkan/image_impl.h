@@ -2,6 +2,8 @@
 #define VRAKTAL_CORE_GPU_VULKAN_IMAGE_H
 #pragma once
 
+#include <variant>
+
 #include <core/gpu/image.h>
 #include <vulkan/vulkan_raii.hpp>
 
@@ -9,12 +11,10 @@ namespace core::gpu
 {
 	struct Image::Impl
 	{
-	private:
 		Image& parent;
-		vk::raii::Device& device;
-		vk::raii::PhysicalDevice& physicalDevice;
+		const Device* device;
 
-		vk::raii::Image image;
+		std::variant< vk::raii::Image, vk::Image> image;
 		vk::raii::DeviceMemory memory;
 		vk::raii::ImageView view;
 
@@ -22,28 +22,33 @@ namespace core::gpu
 		uint32_t height;
 		uint32_t mipLevels;
 		uint32_t arrayLayers;
+
 		TextureFormat format;
+
 		SampleCount samples;
+
+		bool ownsImage = true;
+
+		vk::Image GetVkImage() const
+		{
+			if(ownsImage)
+				return *std::get<vk::raii::Image>(image);
+			else
+				return std::get<vk::Image>(image);
+		}
 
 		uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
-	public:
-		explicit Impl(Image& p, vk::raii::Device& dev, vk::raii::PhysicalDevice& physDev,
-			const ImageCreateInfo& info);
+        explicit Impl(Image& p, const core::gpu::Device* device,
+			const SImageCreateInfo& info);
+
+		explicit Impl(Image& p, const core::gpu::Device* device,
+					  vk::Image swapchainImage, uint32_t width, uint32_t height,
+					  TextureFormat format);
+
 		~Impl();
 
-		vk::raii::Image& GetImage();
-		const vk::raii::Image& GetImage() const;
-		vk::raii::ImageView& GetView();
-		const vk::raii::ImageView& GetView() const;
-
-		uint32_t GetWidth() const { return width; }
-		uint32_t GetHeight() const { return height; }
-		uint32_t GetMipLevels() const { return mipLevels; }
-		uint32_t GetArrayLayers() const { return arrayLayers; }
-		TextureFormat GetFormat() const { return format; }
-
-		void CreateView(const ImageViewCreateInfo& info);
+		void CreateView(const SImageViewCreateInfo& info);
 
 		void TransitionLayout(CommandBuffer& commandBuffer, ImageLayout oldLayout,
 			ImageLayout newLayout, uint32_t mipLevels);

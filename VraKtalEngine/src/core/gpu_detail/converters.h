@@ -12,13 +12,13 @@ namespace core::gpu_detail
 	vk::SamplerMipmapMode       ToVulkan(core::SamplerMipmapMode mode);
 	vk::CompareOp               ToVulkan(core::CompareOp op);
 	vk::ImageLayout             ToVulkan(core::ImageLayout layout);
-	vk::BufferUsageFlags        ToVulkan(core::BufferUsage usage);
-	vk::MemoryPropertyFlags     ToVulkan(core::MemoryProperty properties);
+	vk::BufferUsageFlags        ToVulkan(core::EBufferUsage usage);
+	vk::MemoryPropertyFlags     ToVulkan(core::EMemoryProperty properties);
 	vk::ImageUsageFlags         ToVulkan(core::ImageUsage usage);
 	vk::ImageTiling             ToVulkan(core::ImageTiling tiling);
 	vk::SampleCountFlagBits     ToVulkan(core::SampleCount samples);
 	vk::Format                  ToVulkan(core::TextureFormat format);
-	vk::DescriptorType          ToVulkan(core::DescriptorType type);
+	vk::DescriptorType          ToVulkan(core::EDescriptorType type);
 	vk::CommandPoolCreateFlags  ToVulkan(core::CommandPoolCreateFlags flags);
 	vk::VertexInputRate         ToVulkan(core::VertexInputRate rate);
 	vk::DynamicState            ToVulkan(core::DynamicState state);

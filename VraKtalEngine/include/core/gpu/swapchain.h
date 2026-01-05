@@ -9,6 +9,10 @@
 
 namespace core::gpu
 {
+	class Device;
+	class Image;
+	class Swapchain;
+
 	struct SwapchainCreateInfo
 	{
 		void* surface = nullptr;
@@ -17,13 +21,7 @@ namespace core::gpu
 		TextureFormat preferredFormat = TextureFormat::RGBA8_SRGB;
 		PresentMode presentMode = PresentMode::Fifo;
 		uint32_t minImageCount = 2;
-		void* oldSwapchain = nullptr;
-	};
-
-	struct SwapchainImage
-	{
-		void* image = nullptr;
-		void* imageView = nullptr;
+		const Swapchain* oldSwapchain;
 	};
 
 	class Swapchain
@@ -33,7 +31,7 @@ namespace core::gpu
 		std::unique_ptr<Impl> m_impl;
 
 	public:
-		Swapchain(void* device, void* physicalDevice, const SwapchainCreateInfo& info);
+		Swapchain(const core::gpu::Device* device, const SwapchainCreateInfo& info);
 		~Swapchain();
 
 		Swapchain(const Swapchain&) = delete;
@@ -42,20 +40,9 @@ namespace core::gpu
 		Swapchain(Swapchain&&) noexcept;
 		Swapchain& operator=(Swapchain&&) noexcept;
 
-		void* GetHandle() const;
-
-		uint32_t GetImageCount() const;
-		SwapchainImage GetImage(uint32_t index) const;
-		std::vector<SwapchainImage> GetImages() const;
-
-		TextureFormat GetFormat() const;
-		uint32_t GetWidth() const;
-		uint32_t GetHeight() const;
-
 		uint32_t AcquireNextImage(void* semaphore, uint64_t timeout = UINT64_MAX);
 
-		Impl& GetImpl();
-		const Impl& GetImpl() const;
+		Impl& GetImpl() const;
 	};
 }
 

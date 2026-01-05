@@ -1,14 +1,13 @@
 #include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu/vulkan/commandBuffer_impl.h"
+#include "../src/core/gpu/vulkan/device_impl.h"
 #include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <stdexcept>
 
-core::gpu::Image::Impl::Impl(core::gpu::Image& p, vk::raii::Device& dev,
-	vk::raii::PhysicalDevice& physDev, const ImageCreateInfo& info)
-	: parent(p), device(dev), physicalDevice(physDev),
-	image(nullptr), memory(nullptr), view(nullptr),
+core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _device, const SImageCreateInfo& info)
+	: parent(p), device(_device), image(vk::raii::Image(nullptr)), memory(nullptr), view(nullptr),
 	width(info.width), height(info.height),
 	mipLevels(info.mipLevels), arrayLayers(info.arrayLayers),
 	format(info.format), samples(info.samples)
@@ -32,9 +31,9 @@ core::gpu::Image::Impl::Impl(core::gpu::Image& p, vk::raii::Device& dev,
 	imageInfo.sharingMode = vk::SharingMode::eExclusive;
 	imageInfo.initialLayout = vk::ImageLayout::eUndefined;
 
-	image = vk::raii::Image(device, imageInfo);
+	image = vk::raii::Image(device->GetImpl().device, imageInfo);
 
-	vk::MemoryRequirements memRequirements = image.getMemoryRequirements();
+	vk::MemoryRequirements memRequirements = std::get<vk::raii::Image>(image).getMemoryRequirements();
 
 	vk::MemoryAllocateInfo allocInfo{};
 	allocInfo.allocationSize = memRequirements.size;
@@ -43,9 +42,22 @@ core::gpu::Image::Impl::Impl(core::gpu::Image& p, vk::raii::Device& dev,
 		core::gpu_detail::ToVulkan(info.memoryProperties)
 	);
 
-	memory = vk::raii::DeviceMemory(device, allocInfo);
+	memory = vk::raii::DeviceMemory(device->GetImpl().device, allocInfo);
 
-	image.bindMemory(*memory, 0);
+	std::get<vk::raii::Image>(image).bindMemory(*memory, 0);
+}
+
+core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _device,
+							 vk::Image swapchainImage, uint32_t w, uint32_t h, TextureFormat fmt)
+	: parent(p), device(_device),
+	image(swapchainImage),
+	memory(nullptr),
+	view(nullptr),
+	width(w), height(h),
+	mipLevels(1), arrayLayers(1),
+	format(fmt), samples(SampleCount::e1),
+	ownsImage(false)  
+{
 }
 
 core::gpu::Image::Impl::~Impl() = default;
@@ -53,7 +65,7 @@ core::gpu::Image::Impl::~Impl() = default;
 uint32_t core::gpu::Image::Impl::FindMemoryType(uint32_t typeFilter,
 	vk::MemoryPropertyFlags properties)
 {
-	vk::PhysicalDeviceMemoryProperties memProperties = physicalDevice.getMemoryProperties();
+	vk::PhysicalDeviceMemoryProperties memProperties = device->GetImpl().physicalDevice.getMemoryProperties();
 
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
 	{
@@ -67,10 +79,10 @@ uint32_t core::gpu::Image::Impl::FindMemoryType(uint32_t typeFilter,
 	throw std::runtime_error("Failed to find suitable memory type for image");
 }
 
-void core::gpu::Image::Impl::CreateView(const ImageViewCreateInfo& info)
+void core::gpu::Image::Impl::CreateView(const SImageViewCreateInfo& info)
 {
 	vk::ImageViewCreateInfo viewInfo{};
-	viewInfo.image = *image;
+	viewInfo.image = GetVkImage();
 	viewInfo.viewType = vk::ImageViewType::e2D;
 	viewInfo.format = core::gpu_detail::ToVulkan(info.format);
 	viewInfo.subresourceRange.aspectMask = info.isDepth ?
@@ -80,7 +92,7 @@ void core::gpu::Image::Impl::CreateView(const ImageViewCreateInfo& info)
 	viewInfo.subresourceRange.baseArrayLayer = info.baseArrayLayer;
 	viewInfo.subresourceRange.layerCount = info.layerCount;
 
-	view = vk::raii::ImageView(device, viewInfo);
+	view = vk::raii::ImageView(device->GetImpl().device, viewInfo);
 }
 
 void core::gpu::Image::Impl::TransitionLayout(CommandBuffer& commandBuffer,
@@ -91,7 +103,7 @@ void core::gpu::Image::Impl::TransitionLayout(CommandBuffer& commandBuffer,
 	barrier.newLayout = core::gpu_detail::ToVulkan(newLayout);
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = *image;
+	barrier.image = GetVkImage();
 	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 	barrier.subresourceRange.baseMipLevel = 0;
 	barrier.subresourceRange.levelCount = mipLevels;
@@ -139,15 +151,13 @@ void core::gpu::Image::Impl::CopyFromBuffer(CommandBuffer& commandBuffer,
 	region.imageExtent = vk::Extent3D{ width, height, 1 };
 
 	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
-	auto& srcBuffer = buffer.GetImpl().GetBuffer();
-
-	cmdBuf.copyBufferToImage(*srcBuffer, *image, vk::ImageLayout::eTransferDstOptimal, region);
+	cmdBuf.copyBufferToImage(*buffer.GetImpl().buffer, GetVkImage(), vk::ImageLayout::eTransferDstOptimal, region);
 }
 
 void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
 	uint32_t width, uint32_t height, uint32_t mipLevels)
 {
-	vk::FormatProperties formatProperties = physicalDevice.getFormatProperties(
+	vk::FormatProperties formatProperties = device->GetImpl().physicalDevice.getFormatProperties(
 		core::gpu_detail::ToVulkan(format));
 
 	if (!(formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear))
@@ -158,7 +168,7 @@ void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
 	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
 
 	vk::ImageMemoryBarrier barrier{};
-	barrier.image = *image;
+	barrier.image = GetVkImage();
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -202,8 +212,8 @@ void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
 		blit.dstSubresource.layerCount = 1;
 
 		cmdBuf.blitImage(
-			*image, vk::ImageLayout::eTransferSrcOptimal,
-			*image, vk::ImageLayout::eTransferDstOptimal,
+			GetVkImage(), vk::ImageLayout::eTransferSrcOptimal,
+			GetVkImage(), vk::ImageLayout::eTransferDstOptimal,
 			blit, vk::Filter::eLinear
 		);
 
@@ -235,73 +245,14 @@ void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
 	);
 }
 
-vk::raii::Image& core::gpu::Image::Impl::GetImage()
+core::gpu::Image::Image(const core::gpu::Device* device, const SImageCreateInfo& info)
 {
-	return image;
-}
-
-const vk::raii::Image& core::gpu::Image::Impl::GetImage() const
-{
-	return image;
-}
-
-vk::raii::ImageView& core::gpu::Image::Impl::GetView()
-{
-	return view;
-}
-
-const vk::raii::ImageView& core::gpu::Image::Impl::GetView() const
-{
-	return view;
-}
-
-core::gpu::Image::Image(void* device, void* physicalDevice, const ImageCreateInfo& info)
-{
-	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
-	auto& vkPhysicalDevice = *static_cast<vk::raii::PhysicalDevice*>(physicalDevice);
-
-	m_impl = std::make_unique<Impl>(*this, vkDevice, vkPhysicalDevice, info);
+	m_impl = std::make_unique<Impl>(*this, device, info);
 }
 
 core::gpu::Image::~Image() = default;
 
-void* core::gpu::Image::GetHandle() const
-{
-	VkImage nativeHandle = *m_impl->GetImage();
-	return reinterpret_cast<void*>(nativeHandle);
-}
-
-void* core::gpu::Image::GetViewHandle() const
-{
-	return reinterpret_cast<void*>(static_cast<VkImageView>(*m_impl->GetView()));
-}
-
-uint32_t core::gpu::Image::GetWidth() const
-{
-	return m_impl->GetWidth();
-}
-
-uint32_t core::gpu::Image::GetHeight() const
-{
-	return m_impl->GetHeight();
-}
-
-uint32_t core::gpu::Image::GetMipLevels() const
-{
-	return m_impl->GetMipLevels();
-}
-
-uint32_t core::gpu::Image::GetArrayLayers() const
-{
-	return m_impl->GetArrayLayers();
-}
-
-core::TextureFormat core::gpu::Image::GetFormat() const
-{
-	return m_impl->GetFormat();
-}
-
-void core::gpu::Image::CreateView(const ImageViewCreateInfo& info)
+void core::gpu::Image::CreateView(const SImageViewCreateInfo& info)
 {
 	m_impl->CreateView(info);
 }
@@ -324,7 +275,14 @@ void core::gpu::Image::GenerateMipmaps(CommandBuffer& commandBuffer,
 	m_impl->GenerateMipmaps(commandBuffer, width, height, mipLevels);
 }
 
-core::gpu::Image::Impl& core::gpu::Image::GetImpl()
+core::gpu::Image::Impl& core::gpu::Image::GetImpl() const
 {
 	return *m_impl;
+}
+
+core::gpu::Image::Image(const core::gpu::Device* device, void* swapchainImage,
+						uint32_t width, uint32_t height, TextureFormat format)
+{
+	vk::Image vkImage = static_cast<vk::Image>(reinterpret_cast<VkImage>(swapchainImage));
+	m_impl = std::make_unique<Impl>(*this, device, vkImage, width, height, format);
 }

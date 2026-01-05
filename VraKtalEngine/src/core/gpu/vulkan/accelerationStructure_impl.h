@@ -4,6 +4,7 @@
 
 #include <core/gpu/accelerationStructure.h>
 #include <vulkan/vulkan_raii.hpp>
+
 #include <memory>
 #include <optional>
 
@@ -11,39 +12,32 @@ namespace core::gpu
 {
 	struct AccelerationStructure::Impl
 	{
-	private:
 		AccelerationStructure& parent;
-		vk::raii::Device& device;
-		vk::raii::PhysicalDevice& physicalDevice;
+		const core::gpu::Device* device;
 
 		std::optional<vk::raii::AccelerationStructureKHR> accelerationStructure;
 		std::unique_ptr<Buffer> buffer;
 		std::unique_ptr<Buffer> scratchBuffer;
 		std::unique_ptr<Buffer> instanceBuffer;
 
-		AccelerationStructureType type;
-		std::vector<AccelerationStructureGeometry> geometries;
-		std::vector<AccelerationStructureInstance> instances;
+		EAccelerationStructureType type;
+		std::vector<SAccelerationStructureGeometry> geometries;
+		std::vector<SAccelerationStructureInstance> instances;
 
 		vk::BuildAccelerationStructureFlagsKHR buildFlags;
 		vk::AccelerationStructureBuildSizesInfoKHR buildSizes;
 
-	public:
-		explicit Impl(AccelerationStructure& p, vk::raii::Device& dev,
-			vk::raii::PhysicalDevice& physDev,
-			const AccelerationStructureCreateInfo& info);
+		explicit Impl(AccelerationStructure& p, const core::gpu::Device* device,
+			const SAccelerationStructureCreateInfo& info);
 
 		~Impl();
 
-		vk::raii::AccelerationStructureKHR& GetAccelerationStructure();
 		uint64_t GetDeviceAddress() const;
-		Buffer* GetBuffer() const;
 
 		void Build(vk::raii::CommandBuffer& commandBuffer);
 
-	private:
-		void CreateBottomLevel(const AccelerationStructureCreateInfo& info);
-		void CreateTopLevel(const AccelerationStructureCreateInfo& info);
+		void CreateBottomLevel(const SAccelerationStructureCreateInfo& info);
+		void CreateTopLevel(const SAccelerationStructureCreateInfo& info);
 		void CreateAccelerationStructureBuffer(vk::DeviceSize size);
 		void CreateScratchBuffer(vk::DeviceSize size);
 	};

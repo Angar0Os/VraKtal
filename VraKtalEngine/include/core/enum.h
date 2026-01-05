@@ -103,7 +103,7 @@ namespace core
 		BC7_RGBA_UNorm,
 	};
 
-	enum class BufferUsage : uint32_t
+	enum class EBufferUsage : uint32_t
 	{
 		None = 0,
 		TransferSrc = 1 << 0,
@@ -119,17 +119,17 @@ namespace core
 		AccelerationStructureBuildInput = 1 << 19
 	};
 
-	inline BufferUsage operator|(BufferUsage a, BufferUsage b)
+	inline EBufferUsage operator|(EBufferUsage a, EBufferUsage b)
 	{
-		return static_cast<BufferUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+		return static_cast<EBufferUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
 	}
 
-	inline BufferUsage operator&(BufferUsage a, BufferUsage b)
+	inline EBufferUsage operator&(EBufferUsage a, EBufferUsage b)
 	{
-		return static_cast<BufferUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+		return static_cast<EBufferUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
 	}
 
-	enum class MemoryProperty : uint32_t
+	enum class EMemoryProperty : uint32_t
 	{
 		None = 0,
 		DeviceLocal = 1 << 0,
@@ -138,17 +138,17 @@ namespace core
 		HostCached = 1 << 3
 	};
 
-	inline MemoryProperty operator|(MemoryProperty a, MemoryProperty b)
+	inline EMemoryProperty operator|(EMemoryProperty a, EMemoryProperty b)
 	{
-		return static_cast<MemoryProperty>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+		return static_cast<EMemoryProperty>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
 	}
 
-	inline MemoryProperty operator&(MemoryProperty a, MemoryProperty b)
+	inline EMemoryProperty operator&(EMemoryProperty a, EMemoryProperty b)
 	{
-		return static_cast<MemoryProperty>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+		return static_cast<EMemoryProperty>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
 	}
 
-	enum class DescriptorType
+	enum class EDescriptorType
 	{
 		UniformBuffer,
 		CombinedImageSampler,
@@ -236,7 +236,7 @@ namespace core
 		return static_cast<CommandPoolCreateFlags>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
 	}
 
-	enum class CommandBufferLevel
+	enum class ECommandBufferLevel
 	{
 		Primary,
 		Secondary

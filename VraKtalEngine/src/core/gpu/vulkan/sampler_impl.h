@@ -9,16 +9,12 @@ namespace core::gpu
 {
 	struct Sampler::Impl
 	{
-	private:
 		Sampler& parent;
-		vk::raii::Device& device;
+		const core::gpu::Device* device;
 		vk::raii::Sampler sampler;
 
-	public:
-		explicit Impl(Sampler& p, vk::raii::Device& dev, const SamplerCreateInfo& info);
+		explicit Impl(Sampler& p, const core::gpu::Device* device, const SamplerCreateInfo& info);
 		~Impl();
-
-		vk::raii::Sampler& GetSampler();
 	};
 }
 

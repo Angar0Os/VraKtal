@@ -1,30 +1,33 @@
+#include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
+#include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu/vulkan/commandBuffer_impl.h"
-
-#include <core/gpu/accelerationStructure.h>
+#include "../src/core/gpu/vulkan/commandPool_impl.h"
+#include "../src/core/gpu/vulkan/descriptorSet_impl.h"
+#include "../src/core/gpu/vulkan/device_impl.h"
+#include "../src/core/gpu/vulkan/image_impl.h"
+#include "../src/core/gpu/vulkan/pipeline_impl.h"
+#include "../src/core/gpu/vulkan/swapchain_impl.h"
 
 #include <stdexcept>
 
-core::gpu::CommandBuffer::Impl::Impl(core::gpu::CommandBuffer& p, vk::raii::Device& dev,
-	vk::raii::Queue& q, vk::raii::CommandPool& pool, const CommandBufferCreateInfo& info)
-	: parent(p), device(dev), queue(q), commandPool(pool),
-	commandBuffers(nullptr),
-	isSingleTime(info.singleTime), currentIndex(0)
+core::gpu::CommandBuffer::Impl::Impl(core::gpu::CommandBuffer& p, const core::gpu::Device* device, const SCommandBufferCreateInfo& info)
+	: parent(p), commandBuffers(nullptr), isSingleTime(info.singleTime), currentIndex(0)
 {
 	if (info.count == 0)
 	{
 		throw std::runtime_error("CommandBuffer count cannot be zero");
 	}
 
-	vk::CommandBufferLevel level = (info.level == CommandBufferLevel::Primary)
+	vk::CommandBufferLevel level = (info.level == ECommandBufferLevel::Primary)
 		? vk::CommandBufferLevel::ePrimary
 		: vk::CommandBufferLevel::eSecondary;
 
 	vk::CommandBufferAllocateInfo allocInfo{};
-	allocInfo.commandPool = *commandPool;
+	allocInfo.commandPool = device->GetImpl().commandPool->GetImpl().pool;
 	allocInfo.level = level;
 	allocInfo.commandBufferCount = info.count;
 
-	commandBuffers = vk::raii::CommandBuffers(device, allocInfo);
+	commandBuffers = vk::raii::CommandBuffers(device->GetImpl().device, allocInfo);
 }
 
 core::gpu::CommandBuffer::Impl::~Impl()
@@ -49,21 +52,9 @@ const vk::raii::CommandBuffer& core::gpu::CommandBuffer::Impl::GetCommandBuffer(
 	return commandBuffers[index];
 }
 
-void core::gpu::CommandBuffer::Impl::BuildAccelerationStructure(void* accelerationStructure)
+void core::gpu::CommandBuffer::Impl::BuildAccelerationStructure(const core::gpu::AccelerationStructure* accelerationStructure)
 {
-	if (!accelerationStructure)
-	{
-		throw std::runtime_error("Invalid acceleration structure handle (nullptr)");
-	}
-
-	auto* accelStruct = static_cast<AccelerationStructure*>(accelerationStructure);
-
-	try {
-		accelStruct->Build(&GetCommandBuffer(currentIndex));
-	}
-	catch (const std::exception& e) {
-		throw std::runtime_error(std::string("Failed to build acceleration structure: ") + e.what());
-	}
+	accelerationStructure->GetImpl().Build(GetCommandBuffer(currentIndex));
 }
 
 void core::gpu::CommandBuffer::Impl::AccelerationStructureBarrier()
@@ -82,23 +73,16 @@ void core::gpu::CommandBuffer::Impl::AccelerationStructureBarrier()
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::BindRayTracingPipeline(void* pipeline)
+void core::gpu::CommandBuffer::Impl::BindRayTracingPipeline(const core::gpu::Pipeline* pipeline)
 {
-	VkPipeline vkPipeline = reinterpret_cast<VkPipeline>(pipeline);
-
-	if (!vkPipeline)
-	{
-		throw std::runtime_error("Invalid ray tracing pipeline handle");
-	}
-
 	GetCommandBuffer(currentIndex).bindPipeline(
 		vk::PipelineBindPoint::eRayTracingKHR,
-		vk::Pipeline(vkPipeline)
+		vk::Pipeline(pipeline->GetImpl().pipeline)
 	);
 }
 
 void core::gpu::CommandBuffer::Impl::TraceRays(
-	void* pipeline,
+	const core::gpu::Device* device,
 	void* raygenSBT, uint32_t raygenOffset, uint32_t raygenStride,
 	void* missSBT, uint32_t missOffset, uint32_t missStride, uint32_t missCount,
 	void* hitSBT, uint32_t hitOffset, uint32_t hitStride, uint32_t hitCount,
@@ -108,11 +92,11 @@ void core::gpu::CommandBuffer::Impl::TraceRays(
 	vk::StridedDeviceAddressRegionKHR raygenRegion{};
 	if (raygenSBT)
 	{
-		vk::Buffer raygenBuffer = reinterpret_cast<VkBuffer>(raygenSBT);
+		vk::Buffer raygenBuffer = static_cast<VkBuffer>(raygenSBT);
 		vk::BufferDeviceAddressInfo addressInfo{};
 		addressInfo.buffer = raygenBuffer;
 
-		raygenRegion.deviceAddress = device.getBufferAddress(addressInfo) + raygenOffset;
+		raygenRegion.deviceAddress = device->GetImpl().device.getBufferAddress(addressInfo) + raygenOffset;
 		raygenRegion.stride = raygenStride;
 		raygenRegion.size = raygenStride;
 	}
@@ -120,11 +104,11 @@ void core::gpu::CommandBuffer::Impl::TraceRays(
 	vk::StridedDeviceAddressRegionKHR missRegion{};
 	if (missSBT && missCount > 0)
 	{
-		vk::Buffer missBuffer = reinterpret_cast<VkBuffer>(missSBT);
+		vk::Buffer missBuffer = static_cast<VkBuffer>(missSBT);
 		vk::BufferDeviceAddressInfo addressInfo{};
 		addressInfo.buffer = missBuffer;
 
-		missRegion.deviceAddress = device.getBufferAddress(addressInfo) + missOffset;
+		missRegion.deviceAddress = device->GetImpl().device.getBufferAddress(addressInfo) + missOffset;
 		missRegion.stride = missStride;
 		missRegion.size = missStride * missCount;
 	}
@@ -132,11 +116,11 @@ void core::gpu::CommandBuffer::Impl::TraceRays(
 	vk::StridedDeviceAddressRegionKHR hitRegion{};
 	if (hitSBT && hitCount > 0)
 	{
-		vk::Buffer hitBuffer = reinterpret_cast<VkBuffer>(hitSBT);
+		vk::Buffer hitBuffer = static_cast<VkBuffer>(hitSBT);
 		vk::BufferDeviceAddressInfo addressInfo{};
 		addressInfo.buffer = hitBuffer;
 
-		hitRegion.deviceAddress = device.getBufferAddress(addressInfo) + hitOffset;
+		hitRegion.deviceAddress = device->GetImpl().device.getBufferAddress(addressInfo) + hitOffset;
 		hitRegion.stride = hitStride;
 		hitRegion.size = hitStride * hitCount;
 	}
@@ -144,11 +128,11 @@ void core::gpu::CommandBuffer::Impl::TraceRays(
 	vk::StridedDeviceAddressRegionKHR callableRegion{};
 	if (callableSBT && callableCount > 0)
 	{
-		vk::Buffer callableBuffer = reinterpret_cast<VkBuffer>(callableSBT);
+		vk::Buffer callableBuffer = static_cast<VkBuffer>(callableSBT);
 		vk::BufferDeviceAddressInfo addressInfo{};
 		addressInfo.buffer = callableBuffer;
 
-		callableRegion.deviceAddress = device.getBufferAddress(addressInfo) + callableOffset;
+		callableRegion.deviceAddress = device->GetImpl().device.getBufferAddress(addressInfo) + callableOffset;
 		callableRegion.stride = callableStride;
 		callableRegion.size = callableStride * callableCount;
 	}
@@ -203,7 +187,7 @@ void core::gpu::CommandBuffer::Impl::End(uint32_t index)
 	commandBuffers[index].end();
 }
 
-void core::gpu::CommandBuffer::Impl::Submit(void* waitSemaphore, void* signalSemaphore, void* fence)
+void core::gpu::CommandBuffer::Impl::Submit(const core::gpu::Device* device, void* waitSemaphore, void* signalSemaphore, void* fence)
 {
 	if (currentIndex >= commandBuffers.size())
 	{
@@ -222,7 +206,7 @@ void core::gpu::CommandBuffer::Impl::Submit(void* waitSemaphore, void* signalSem
 
 	if (waitSemaphore)
 	{
-		vkWaitSemaphore = reinterpret_cast<VkSemaphore>(waitSemaphore);
+		vkWaitSemaphore = static_cast<VkSemaphore>(waitSemaphore);
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = &vkWaitSemaphore;
 		submitInfo.pWaitDstStageMask = &waitStage;
@@ -230,29 +214,22 @@ void core::gpu::CommandBuffer::Impl::Submit(void* waitSemaphore, void* signalSem
 
 	if (signalSemaphore)
 	{
-		vkSignalSemaphore = reinterpret_cast<VkSemaphore>(signalSemaphore);
+		vkSignalSemaphore = static_cast<VkSemaphore>(signalSemaphore);
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = &vkSignalSemaphore;
 	}
 
-	vk::Fence vkFence = fence ? reinterpret_cast<VkFence>(fence) : nullptr;
+	vk::Fence vkFence = fence ? static_cast<VkFence>(fence) : nullptr;
 
-	queue.submit(submitInfo, vkFence);
+	device->GetImpl().graphicsQueue.submit(submitInfo, vkFence);
 }
 
-void core::gpu::CommandBuffer::Impl::PushConstants(void* pipelineLayout,
+void core::gpu::CommandBuffer::Impl::PushConstants(const core::gpu::Pipeline* pipeline,
 	uint32_t stageFlags,
 	uint32_t offset,
 	uint32_t size,
 	const void* pValues)
 {
-	if (!pipelineLayout || !pValues)
-	{
-		throw std::runtime_error("Invalid push constants parameters!");
-	}
-
-	vk::PipelineLayout vkLayout = reinterpret_cast<VkPipelineLayout>(pipelineLayout);
-
 	vk::ShaderStageFlags vkStageFlags;
 
 	if (stageFlags & static_cast<uint32_t>(ShaderStageFlags::Vertex))
@@ -265,62 +242,62 @@ void core::gpu::CommandBuffer::Impl::PushConstants(void* pipelineLayout,
 		vkStageFlags |= vk::ShaderStageFlagBits::eCompute;
 
 	GetCommandBuffer(currentIndex).pushConstants<uint8_t>(
-		vkLayout,
+		pipeline->GetImpl().pipelineLayout,
 		vkStageFlags,
 		offset,
 		vk::ArrayProxy<const uint8_t>(size, static_cast<const uint8_t*>(pValues))
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::SubmitAndWait()
+void core::gpu::CommandBuffer::Impl::SubmitAndWait(const core::gpu::Device* device)
 {
-	Submit();
-	queue.waitIdle();
+	Submit(device);
+	device->GetImpl().graphicsQueue.waitIdle();
 }
 
-void core::gpu::CommandBuffer::Impl::BindVertexBuffer(void* buffer, size_t offset)
+void core::gpu::CommandBuffer::Impl::BindVertexBuffer(const core::gpu::Buffer* buffer, size_t offset)
 {
-	vk::Buffer vkBuffer = reinterpret_cast<VkBuffer>(buffer);
 	vk::DeviceSize vkOffset = static_cast<vk::DeviceSize>(offset);
-
-	GetCommandBuffer(currentIndex).bindVertexBuffers(0, vkBuffer, vkOffset);
+	GetCommandBuffer(currentIndex).bindVertexBuffers(0, *buffer->GetImpl().buffer, vkOffset);
 }
 
-void core::gpu::CommandBuffer::Impl::BindIndexBuffer(void* buffer, size_t offset)
+void core::gpu::CommandBuffer::Impl::BindIndexBuffer(const core::gpu::Buffer* buffer, size_t offset)
 {
-	vk::Buffer vkBuffer = reinterpret_cast<VkBuffer>(buffer);
-
 	GetCommandBuffer(currentIndex).bindIndexBuffer(
-		vkBuffer,
+		buffer->GetImpl().buffer,
 		static_cast<vk::DeviceSize>(offset),
 		vk::IndexType::eUint32
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::BindDescriptorSets(void* pipelineLayout,
-	void* descriptorSet,
+void core::gpu::CommandBuffer::Impl::BindDescriptorSets(
+	const core::gpu::Device* device,
+	uint32_t frameIndex,
 	uint32_t firstSet)
 {
-	vk::PipelineLayout vkLayout = reinterpret_cast<VkPipelineLayout>(pipelineLayout);
-	vk::DescriptorSet vkDescSet = reinterpret_cast<VkDescriptorSet>(descriptorSet);
-
 	GetCommandBuffer(currentIndex).bindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,
-		vkLayout,
+		device->GetImpl().graphicsPipeline->GetImpl().pipelineLayout,
 		firstSet,
-		vkDescSet,
+		**device->GetImpl().descriptorSets[frameIndex],
 		nullptr
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
+void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth)
 {
-	vk::Viewport viewport(x, y, width, height, minDepth, maxDepth);
+	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+
+	vk::Viewport viewport(x, y, static_cast<float>(width), static_cast<float>(height), minDepth, maxDepth);
 	GetCommandBuffer(currentIndex).setViewport(0, viewport);
 }
 
-void core::gpu::CommandBuffer::Impl::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
+void core::gpu::CommandBuffer::Impl::SetScissor(int32_t x, int32_t y, const core::gpu::Device* device)
 {
+	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+
 	vk::Rect2D scissor({ x, y }, { width, height });
 	GetCommandBuffer(currentIndex).setScissor(0, scissor);
 }
@@ -332,27 +309,27 @@ void core::gpu::CommandBuffer::Impl::DrawIndexed(uint32_t indexCount, uint32_t i
 		indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void core::gpu::CommandBuffer::Impl::BeginRendering(uint32_t width,
-	uint32_t height,
-	void* colorImageView,
-	void* depthImageView)
+void core::gpu::CommandBuffer::Impl::BeginRendering(
+	const core::gpu::Device* device,
+	const core::gpu::Image* colorImage,
+	const core::gpu::Image* depthImage)
 {
-	vk::ImageView vkColorView = reinterpret_cast<VkImageView>(colorImageView);
-	vk::ImageView vkDepthView = reinterpret_cast<VkImageView>(depthImageView);
-
 	vk::RenderingAttachmentInfo colorAttachment{};
-	colorAttachment.imageView = vkColorView;
+	colorAttachment.imageView = colorImage->GetImpl().view;
 	colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
 	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
 	colorAttachment.clearValue = vk::ClearColorValue(0.1f, 0.1f, 0.15f, 1.f);
 
 	vk::RenderingAttachmentInfo depthAttachment{};
-	depthAttachment.imageView = vkDepthView;
+	depthAttachment.imageView = depthImage->GetImpl().view;
 	depthAttachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
 	depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
 	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
 	depthAttachment.clearValue = vk::ClearDepthStencilValue(1.f, 0);
+
+	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
 
 	vk::RenderingInfo info{};
 	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });
@@ -369,28 +346,17 @@ void core::gpu::CommandBuffer::Impl::EndRendering()
 	GetCommandBuffer(currentIndex).endRendering();
 }
 
-void core::gpu::CommandBuffer::Impl::BindPipeline(void* pipeline)
+void core::gpu::CommandBuffer::Impl::BindPipeline(const core::gpu::Pipeline* pipeline)
 {
-	VkPipeline vkPipeline = reinterpret_cast<VkPipeline>(pipeline);
-
-	if (!vkPipeline)
-	{
-		throw std::runtime_error("Invalid pipeline handle");
-	}
-
 	GetCommandBuffer(currentIndex).bindPipeline(
 		vk::PipelineBindPoint::eGraphics,
-		vk::Pipeline(vkPipeline)
+		vk::Pipeline(pipeline->GetImpl().pipeline)
 	);
 }
 
-core::gpu::CommandBuffer::CommandBuffer(void* device, void* queue, const CommandBufferCreateInfo& info)
+core::gpu::CommandBuffer::CommandBuffer(const core::gpu::Device* device, const SCommandBufferCreateInfo& info)
 {
-	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
-	auto& vkQueue = *static_cast<vk::raii::Queue*>(queue);
-	auto& vkCommandPool = *static_cast<vk::raii::CommandPool*>(info.commandPool);
-
-	m_impl = std::make_unique<Impl>(*this, vkDevice, vkQueue, vkCommandPool, info);
+	m_impl = std::make_unique<Impl>(*this, device, info);
 }
 
 core::gpu::CommandBuffer::~CommandBuffer() = default;
@@ -398,17 +364,8 @@ core::gpu::CommandBuffer::~CommandBuffer() = default;
 core::gpu::CommandBuffer::CommandBuffer(CommandBuffer&&) noexcept = default;
 core::gpu::CommandBuffer& core::gpu::CommandBuffer::operator=(CommandBuffer&&) noexcept = default;
 
-void* core::gpu::CommandBuffer::GetHandle(uint32_t index) const
-{
-	return static_cast<void*>(
-		const_cast<VkCommandBuffer*>(
-			reinterpret_cast<const VkCommandBuffer*>(&(*m_impl->GetCommandBuffer(index)))
-			)
-		);
-}
-
 void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
-	void* image,
+	const core::gpu::Image* image,
 	vk::ImageLayout oldLayout,
 	vk::ImageLayout newLayout,
 	vk::AccessFlags srcAccess,
@@ -417,8 +374,6 @@ void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
 	vk::PipelineStageFlags dstStage,
 	bool isDepth)
 {
-	vk::Image vkImage = reinterpret_cast<VkImage>(image);
-
 	vk::ImageMemoryBarrier barrier{};
 	barrier.srcAccessMask = srcAccess;
 	barrier.dstAccessMask = dstAccess;
@@ -426,7 +381,7 @@ void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
 	barrier.newLayout = newLayout;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = vkImage;
+	barrier.image = image->GetImpl().GetVkImage();
 
 	vk::ImageSubresourceRange subRange{};
 	subRange.aspectMask = isDepth ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
@@ -442,11 +397,8 @@ void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::ResolveImage(void* srcImage, void* dstImage, uint32_t width, uint32_t height)
+void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, const core::gpu::Device* device)
 {
-	vk::Image vkSrcImage = reinterpret_cast<VkImage>(srcImage);
-	vk::Image vkDstImage = reinterpret_cast<VkImage>(dstImage);
-
 	vk::ImageResolve resolveRegion{};
 	vk::ImageSubresourceLayers subRange{};
 	subRange.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -467,27 +419,27 @@ void core::gpu::CommandBuffer::Impl::ResolveImage(void* srcImage, void* dstImage
 	vk::Offset3D dstOffset = { 0, 0, 0 };
 	resolveRegion.dstOffset = dstOffset;
 
+	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
+	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+
 	vk::Extent3D ext3D = { width, height, 1 };
 	resolveRegion.extent = ext3D;
 
 	GetCommandBuffer(currentIndex).resolveImage(
-		vkSrcImage, vk::ImageLayout::eTransferSrcOptimal,
-		vkDstImage, vk::ImageLayout::eTransferDstOptimal,
+		srcImage->GetImpl().GetVkImage(), vk::ImageLayout::eTransferSrcOptimal,
+		dstImage->GetImpl().GetVkImage(), vk::ImageLayout::eTransferDstOptimal,
 		resolveRegion
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::CopyBuffer(void* srcBuffer, void* dstBuffer, size_t size)
+void core::gpu::CommandBuffer::Impl::CopyBuffer(const core::gpu::Buffer* srcBuffer, const core::gpu::Buffer* dstBuffer, size_t size)
 {
-	vk::Buffer vkSrcBuffer = reinterpret_cast<VkBuffer>(srcBuffer);
-	vk::Buffer vkDstBuffer = reinterpret_cast<VkBuffer>(dstBuffer);
-
 	vk::BufferCopy copyRegion;
 	copyRegion.srcOffset = 0;
 	copyRegion.dstOffset = 0;
 	copyRegion.size = size;
 
-	GetCommandBuffer(currentIndex).copyBuffer(vkSrcBuffer, vkDstBuffer, copyRegion);
+	GetCommandBuffer(currentIndex).copyBuffer(srcBuffer->GetImpl().buffer, dstBuffer->GetImpl().buffer, copyRegion);
 }
 
 uint32_t core::gpu::CommandBuffer::GetCount() const
@@ -505,44 +457,44 @@ void core::gpu::CommandBuffer::End(uint32_t index)
 	m_impl->End(index);
 }
 
-void core::gpu::CommandBuffer::Submit(void* waitSemaphore, void* signalSemaphore, void* fence)
+void core::gpu::CommandBuffer::Submit(const core::gpu::Device* device, void* waitSemaphore, void* signalSemaphore, void* fence)
 {
-	m_impl->Submit(waitSemaphore, signalSemaphore, fence);
+	m_impl->Submit(device, waitSemaphore, signalSemaphore, fence);
 }
 
-void core::gpu::CommandBuffer::SubmitAndWait()
+void core::gpu::CommandBuffer::SubmitAndWait(const core::gpu::Device* device)
 {
-	m_impl->SubmitAndWait();
+	m_impl->SubmitAndWait(device);
 }
 
-void core::gpu::CommandBuffer::BindPipeline(void* pipeline)
+void core::gpu::CommandBuffer::BindPipeline(const core::gpu::Pipeline* pipeline)
 {
 	m_impl->BindPipeline(pipeline);
 }
 
-void core::gpu::CommandBuffer::BindVertexBuffer(void* buffer, size_t offset)
+void core::gpu::CommandBuffer::BindVertexBuffer(const core::gpu::Buffer* buffer, size_t offset)
 {
 	m_impl->BindVertexBuffer(buffer, offset);
 }
 
-void core::gpu::CommandBuffer::BindIndexBuffer(void* buffer, size_t offset)
+void core::gpu::CommandBuffer::BindIndexBuffer(const core::gpu::Buffer* buffer, size_t offset)
 {
 	m_impl->BindIndexBuffer(buffer, offset);
 }
 
-void core::gpu::CommandBuffer::BindDescriptorSets(void* pipelineLayout, void* descriptorSet, uint32_t firstSet)
+void core::gpu::CommandBuffer::BindDescriptorSets(const core::gpu::Device* device, uint32_t frameIndex, uint32_t firstSet)
 {
-	m_impl->BindDescriptorSets(pipelineLayout, descriptorSet, firstSet);
+	m_impl->BindDescriptorSets(device, frameIndex, firstSet);
 }
 
-void core::gpu::CommandBuffer::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
+void core::gpu::CommandBuffer::SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth)
 {
-	m_impl->SetViewport(x, y, width, height, minDepth, maxDepth);
+	m_impl->SetViewport(x, y, device, minDepth, maxDepth);
 }
 
-void core::gpu::CommandBuffer::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
+void core::gpu::CommandBuffer::SetScissor(int32_t x, int32_t y, const core::gpu::Device* device)
 {
-	m_impl->SetScissor(x, y, width, height);
+	m_impl->SetScissor(x, y, device);
 }
 
 void core::gpu::CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
@@ -550,9 +502,9 @@ void core::gpu::CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanc
 	m_impl->DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void core::gpu::CommandBuffer::BeginRendering(uint32_t width, uint32_t height, void* colorImageView, void* depthImageView)
+void core::gpu::CommandBuffer::BeginRendering(const core::gpu::Device* device, const core::gpu::Image* colorImageView, const core::gpu::Image* depthImageView)
 {
-	m_impl->BeginRendering(width, height, colorImageView, depthImageView);
+	m_impl->BeginRendering(device, colorImageView, depthImageView);
 }
 
 void core::gpu::CommandBuffer::EndRendering()
@@ -560,17 +512,12 @@ void core::gpu::CommandBuffer::EndRendering()
 	m_impl->EndRendering();
 }
 
-core::gpu::CommandBuffer::Impl& core::gpu::CommandBuffer::GetImpl()
+core::gpu::CommandBuffer::Impl& core::gpu::CommandBuffer::GetImpl() const
 {
 	return *m_impl;
 }
 
-const core::gpu::CommandBuffer::Impl& core::gpu::CommandBuffer::GetImpl() const
-{
-	return *m_impl;
-}
-
-void core::gpu::CommandBuffer::TransitionImageLayout(void* image, ImageLayout oldLayout, ImageLayout newLayout, bool isDepth)
+void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* image, ImageLayout oldLayout, ImageLayout newLayout, bool isDepth)
 {
 	vk::AccessFlags srcAccess, dstAccess;
 	vk::PipelineStageFlags srcStage, dstStage;
@@ -647,26 +594,26 @@ void core::gpu::CommandBuffer::TransitionImageLayout(void* image, ImageLayout ol
 	m_impl->TransitionImageLayout(image, vkOldLayout, vkNewLayout, srcAccess, dstAccess, srcStage, dstStage, isDepth);
 }
 
-void core::gpu::CommandBuffer::ResolveImage(void* srcImage, void* dstImage, uint32_t width, uint32_t height)
+void core::gpu::CommandBuffer::ResolveImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, const core::gpu::Device* device)
 {
-	m_impl->ResolveImage(srcImage, dstImage, width, height);
+	m_impl->ResolveImage(srcImage, dstImage, device);
 }
 
-void core::gpu::CommandBuffer::CopyBuffer(void* srcBuffer, void* dstBuffer, size_t size)
+void core::gpu::CommandBuffer::CopyBuffer(const core::gpu::Buffer* srcBuffer, const core::gpu::Buffer* dstBuffer, size_t size)
 {
 	m_impl->CopyBuffer(srcBuffer, dstBuffer, size);
 }
 
-void core::gpu::CommandBuffer::PushConstants(void* pipelineLayout,
+void core::gpu::CommandBuffer::PushConstants(const core::gpu::Pipeline* pipeline,
 	uint32_t stageFlags,
 	uint32_t offset,
 	uint32_t size,
 	const void* pValues)
 {
-	m_impl->PushConstants(pipelineLayout, stageFlags, offset, size, pValues);
+	m_impl->PushConstants(pipeline, stageFlags, offset, size, pValues);
 }
 
-void core::gpu::CommandBuffer::BuildAccelerationStructure(void* accelerationStructure)
+void core::gpu::CommandBuffer::BuildAccelerationStructure(const core::gpu::AccelerationStructure* accelerationStructure)
 {
 	m_impl->BuildAccelerationStructure(accelerationStructure);
 }
@@ -676,13 +623,13 @@ void core::gpu::CommandBuffer::AccelerationStructureBarrier()
 	m_impl->AccelerationStructureBarrier();
 }
 
-void core::gpu::CommandBuffer::BindRayTracingPipeline(void* pipeline)
+void core::gpu::CommandBuffer::BindRayTracingPipeline(const core::gpu::Pipeline* pipeline)
 {
 	m_impl->BindRayTracingPipeline(pipeline);
 }
 
 void core::gpu::CommandBuffer::TraceRays(
-	void* pipeline,
+	const core::gpu::Device* device,
 	void* raygenSBT, uint32_t raygenOffset, uint32_t raygenStride,
 	void* missSBT, uint32_t missOffset, uint32_t missStride, uint32_t missCount,
 	void* hitSBT, uint32_t hitOffset, uint32_t hitStride, uint32_t hitCount,
@@ -690,7 +637,7 @@ void core::gpu::CommandBuffer::TraceRays(
 	uint32_t width, uint32_t height, uint32_t depth)
 {
 	m_impl->TraceRays(
-		pipeline,
+		device,
 		raygenSBT, raygenOffset, raygenStride,
 		missSBT, missOffset, missStride, missCount,
 		hitSBT, hitOffset, hitStride, hitCount,

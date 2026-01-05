@@ -1,8 +1,10 @@
 #include "../src/core/gpu/vulkan/pipeline_impl.h"
+#include "../src/core/gpu/vulkan/descriptorSetLayout_impl.h"
+#include "../src/core/gpu/vulkan/device_impl.h"
 #include "../src/core/gpu_detail/converters.h"
-#include <core/gpu/descriptorSetLayout.h>
 
-core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, vk::raii::Device& dev, const PipelineCreateInfo& info)
+
+core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, const core::gpu::Device* dev, const PipelineCreateInfo& info)
 	: parent(p), device(dev), pipelineLayout(nullptr), pipeline(nullptr)
 {
 	std::vector<vk::raii::ShaderModule> shaderModules;
@@ -14,7 +16,7 @@ core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, vk::raii::Device& dev, c
 		moduleInfo.codeSize = stage.code.size();
 		moduleInfo.pCode = reinterpret_cast<const uint32_t*>(stage.code.data());
 
-		shaderModules.emplace_back(device, moduleInfo);
+		shaderModules.emplace_back(device->GetImpl().device, moduleInfo);
 
 		vk::PipelineShaderStageCreateInfo shaderStageInfo{};
 		shaderStageInfo.stage = core::gpu_detail::ToVulkan(stage.stage);
@@ -102,8 +104,7 @@ core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, vk::raii::Device& dev, c
 	std::vector<vk::DescriptorSetLayout> vkLayouts;
 	for (auto* layout : info.descriptorSetLayouts)
 	{
-		VkDescriptorSetLayout vkLayoutHandle = reinterpret_cast<VkDescriptorSetLayout>(layout->GetHandle());
-		vkLayouts.push_back(vk::DescriptorSetLayout(vkLayoutHandle));
+		vkLayouts.push_back(vk::DescriptorSetLayout(layout->GetImpl().layout));
 	}
 
 	std::vector<vk::PushConstantRange> vkPushConstants;
@@ -134,7 +135,7 @@ core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, vk::raii::Device& dev, c
 	layoutInfo.pushConstantRangeCount = static_cast<uint32_t>(vkPushConstants.size());
 	layoutInfo.pPushConstantRanges = vkPushConstants.data();
 
-	pipelineLayout = vk::raii::PipelineLayout(device, layoutInfo);
+	pipelineLayout = vk::raii::PipelineLayout(device->GetImpl().device, layoutInfo);
 
 	std::vector<vk::Format> vkColorFormats;
 	for (const auto& format : info.colorAttachmentFormats)
@@ -162,35 +163,14 @@ core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, vk::raii::Device& dev, c
 	pipelineInfo.layout = *pipelineLayout;
 	pipelineInfo.renderPass = nullptr;
 
-	pipeline = vk::raii::Pipeline(device, nullptr, pipelineInfo);
+	pipeline = vk::raii::Pipeline(device->GetImpl().device, nullptr, pipelineInfo);
 }
 
 core::gpu::Pipeline::Impl::~Impl() = default;
 
-vk::raii::Pipeline& core::gpu::Pipeline::Impl::GetPipeline()
+core::gpu::Pipeline::Pipeline(const core::gpu::Device* device, const PipelineCreateInfo& info)
 {
-	return pipeline;
-}
-
-const vk::raii::Pipeline& core::gpu::Pipeline::Impl::GetPipeline() const
-{
-	return pipeline;
-}
-
-vk::raii::PipelineLayout& core::gpu::Pipeline::Impl::GetPipelineLayout()
-{
-	return pipelineLayout;
-}
-
-const vk::raii::PipelineLayout& core::gpu::Pipeline::Impl::GetPipelineLayout() const
-{
-	return pipelineLayout;
-}
-
-core::gpu::Pipeline::Pipeline(void* device, const PipelineCreateInfo& info)
-{
-	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
-	m_impl = std::make_unique<Impl>(*this, vkDevice, info);
+	m_impl = std::make_unique<Impl>(*this, device, info);
 }
 
 core::gpu::Pipeline::~Pipeline() = default;
@@ -198,24 +178,7 @@ core::gpu::Pipeline::~Pipeline() = default;
 core::gpu::Pipeline::Pipeline(Pipeline&&) noexcept = default;
 core::gpu::Pipeline& core::gpu::Pipeline::operator=(Pipeline&&) noexcept = default;
 
-void* core::gpu::Pipeline::GetHandle() const
-{
-	VkPipeline nativeHandle = *m_impl->GetPipeline();
-	return reinterpret_cast<void*>(nativeHandle);
-}
-
-void* core::gpu::Pipeline::GetLayoutHandle() const
-{
-	VkPipelineLayout nativeHandle = *m_impl->GetPipelineLayout();
-	return reinterpret_cast<void*>(nativeHandle);
-}
-
-core::gpu::Pipeline::Impl& core::gpu::Pipeline::GetImpl()
-{
-	return *m_impl;
-}
-
-const core::gpu::Pipeline::Impl& core::gpu::Pipeline::GetImpl() const
+core::gpu::Pipeline::Impl& core::gpu::Pipeline::GetImpl() const
 {
 	return *m_impl;
 }

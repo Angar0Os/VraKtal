@@ -7,6 +7,8 @@
 
 namespace core::gpu
 {
+	class Device;
+
 	struct SamplerCreateInfo
 	{
 		Filter minFilter = Filter::Linear;
@@ -31,12 +33,10 @@ namespace core::gpu
 		std::unique_ptr<Impl> m_impl;
 
 	public:
-		Sampler(void* device, const SamplerCreateInfo& info);
+		Sampler(const core::gpu::Device* device, const SamplerCreateInfo& info);
 		~Sampler();
 
-		void* GetHandle() const;
-
-		Impl& GetImpl();
+		Impl& GetImpl() const;
 	};
 }
 

@@ -6,45 +6,45 @@
 #include <vector>
 
 #include <core/enum.h>
-#include <core/gpu/descriptorSetLayout.h>
 
 namespace core::gpu
 {
-	struct DescriptorPoolSize
-	{
-		DescriptorType type;
-		uint32_t descriptorCount;
-	};
+    class Device;
+    class DescriptorSetLayout;
 
-	struct DescriptorPoolCreateInfo
-	{
-		uint32_t maxSets;
-		std::vector<DescriptorPoolSize> poolSizes;
-		bool allowFreeDescriptorSet = false;
-	};
+    struct SDescriptorPoolSize
+    {
+        EDescriptorType type;
+        uint32_t descriptorCount;
+    };
 
-	class DescriptorPool
-	{
-	private:
-		struct Impl;
-		std::unique_ptr<Impl> m_impl;
+    struct SDescriptorPoolCreateInfo
+    {
+        uint32_t maxSets;
+        std::vector<SDescriptorPoolSize> poolSizes;
+        bool allowFreeDescriptorSet = false;
+    };
 
-	public:
-		DescriptorPool(void* device, const DescriptorPoolCreateInfo& info);
-		~DescriptorPool();
+    class DescriptorPool
+    {
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> m_impl;
 
-		DescriptorPool(const DescriptorPool&) = delete;
-		DescriptorPool& operator=(const DescriptorPool&) = delete;
+    public:
+        DescriptorPool(const core::gpu::Device* _device, const SDescriptorPoolCreateInfo& _info);
+        ~DescriptorPool();
 
-		DescriptorPool(DescriptorPool&&) noexcept;
-		DescriptorPool& operator=(DescriptorPool&&) noexcept;
+        DescriptorPool(const DescriptorPool&) = delete;
+        DescriptorPool& operator=(const DescriptorPool&) = delete;
 
-		std::vector<void*> AllocateDescriptorSets(const std::vector<DescriptorSetLayout*>& layouts, uint32_t count);
+        DescriptorPool(DescriptorPool&&) noexcept;
+        DescriptorPool& operator=(DescriptorPool&&) noexcept;
 
-		void* GetHandle() const;
+        std::vector<void*> AllocateDescriptorSets(const std::vector<DescriptorSetLayout*>& _layouts, uint32_t _count);
 
-		Impl& GetImpl();
-	};
+        Impl& GetImpl() const;
+    };
 }
 
 #endif //VRAKTAL_CORE_GPU_DESCRIPTORPOOL_H

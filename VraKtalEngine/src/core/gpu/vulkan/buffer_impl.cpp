@@ -1,13 +1,12 @@
 #include "../src/core/gpu/vulkan/buffer_impl.h"
+#include "../src/core/gpu/vulkan/device_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <cstring>
 #include <stdexcept>
 
-core::gpu::Buffer::Impl::Impl(core::gpu::Buffer& p, vk::raii::Device& dev,
-	vk::raii::PhysicalDevice& physDev, const BufferCreateInfo& info)
-	: parent(p), device(dev), physicalDevice(physDev),
-	buffer(nullptr), memory(nullptr), bufferSize(info.size), mappedData(nullptr)
+core::gpu::Buffer::Impl::Impl(core::gpu::Buffer& p, const core::gpu::Device* device, const SBufferCreateInfo& info)
+	: parent(p), buffer(nullptr), device(device), memory(nullptr), bufferSize(info.size), mappedData(nullptr)
 {
 	if (info.size == 0)
 	{
@@ -20,12 +19,12 @@ core::gpu::Buffer::Impl::Impl(core::gpu::Buffer& p, vk::raii::Device& dev,
 	bufferInfo.usage = core::gpu_detail::ToVulkan(info.usage);
 	bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
-	buffer = vk::raii::Buffer(device, bufferInfo);
+	buffer = vk::raii::Buffer(device->GetImpl().device, bufferInfo);
 
 	vk::MemoryRequirements memRequirements = buffer.getMemoryRequirements();
 
 	vk::MemoryAllocateFlagsInfo allocFlagsInfo{};
-	bool needsDeviceAddress = (info.usage & BufferUsage::ShaderDeviceAddress) != BufferUsage::None;
+	bool needsDeviceAddress = (info.usage & EBufferUsage::ShaderDeviceAddress) != EBufferUsage::None;
 
 	if (needsDeviceAddress)
 	{
@@ -44,7 +43,7 @@ core::gpu::Buffer::Impl::Impl(core::gpu::Buffer& p, vk::raii::Device& dev,
 		allocInfo.pNext = &allocFlagsInfo;
 	}
 
-	memory = vk::raii::DeviceMemory(device, allocInfo);
+	memory = vk::raii::DeviceMemory(device->GetImpl().device, allocInfo);
 
 	buffer.bindMemory(*memory, 0);
 }
@@ -59,7 +58,7 @@ core::gpu::Buffer::Impl::~Impl()
 
 uint32_t core::gpu::Buffer::Impl::FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties)
 {
-	vk::PhysicalDeviceMemoryProperties memProperties = physicalDevice.getMemoryProperties();
+	vk::PhysicalDeviceMemoryProperties memProperties = device->GetImpl().physicalDevice.getMemoryProperties();
 
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
 	{
@@ -71,21 +70,6 @@ uint32_t core::gpu::Buffer::Impl::FindMemoryType(uint32_t typeFilter, vk::Memory
 	}
 
 	throw std::runtime_error("Failed to find suitable memory type");
-}
-
-vk::raii::Buffer& core::gpu::Buffer::Impl::GetBuffer()
-{
-	return buffer;
-}
-
-const vk::raii::Buffer& core::gpu::Buffer::Impl::GetBuffer() const
-{
-	return buffer;
-}
-
-size_t core::gpu::Buffer::Impl::GetSize() const
-{
-	return bufferSize;
 }
 
 void core::gpu::Buffer::Impl::Map(void** data)
@@ -126,7 +110,7 @@ uint64_t core::gpu::Buffer::Impl::GetDeviceAddress() const
 {
 	vk::BufferDeviceAddressInfo addressInfo{};
 	addressInfo.buffer = *buffer;
-	return device.getBufferAddress(addressInfo);
+	return device->GetImpl().device.getBufferAddress(addressInfo);
 }
 
 uint64_t core::gpu::Buffer::GetDeviceAddress() const
@@ -134,25 +118,12 @@ uint64_t core::gpu::Buffer::GetDeviceAddress() const
 	return m_impl->GetDeviceAddress();
 }
 
-core::gpu::Buffer::Buffer(void* device, void* physicalDevice, const BufferCreateInfo& info)
+core::gpu::Buffer::Buffer(const core::gpu::Device* device, const SBufferCreateInfo& info)
 {
-	auto& vkDevice = *static_cast<vk::raii::Device*>(device);
-	auto& vkPhysicalDevice = *static_cast<vk::raii::PhysicalDevice*>(physicalDevice);
-
-	m_impl = std::make_unique<Impl>(*this, vkDevice, vkPhysicalDevice, info);
+	m_impl = std::make_unique<Impl>(*this, device, info);
 }
 
 core::gpu::Buffer::~Buffer() = default;
-
-void* core::gpu::Buffer::GetHandle() const
-{
-	return reinterpret_cast<void*>(static_cast<VkBuffer>(*m_impl->GetBuffer()));
-}
-
-size_t core::gpu::Buffer::GetSize() const
-{
-	return m_impl->GetSize();
-}
 
 void core::gpu::Buffer::Map(void** data)
 {
@@ -169,7 +140,7 @@ void core::gpu::Buffer::CopyFrom(const void* data, size_t size, size_t offset)
 	m_impl->CopyFrom(data, size, offset);
 }
 
-core::gpu::Buffer::Impl& core::gpu::Buffer::GetImpl()
+core::gpu::Buffer::Impl& core::gpu::Buffer::GetImpl() const
 {
 	return *m_impl;
 }

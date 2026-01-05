@@ -4,6 +4,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <core/gpu/accelerationStructure.h>
 #include <vector>
 
 namespace core::gpu
@@ -11,7 +12,7 @@ namespace core::gpu
 	class Buffer;
 }
 
-namespace graphics::resources::object
+namespace graphics::resources
 {
 	struct Vertex
 	{
@@ -45,11 +46,15 @@ namespace graphics::resources::object
 	public:
 		std::vector<Vertex> vertices;
 		std::vector<uint32_t> indices;
-
 		std::vector<SubMesh> subMeshes;
 
 		std::unique_ptr<core::gpu::Buffer> vertexBuffer;
 		std::unique_ptr<core::gpu::Buffer> indexBuffer;
+		uint32_t indexCount = 0;
+
+		std::unique_ptr<core::gpu::Buffer> rtVertexBuffer;
+		std::unique_ptr<core::gpu::Buffer> rtIndexBuffer;
+		std::unique_ptr<core::gpu::AccelerationStructure> blas;
 
 		std::vector<SubMesh> GetSubmeshes() const
 		{
@@ -167,9 +172,9 @@ namespace graphics::resources::object
 namespace std
 {
 	template<>
-	struct hash<graphics::resources::object::Vertex>
+	struct hash<graphics::resources::Vertex>
 	{
-		size_t operator()(const graphics::resources::object::Vertex& vertex) const
+		size_t operator()(const graphics::resources::Vertex& vertex) const
 		{
 			size_t h1 = hash<float>()(vertex.position.x);
 			size_t h2 = hash<float>()(vertex.position.y);

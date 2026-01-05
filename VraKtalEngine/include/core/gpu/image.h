@@ -8,10 +8,11 @@
 
 namespace core::gpu
 {
-	class CommandBuffer;
 	class Buffer;
+	class CommandBuffer;
+	class Device;
 
-	struct ImageCreateInfo
+	struct SImageCreateInfo
 	{
 		uint32_t width = 0;
 		uint32_t height = 0;
@@ -20,11 +21,11 @@ namespace core::gpu
 		TextureFormat format = TextureFormat::RGBA8_SRGB;
 		ImageTiling tiling = ImageTiling::Optimal;
 		ImageUsage usage = ImageUsage::None;
-		MemoryProperty memoryProperties = MemoryProperty::DeviceLocal;
+		EMemoryProperty memoryProperties = EMemoryProperty::DeviceLocal;
 		SampleCount samples = SampleCount::e1;
 	};
 
-	struct ImageViewCreateInfo
+	struct SImageViewCreateInfo
 	{
 		TextureFormat format = TextureFormat::RGBA8_SRGB;
 		uint32_t baseMipLevel = 0;
@@ -41,19 +42,14 @@ namespace core::gpu
 		std::unique_ptr<Impl> m_impl;
 
 	public:
-		Image(void* device, void* physicalDevice, const ImageCreateInfo& info);
+		Image(const core::gpu::Device* device, const SImageCreateInfo& info);
+
+		Image(const core::gpu::Device* device, void* image, uint32_t width,
+              uint32_t height, TextureFormat format);
+
 		~Image();
 
-		void* GetHandle() const;
-		void* GetViewHandle() const;
-
-		uint32_t GetWidth() const;
-		uint32_t GetHeight() const;
-		uint32_t GetMipLevels() const;
-		uint32_t GetArrayLayers() const;
-		TextureFormat GetFormat() const;
-
-		void CreateView(const ImageViewCreateInfo& info);
+		void CreateView(const SImageViewCreateInfo& info);
 
 		void TransitionLayout(CommandBuffer& commandBuffer,
 			ImageLayout oldLayout, ImageLayout newLayout, uint32_t mipLevels = 1);
@@ -64,7 +60,7 @@ namespace core::gpu
 		void GenerateMipmaps(CommandBuffer& commandBuffer, uint32_t width,
 			uint32_t height, uint32_t mipLevels);
 
-		Impl& GetImpl();
+		Impl& GetImpl() const;
 	};
 }
 

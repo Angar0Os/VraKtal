@@ -4,21 +4,24 @@
 
 #include <memory>
 #include <vector>
+
 #include <core/enum.h>
 
 namespace core::gpu
 {
-	struct DescriptorSetLayoutBinding
+	class Device;
+
+	struct SDescriptorSetLayoutBinding
 	{
 		uint32_t binding;
-		DescriptorType descriptorType;
+		EDescriptorType descriptorType;
 		uint32_t descriptorCount = 1;
 		core::ShaderStage stageFlags;
 	};
 
-	struct DescriptorSetLayoutCreateInfo
+	struct SDescriptorSetLayoutCreateInfo
 	{
-		std::vector<DescriptorSetLayoutBinding> bindings;
+		std::vector<SDescriptorSetLayoutBinding> bindings;
 	};
 
 	class DescriptorSetLayout
@@ -28,7 +31,7 @@ namespace core::gpu
 		std::unique_ptr<Impl> m_impl;
 
 	public:
-		DescriptorSetLayout(void* device, const DescriptorSetLayoutCreateInfo& info);
+		DescriptorSetLayout(const core::gpu::Device* device, const SDescriptorSetLayoutCreateInfo& info);
 		~DescriptorSetLayout();
 
 		DescriptorSetLayout(const DescriptorSetLayout&) = delete;
@@ -37,10 +40,7 @@ namespace core::gpu
 		DescriptorSetLayout(DescriptorSetLayout&&) noexcept;
 		DescriptorSetLayout& operator=(DescriptorSetLayout&&) noexcept;
 
-		void* GetHandle() const;
-
-		Impl& GetImpl();
-		const Impl& GetImpl() const;
+		Impl& GetImpl() const;
 	};
 }
 
