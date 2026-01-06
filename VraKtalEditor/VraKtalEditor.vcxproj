@@ -135,10 +135,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\contentDrawer.cpp" />
     <ClCompile Include="src\imGuiWindows.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="header\contentDrawer.h" />
     <ClInclude Include="header\imGuiWindows.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

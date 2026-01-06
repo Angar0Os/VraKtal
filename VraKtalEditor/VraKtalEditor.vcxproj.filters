@@ -21,9 +21,15 @@
     <ClCompile Include="src\imGuiWindows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\contentDrawer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\imGuiWindows.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="header\contentDrawer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
