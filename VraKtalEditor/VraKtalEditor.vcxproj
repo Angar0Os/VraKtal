@@ -138,10 +138,12 @@
     <ClCompile Include="src\contentDrawer.cpp" />
     <ClCompile Include="src\imGuiWindows.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\utils\fileTypeDetector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\contentDrawer.h" />
     <ClInclude Include="header\imGuiWindows.h" />
+    <ClInclude Include="header\utils\fileTypeDetector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,6 +1,8 @@
 #include "../header/contentDrawer.h"
 #include "imgui/imgui.h"
 
+#include <iostream>
+
 #include "MDI/IconsMaterialDesignIcons.h"
 
 constexpr const char* baseAssetPath = "assets";
@@ -31,43 +33,27 @@ void ContentDrawer::GetContentDrawerWindow()
 	// todo : refacto the way to access fonts
 	ImFont* largeIconFont = ImGui::GetIO().Fonts->Fonts[1];
 
+	// todo: check because is inf. loop here !
 	for (auto& entry : std::filesystem::directory_iterator(m_currentPath))
 	{
 		const auto& path = entry.path();
 		std::string filename = path.filename().string();
+		bool isDirectory = entry.is_directory();
+
+		FileType fileType = FileTypeDetector::DetectFileType(path);
+
+		std::cout << "fileType " << fileType << std::endl;
 
 		ImGui::PushID(filename.c_str());
-
-		// todo: refacto for avoinding continue and duplicate code
-
-		if (entry.is_directory()) {
-			ImGui::BeginGroup();
-
-			ImGui::PushFont(largeIconFont);
-			if (ImGui::Button(ICON_MDI_FOLDER, ImVec2(buttonSize, 0))) {
-				m_currentPath = path;
-			}
-			ImGui::PopFont();
-
-			ImVec2 textPos = ImGui::GetCursorPos();
-			ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + buttonSize);
-			ImVec2 textSize = ImGui::CalcTextSize(filename.c_str(), nullptr, false, buttonSize);
-			ImGui::SetCursorPosX(textPos.x + (buttonSize - textSize.x) * 0.5f);
-			ImGui::Text("%s", filename.c_str());
-			ImGui::PopTextWrapPos();
-
-			ImGui::EndGroup();
-			ImGui::SameLine();
-
-			ImGui::PopID();
-
-			continue;
-		}
-
 		ImGui::BeginGroup();
 
 		ImGui::PushFont(largeIconFont);
-		if (ImGui::Button(ICON_MDI_ACCESS_POINT, ImVec2(buttonSize, 0))) {
+		const char* icon = isDirectory ? ICON_MDI_FOLDER : GetIconForFileType(fileType);
+
+		if (ImGui::Button(icon, ImVec2(buttonSize, 0))) {
+			if (isDirectory) {
+				m_currentPath = path;
+			}
 		}
 		ImGui::PopFont();
 
@@ -85,4 +71,26 @@ void ContentDrawer::GetContentDrawerWindow()
 	}
 
 	ImGui::End();
+}
+
+const char* ContentDrawer::GetIconForFileType(FileType type)
+{
+	switch (type) {
+	case FileType::ImagePNG:
+	case FileType::ImageJPEG:
+		return ICON_MDI_FILE_IMAGE;
+
+	case FileType::AudioMP3:
+	case FileType::AudioWAV:
+		return ICON_MDI_FILE_MUSIC;
+
+	case FileType::MeshOBJ:
+	case FileType::MeshGLTF:
+	case FileType::MeshGLB:
+		return ICON_MDI_CUBE_OUTLINE;
+
+	case FileType::Unknown:
+	default:
+		return ICON_MDI_FILE;
+	}
 }
