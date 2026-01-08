@@ -75,6 +75,10 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
 
+	ImGuiIO& io = ImGui::GetIO();
+
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
 	// Initialize GLFW 
 	ImGui_ImplGlfw_InitForVulkan(_window.GlfwHandle(), true);
 
