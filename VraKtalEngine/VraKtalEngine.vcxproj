@@ -169,6 +169,7 @@
     <Content Include="..\bin\VraKtalEngine_Debug.pdb" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h" />
     <ClInclude Include="include\core\enum.h" />
     <ClInclude Include="include\core\gpu\accelerationStructure.h" />
     <ClInclude Include="include\core\gpu\buffer.h" />

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
@@ -63,6 +63,9 @@
     </Filter>
     <Filter Include="Source Files\graphics\resources\property">
       <UniqueIdentifier>{2eab3814-ab48-462b-a881-0f5a08f2d551}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\portableFileDialogs">
+      <UniqueIdentifier>{9060703a-032f-4e39-9ead-06e259c1f291}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -182,6 +185,9 @@
     </ClInclude>
     <ClInclude Include="include\graphics\resources\object\staticMesh.h">
       <Filter>Header Files\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h">
+      <Filter>external\portableFileDialogs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
