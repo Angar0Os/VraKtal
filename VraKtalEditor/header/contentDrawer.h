@@ -48,6 +48,8 @@ private:
 	void ShowDeleteDialog();
 	void ShowRenameDialog();
 
+	void PerformImport();
+
 public:
 	ContentDrawer();
 

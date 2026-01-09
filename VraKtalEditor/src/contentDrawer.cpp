@@ -1,6 +1,13 @@
 #include "../header/contentDrawer.h"
 #include "imgui/imgui.h"
 
+// Define NOMINMAX before including portable-file-dialogs to prevent Windows min/max macros
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+#include "portable-file-dialogs/portable-file-dialogs.h"
+
 #include <iostream>
 #include <algorithm>
 
@@ -31,7 +38,7 @@ void ContentDrawer::GetContentDrawerWindow()
 		}
 
 		if (ImGui::MenuItem("Import")) {
-			m_needsRefresh = true;
+			PerformImport();
 		}
 
 		if (ImGui::MenuItem(ICON_MDI_REFRESH)) {
@@ -338,6 +345,45 @@ void ContentDrawer::PerformDelete()
 
 	ClearSelection();
 	m_needsRefresh = true;
+}
+
+void ContentDrawer::PerformImport()
+{
+	auto selection = pfd::open_file(
+	"Import Files",
+		"",
+	{
+		"All Files", "*",
+		"Images", "*.png *.jpg *.jpeg",
+		"Audio", "*.mp3 *.wav",
+		"3D Models", "*.obj *.gltf *.glb",
+	},
+		pfd::opt::multiselect
+		);
+
+		auto files = selection.result();
+
+		if (files.empty()) {
+			return;
+		}
+
+		for (const auto& sourceFile : files) {
+			std::filesystem::path sourcePath(sourceFile);
+			std::filesystem::path destPath = m_currentPath / sourcePath.filename();
+
+			try {
+				if (std::filesystem::exists(destPath)) {
+					continue;
+				}
+
+				std::filesystem::copy_file(sourcePath, destPath);
+			}
+			catch (const std::exception& e) {
+				std::cerr << "Import failed for " << sourcePath.filename() << ": " << e.what() << std::endl;
+			}
+		}
+
+		m_needsRefresh = true;
 }
 
 void ContentDrawer::PerformRename()
