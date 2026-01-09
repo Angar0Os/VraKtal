@@ -45,15 +45,58 @@ void ContentDrawer::GetContentDrawerWindow()
 			m_needsRefresh = true;
 		}
 
-		std::string pathStr = m_currentPath.string();
-		float pathWidth = ImGui::CalcTextSize(pathStr.c_str()).x;
-		float availableWidth = ImGui::GetContentRegionAvail().x;
+		std::filesystem::path tempPath = m_currentPath;
+		std::vector<std::pair<std::string, std::filesystem::path>> breadcrumbs;
 
-		if (availableWidth > pathWidth) {
-			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth - pathWidth);
+		while (tempPath != std::filesystem::path(baseAssetPath).parent_path() && !tempPath.empty()) {
+			breadcrumbs.insert(breadcrumbs.begin(), { tempPath.filename().string(), tempPath });
+			tempPath = tempPath.parent_path();
 		}
 
-		ImGui::TextDisabled("%s", pathStr.c_str());
+		float breadcrumbWidth = 0.0f;
+		for (size_t i = 0; i < breadcrumbs.size(); ++i)
+		{
+			breadcrumbWidth += ImGui::CalcTextSize(breadcrumbs[i].first.c_str()).x;
+			if (i > 0) {
+				breadcrumbWidth += ImGui::CalcTextSize(" / ").x;
+			}
+		}
+
+		breadcrumbWidth += ImGui::GetStyle().ItemSpacing.x * (breadcrumbs.size() - 1);
+
+		float availableWidth = ImGui::GetContentRegionAvail().x;
+		if (availableWidth > breadcrumbWidth) {
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth - breadcrumbWidth);
+		}
+
+		for (size_t i = 0; i < breadcrumbs.size(); ++i) {
+			if (i > 0) {
+				ImGui::SameLine();
+				ImGui::TextDisabled("/");
+				ImGui::SameLine();
+			}
+
+			if (i == breadcrumbs.size() - 1) {
+				ImGui::TextDisabled("%s", breadcrumbs[i].first.c_str());
+			}
+			else {
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.7f, 1.0f, 1.0f));
+				ImGui::Text("%s", breadcrumbs[i].first.c_str());
+				ImGui::PopStyleColor();
+
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.8f, 1.0f, 1.0f));
+					ImGui::PopStyleColor();
+				}
+
+				if (ImGui::IsItemClicked()) {
+					m_currentPath = breadcrumbs[i].second;
+					m_needsRefresh = true;
+					ClearSelection();
+				}
+			}
+		}
 
 		ImGui::EndMenuBar();
 	}
@@ -226,11 +269,11 @@ void ContentDrawer::HandleFileActions()
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem(ICON_MDI_CONTENT_COPY " Copy")) {
+		if (ImGui::MenuItem(ICON_MDI_CONTENT_COPY " Copy", "Ctrl+C")) {
 			PerformCopy();
 		}
 
-		if (ImGui::MenuItem(ICON_MDI_CONTENT_CUT " Cut")) {
+		if (ImGui::MenuItem(ICON_MDI_CONTENT_CUT " Cut", "Ctrl+X")) {
 			PerformCut();
 		}
 
@@ -350,40 +393,40 @@ void ContentDrawer::PerformDelete()
 void ContentDrawer::PerformImport()
 {
 	auto selection = pfd::open_file(
-	"Import Files",
+		"Import Files",
 		"",
-	{
-		"All Files", "*",
-		"Images", "*.png *.jpg *.jpeg",
-		"Audio", "*.mp3 *.wav",
-		"3D Models", "*.obj *.gltf *.glb",
-	},
+		{
+			"All Files", "*",
+			"Images", "*.png *.jpg *.jpeg",
+			"Audio", "*.mp3 *.wav",
+			"3D Models", "*.obj *.gltf *.glb",
+		},
 		pfd::opt::multiselect
 		);
 
-		auto files = selection.result();
+	auto files = selection.result();
 
-		if (files.empty()) {
-			return;
-		}
+	if (files.empty()) {
+		return;
+	}
 
-		for (const auto& sourceFile : files) {
-			std::filesystem::path sourcePath(sourceFile);
-			std::filesystem::path destPath = m_currentPath / sourcePath.filename();
+	for (const auto& sourceFile : files) {
+		std::filesystem::path sourcePath(sourceFile);
+		std::filesystem::path destPath = m_currentPath / sourcePath.filename();
 
-			try {
-				if (std::filesystem::exists(destPath)) {
-					continue;
-				}
-
-				std::filesystem::copy_file(sourcePath, destPath);
+		try {
+			if (std::filesystem::exists(destPath)) {
+				continue;
 			}
-			catch (const std::exception& e) {
-				std::cerr << "Import failed for " << sourcePath.filename() << ": " << e.what() << std::endl;
-			}
-		}
 
-		m_needsRefresh = true;
+			std::filesystem::copy_file(sourcePath, destPath);
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Import failed for " << sourcePath.filename() << ": " << e.what() << std::endl;
+		}
+	}
+
+	m_needsRefresh = true;
 }
 
 void ContentDrawer::PerformRename()
@@ -421,8 +464,6 @@ void ContentDrawer::RefreshFileList() {
 		fileEntry.fileType = FileTypeDetector::DetectFileType(fileEntry.path);
 		fileEntry.isSelected = false;
 
-		std::cout << "fileType " << fileEntry.fileType << std::endl;
-
 		m_cachedFiles.push_back(fileEntry);
 	}
 
@@ -447,7 +488,7 @@ void ContentDrawer::ShowRenameDialog()
 
 		ImGui::Separator();
 
-		if (ImGui::Button("OK", ImVec2(120, 0))) {
+		if (ImGui::Button("OK", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
 			PerformRename();
 			ImGui::CloseCurrentPopup();
 		}
@@ -483,7 +524,7 @@ void ContentDrawer::ShowDeleteDialog()
 
 		ImGui::Separator();
 
-		if (ImGui::Button("Delete", ImVec2(120, 0))) {
+		if (ImGui::Button("Delete", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
 			PerformDelete();
 			ImGui::CloseCurrentPopup();
 		}
