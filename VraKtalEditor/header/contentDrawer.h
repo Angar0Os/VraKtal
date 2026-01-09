@@ -3,12 +3,14 @@
 #include "../header/utils/fileTypeDetector.h"
 
 #include <filesystem>
+#include <set>
 
 struct FileEntry {
 	std::filesystem::path path;
 	std::string filename;
 	FileType fileType;
 	bool isDirectory;
+	bool isSelected;
 };
 
 class ContentDrawer
@@ -17,9 +19,22 @@ private:
 	std::filesystem::path m_currentPath;
 	std::vector<FileEntry> m_cachedFiles;
 	bool m_needsRefresh;
+	std::set<size_t> m_selectedIndices;
+
+	bool m_showRenameDialog = false;
+	bool m_showDeleteDialog = false;
+	char m_renameBuffer[256] = "";
+	size_t m_renameTargetIndex = 0;
 
 	const char* GetIconForFileType(FileType type);
 	void RefreshFileList();
+	void ClearSelection();
+	void HandleFileActions();
+
+	void PerformDelete();
+	void PerformRename();
+	void ShowDeleteDialog();
+	void ShowRenameDialog();
 
 public:
 	ContentDrawer();
