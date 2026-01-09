@@ -64,6 +64,15 @@ void ContentDrawer::GetContentDrawerWindow()
 		if (ImGui::IsKeyPressed(ImGuiKey_Delete) && !m_selectedIndices.empty()) {
 			m_showDeleteDialog = true;
 		}
+		if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C) && !m_selectedIndices.empty()) {
+			PerformCopy();
+		}
+		if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_X) && !m_selectedIndices.empty()) {
+			PerformCut();
+		}
+		if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_V) && !m_clipboardPaths.empty()) {
+			PerformPaste();
+		}
 	}
 
 	const float buttonSize = 80.0f;
@@ -77,13 +86,15 @@ void ContentDrawer::GetContentDrawerWindow()
 	ShowDeleteDialog();
 
 	if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !ImGui::IsAnyItemHovered()) {
-		// todo : clipboard to handle
-		ClearSelection();
-		ImGui::OpenPopup("EmptySpaceMenu");
+		if (!m_clipboardPaths.empty()) {
+			ImGui::OpenPopup("EmptySpaceMenu");
+		}
 	}
 
 	if (ImGui::BeginPopup("EmptySpaceMenu")) {
-		if (ImGui::MenuItem(ICON_MDI_CONTENT_PASTE " Paste", "Ctrl+V")) {}
+		if (ImGui::MenuItem(ICON_MDI_CONTENT_PASTE " Paste", "Ctrl+V")) {
+			PerformPaste();
+		}
 		ImGui::EndPopup();
 	}
 
@@ -208,12 +219,100 @@ void ContentDrawer::HandleFileActions()
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem(ICON_MDI_CONTENT_COPY " Copy")) {}
+		if (ImGui::MenuItem(ICON_MDI_CONTENT_COPY " Copy")) {
+			PerformCopy();
+		}
 
-		if (ImGui::MenuItem(ICON_MDI_CONTENT_CUT " Cut")) {}
+		if (ImGui::MenuItem(ICON_MDI_CONTENT_CUT " Cut")) {
+			PerformCut();
+		}
+
+		if (ImGui::MenuItem(ICON_MDI_CONTENT_PASTE " Paste", "Ctrl+V", false, !m_clipboardPaths.empty())) {
+			PerformPaste();
+		}
 
 		ImGui::EndPopup();
 	}
+}
+
+void ContentDrawer::PerformCopy()
+{
+	m_clipboardPaths.clear();
+	m_clipboardAction = ClipboardAction::Copy;
+
+	for (size_t idx : m_selectedIndices) {
+		if (idx < m_cachedFiles.size()) {
+			m_clipboardPaths.push_back(m_cachedFiles[idx].path);
+		}
+	}
+}
+
+void ContentDrawer::PerformCut()
+{
+	m_clipboardPaths.clear();
+	m_clipboardAction = ClipboardAction::Cut;
+
+	for (size_t idx : m_selectedIndices) {
+		if (idx < m_cachedFiles.size()) {
+			m_clipboardPaths.push_back(m_cachedFiles[idx].path);
+		}
+	}
+}
+
+void ContentDrawer::PerformPaste()
+{
+	if (m_clipboardPaths.empty() || m_clipboardAction == ClipboardAction::None) {
+		return;
+	}
+
+	for (const auto& sourcePath : m_clipboardPaths) {
+		std::filesystem::path destPath = m_currentPath / sourcePath.filename();
+
+		if (std::filesystem::exists(destPath)) {
+			std::cerr << "Destination already exists: " << destPath << std::endl;
+			continue;
+		}
+
+		if (std::filesystem::is_directory(sourcePath)) {
+			try {
+				std::string sourceStr = std::filesystem::canonical(sourcePath).string();
+				std::string currentStr = std::filesystem::canonical(m_currentPath).string();
+
+				if (currentStr == sourceStr || currentStr.find(sourceStr + "\\") == 0 || currentStr.find(sourceStr + "/") == 0) {
+					std::cerr << "Cannot paste folder into itself or its subdirectory: "
+						<< sourcePath.filename() << std::endl;
+					continue;
+				}
+			}
+			catch (const std::filesystem::filesystem_error& e) {
+				std::cerr << "Warning: Could not verify path: " << e.what() << std::endl;
+			}
+		}
+
+		try {
+			if (m_clipboardAction == ClipboardAction::Copy) {
+				if (std::filesystem::is_directory(sourcePath)) {
+					std::filesystem::copy(sourcePath, destPath, std::filesystem::copy_options::recursive);
+				}
+				else {
+					std::filesystem::copy_file(sourcePath, destPath);
+				}
+			}
+			else if (m_clipboardAction == ClipboardAction::Cut) {
+				std::filesystem::rename(sourcePath, destPath);
+			}
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Paste failed for " << sourcePath.filename() << ": " << e.what() << std::endl;
+		}
+	}
+
+	if (m_clipboardAction == ClipboardAction::Cut) {
+		m_clipboardPaths.clear();
+		m_clipboardAction = ClipboardAction::None;
+	}
+
+	m_needsRefresh = true;
 }
 
 void ContentDrawer::PerformDelete()

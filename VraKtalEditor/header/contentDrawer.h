@@ -13,6 +13,12 @@ struct FileEntry {
 	bool isSelected;
 };
 
+enum class ClipboardAction {
+	None,
+	Copy,
+	Cut
+};
+
 class ContentDrawer
 {
 private:
@@ -26,12 +32,18 @@ private:
 	char m_renameBuffer[256] = "";
 	size_t m_renameTargetIndex = 0;
 
+	ClipboardAction m_clipboardAction = ClipboardAction::None;
+	std::vector<std::filesystem::path> m_clipboardPaths;
+
 	const char* GetIconForFileType(FileType type);
 	void RefreshFileList();
 	void ClearSelection();
 	void HandleFileActions();
 
+	void PerformCopy();
+	void PerformCut();
 	void PerformDelete();
+	void PerformPaste();
 	void PerformRename();
 	void ShowDeleteDialog();
 	void ShowRenameDialog();
