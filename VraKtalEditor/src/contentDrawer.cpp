@@ -33,7 +33,13 @@ void ContentDrawer::GetContentDrawerWindow()
 	ImGui::Begin("Content Drawer", nullptr, ImGuiWindowFlags_MenuBar);
 
 	if (ImGui::BeginMenuBar()) {
-		if (ImGui::MenuItem(ICON_MDI_PLUS " Add")) {
+		if (ImGui::BeginMenu(ICON_MDI_PLUS " Add")) {
+			if (ImGui::MenuItem(ICON_MDI_FOLDER " Folder")) {
+				PerformCreateFolder();
+			}
+
+			ImGui::EndMenu();
+
 			m_needsRefresh = true;
 		}
 
@@ -294,6 +300,20 @@ void ContentDrawer::PerformCopy()
 		if (idx < m_cachedFiles.size()) {
 			m_clipboardPaths.push_back(m_cachedFiles[idx].path);
 		}
+	}
+}
+
+void ContentDrawer::PerformCreateFolder()
+{
+	try {
+		std::filesystem::path newFolderPath = m_currentPath / "New folder";
+
+		if (!std::filesystem::exists(newFolderPath)) {
+			std::filesystem::create_directory(newFolderPath);
+		}
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Folder creation failed: " << e.what() << std::endl;
 	}
 }
 

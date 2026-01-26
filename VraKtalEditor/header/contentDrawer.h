@@ -41,6 +41,7 @@ private:
 	void HandleFileActions();
 
 	void PerformCopy();
+	void PerformCreateFolder();
 	void PerformCut();
 	void PerformDelete();
 	void PerformPaste();
