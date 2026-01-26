@@ -187,4 +187,5 @@ namespace std
 		}
 	};
 }
+
 #endif //VRAKTAL_GRAPHICS_RESOURCES_MESH_H

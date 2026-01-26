@@ -231,6 +231,7 @@
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\bin\assets\shaders\frameUniforms.slang" />
     <None Include="..\bin\assets\shaders\shader.slang" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

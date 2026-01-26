@@ -91,15 +91,15 @@ int main()
 
 		renderer.PushLight(mainLight);
 
-		graphics::resources::Light closeLight;
-		closeLight.name = "Close Light";
-		closeLight.position = glm::vec3(0.0f, 1.0f, 0.5f);
-		closeLight.color = glm::vec3(1.0f, 0.0f, 0.0f);
-		closeLight.intensity = 10.0f;
-		closeLight.radius = 0.1f;
-		closeLight.enabled = true;
+		//graphics::resources::Light closeLight;
+		//closeLight.name = "Close Light";
+		//closeLight.position = glm::vec3(0.0f, 1.0f, 0.5f);
+		//closeLight.color = glm::vec3(1.0f, 0.0f, 0.0f);
+		//closeLight.intensity = 10.0f;
+		//closeLight.radius = 0.1f;
+		//closeLight.enabled = true;
 
-		renderer.PushLight(closeLight);
+		//renderer.PushLight(closeLight);
 
 		renderer.Render(swapchainImage, imageIndex);
 		device.Present(imageIndex);
