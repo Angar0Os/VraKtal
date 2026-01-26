@@ -139,11 +139,13 @@
     <ClCompile Include="src\imGuiWindows.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\utils\fileTypeDetector.cpp" />
+    <ClCompile Include="src\utils\yamlParser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\contentDrawer.h" />
     <ClInclude Include="header\imGuiWindows.h" />
     <ClInclude Include="header\utils\fileTypeDetector.h" />
+    <ClInclude Include="header\utils\yamlParser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
