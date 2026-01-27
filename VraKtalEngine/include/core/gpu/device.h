@@ -17,6 +17,7 @@ namespace core
 		class Buffer;
 		class Image;
         class Pipeline;
+		class ImguiContext;
 
 		constexpr int MAX_LIGHTS = 10;
 
@@ -62,6 +63,7 @@ namespace core
 		private:
 			struct Impl;
 			std::unique_ptr<Impl> m_impl;
+			ImguiContext* m_imGuiContext;
 		public:
 			explicit Device(Window& window);
 			~Device();
@@ -88,8 +90,9 @@ namespace core
 
 			void RecreateSwapchain();
 			void WaitIdle();
-
 			static constexpr uint32_t s_FRAMES_IN_FLIGHT = 2;
+
+			ImguiContext* GetImGuiContext();
 		};
 	}
 }

@@ -8,6 +8,8 @@
 #include "../src/core/gpu/vulkan/pipeline_impl.h"
 #include "../src/core/gpu/vulkan/swapchain_impl.h"
 
+#include "imgui/imgui_impl_vulkan.h"
+
 #include <stdexcept>
 
 core::gpu::CommandBuffer::Impl::Impl(core::gpu::CommandBuffer& p, const core::gpu::Device* device, const SCommandBufferCreateInfo& info)

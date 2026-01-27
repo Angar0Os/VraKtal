@@ -6,11 +6,13 @@
 #include "../src/core/gpu/vulkan/commandPool_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu/vulkan/swapchain_impl.h"
+#include "../src/core/gpu/vulkan/imguiContext_impl.h"
 
 #include "../src/core/gpu_detail/converters.h"
 
 #include <core/gpu/descriptorSet.h>
 #include <core/enum.h>
+#include <core/gpu/swapchain.h>
 
 #include <graphics/resources/object/mesh.h>
 
@@ -51,11 +53,16 @@ core::gpu::Device::Device(core::Window& window)
 	m_impl = std::make_unique<Impl>(window, nullptr);
 	m_impl->parent = this;
 	m_impl->Initialize();
+	m_imGuiContext = new ImguiContext(window, *this);
 }
 
 core::gpu::Device::~Device()
 {
-
+	if (m_imGuiContext)
+	{
+		delete m_imGuiContext;
+		m_imGuiContext = nullptr;
+	}
 }
 
 core::gpu::Device::Impl::Impl(core::Window& _window, const core::gpu::Device* _parent)
@@ -777,6 +784,11 @@ void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
 	return static_cast<void*>(static_cast<VkFence>(*inFlightFences[frameIndex]));
 }
 
+const core::gpu::Swapchain* core::gpu::Device::Impl::GetSwapchain() const
+{
+	return swapchain.get();
+}
+
 const core::gpu::Image* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
 {
 	if (!swapchain)
@@ -1060,5 +1072,10 @@ const core::gpu::Pipeline* core::gpu::Device::GetGraphicsPipeline() const
 void core::gpu::Device::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)
 {
 	if (m_impl) m_impl->UpdateDescriptorWithTLAS(frameIndex, tlasHandle);
+}
+
+core::gpu::ImguiContext* core::gpu::Device::GetImGuiContext()
+{
+	return m_imGuiContext;
 }
 
