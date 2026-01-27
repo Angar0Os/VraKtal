@@ -16,8 +16,7 @@ namespace core::gpu
 
         std::vector<vk::raii::DescriptorSet> allocatedSets;
     public:
-        explicit Impl(DescriptorPool& _pool, const core::gpu::Device* _device,
-                      const SDescriptorPoolCreateInfo& _info);
+        explicit Impl(DescriptorPool& _pool, const core::gpu::Device* _device);
         ~Impl();
 
         std::vector<vk::raii::DescriptorSet*> AllocateDescriptorSets(
