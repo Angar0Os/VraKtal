@@ -1,3 +1,5 @@
+#ifndef EDITOR_IMGUIWINDOWS_H
+#define EDITOR_IMGUIWINDOWS_H
 #pragma once
 
 #include "contentDrawer.h"
@@ -28,3 +30,5 @@ private:
 private :
     graphics::Renderer* m_renderer;
 };
+
+#endif //EDITOR_IMGUIWINDOWS_H

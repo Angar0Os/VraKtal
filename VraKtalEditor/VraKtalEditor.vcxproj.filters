@@ -20,6 +20,12 @@
     <Filter Include="Source Files\utils">
       <UniqueIdentifier>{14760e3f-abe1-41b8-9e76-520568f183a7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\windows">
+      <UniqueIdentifier>{17785fff-e892-4925-bd87-37d6100a1859}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\windows">
+      <UniqueIdentifier>{e752945f-d482-4a1c-bd46-8e71113e0871}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -28,28 +34,28 @@
     <ClCompile Include="src\imGuiWindows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\contentDrawer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\utils\fileTypeDetector.cpp">
       <Filter>Source Files\utils</Filter>
     </ClCompile>
     <ClCompile Include="src\utils\yamlParser.cpp">
       <Filter>Source Files\utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\contentDrawer.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="header\imGuiWindows.h">
+    <ClInclude Include="include\imGuiWindows.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="header\contentDrawer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="header\utils\fileTypeDetector.h">
+    <ClInclude Include="include\utils\fileTypeDetector.h">
       <Filter>Header Files\utils</Filter>
     </ClInclude>
-    <ClInclude Include="header\utils\yamlParser.h">
+    <ClInclude Include="include\utils\yamlParser.h">
       <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="include\contentDrawer.h">
+      <Filter>Header Files\windows</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

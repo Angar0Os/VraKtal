@@ -1,3 +1,5 @@
+#ifndef EDITOR_WINDOWS_CONTENTDRAWER_H
+#define EDITOR_WINDOWS_CONTENTDRAWER_H
 #pragma once
 
 #include "utils/fileTypeDetector.h"
@@ -56,3 +58,5 @@ public:
 
 	void GetContentDrawerWindow();
 };
+
+#endif //EDITOR_WINDOWS_CONTENTDRAWER_H

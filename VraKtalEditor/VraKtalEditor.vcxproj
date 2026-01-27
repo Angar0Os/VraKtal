@@ -144,10 +144,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="header\contentDrawer.h" />
-    <ClInclude Include="header\imGuiWindows.h" />
-    <ClInclude Include="header\utils\fileTypeDetector.h" />
-    <ClInclude Include="header\utils\yamlParser.h" />
+    <ClInclude Include="include\contentDrawer.h" />
+    <ClInclude Include="include\imGuiWindows.h" />
+    <ClInclude Include="include\utils\fileTypeDetector.h" />
+    <ClInclude Include="include\utils\yamlParser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
