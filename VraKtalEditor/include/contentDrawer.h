@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../header/utils/fileTypeDetector.h"
+#include "utils/fileTypeDetector.h"
 
 #include <filesystem>
 #include <set>
