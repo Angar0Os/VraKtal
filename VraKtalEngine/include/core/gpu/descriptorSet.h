@@ -8,6 +8,7 @@
 
 namespace core::gpu
 {
+    class AccelerationStructure;
     class Buffer;     
     class Device;
     class Sampler;     
@@ -27,6 +28,9 @@ namespace core::gpu
         DescriptorSet& BindImage(const Sampler& sampler, const Texture* texture,
             const Texture& defaultTexture, ImageLayout layout = ImageLayout::ShaderReadOnly);
 
+        template<typename T>
+        void Bind(uint32_t binding, const T& input);
+        
         void Update();
 
         Impl& GetImpl() const;

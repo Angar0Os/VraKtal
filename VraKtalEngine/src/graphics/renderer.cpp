@@ -6,7 +6,7 @@
 
 using namespace graphics;
 
-#define VRAKTAL_EDITOR
+//#define VRAKTAL_EDITOR
 
 Renderer::Renderer(core::Window& window, core::gpu::Device& device)
 	: m_window(window),

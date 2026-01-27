@@ -15,7 +15,6 @@ import vulkan_hpp;
 #include <core/window.h>
 #include <core/gpu/descriptorSetLayout.h>
 #include <core/gpu/buffer.h>
-#include <core/gpu/sampler.h>
 #include <core/gpu/image.h>
 #include <core/gpu/commandBuffer.h>
 #include <core/gpu/texture.h>
@@ -53,8 +52,6 @@ namespace core::gpu
 		std::vector<vk::raii::DescriptorSet*>	descriptorSets;
 
 		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
-
-		std::unique_ptr<Sampler> textureSampler;
 
 		std::unique_ptr<Texture> defaultWhiteTexture;
 		std::unique_ptr<Texture> defaultBlackTexture;
@@ -99,12 +96,9 @@ namespace core::gpu
 		void CreateGraphicsPipeline();
 		void RecreateSwapchain();
 
-		void CreateDescriptorSetLayout();
 		void CreateCommandPool();
 		void CreateDescriptorPool();
-		void AllocateDescriptorSets();
-		void CreateUniformBuffers();
-		void CreateSamplers();
+
 		void CreateDefaultTextures();
 		void LoadMaterialTextures();
 		void CreateColorImage();

@@ -71,7 +71,7 @@ std::vector<vk::raii::DescriptorSet*> core::gpu::DescriptorPool::Impl::AllocateD
 vk::raii::DescriptorPool& core::gpu::DescriptorPool::Impl::GetPool()
 {
 	return pool;
-}
+}	
 
 const vk::raii::DescriptorPool& core::gpu::DescriptorPool::Impl::GetPool() const
 {

@@ -39,6 +39,10 @@ namespace core::gpu
 		DescriptorSet& BindImage(const Sampler& sampler, const Texture* texture,
 			const Texture& defaultTexture, ImageLayout layout);
 
+
+
+        DescriptorSet& BindAccelerationStructure(uint32_t frameIndex, const AccelerationStructure& accelStructure);
+
 		void Update();
 	};
 }

@@ -80,25 +80,18 @@ void core::gpu::Device::Impl::Initialize()
 
 	CreateSwapchain();
 
-	CreateDescriptorSetLayout();
-
 	CreateDescriptorPool();
-	AllocateDescriptorSets();
-
-	CreateUniformBuffers();
 	CreateCommandPool();
-	CreateSamplers();
 
+	CreateSyncObjects();
+
+	// Renderer 
 	CreateDefaultTextures();
 	LoadMaterialTextures();
 	CreateColorImage();
 	CreateDepthImage();
-
 	CreateGraphicsPipeline();
-
 	CreateDescriptorSets();
-
-	CreateSyncObjects();
 }
 
 core::gpu::Device::Impl::~Impl()
@@ -395,30 +388,12 @@ void core::gpu::Device::Impl::CreateLogicalDevice()
 	const auto& rtPipelineProps = rtProps.get<vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
 }
 
-void core::gpu::Device::Impl::CreateDescriptorSetLayout()
-{
-	SDescriptorSetLayoutCreateInfo layoutInfo;
-	layoutInfo.bindings =
-	{
-		{0, EDescriptorType::UniformBuffer, 1, core::ShaderStage::Vertex | core::ShaderStage::Fragment},
-
-		{1, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{2, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{3, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{4, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{5, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{6, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{8, EDescriptorType::AccelerationStructure, 1, core::ShaderStage::Fragment}
-	};
-
-	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(parent, layoutInfo);
-}
-
 void core::gpu::Device::Impl::CreateDescriptorPool()
 {
 	descriptorPool = std::make_unique<DescriptorPool>(parent);
 }
 
+// Renderer / Faire bindAccelerationStructure dans descriptor Set et changer l'update par Bind + update
 void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)
 {
 	if (frameIndex >= descriptorSets.size() || !tlasHandle) return;
@@ -441,55 +416,6 @@ void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, cons
 	device.updateDescriptorSets(writeDesc, nullptr);
 }
 
-void core::gpu::Device::Impl::AllocateDescriptorSets()
-{
-	std::vector<DescriptorSetLayout*> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout.get());
-	auto allocatedSets = descriptorPool->AllocateDescriptorSets(layouts, MAX_FRAMES_IN_FLIGHT);
-
-	descriptorSets.clear();
-	descriptorSets.reserve(allocatedSets.size());
-	for (auto* setHandle : allocatedSets)
-	{
-		descriptorSets.push_back(static_cast<vk::raii::DescriptorSet*>(setHandle));
-	}
-}
-
-void core::gpu::Device::Impl::CreateUniformBuffers()
-{
-	uniformBuffers.clear();
-	uniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		SBufferCreateInfo bufferInfo{
-			.size = sizeof(UniformBufferObject),
-			.usage = EBufferUsage::UniformBuffer,
-			.memoryProperties = EMemoryProperty::HostVisible | EMemoryProperty::HostCoherent
-		};
-		uniformBuffers.push_back(std::make_unique<Buffer>(parent, bufferInfo));
-	}
-}
-
-void core::gpu::Device::Impl::CreateSamplers()
-{
-	SamplerCreateInfo samplerInfo{
-		.minFilter = Filter::Linear,
-		.magFilter = Filter::Linear,
-		.mipmapMode = SamplerMipmapMode::Linear,
-		.addressModeU = SamplerAddressMode::Repeat,
-		.addressModeV = SamplerAddressMode::Repeat,
-		.addressModeW = SamplerAddressMode::Repeat,
-		.mipLodBias = 0.0f,
-		.enableAnisotropy = true,
-		.maxAnisotropy = 8.0f,
-		.enableCompare = false,
-		.compareOp = CompareOp::Always,
-		.minLod = 0.0f,
-		.maxLod = 1000.0f
-	};
-	textureSampler = std::make_unique<Sampler>(parent, samplerInfo);
-}
-
 void core::gpu::Device::Impl::CreateCommandPool()
 {
 	CommandPoolCreateInfo poolInfo{
@@ -500,7 +426,7 @@ void core::gpu::Device::Impl::CreateCommandPool()
 	commandPool = std::make_unique<CommandPool>(parent, poolInfo);
 }
 
-
+// Renderer
 void core::gpu::Device::Impl::CreateDefaultTextures()
 {
 	defaultWhiteTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
@@ -508,6 +434,7 @@ void core::gpu::Device::Impl::CreateDefaultTextures()
 	defaultNormalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
 }
 
+// Renderer
 void core::gpu::Device::Impl::LoadMaterialTextures()
 {
 	albedoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
@@ -517,12 +444,14 @@ void core::gpu::Device::Impl::LoadMaterialTextures()
 	aoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
 	emissiveTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
 
-	albedoTexture->LoadTextureIfExists(parent, "../bin/assets/textures/viking_room.png");
+	/* Loader une image via un path puis creer une texture*/
+
+	/*albedoTexture->LoadTextureIfExists(parent, "../bin/assets/textures/viking_room.png");
 	normalTexture->LoadTextureIfExists(parent, "assets/textures/normal.png");
 	metallicTexture->LoadTextureIfExists(parent, "assets/textures/metallic.png");
 	roughnessTexture->LoadTextureIfExists(parent, "assets/textures/roughness.png");
 	aoTexture->LoadTextureIfExists(parent, "assets/textures/ao.png");
-	emissiveTexture->LoadTextureIfExists(parent, "assets/textures/emissive.png");
+	emissiveTexture->LoadTextureIfExists(parent, "assets/textures/emissive.png");*/
 }
 
 void core::gpu::Device::Impl::CreateSwapchain()
@@ -543,6 +472,7 @@ void core::gpu::Device::Impl::CreateSwapchain()
 	swapchain = std::make_unique<Swapchain>(parent, swapchainInfo);
 }
 
+//Renderer
 void core::gpu::Device::Impl::CreateGraphicsPipeline()
 {
 	auto shaderCode = ReadFile("../bin/assets/shaders/slang.spv");
@@ -643,6 +573,7 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 	};
 	swapchain = std::make_unique<Swapchain>(parent, swapchainInfo);
 
+	// Renderer
 	CreateColorImage();
 	CreateDepthImage();
 	CreateGraphicsPipeline();
@@ -650,20 +581,21 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 	CreateDescriptorSets();
 }
 
+// Renderer
 void core::gpu::Device::Impl::CreateDescriptorSets()
 {
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		DescriptorSet(parent, &descriptorSets, i)
-			.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
-			.BindImage(*textureSampler, albedoTexture.get(), *defaultWhiteTexture)
-			.BindImage(*textureSampler, normalTexture.get(), *defaultNormalTexture)
-			.BindImage(*textureSampler, metallicTexture.get(), *defaultWhiteTexture)
-			.BindImage(*textureSampler, roughnessTexture.get(), *defaultWhiteTexture)
-			.BindImage(*textureSampler, aoTexture.get(), *defaultWhiteTexture)
-			.BindImage(*textureSampler, emissiveTexture.get(), *defaultBlackTexture)
-			.Update();
-	}
+	//for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	//{
+	//	DescriptorSet(parent, &descriptorSets, i)
+	//		.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
+	//		.BindImage(*textureSampler, albedoTexture.get(), *defaultWhiteTexture)
+	//		.BindImage(*textureSampler, normalTexture.get(), *defaultNormalTexture)
+	//		.BindImage(*textureSampler, metallicTexture.get(), *defaultWhiteTexture)
+	//		.BindImage(*textureSampler, roughnessTexture.get(), *defaultWhiteTexture)
+	//		.BindImage(*textureSampler, aoTexture.get(), *defaultWhiteTexture)
+	//		.BindImage(*textureSampler, emissiveTexture.get(), *defaultBlackTexture)
+	//		.Update();
+	//}
 }
 
 void core::gpu::Device::Impl::CreateSyncObjects()
@@ -910,6 +842,8 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 	}
 }
 
+
+// Renderer
 void core::gpu::Device::Impl::CreateColorImage()
 {
 	SImageCreateInfo colorInfo{
@@ -933,6 +867,7 @@ void core::gpu::Device::Impl::CreateColorImage()
 	colorImage->CreateView(viewInfo);
 }
 
+// Renderer
 void core::gpu::Device::Impl::CreateDepthImage()
 {
 	SImageCreateInfo depthInfo{

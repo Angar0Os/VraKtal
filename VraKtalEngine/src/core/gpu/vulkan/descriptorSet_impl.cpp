@@ -1,3 +1,4 @@
+#include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
 #include "../src/core/gpu/vulkan/descriptorSet_impl.h"
 #include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
@@ -23,6 +24,23 @@ core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gp
 
 core::gpu::DescriptorSet::Impl::~Impl() = default;
 
+template<>
+void core::gpu::DescriptorSet::Bind<core::gpu::Texture>(uint32_t binding, const core::gpu::Texture& texture)
+{
+	size_t infoIndex = imageInfos.size();
+	imageInfos.emplace_back(
+		texture.GetImpl().,
+		texture.GetImpl().image->GetImpl().view,
+		core::gpu_detail::ToVulkan(layout)
+	);
+
+	bindingInfos.push_back({
+		currentBinding++,
+		vk::DescriptorType::eCombinedImageSampler,
+		infoIndex
+	});
+}
+
 core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindBuffer(const Buffer& buffer, size_t offset, size_t range)
 {
 	size_t infoIndex = bufferInfos.size();
@@ -44,24 +62,26 @@ core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindBuffer(const Buffe
 core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindImage(const Sampler& sampler, const Texture* texture,
 	const Texture& defaultTexture, ImageLayout layout)
 {
-	const Texture* selectedTexture = (texture && texture != nullptr)
-		? texture
-		: &defaultTexture;
+	
+}
 
-	size_t infoIndex = imageInfos.size();
-	imageInfos.emplace_back(
-		sampler.GetImpl().sampler,
-		selectedTexture->GetImpl().image->GetImpl().view,
-		core::gpu_detail::ToVulkan(layout)
-	);
+core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindAccelerationStructure(uint32_t frameIndex, const AccelerationStructure& accelStructure)
+{
+	vk::DescriptorSet descSet = **descriptorSets[frameIndex];
+	vk::AccelerationStructureKHR accelStructHandle = **tlasHandle->GetImpl().accelerationStructure;
 
-	bindingInfos.push_back({
-		currentBinding++,
-		vk::DescriptorType::eCombinedImageSampler,
-		infoIndex
-		});
+	vk::WriteDescriptorSetAccelerationStructureKHR accelInfo{};
+	accelInfo.accelerationStructureCount = 1;
+	accelInfo.pAccelerationStructures = &accelStructHandle;
 
-	return parent;
+	vk::WriteDescriptorSet writeDesc{};
+	writeDesc.dstSet = descSet;
+	writeDesc.dstBinding = 8;
+	writeDesc.dstArrayElement = 0;
+	writeDesc.descriptorCount = 1;
+	writeDesc.descriptorType = vk::DescriptorType::eAccelerationStructureKHR;
+	writeDesc.pNext = &accelInfo;
+
 }
 
 void core::gpu::DescriptorSet::Impl::Update()

@@ -3,28 +3,11 @@
 #pragma once
 
 #include <memory>
-#include <string>
-#include <cstdint>
-
-#include <core/enum.h>
 
 namespace core::gpu
 {
-    class CommandPool;
     class Device;
     class Image;
-    class Sampler;
-
-    struct TextureCreateInfo
-    {
-        std::string filepath;
-        TextureFormat format = TextureFormat::RGBA8_SRGB;
-        Filter minFilter = Filter::Linear;
-        Filter magFilter = Filter::Linear;
-        SamplerAddressMode addressMode = SamplerAddressMode::Repeat;
-        bool generateMipmaps = true;
-        bool flipVertically = false;
-    };
 
     class Texture
     {
@@ -33,16 +16,7 @@ namespace core::gpu
         std::unique_ptr<Impl> m_impl;
 
     public:
-        Texture(const core::gpu::Device* _device,
-                const core::gpu::CommandPool* _pool, 
-                const TextureCreateInfo& _info);
-
-        Texture(const core::gpu::Device* _device,
-                const core::gpu::CommandPool* _pool,
-                float _r, float _g, float _b, float _a,
-                TextureFormat _format = TextureFormat::RGBA8_SRGB);
-
-        bool LoadTextureIfExists(const core::gpu::Device* device, const std::string& _filepath);
+        Texture(const core::gpu::Device& _device, const const::core::gpu::Image& _info);
 
         ~Texture();
 
