@@ -184,6 +184,7 @@
     <ClInclude Include="..\external\include\imgui\imstb_textedit.h" />
     <ClInclude Include="..\external\include\imgui\imstb_truetype.h" />
     <ClInclude Include="..\external\include\MDI\IconsMaterialDesignIcons.h" />
+    <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h" />
     <ClInclude Include="include\core\enum.h" />
     <ClInclude Include="include\core\gpu\accelerationStructure.h" />
     <ClInclude Include="include\core\gpu\buffer.h" />

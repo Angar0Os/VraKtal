@@ -1,6 +1,13 @@
 #include "../header/contentDrawer.h"
 #include "imgui/imgui.h"
 
+// Define NOMINMAX before including portable-file-dialogs to prevent Windows min/max macros
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+#include "portable-file-dialogs/portable-file-dialogs.h"
+
 #include <iostream>
 #include <algorithm>
 
@@ -26,27 +33,76 @@ void ContentDrawer::GetContentDrawerWindow()
 	ImGui::Begin("Content Drawer", nullptr, ImGuiWindowFlags_MenuBar);
 
 	if (ImGui::BeginMenuBar()) {
-		if (ImGui::MenuItem(ICON_MDI_PLUS " Add")) {
+		if (ImGui::BeginMenu(ICON_MDI_PLUS " Add")) {
+			if (ImGui::MenuItem(ICON_MDI_FOLDER " Folder")) {
+				PerformCreateFolder();
+			}
+
+			ImGui::EndMenu();
+
 			m_needsRefresh = true;
 		}
 
 		if (ImGui::MenuItem("Import")) {
-			m_needsRefresh = true;
+			PerformImport();
 		}
 
 		if (ImGui::MenuItem(ICON_MDI_REFRESH)) {
 			m_needsRefresh = true;
 		}
 
-		std::string pathStr = m_currentPath.string();
-		float pathWidth = ImGui::CalcTextSize(pathStr.c_str()).x;
-		float availableWidth = ImGui::GetContentRegionAvail().x;
+		std::filesystem::path tempPath = m_currentPath;
+		std::vector<std::pair<std::string, std::filesystem::path>> breadcrumbs;
 
-		if (availableWidth > pathWidth) {
-			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth - pathWidth);
+		while (tempPath != std::filesystem::path(baseAssetPath).parent_path() && !tempPath.empty()) {
+			breadcrumbs.insert(breadcrumbs.begin(), { tempPath.filename().string(), tempPath });
+			tempPath = tempPath.parent_path();
 		}
 
-		ImGui::TextDisabled("%s", pathStr.c_str());
+		float breadcrumbWidth = 0.0f;
+		for (size_t i = 0; i < breadcrumbs.size(); ++i)
+		{
+			breadcrumbWidth += ImGui::CalcTextSize(breadcrumbs[i].first.c_str()).x;
+			if (i > 0) {
+				breadcrumbWidth += ImGui::CalcTextSize(" / ").x;
+			}
+		}
+
+		breadcrumbWidth += ImGui::GetStyle().ItemSpacing.x * (breadcrumbs.size() - 1);
+
+		float availableWidth = ImGui::GetContentRegionAvail().x;
+		if (availableWidth > breadcrumbWidth) {
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + availableWidth - breadcrumbWidth);
+		}
+
+		for (size_t i = 0; i < breadcrumbs.size(); ++i) {
+			if (i > 0) {
+				ImGui::SameLine();
+				ImGui::TextDisabled("/");
+				ImGui::SameLine();
+			}
+
+			if (i == breadcrumbs.size() - 1) {
+				ImGui::TextDisabled("%s", breadcrumbs[i].first.c_str());
+			}
+			else {
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.7f, 1.0f, 1.0f));
+				ImGui::Text("%s", breadcrumbs[i].first.c_str());
+				ImGui::PopStyleColor();
+
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.8f, 1.0f, 1.0f));
+					ImGui::PopStyleColor();
+				}
+
+				if (ImGui::IsItemClicked()) {
+					m_currentPath = breadcrumbs[i].second;
+					m_needsRefresh = true;
+					ClearSelection();
+				}
+			}
+		}
 
 		ImGui::EndMenuBar();
 	}
@@ -219,11 +275,11 @@ void ContentDrawer::HandleFileActions()
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem(ICON_MDI_CONTENT_COPY " Copy")) {
+		if (ImGui::MenuItem(ICON_MDI_CONTENT_COPY " Copy", "Ctrl+C")) {
 			PerformCopy();
 		}
 
-		if (ImGui::MenuItem(ICON_MDI_CONTENT_CUT " Cut")) {
+		if (ImGui::MenuItem(ICON_MDI_CONTENT_CUT " Cut", "Ctrl+X")) {
 			PerformCut();
 		}
 
@@ -244,6 +300,20 @@ void ContentDrawer::PerformCopy()
 		if (idx < m_cachedFiles.size()) {
 			m_clipboardPaths.push_back(m_cachedFiles[idx].path);
 		}
+	}
+}
+
+void ContentDrawer::PerformCreateFolder()
+{
+	try {
+		std::filesystem::path newFolderPath = m_currentPath / "New folder";
+
+		if (!std::filesystem::exists(newFolderPath)) {
+			std::filesystem::create_directory(newFolderPath);
+		}
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Folder creation failed: " << e.what() << std::endl;
 	}
 }
 
@@ -340,6 +410,45 @@ void ContentDrawer::PerformDelete()
 	m_needsRefresh = true;
 }
 
+void ContentDrawer::PerformImport()
+{
+	auto selection = pfd::open_file(
+		"Import Files",
+		"",
+		{
+			"All Files", "*",
+			"Images", "*.png *.jpg *.jpeg",
+			"Audio", "*.mp3 *.wav",
+			"3D Models", "*.obj *.gltf *.glb",
+		},
+		pfd::opt::multiselect
+		);
+
+	auto files = selection.result();
+
+	if (files.empty()) {
+		return;
+	}
+
+	for (const auto& sourceFile : files) {
+		std::filesystem::path sourcePath(sourceFile);
+		std::filesystem::path destPath = m_currentPath / sourcePath.filename();
+
+		try {
+			if (std::filesystem::exists(destPath)) {
+				continue;
+			}
+
+			std::filesystem::copy_file(sourcePath, destPath);
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Import failed for " << sourcePath.filename() << ": " << e.what() << std::endl;
+		}
+	}
+
+	m_needsRefresh = true;
+}
+
 void ContentDrawer::PerformRename()
 {
 	if (m_renameTargetIndex >= m_cachedFiles.size()) {
@@ -375,8 +484,6 @@ void ContentDrawer::RefreshFileList() {
 		fileEntry.fileType = FileTypeDetector::DetectFileType(fileEntry.path);
 		fileEntry.isSelected = false;
 
-		std::cout << "fileType " << fileEntry.fileType << std::endl;
-
 		m_cachedFiles.push_back(fileEntry);
 	}
 
@@ -401,7 +508,7 @@ void ContentDrawer::ShowRenameDialog()
 
 		ImGui::Separator();
 
-		if (ImGui::Button("OK", ImVec2(120, 0))) {
+		if (ImGui::Button("OK", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
 			PerformRename();
 			ImGui::CloseCurrentPopup();
 		}
@@ -437,7 +544,7 @@ void ContentDrawer::ShowDeleteDialog()
 
 		ImGui::Separator();
 
-		if (ImGui::Button("Delete", ImVec2(120, 0))) {
+		if (ImGui::Button("Delete", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
 			PerformDelete();
 			ImGui::CloseCurrentPopup();
 		}
