@@ -8,11 +8,11 @@
 #include <graphics/resources/object/light.h>
 
 #include <core/gpu/imguiContext.h>
-#include "../header/imGuiWindows.h"
+#include "imGuiWindows.h"
 
 #include <loaders/meshLoader.h>
 
-#include "../header/utils/yamlParser.h"
+#include "utils/yamlParser.h"
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 

@@ -139,7 +139,9 @@
     <ClCompile Include="src\imGuiWindows.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\utils\fileTypeDetector.cpp" />
-    <ClCompile Include="src\utils\yamlParser.cpp" />
+    <ClCompile Include="src\utils\yamlParser.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)VraKtalEditor\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\contentDrawer.h" />
