@@ -41,12 +41,15 @@ private:
 	void HandleFileActions();
 
 	void PerformCopy();
+	void PerformCreateFolder();
 	void PerformCut();
 	void PerformDelete();
 	void PerformPaste();
 	void PerformRename();
 	void ShowDeleteDialog();
 	void ShowRenameDialog();
+
+	void PerformImport();
 
 public:
 	ContentDrawer();

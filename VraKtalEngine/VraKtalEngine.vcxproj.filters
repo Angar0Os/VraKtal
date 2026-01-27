@@ -79,6 +79,9 @@
     <Filter Include="external\fonts">
       <UniqueIdentifier>{bd25967c-d4f9-474d-a3ee-94157b94d36a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="external\portableFileDialogs">
+      <UniqueIdentifier>{9060703a-032f-4e39-9ead-06e259c1f291}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -248,6 +251,9 @@
     </ClInclude>
     <ClInclude Include="..\external\include\MDI\IconsMaterialDesignIcons.h">
       <Filter>external\MDI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h">
+      <Filter>external\portableFileDialogs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
