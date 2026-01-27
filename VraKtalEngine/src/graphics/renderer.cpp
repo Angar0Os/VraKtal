@@ -6,6 +6,8 @@
 
 using namespace graphics;
 
+#define VRAKTAL_EDITOR
+
 Renderer::Renderer(core::Window& window, core::gpu::Device& device)
 	: m_window(window),
 	m_device(device),
@@ -287,8 +289,10 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 		cmd->DrawIndexed(meshInstance.first->indexCount);
 	}
 
+#ifndef VRAKTAL_EDITOR
 	m_device.GetImGuiContext()->PrepareDrawData();
 	m_device.GetImGuiContext()->DrawEditors(static_cast<void*>(cmd.get()));
+#endif
 
 	cmd->EndRendering();
 

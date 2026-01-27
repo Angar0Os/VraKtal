@@ -24,6 +24,7 @@ int main()
 	graphics::Renderer renderer(window, device);
 	loaders::MeshLoader loader(&device);
 	ImGuiWindows imGuiWindows = ImGuiWindows(&renderer);
+
 	device.GetImGuiContext()->BindPrepareDrawData([&]()
 	{
 		 imGuiWindows.PrepareImGuiWindows();
@@ -108,8 +109,6 @@ int main()
 		mainLight.enabled = true;
 
 		renderer.PushLight(mainLight);
-
-		//renderer.PushLight(lights[0]);
 
 		renderer.Render(swapchainImage, imageIndex);
 		device.Present(imageIndex);
