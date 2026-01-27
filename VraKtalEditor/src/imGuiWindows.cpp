@@ -1,5 +1,7 @@
 
 #include "../header/imGuiWindows.h"
+#include "../header/contentDrawer.h"
+#include "imgui/imgui.h"
 #include <graphics/resources/object/camera.h>
 #include <graphics/renderer.h>
 
@@ -42,7 +44,13 @@ void ImGuiWindows::PrepareImGuiWindows()
 	mainWindow();
 
     testWindow();
+	ContentDrawerWindow();
     HierarchyWindow();
+}
+
+void ImGuiWindows::ContentDrawerWindow()
+{
+	m_contentDrawer.GetContentDrawerWindow();
 }
 
 void ImGuiWindows::HierarchyWindow()
