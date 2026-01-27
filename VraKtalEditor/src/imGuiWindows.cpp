@@ -3,8 +3,10 @@
 #include <graphics/resources/object/camera.h>
 #include <graphics/renderer.h>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/type_ptr.inl>
 #include <glm/gtx/matrix_decompose.inl>
+
 #include <imGuizmo/ImGuizmo.h>
 #include <imgui/imgui.h>
 
