@@ -409,17 +409,7 @@ void core::gpu::Device::Impl::CreateDescriptorSetLayout()
 
 void core::gpu::Device::Impl::CreateDescriptorPool()
 {
-	SDescriptorPoolCreateInfo poolInfo;
-	poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 2;
-	poolInfo.poolSizes =
-	{
-		{EDescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT * 2},
-		{EDescriptorType::CombinedImageSampler, MAX_FRAMES_IN_FLIGHT * 7},
-		{EDescriptorType::AccelerationStructure, MAX_FRAMES_IN_FLIGHT}
-	};
-	poolInfo.allowFreeDescriptorSet = true;
-
-	descriptorPool = std::make_unique<DescriptorPool>(parent, poolInfo);
+	descriptorPool = std::make_unique<DescriptorPool>(parent);
 }
 
 void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)

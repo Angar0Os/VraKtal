@@ -4,35 +4,31 @@
 #include "../src/core/gpu_detail/converters.h"
 
 core::gpu::DescriptorPool::Impl::Impl(core::gpu::DescriptorPool& _pool,
-	const core::gpu::Device* _device, const SDescriptorPoolCreateInfo& _info)
+	const core::gpu::Device* _device)
 	: parent(_pool), device(_device), pool(nullptr)
 {
-	allocatedSets.reserve(_info.maxSets);
 
-	std::vector<vk::DescriptorPoolSize> vkPoolSizes;
-	vkPoolSizes.reserve(_info.poolSizes.size());
+	std::vector<vk::DescriptorPoolSize> poolSizes = {
+		{ vk::DescriptorType::eUniformBuffer,            1024 },
+		{ vk::DescriptorType::eStorageBuffer,            1024 },
+		{ vk::DescriptorType::eCombinedImageSampler,     2048 },
+		{ vk::DescriptorType::eSampledImage,             1024 },
+		{ vk::DescriptorType::eStorageImage,             512  },
+		{ vk::DescriptorType::eUniformTexelBuffer,       256  },
+		{ vk::DescriptorType::eStorageTexelBuffer,       256  },
+		{ vk::DescriptorType::eSampler,                  512  },
+		{ vk::DescriptorType::eInputAttachment,          256  },
+		{ vk::DescriptorType::eAccelerationStructureKHR, 32   }
+	};
 
-	for (const auto& poolSize : _info.poolSizes)
-	{
-		vk::DescriptorPoolSize poolSizeInfo{};
-		poolSizeInfo.type = core::gpu_detail::ToVulkan(poolSize.type);
-		poolSizeInfo.descriptorCount = poolSize.descriptorCount;
-		vkPoolSizes.push_back(poolSizeInfo);
-	}
+	auto createInfo = vk::DescriptorPoolCreateInfo{};
 
-	vk::DescriptorPoolCreateFlags flags;
-	if (_info.allowFreeDescriptorSet)
-	{
-		flags |= vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
-	}
+	createInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+	createInfo.maxSets = 2048;
+	createInfo.poolSizeCount = uint32_t(poolSizes.size());
+	createInfo.pPoolSizes = poolSizes.data();
 
-	vk::DescriptorPoolCreateInfo poolInfo{};
-	poolInfo.flags = flags;
-	poolInfo.maxSets = _info.maxSets;
-	poolInfo.poolSizeCount = static_cast<uint32_t>(vkPoolSizes.size());
-	poolInfo.pPoolSizes = vkPoolSizes.data();
-
-	pool = vk::raii::DescriptorPool(device->GetImpl().device, poolInfo);
+	pool = vk::raii::DescriptorPool(device->GetImpl().device, createInfo);
 }
 
 core::gpu::DescriptorPool::Impl::~Impl() = default;
@@ -82,15 +78,12 @@ const vk::raii::DescriptorPool& core::gpu::DescriptorPool::Impl::GetPool() const
 	return pool;
 }
 
-core::gpu::DescriptorPool::DescriptorPool(const core::gpu::Device* device, const SDescriptorPoolCreateInfo& info)
+core::gpu::DescriptorPool::DescriptorPool(const core::gpu::Device* device)
 {
-	m_impl = std::make_unique<Impl>(*this, device, info);
+	m_impl = std::make_unique<Impl>(*this, device);
 }
 
 core::gpu::DescriptorPool::~DescriptorPool() = default;
-
-core::gpu::DescriptorPool::DescriptorPool(DescriptorPool&& other) noexcept = default;
-core::gpu::DescriptorPool& core::gpu::DescriptorPool::operator=(DescriptorPool&& other) noexcept = default;
 
 std::vector<void*> core::gpu::DescriptorPool::AllocateDescriptorSets(
 	const std::vector<DescriptorSetLayout*>& layouts, uint32_t count)
