@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 
 #include <core/window.h>
 #include <core/gpu/device.h>
@@ -11,6 +11,8 @@
 #include "../header/imGuiWindows.h"
 
 #include <loaders/meshLoader.h>
+
+#include "../header/utils/yamlParser.h"
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 
@@ -54,6 +56,14 @@ int main()
 
 	uint32_t currentFrameIndex = 0;
 	uint32_t frameCounter = 0;
+
+	utils::YamlParser parser("project.yaml");
+
+	std::vector<graphics::resources::Light> lights;
+
+	if (parser.IsValid()) {
+		lights = parser.LoadLights();
+	}
 
 	while (!window.ShouldClose())
 	{
@@ -99,15 +109,7 @@ int main()
 
 		renderer.PushLight(mainLight);
 
-		//graphics::resources::Light closeLight;
-		//closeLight.name = "Close Light";
-		//closeLight.position = glm::vec3(0.0f, 1.0f, 0.5f);
-		//closeLight.color = glm::vec3(1.0f, 0.0f, 0.0f);
-		//closeLight.intensity = 10.0f;
-		//closeLight.radius = 0.1f;
-		//closeLight.enabled = true;
-
-		//renderer.PushLight(closeLight);
+		//renderer.PushLight(lights[0]);
 
 		renderer.Render(swapchainImage, imageIndex);
 		device.Present(imageIndex);
