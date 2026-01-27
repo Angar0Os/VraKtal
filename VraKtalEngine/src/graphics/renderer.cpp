@@ -1,4 +1,5 @@
 #include <graphics/renderer.h>
+#include <core/gpu/imguiContext.h>
 
 #include <memory>
 #include <iostream>
@@ -285,6 +286,9 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 		cmd->BindIndexBuffer(meshInstance.first->indexBuffer.get());
 		cmd->DrawIndexed(meshInstance.first->indexCount);
 	}
+
+	m_device.GetImGuiContext()->PrepareDrawData();
+	m_device.GetImGuiContext()->DrawEditors(static_cast<void*>(cmd.get()));
 
 	cmd->EndRendering();
 

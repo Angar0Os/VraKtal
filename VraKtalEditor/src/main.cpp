@@ -7,6 +7,9 @@
 #include <graphics/renderer.h>
 #include <graphics/resources/object/light.h>
 
+#include <core/gpu/imguiContext.h>
+#include "../header/imGuiWindows.h"
+
 #include <loaders/meshLoader.h>
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
@@ -14,10 +17,15 @@
 int main()
 {
 	core::Window window(800, 600, "VraKtal Engine");
+	
 	core::gpu::Device device(window);
 	graphics::Renderer renderer(window, device);
-
 	loaders::MeshLoader loader(&device);
+	ImGuiWindows imGuiWindows = ImGuiWindows(&renderer);
+	device.GetImGuiContext()->BindPrepareDrawData([&]()
+	{
+		 imGuiWindows.PrepareImGuiWindows();
+	});
 
 	auto vikingRoomMesh = loader.LoadMesh("assets/models/viking_room.obj");
 	auto planeMesh = loader.CreatePlane(10.0f, 10.0f, 10, 10);

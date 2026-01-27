@@ -64,6 +64,15 @@
     <Filter Include="Source Files\graphics\resources\property">
       <UniqueIdentifier>{2eab3814-ab48-462b-a881-0f5a08f2d551}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{46c6671c-d437-48a1-a861-096c331d62d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\ImGui">
+      <UniqueIdentifier>{3b75a217-ceae-4fda-b3ef-fdd405fc0d7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\ImGuizmo">
+      <UniqueIdentifier>{c2ebceed-88ee-4fdd-b70a-dd7f67326125}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -183,6 +192,54 @@
     <ClInclude Include="include\graphics\resources\object\staticMesh.h">
       <Filter>Header Files\graphics\resources\object</Filter>
     </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\GraphEditor.h">
+      <Filter>External\ImGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\ImCurveEdit.h">
+      <Filter>External\ImGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\ImGradient.h">
+      <Filter>External\ImGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\ImGuizmo.h">
+      <Filter>External\ImGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\ImSequencer.h">
+      <Filter>External\ImGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\ImZoomSlider.h">
+      <Filter>External\ImGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imconfig.h">
+      <Filter>External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imgui.h">
+      <Filter>External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imgui_impl_glfw.h">
+      <Filter>External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imgui_impl_vulkan.h">
+      <Filter>External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imgui_internal.h">
+      <Filter>External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imstb_rectpack.h">
+      <Filter>External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imstb_textedit.h">
+      <Filter>External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imstb_truetype.h">
+      <Filter>External\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\imguiContext.h">
+      <Filter>Header Files\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\gpu\vulkan\imguiContext_impl.h">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -242,6 +299,45 @@
     <ClCompile Include="src\graphics\resources\object\scene.cpp">
       <Filter>Source Files\graphics\resources</Filter>
     </ClCompile>
+    <ClCompile Include="..\external\include\imGuizmo\GraphEditor.cpp">
+      <Filter>External\ImGuizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imGuizmo\ImCurveEdit.cpp">
+      <Filter>External\ImGuizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imGuizmo\ImGradient.cpp">
+      <Filter>External\ImGuizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imGuizmo\ImGuizmo.cpp">
+      <Filter>External\ImGuizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imGuizmo\ImSequencer.cpp">
+      <Filter>External\ImGuizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_demo.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_draw.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_impl_glfw.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_impl_vulkan.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_tables.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_widgets.cpp">
+      <Filter>External\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\gpu\vulkan\imguiContext_impl.cpp">
+      <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\shaders\shader.slang">
@@ -249,6 +345,9 @@
     </None>
     <None Include="..\bin\assets\shaders\frameUniforms.slang">
       <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="..\external\include\imGuizmo\.editorconfig">
+      <Filter>External\ImGuizmo</Filter>
     </None>
   </ItemGroup>
 </Project>

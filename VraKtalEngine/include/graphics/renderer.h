@@ -62,6 +62,13 @@ namespace graphics
 		void Cleanup();
 
 		core::gpu::AccelerationStructure* GetTLAS() const { return m_tlas.get(); }
+
+		glm::mat4 GetViewMatrix()		{ return m_viewMatrix;		};
+		glm::mat4 GetProjectionMatrix()	{ return m_projMatrix;		};
+		glm::vec3 GetCameraPosition()	{ return m_cameraPosition;	};
+
+		std::vector<std::pair<resources::Mesh*, glm::mat4>>* GetMeshInstances() { return &m_meshInstances; };
+
 	};
 }
 
