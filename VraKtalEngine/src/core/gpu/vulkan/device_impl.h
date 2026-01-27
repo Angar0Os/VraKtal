@@ -20,7 +20,6 @@ import vulkan_hpp;
 #include <core/gpu/texture.h>
 #include <core/gpu/descriptorPool.h>
 #include <core/gpu/commandPool.h>
-#include <core/gpu/swapchain.h>
 #include <core/gpu/pipeline.h>
 
 #ifdef NDEBUG
@@ -67,10 +66,12 @@ namespace core::gpu
 		std::unique_ptr<Image>	colorImage;
 		std::unique_ptr<Image>	depthImage;
 
-		std::unique_ptr<Swapchain>	swapchain;
 		std::unique_ptr<Pipeline>	graphicsPipeline;
 
 		std::vector<CommandBuffer>	commandBuffers;
+
+        vk::raii::SwapchainKHR				swapchain = nullptr;
+        std::vector<vk::raii::ImageView>    swapchainImageViews;
 
 		std::vector<vk::raii::Semaphore>	imageAvailable;
 		std::vector<vk::raii::Semaphore>	renderFinished;
@@ -117,10 +118,13 @@ namespace core::gpu
 
 		Buffer* GetUniformBuffer(uint32_t frameIndex) const;
 
-		const Swapchain* GetSwapchain() const;
 		const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
 		const core::gpu::Image* GetColorImage() const;
 		const core::gpu::Image* GetDepthImage() const;
+
+		vk::SurfaceFormatKHR	ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats, TextureFormat preferredFormat);
+		vk::PresentModeKHR		ChoosePresentMode(const std::vector<vk::PresentModeKHR>& availableModes, PresentMode preferredMode);
+		vk::Extent2D			ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
 
         const core::gpu::Pipeline* GetGraphicsPipeline() const;
 

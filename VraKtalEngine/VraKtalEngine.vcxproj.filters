@@ -105,13 +105,7 @@
     <ClInclude Include="include\core\gpu\buffer.h">
       <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\gpu\sampler.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\sampler_impl.h">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\core\gpu_detail\converters.h">
@@ -153,13 +147,7 @@
     <ClInclude Include="include\core\gpu\pipeline.h">
       <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\gpu\swapchain.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\gpu\vulkan\pipeline_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\swapchain_impl.h">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="include\graphics\renderer.h">
@@ -269,9 +257,6 @@
     <ClCompile Include="src\core\gpu\vulkan\buffer_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\sampler_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\gpu_detail\converters.cpp">
       <Filter>Source Files\core\gpu\gpu_detail</Filter>
     </ClCompile>
@@ -297,9 +282,6 @@
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\pipeline_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\swapchain_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\renderer.cpp">

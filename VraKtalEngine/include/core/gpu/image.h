@@ -35,6 +35,8 @@ namespace core::gpu
 		bool isDepth = false;
 	};
 
+	struct SPredefinedImageCreateInfo;
+
 	class Image
 	{
 	private:
@@ -43,22 +45,12 @@ namespace core::gpu
 
 	public:
 		Image(const core::gpu::Device* device, const SImageCreateInfo& info);
+		Image(const core::gpu::Device* device, const SPredefinedImageCreateInfo& info);
 
 		Image(const core::gpu::Device* device, void* image, uint32_t width,
               uint32_t height, TextureFormat format);
 
 		~Image();
-
-		void CreateView(const SImageViewCreateInfo& info);
-
-		void TransitionLayout(CommandBuffer& commandBuffer,
-			ImageLayout oldLayout, ImageLayout newLayout, uint32_t mipLevels = 1);
-
-		void CopyFromBuffer(CommandBuffer& commandBuffer, Buffer& buffer,
-			uint32_t width, uint32_t height);
-
-		void GenerateMipmaps(CommandBuffer& commandBuffer, uint32_t width,
-			uint32_t height, uint32_t mipLevels);
 
 		Impl& GetImpl() const;
 	};

@@ -5,14 +5,11 @@
 #include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
 #include "../src/core/gpu/vulkan/commandPool_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
-#include "../src/core/gpu/vulkan/swapchain_impl.h"
 #include "../src/core/gpu/vulkan/imguiContext_impl.h"
 
 #include "../src/core/gpu_detail/converters.h"
 
-#include <core/gpu/descriptorSet.h>
 #include <core/enum.h>
-#include <core/gpu/swapchain.h>
 
 #include <graphics/resources/object/mesh.h>
 
@@ -454,22 +451,120 @@ void core::gpu::Device::Impl::LoadMaterialTextures()
 	emissiveTexture->LoadTextureIfExists(parent, "assets/textures/emissive.png");*/
 }
 
+vk::SurfaceFormatKHR core::gpu::Device::Impl::ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats, TextureFormat preferredFormat)
+{
+	vk::Format vkPreferredFormat = core::gpu_detail::ToVulkan(preferredFormat);
+
+	for(const auto& format : availableFormats)
+	{
+		if(format.format == vkPreferredFormat &&
+		   format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+		{
+			return format;
+		}
+	}
+
+	for(const auto& format : availableFormats)
+	{
+		if(format.format == vk::Format::eB8G8R8A8Srgb &&
+		   format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+		{
+			return format;
+		}
+	}
+
+	return availableFormats[0];
+}
+
+vk::PresentModeKHR core::gpu::Device::Impl::ChoosePresentMode(const std::vector<vk::PresentModeKHR>& availableModes, PresentMode preferredMode)
+{
+	vk::PresentModeKHR vkPreferredMode = core::gpu_detail::ToVulkan(preferredMode);
+
+	for(const auto& mode : availableModes)
+	{
+		if(mode == vkPreferredMode)
+		{
+			return mode;
+		}
+	}
+
+	return vk::PresentModeKHR::eFifo;
+}
+
+vk::Extent2D core::gpu::Device::Impl::ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height)
+{
+	if(capabilities.currentExtent.width != 0xFFFFFFFF)
+	{
+		return capabilities.currentExtent;
+	}
+
+	vk::Extent2D actualExtent = {width, height};
+
+	actualExtent.width = std::clamp(actualExtent.width,
+									capabilities.minImageExtent.width,
+									capabilities.maxImageExtent.width);
+	actualExtent.height = std::clamp(actualExtent.height,
+									 capabilities.minImageExtent.height,
+									 capabilities.maxImageExtent.height);
+
+	return actualExtent;
+}
+
+
 void core::gpu::Device::Impl::CreateSwapchain()
 {
-	int width, height = 0;
-	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
+	vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
+	auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface);
+	auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
 
-	SwapchainCreateInfo swapchainInfo{
-		.surface = static_cast<void*>(static_cast<VkSurfaceKHR>(*surface)),
-		.width = static_cast<uint32_t>(width),
-		.height = static_cast<uint32_t>(height),
-		.preferredFormat = TextureFormat::RGBA8_SRGB,
-		.presentMode = PresentMode::Mailbox,
-		.minImageCount = 3,
+	vk::SurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(surfaceFormats, TextureFormat::RGBA8_SRGB);
+	vk::PresentModeKHR presentMode = ChoosePresentMode(presentModes, PresentMode::Fifo);
+	vk::Extent2D extent = ChooseExtent(capabilities, 0, 0);
+
+	uint32_t imageCount = std::max(2u, capabilities.minImageCount);
+	if(capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
+	{
+		imageCount = capabilities.maxImageCount;
+	}
+
+	vk::SwapchainCreateInfoKHR createInfo{
+		.surface = surface,
+		.minImageCount = imageCount,
+		.imageFormat = surfaceFormat.format,
+		.imageColorSpace = surfaceFormat.colorSpace,
+		.imageExtent = extent,
+		.imageArrayLayers = 1,
+		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+		.imageSharingMode = vk::SharingMode::eExclusive,
+		.preTransform = capabilities.currentTransform,
+		.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+		.presentMode = presentMode,
+		.clipped = vk::True,
 		.oldSwapchain = nullptr
 	};
 
-	swapchain = std::make_unique<Swapchain>(parent, swapchainInfo);
+	swapchain = vk::raii::SwapchainKHR(device, createInfo);
+
+	std::vector<vk::Image> vkImages = swapchain.getImages();
+	swapchainImageViews.clear();
+	swapchainImageViews.reserve(vkImages.size());
+
+	for(vk::Image image : vkImages)
+	{
+		vk::ImageViewCreateInfo viewInfo{
+			.image = image,
+			.viewType = vk::ImageViewType::e2D,
+			.format = surfaceFormat.format,
+			.subresourceRange = {
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+		swapchainImageViews.emplace_back(device, viewInfo);
+	}
 }
 
 //Renderer
@@ -515,7 +610,7 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 	pipelineInfo.depthCompareOp = CompareOp::Less;
 	pipelineInfo.blendEnable = false;
 	pipelineInfo.samples = SampleCount::e4;
-	pipelineInfo.colorAttachmentFormats = { core::gpu_detail::FromVulkan(swapchain->GetImpl().format) };
+	pipelineInfo.colorAttachmentFormats = { TextureFormat::RGBA8_SRGB };
 	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
 	pipelineInfo.descriptorSetLayouts = { descriptorSetLayout.get() };
 	pipelineInfo.pushConstantRanges = pushConstants;
@@ -547,8 +642,7 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 {
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
-
-	while (width == 0 || height == 0)
+	while(width == 0 || height == 0)
 	{
 		glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
 		glfwWaitEvents();
@@ -556,22 +650,62 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 
 	device.waitIdle();
 
-	imageAvailable.clear();
-	renderFinished.clear();
-	inFlightFences.clear();
-	imagesInFlight.clear();
-	tempCmdBufs.clear();
+	swapchainImageViews.clear();
 
-	SwapchainCreateInfo swapchainInfo{
-		.surface = static_cast<void*>(static_cast<VkSurfaceKHR>(*surface)),
-		.width = static_cast<uint32_t>(width),
-		.height = static_cast<uint32_t>(height),
-		.preferredFormat = TextureFormat::RGBA8_SRGB,
-		.presentMode = PresentMode::Mailbox,
-		.minImageCount = 3,
-		.oldSwapchain = swapchain.get()
+	vk::SwapchainKHR oldSwapchain = *swapchain;
+
+	vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
+	auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
+	auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
+
+	vk::SurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(surfaceFormats, TextureFormat::RGBA8_SRGB);
+	vk::PresentModeKHR presentMode = ChoosePresentMode(presentModes, PresentMode::Mailbox);
+	vk::Extent2D extent = ChooseExtent(capabilities, width, height);
+
+	uint32_t imageCount = std::max(3u, capabilities.minImageCount);
+	if(capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
+	{
+		imageCount = capabilities.maxImageCount;
+	}
+
+	vk::SwapchainCreateInfoKHR createInfo{
+		.surface = *surface,
+		.minImageCount = imageCount,
+		.imageFormat = surfaceFormat.format,
+		.imageColorSpace = surfaceFormat.colorSpace,
+		.imageExtent = extent,
+		.imageArrayLayers = 1,
+		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+		.imageSharingMode = vk::SharingMode::eExclusive,
+		.preTransform = capabilities.currentTransform,
+		.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+		.presentMode = presentMode,
+		.clipped = vk::True,
+		.oldSwapchain = oldSwapchain 
 	};
-	swapchain = std::make_unique<Swapchain>(parent, swapchainInfo);
+
+	swapchain = vk::raii::SwapchainKHR(device, createInfo);
+
+	std::vector<vk::Image> vkImages = swapchain.getImages();
+	swapchainImageViews.clear();
+	swapchainImageViews.reserve(vkImages.size());
+
+	for(vk::Image image : vkImages)
+	{
+		vk::ImageViewCreateInfo viewInfo{
+			.image = image,
+			.viewType = vk::ImageViewType::e2D,
+			.format = surfaceFormat.format,
+			.subresourceRange = {
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+		swapchainImageViews.emplace_back(device, viewInfo);
+	}
 
 	// Renderer
 	CreateColorImage();
@@ -613,7 +747,7 @@ void core::gpu::Device::Impl::CreateSyncObjects()
 		imageAvailable.emplace_back(device, semInfo);
 	}
 
-	uint32_t swapchainImageCount = swapchain->GetImpl().images.size();
+	uint32_t swapchainImageCount = swapchain.getImages().size();
 	renderFinished.reserve(swapchainImageCount);
 	for (size_t i = 0; i < swapchainImageCount; ++i)
 	{
@@ -659,7 +793,7 @@ uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 	{
 		vk::ResultValue<uint32_t> result = device.acquireNextImage2KHR(
 			vk::AcquireNextImageInfoKHR{
-				.swapchain = swapchain->GetImpl().swapchain,
+				.swapchain = swapchain,
 				.timeout = UINT64_MAX,
 				.semaphore = *imageAvailable[frameIndex],
 				.fence = nullptr,
@@ -716,28 +850,24 @@ void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
 	return static_cast<void*>(static_cast<VkFence>(*inFlightFences[frameIndex]));
 }
 
-const core::gpu::Swapchain* core::gpu::Device::Impl::GetSwapchain() const
-{
-	return swapchain.get();
-}
-
 const core::gpu::Image* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
 {
-	if (!swapchain)
+	if (swapchain == nullptr)
 	{
 		std::cerr << "ERROR: Swapchain is null!" << std::endl;
 		return nullptr;
 	}
 
-	if (imageIndex >= swapchain->GetImpl().images.size())
+	if (imageIndex >= swapchain.getImages().size())
 	{
 		std::cerr << "ERROR: Image index " << imageIndex
 			<< " out of range (swapchain has "
-			<< swapchain->GetImpl().images.size() << " images)" << std::endl;
+			<< swapchain.getImages().size() << " images)" << std::endl;
 		return nullptr;
 	}
 
-	return swapchain->GetImpl().images[imageIndex].get();
+	auto images = swapchain.getImages();
+	return images[imageIndex];
 }
 
 const core::gpu::Image* core::gpu::Device::Impl::GetColorImage() const
