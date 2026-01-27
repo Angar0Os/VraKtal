@@ -1,4 +1,4 @@
-#include "../header/utils/fileTypeDetector.h"
+#include "utils/fileTypeDetector.h"
 #include <fstream>
 #include <vector>
 #include <string>

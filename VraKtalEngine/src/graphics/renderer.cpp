@@ -289,7 +289,7 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 		cmd->DrawIndexed(meshInstance.first->indexCount);
 	}
 
-#ifndef VRAKTAL_EDITOR
+#ifdef VRAKTAL_EDITOR
 	m_device.GetImGuiContext()->PrepareDrawData();
 	m_device.GetImGuiContext()->DrawEditors(static_cast<void*>(cmd.get()));
 #endif
