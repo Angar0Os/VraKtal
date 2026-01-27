@@ -73,6 +73,12 @@
     <Filter Include="External\ImGuizmo">
       <UniqueIdentifier>{c2ebceed-88ee-4fdd-b70a-dd7f67326125}</UniqueIdentifier>
     </Filter>
+    <Filter Include="external\MDI">
+      <UniqueIdentifier>{12838fcd-973e-4485-97c5-f924ada4441c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\fonts">
+      <UniqueIdentifier>{bd25967c-d4f9-474d-a3ee-94157b94d36a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -240,6 +246,9 @@
     <ClInclude Include="src\core\gpu\vulkan\imguiContext_impl.h">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="..\external\include\MDI\IconsMaterialDesignIcons.h">
+      <Filter>external\MDI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -349,5 +358,10 @@
     <None Include="..\external\include\imGuizmo\.editorconfig">
       <Filter>External\ImGuizmo</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="..\external\fonts\materialdesignicons-webfont.ttf">
+      <Filter>external\fonts</Filter>
+    </Font>
   </ItemGroup>
 </Project>

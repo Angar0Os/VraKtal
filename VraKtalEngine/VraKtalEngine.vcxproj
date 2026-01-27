@@ -183,6 +183,7 @@
     <ClInclude Include="..\external\include\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\external\include\imgui\imstb_textedit.h" />
     <ClInclude Include="..\external\include\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\external\include\MDI\IconsMaterialDesignIcons.h" />
     <ClInclude Include="include\core\enum.h" />
     <ClInclude Include="include\core\gpu\accelerationStructure.h" />
     <ClInclude Include="include\core\gpu\buffer.h" />
@@ -263,6 +264,9 @@
     <None Include="..\bin\assets\shaders\frameUniforms.slang" />
     <None Include="..\bin\assets\shaders\shader.slang" />
     <None Include="..\external\include\imGuizmo\.editorconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="..\external\fonts\materialdesignicons-webfont.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
