@@ -30,6 +30,17 @@ void ImGuiWindows::PrepareImGuiWindows()
 
 	//EditTransformByIndice(viewMatrix, proj, objectIndex);
 
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->WorkPos);
+	ImGui::SetNextWindowSize(viewport->WorkSize);
+	ImGui::SetNextWindowViewport(viewport->ID);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f,0.0f));
+
+	mainWindow();
+
     testWindow();
     HierarchyWindow();
 }
@@ -42,6 +53,7 @@ void ImGuiWindows::HierarchyWindow()
 void ImGuiWindows::testWindow()
 {
 	ImGui::Begin("Hello ImGui + Vulkan");
+
 	ImGui::Text("If you see this, ImGui works!");
 	ImGui::Separator();
 	static float f = 0.0f;
@@ -110,3 +122,63 @@ void ImGuiWindows::EditTransformByIndice(const float* cameraView, const float* c
     object->transform.SetScale(scale);*/
 }
 
+
+void ImGuiWindows::mainWindow()
+{
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+	window_flags |= ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+	window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+	ImGui::Begin("DockSpace", nullptr, window_flags);
+	ImGui::PopStyleVar(3);
+	
+	ImGuiID dockspace_id = ImGui::GetID("DockSpace");
+	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+
+	SetMenuBar();
+	ImGui::End();
+}
+
+void ImGuiWindows::SetMenuBar() {
+	if (ImGui::BeginMenuBar()) {
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("New Project")) {}
+
+			if (ImGui::MenuItem("Open Project")) {}
+
+			if (ImGui::MenuItem("Save Project")) {}
+
+			if (ImGui::MenuItem("Quit")) {}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Edit")) {
+			if (ImGui::MenuItem("Undo (CTRL + Z)")) {}
+
+			if (ImGui::MenuItem("Redo (CTRL + Y)")) {}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Tools")) {
+			if (ImGui::MenuItem("Timeline")) {}
+
+			if (ImGui::MenuItem("CameraSplineEditor")) {}
+
+			if (ImGui::MenuItem("Tracy")) {}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::MenuItem("Build")) {
+			ImGui::OpenPopup("build_popup");
+		}
+		if (ImGui::BeginPopup("build_popup"))
+		{
+			if (ImGui::Button("Build")) {}; ImGui::SameLine();
+			if (ImGui::Button("Build & Run")) {}
+
+			ImGui::EndPopup();
+		}
+		ImGui::EndMenuBar();
+	}
+}

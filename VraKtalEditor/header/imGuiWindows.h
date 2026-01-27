@@ -1,5 +1,7 @@
 #pragma once
 
+#include "imgui/imgui.h"
+
 namespace graphics {
     class Renderer;
 }
@@ -13,8 +15,10 @@ public:
     void PrepareImGuiWindows();
 
 private:
+	void SetMenuBar();
 
     void HierarchyWindow();
+    void mainWindow();
     void testWindow();
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
 
