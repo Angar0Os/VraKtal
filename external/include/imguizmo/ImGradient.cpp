@@ -1,9 +1,9 @@
 // https://github.com/CedricGuillemet/ImGuizmo
-// v1.92.5 WIP
+// v 1.83
 //
 // The MIT License(MIT)
 //
-// Copyright(c) 2016-2021 Cedric Guillemet
+// Copyright(c) 2021 Cedric Guillemet
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -24,8 +24,8 @@
 // SOFTWARE.
 //
 #include "ImGradient.h"
-#include "imgui.h"
-#include "imgui_internal.h"
+#include "../imgui/imgui.h"
+#include "../imgui/imgui_internal.h"
 
 namespace ImGradient
 {
@@ -67,7 +67,7 @@ namespace ImGradient
       bool ret = false;
       ImGuiIO& io = ImGui::GetIO();
       ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-      ImGui::BeginChild(137, size, ImGuiChildFlags_FrameStyle);
+      ImGui::BeginChildFrame(137, size);
 
       ImDrawList* draw_list = ImGui::GetWindowDrawList();
       const ImVec2 offset = ImGui::GetCursorScreenPos();
@@ -107,7 +107,7 @@ namespace ImGradient
          delegate.AddPoint(delegate.GetPoint(t));
          ret = true;
       }
-      ImGui::EndChild();
+      ImGui::EndChildFrame();
       ImGui::PopStyleVar();
 
       selection = currentSelection;

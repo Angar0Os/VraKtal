@@ -1,9 +1,9 @@
 // https://github.com/CedricGuillemet/ImGuizmo
-// v1.92.5 WIP
+// v 1.83
 //
 // The MIT License(MIT)
 //
-// Copyright(c) 2016-2021 Cedric Guillemet
+// Copyright(c) 2021 Cedric Guillemet
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -28,8 +28,8 @@
 #include <vector>
 #include <stdint.h>
 #include <string>
-#include "imgui.h"
-#include "imgui_internal.h"
+#include "../imgui/imgui.h"
+#include "../imgui/imgui_internal.h"
 
 namespace GraphEditor {
 
@@ -139,8 +139,6 @@ struct Delegate
     
     virtual const size_t GetLinkCount() = 0;
     virtual const Link GetLink(LinkIndex index) = 0;
-
-    virtual ~Delegate() = default;
 };
 
 void Show(Delegate& delegate, const Options& options, ViewState& viewState, bool enabled, FitOnScreen* fit = nullptr);

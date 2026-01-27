@@ -1,9 +1,9 @@
 // https://github.com/CedricGuillemet/ImGuizmo
-// v1.92.5 WIP
+// v 1.83
 //
 // The MIT License(MIT)
 //
-// Copyright(c) 2016-2021 Cedric Guillemet
+// Copyright(c) 2021 Cedric Guillemet
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -24,8 +24,8 @@
 // SOFTWARE.
 //
 #include "ImCurveEdit.h"
-#include "imgui.h"
-#include "imgui_internal.h"
+#include "../imgui/imgui.h"
+#include "../imgui/imgui_internal.h"
 #include <stdint.h>
 #include <set>
 #include <vector>
@@ -148,7 +148,7 @@ namespace ImCurveEdit
       ImGuiIO& io = ImGui::GetIO();
       ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
       ImGui::PushStyleColor(ImGuiCol_Border, 0);
-      ImGui::BeginChild(id, size, ImGuiChildFlags_FrameStyle);
+      ImGui::BeginChildFrame(id, size);
       delegate.focused = ImGui::IsWindowFocused();
       ImDrawList* draw_list = ImGui::GetWindowDrawList();
       if (clippingRect)
@@ -441,7 +441,7 @@ namespace ImCurveEdit
       if (clippingRect)
          draw_list->PopClipRect();
 
-      ImGui::EndChild();
+      ImGui::EndChildFrame();
       ImGui::PopStyleVar();
       ImGui::PopStyleColor(1);
 
@@ -452,7 +452,6 @@ namespace ImCurveEdit
          for (auto& point : selection)
             (*selectedPoints)[index++] = point;
       }
-      _freea(curvesIndex);      
       return ret;
    }
 }
