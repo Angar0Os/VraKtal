@@ -43,6 +43,9 @@
     <ClCompile Include="src\contentDrawer.cpp">
       <Filter>Source Files\windows</Filter>
     </ClCompile>
+    <ClCompile Include="newProjectModal.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -55,6 +58,9 @@
       <Filter>Header Files\utils</Filter>
     </ClInclude>
     <ClInclude Include="include\contentDrawer.h">
+      <Filter>Header Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="include\newProjectModal.h">
       <Filter>Header Files\windows</Filter>
     </ClInclude>
   </ItemGroup>

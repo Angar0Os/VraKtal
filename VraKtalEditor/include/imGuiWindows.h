@@ -3,6 +3,7 @@
 #pragma once
 
 #include "contentDrawer.h"
+#include "newProjectModal.h"
 
 namespace graphics {
     class Renderer;
@@ -26,6 +27,7 @@ private:
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
 
 	ContentDrawer m_contentDrawer;
+    NewProjectModal m_newProjectModal;
 
 private :
     graphics::Renderer* m_renderer;

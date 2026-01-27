@@ -25,6 +25,7 @@ class ContentDrawer
 {
 private:
 	std::filesystem::path m_currentPath;
+	std::filesystem::path m_baseAssetPath;
 	std::vector<FileEntry> m_cachedFiles;
 	bool m_needsRefresh;
 	std::set<size_t> m_selectedIndices;
@@ -57,6 +58,7 @@ public:
 	ContentDrawer();
 
 	void GetContentDrawerWindow();
+	void SetCurrentPath(std::filesystem::path newPath);
 };
 
 #endif //EDITOR_WINDOWS_CONTENTDRAWER_H

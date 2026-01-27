@@ -46,6 +46,18 @@ void ImGuiWindows::PrepareImGuiWindows()
     testWindow();
 	ContentDrawerWindow();
     HierarchyWindow();
+
+	m_newProjectModal.GetNewProjectModalWindow();
+
+	if (m_newProjectModal.HasNewProjectCreated()) {
+		std::filesystem::path lastProjectPath = m_newProjectModal.GetLastCreatedProjectPath();
+
+		if (!lastProjectPath.empty()) {
+			m_contentDrawer.SetCurrentPath(lastProjectPath);
+		}
+
+		m_newProjectModal.ResetProjectCreatedFlag();
+	}
 }
 
 void ImGuiWindows::ContentDrawerWindow()
@@ -151,7 +163,9 @@ void ImGuiWindows::mainWindow()
 void ImGuiWindows::SetMenuBar() {
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("New Project")) {}
+			if (ImGui::MenuItem("New Project")) {
+				m_newProjectModal.ToggleNewProjectModal();
+			}
 
 			if (ImGui::MenuItem("Open Project")) {}
 
