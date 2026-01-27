@@ -103,7 +103,7 @@ void core::gpu::Device::Impl::Initialize()
 
 core::gpu::Device::Impl::~Impl()
 {
-
+	descriptorPool.reset();
 }
 
 void core::gpu::Device::Impl::CreateInstance()

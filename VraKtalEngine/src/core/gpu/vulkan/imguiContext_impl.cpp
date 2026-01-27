@@ -62,13 +62,15 @@ core::gpu::ImguiContext::Impl::Impl(Window& _window, Device& _device)
 
 core::gpu::ImguiContext::Impl::~Impl()
 {
-	if (imguiDescriptorPool != VK_NULL_HANDLE)
-	{
-		vkDestroyDescriptorPool(*m_device->GetImpl().device, imguiDescriptorPool, nullptr);
-    }
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+
+	if(imguiDescriptorPool != VK_NULL_HANDLE)
+	{
+		vkDestroyDescriptorPool(*m_device->GetImpl().device, imguiDescriptorPool, nullptr);
+		imguiDescriptorPool = VK_NULL_HANDLE;
+	}
 }
 
 void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _device)
@@ -148,4 +150,6 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	ImGui_ImplVulkan_Init(&init_info);
 	ImGuizmo::SetRect(0, 0, _device.GetImpl().GetSwapchain()->GetImpl().extent.height, _device.GetImpl().GetSwapchain()->GetImpl().extent.width);
 	ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
+
+	m_device = &_device;
 }
