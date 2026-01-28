@@ -5,9 +5,10 @@
 #include <core/window.h>
 #include <core/gpu/device.h>
 #include <core/gpu/commandBuffer.h>
-#include <core/gpu/buffer.h>
 #include <core/gpu/accelerationStructure.h>
 #include <core/gpu/image.h>
+
+#include <core/gpu/texture.h>
 
 #include <graphics/resources/object/mesh.h>
 #include <graphics/resources/object/light.h>
@@ -68,6 +69,8 @@ namespace graphics
 		glm::vec3 GetCameraPosition()	{ return m_cameraPosition;	};
 
 		std::vector<std::pair<resources::Mesh*, glm::mat4>>* GetMeshInstances() { return &m_meshInstances; };
+
+		void CreateDefaultTextures();
 
 	};
 }

@@ -422,14 +422,6 @@ void core::gpu::Device::Impl::CreateCommandPool()
 }
 
 // Renderer
-void core::gpu::Device::Impl::CreateDefaultTextures()
-{
-	//defaultWhiteTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	//defaultBlackTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
-	//defaultNormalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
-}
-
-// Renderer
 void core::gpu::Device::Impl::LoadMaterialTextures()
 {
 	//albedoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);

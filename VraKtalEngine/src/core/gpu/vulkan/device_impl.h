@@ -52,10 +52,6 @@ namespace core::gpu
 
 		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
 
-		std::unique_ptr<Texture> defaultWhiteTexture;
-		std::unique_ptr<Texture> defaultBlackTexture;
-		std::unique_ptr<Texture> defaultNormalTexture;
-
 		std::unique_ptr<Texture> albedoTexture;
 		std::unique_ptr<Texture> normalTexture;
 		std::unique_ptr<Texture> metallicTexture;
