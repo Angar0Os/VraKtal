@@ -255,6 +255,11 @@ core::gpu::Image::Image(const core::gpu::Device* device, const SPredefinedImageC
 	m_impl = std::make_unique<Impl>(device, info);
 }
 
+core::gpu::Image::Image(const core::gpu::Device* device, float r, float g, float b, float a)
+{
+	m_impl = std::make_unique<Impl>(device, r, g, b, a);
+}
+
 core::gpu::Image::~Image() = default;
 
 core::gpu::Image::Impl& core::gpu::Image::GetImpl() const
