@@ -12,6 +12,8 @@
 #include <imGuizmo/ImGuizmo.h>
 #include <imgui/imgui.h>
 
+#include "portable-file-dialogs/portable-file-dialogs.h"
+
 #include <iostream>
 
 ImGuiWindows::ImGuiWindows(graphics::Renderer* _renderer)
@@ -167,7 +169,9 @@ void ImGuiWindows::SetMenuBar() {
 				m_newProjectModal.ToggleNewProjectModal();
 			}
 
-			if (ImGui::MenuItem("Open Project")) {}
+			if (ImGui::MenuItem("Open Project")) {
+				ImGuiWindows::LoadProject();
+			}
 
 			if (ImGui::MenuItem("Save Project")) {}
 
@@ -202,5 +206,28 @@ void ImGuiWindows::SetMenuBar() {
 			ImGui::EndPopup();
 		}
 		ImGui::EndMenuBar();
+	}
+}
+
+void ImGuiWindows::LoadProject()
+{
+	auto selection = pfd::open_file(
+		"Choose a project",
+		"",
+		{
+			"YAML", "*.yaml",
+		}
+		);
+
+	auto files = selection.result();
+
+	if (files.empty()) {
+		return;
+	}
+
+	std::filesystem::path projectPath(files[0]);
+
+	if (!projectPath.parent_path().empty()) {
+		m_contentDrawer.SetCurrentPath(projectPath.parent_path());
 	}
 }

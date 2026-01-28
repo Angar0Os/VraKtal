@@ -25,6 +25,7 @@ private:
     void mainWindow();
     void testWindow();
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
+    void LoadProject();
 
 	ContentDrawer m_contentDrawer;
     NewProjectModal m_newProjectModal;
