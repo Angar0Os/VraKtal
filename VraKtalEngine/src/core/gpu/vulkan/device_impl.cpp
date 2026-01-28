@@ -517,7 +517,7 @@ void core::gpu::Device::Impl::LoadMaterialTextures()
 	aoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
 	emissiveTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
 
-	albedoTexture->LoadTextureIfExists(parent, "../bin/assets/textures/viking_room.png");
+	albedoTexture->LoadTextureIfExists(parent, "assets/textures/viking_room.png");
 	normalTexture->LoadTextureIfExists(parent, "assets/textures/normal.png");
 	metallicTexture->LoadTextureIfExists(parent, "assets/textures/metallic.png");
 	roughnessTexture->LoadTextureIfExists(parent, "assets/textures/roughness.png");
@@ -545,7 +545,7 @@ void core::gpu::Device::Impl::CreateSwapchain()
 
 void core::gpu::Device::Impl::CreateGraphicsPipeline()
 {
-	auto shaderCode = ReadFile("../bin/assets/shaders/slang.spv");
+	auto shaderCode = ReadFile("assets/shaders/slang.spv");
 
 	SVertexInputBinding vertexBinding{
 		.binding = 0,

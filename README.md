@@ -15,59 +15,65 @@ Name.
 
 **Vulkan**
 
--   Vulkan SDK version 1.4 or **higher is mandatory**
--   **Only ONE Vulkan SDK installation** must be present on the machine
+* Vulkan SDK version 1.4 or **higher is mandatory**
+* **Only ONE Vulkan SDK installation** must be present on the machine
 
 **Additional Requirements**
 
--   C++20 compatible compiler
--   GPU compatible with Vulkan Ray Tracing extensions
--   Windows
+* C++20 compatible compiler
+* GPU compatible with Vulkan Ray Tracing extensions
+* Windows
+* CMake
 
-## Project Installation & Setup
+## Project Installation \& Setup
 
 1. Clone the repository
 
-    git clone https://github.com/YourRepo/VraKtal.git
-    cd VraKtal
+   git clone https://github.com/YourRepo/VraKtal.git
+   cd VraKtal
 
 2. Install Vulkan SDK (1.4+)
 
-Ensure only one Vulkan SDK version is installed and correctly
-configured.
+   Ensure only one Vulkan SDK version is installed and correctly
+   configured.
 
-3. Generate project files
+3. Install CMake (3.5+)
+4. In the terminal do : 
+   	*mkdir build
+   	cd build
+   	cmake .. -G "Visual Studio 17 2022"
+   	cmake --build .*
+5. Generate project files
+6. Build the Engine FIRST
+7. Set the Editor as Startup Project
 
-4. Build the Engine FIRST
+   > \*\*Build the engine, then set VraKtalEditor as startup project and run.\*\*
 
-5. Set the Editor as Startup Project
+   ## TODO List
 
-> **Build the engine, then set VraKtalEditor as startup project and run.**
+   ### Rendering
 
-## TODO List
+* ☐ Ray Tracing
+* ☐ TAA
+* ☐ Denoising
+* ☐ Stratified sampling, blue noise, importance sampling
+* ☐ Restir DI
+* ☐ Restir GI
+* ☐ Render Graph system
 
-### Rendering
+  ### Editor
 
-- ☐ Ray Tracing 
-- ☐ TAA
-- ☐ Denoising
-- ☐ Stratified sampling, blue noise, importance sampling
-- ☐ Restir DI 
-- ☐ Restir GI
-- ☐ Render Graph system
+* ☐ Editor Core
+* ☐ Light Tool
+* ☐ Inspector
+* ☐ Material Tool
+* ☐ Scene Editor
 
-### Editor
+  ### Engine \& Tools
 
--  ☐ Editor Core
--  ☐ Light Tool
--  ☐ Inspector
--  ☐ Material Tool
--  ☐ Scene Editor
+* ☐ Serialization system
 
-### Engine & Tools
+  ## License
 
--   ☐ Serialization system
+  This project is under MIT license.
 
-## License
-
-This project is under MIT license.
