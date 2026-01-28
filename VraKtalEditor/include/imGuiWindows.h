@@ -1,6 +1,7 @@
 #pragma once
 
 #include "contentDrawer.h"
+#include <core/window.h>
 
 namespace graphics {
     class Renderer;
@@ -9,7 +10,7 @@ namespace graphics {
 class ImGuiWindows
 {
 public:
-	ImGuiWindows(graphics::Renderer* _renderer);
+	ImGuiWindows(graphics::Renderer* _renderer, core::Window* window);
 	~ImGuiWindows();
 
     void PrepareImGuiWindows();
@@ -24,7 +25,6 @@ private:
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
 
 	ContentDrawer m_contentDrawer;
-
-private :
+    core::Window* m_window;
     graphics::Renderer* m_renderer;
 };

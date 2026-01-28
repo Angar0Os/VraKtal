@@ -22,6 +22,7 @@ namespace core
 
 		void PollEvents();
 		bool ShouldClose() const;
+		void Close();
 
 		std::pair<uint32_t, uint32_t> Size() const;
 		const char* Title() const;

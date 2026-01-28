@@ -23,7 +23,7 @@ int main()
 	core::gpu::Device device(window);
 	graphics::Renderer renderer(window, device);
 	loaders::MeshLoader loader(&device);
-	ImGuiWindows imGuiWindows = ImGuiWindows(&renderer);
+	ImGuiWindows imGuiWindows = ImGuiWindows(&renderer, &window);
 
 	device.GetImGuiContext()->BindPrepareDrawData([&]()
 	{

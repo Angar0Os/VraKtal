@@ -14,9 +14,10 @@
 
 #include <iostream>
 
-ImGuiWindows::ImGuiWindows(graphics::Renderer* _renderer)
+ImGuiWindows::ImGuiWindows(graphics::Renderer* _renderer, core::Window* window)
 {
 	m_renderer = _renderer;
+	m_window = window;
 }
 
 ImGuiWindows::~ImGuiWindows()
@@ -157,7 +158,11 @@ void ImGuiWindows::SetMenuBar() {
 
 			if (ImGui::MenuItem("Save Project")) {}
 
-			if (ImGui::MenuItem("Quit")) {}
+			if (ImGui::MenuItem("Quit")) {
+				if (m_window) {
+					m_window->Close();
+				}
+			}
 			ImGui::EndMenu();
 		}
 
