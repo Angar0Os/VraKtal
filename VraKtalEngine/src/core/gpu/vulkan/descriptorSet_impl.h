@@ -14,13 +14,12 @@ namespace core::gpu
 	struct DescriptorSet::Impl
 	{
 		DescriptorSet& parent;
-        const core::gpu::Device* device;
-		std::vector<vk::raii::DescriptorSet*>& descriptorSets;
-		size_t currentFrame;
-		uint32_t currentBinding = 0;
+
+		vk::raii::DescriptorSet descriptorSet = nullptr;
 
 		std::vector<vk::DescriptorBufferInfo> bufferInfos;
 		std::vector<vk::DescriptorImageInfo> imageInfos;
+		std::vector<vk::WriteDescriptorSetAccelerationStructureKHR> asInfos;
 		std::vector<vk::WriteDescriptorSet> writes;
 
 		struct BindingInfo
@@ -31,19 +30,8 @@ namespace core::gpu
 		};
 		std::vector<BindingInfo> bindingInfos;
 
-		explicit Impl(DescriptorSet& p, const core::gpu::Device* device,
-			std::vector<vk::raii::DescriptorSet*>& sets, size_t frame);
+		explicit Impl(DescriptorSet& p, const core::gpu::Device* device, size_t frame);
 		~Impl();
-
-		DescriptorSet& BindBuffer(const Buffer& buffer, size_t offset, size_t range);
-		DescriptorSet& BindImage(const Sampler& sampler, const Texture* texture,
-			const Texture& defaultTexture, ImageLayout layout);
-
-
-
-        DescriptorSet& BindAccelerationStructure(uint32_t frameIndex, const AccelerationStructure& accelStructure);
-
-		void Update();
 	};
 }
 #endif //VRAKTAL_CORE_GPU_VULKAN_DESCRIPTORSET_H

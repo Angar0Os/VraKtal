@@ -17,10 +17,11 @@ namespace core::gpu
 
 	struct Image::Impl
 	{
-        vk::Image				image		= nullptr;
-		vk::raii::Image			raiiImage	= nullptr;
-		vk::raii::DeviceMemory	memory		= nullptr;
-		vk::raii::ImageView		view		= nullptr;
+        vk::Image				image			= nullptr;
+		vk::raii::Image			raiiImage		= nullptr;
+		vk::raii::DeviceMemory	memory			= nullptr;
+		vk::raii::ImageView		view			= nullptr;
+        vk::ImageLayout			currentLayout	= vk::ImageLayout::eUndefined;
 
 		TextureFormat format;
 		SampleCount samples;

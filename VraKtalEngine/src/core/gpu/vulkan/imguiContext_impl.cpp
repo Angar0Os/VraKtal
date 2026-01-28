@@ -4,13 +4,11 @@
 
 #include "../src/core/gpu/vulkan/imguiContext_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
-#include "../src/core/gpu/vulkan/swapchain_impl.h"
 #include "../src/core/gpu/vulkan/commandBuffer_impl.h"
 
 
 #include <core/window.h>
 #include <core/gpu/device.h>
-#include <graphics/renderer.h>
 
 
 #include <core/gpu/commandBuffer.h>
@@ -19,12 +17,8 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "imGuizmo/ImGuizmo.h"
 
-#include <glm/gtc/type_ptr.inl>
 
 #include "MDI/IconsMaterialDesignIcons.h"
-
-#include <iostream>
-#include <vulkan/vulkan_handles.hpp>
 
 core::gpu::ImguiContext::ImguiContext(Window& _window, Device& _device)
     : m_impl(std::make_unique<Impl>(_window, _device))
@@ -136,19 +130,19 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	init_info.Queue = *_device.GetImpl().graphicsQueue;
 	init_info.DescriptorPool = imguiDescriptorPool;
 	init_info.MinImageCount = 2;
-	init_info.ImageCount = _device.GetImpl().GetSwapchain()->GetImpl().images.size();
+	init_info.ImageCount = _device.GetImpl().swapchainImages.size();
 	init_info.MSAASamples = VK_SAMPLE_COUNT_4_BIT;
 	init_info.RenderPass = VK_NULL_HANDLE;
     init_info.UseDynamicRendering = VK_TRUE;
     init_info.PipelineRenderingCreateInfo = {};
     init_info.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
 	init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-	VkFormat format = static_cast<VkFormat>(_device.GetImpl().GetSwapchain()->GetImpl().format);
+	VkFormat format = static_cast<VkFormat>(_device.GetImpl().swapchainImageFormat);
 	init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &format;
 	init_info.PipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 
 	ImGui_ImplVulkan_Init(&init_info);
-	ImGuizmo::SetRect(0, 0, _device.GetImpl().GetSwapchain()->GetImpl().extent.height, _device.GetImpl().GetSwapchain()->GetImpl().extent.width);
+	ImGuizmo::SetRect(0, 0, _device.GetImpl().swapchainExtent.height, _device.GetImpl().swapchainExtent.width);
 	ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
 
 	m_device = &_device;

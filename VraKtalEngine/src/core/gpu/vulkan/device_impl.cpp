@@ -85,8 +85,6 @@ void core::gpu::Device::Impl::Initialize()
 	// Renderer 
 	CreateDefaultTextures();
 	LoadMaterialTextures();
-	CreateColorImage();
-	CreateDepthImage();
 	CreateGraphicsPipeline();
 	CreateDescriptorSets();
 }
@@ -544,6 +542,7 @@ void core::gpu::Device::Impl::CreateSwapchain()
 	};
 
 	swapchain = vk::raii::SwapchainKHR(device, createInfo);
+    swapchainExtent = extent;
 
 	std::vector<vk::Image> vkImages = swapchain.getImages();
 	swapchainImageViews.clear();
@@ -564,7 +563,19 @@ void core::gpu::Device::Impl::CreateSwapchain()
 			}
 		};
 		swapchainImageViews.emplace_back(device, viewInfo);
+
+		swapchainImages.emplace_back(
+			std::make_unique<Image>(
+				parent, 
+				static_cast<void*>(image),
+				extent.width,
+				extent.height,
+                core::gpu_detail::FromVulkan(surfaceFormat.format)
+			)
+		);
 	}
+
+    swapchainImageFormat = surfaceFormat.format;
 }
 
 //Renderer
@@ -708,8 +719,6 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 	}
 
 	// Renderer
-	CreateColorImage();
-	CreateDepthImage();
 	CreateGraphicsPipeline();
 	CreateSyncObjects();
 	CreateDescriptorSets();
@@ -866,8 +875,7 @@ const core::gpu::Image* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imag
 		return nullptr;
 	}
 
-	auto images = swapchain.getImages();
-	return images[imageIndex];
+	return swapchainImages[imageIndex].get();
 }
 
 const core::gpu::Image* core::gpu::Device::Impl::GetColorImage() const
@@ -877,7 +885,7 @@ const core::gpu::Image* core::gpu::Device::Impl::GetColorImage() const
 
 void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
 {
-	const core::gpu::Image* swapchainImage = swapchain->GetImpl().images[imageIndex].get();
+	const core::gpu::Image* swapchainImage = swapchainImages[imageIndex].get();
 
 	vk::CommandBufferAllocateInfo allocInfo{
 		.commandPool = commandPool->GetImpl().pool,
@@ -904,7 +912,7 @@ void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uin
 			.newLayout = vk::ImageLayout::ePresentSrcKHR,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = swapchainImage->GetImpl().GetVkImage(),
+			.image = swapchainImage->GetImpl().image,
 			.subresourceRange = {
 				.aspectMask = vk::ImageAspectFlagBits::eColor,
 				.baseMipLevel = 0,
@@ -951,13 +959,12 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 	if (imageIndex >= renderFinished.size()) return;
 
 	vk::Semaphore presentWait = *renderFinished[imageIndex];
-	vk::SwapchainKHR swapchainHandle = swapchain->GetImpl().swapchain;
 
 	vk::PresentInfoKHR presentInfo{
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores = &presentWait,
 		.swapchainCount = 1,
-		.pSwapchains = &swapchainHandle,
+		.pSwapchains = &*swapchain,
 		.pImageIndices = &imageIndex
 	};
 	try
@@ -974,52 +981,52 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 
 
 // Renderer
-void core::gpu::Device::Impl::CreateColorImage()
-{
-	SImageCreateInfo colorInfo{
-		.width = swapchain->GetImpl().extent.width,
-		.height = swapchain->GetImpl().extent.height,
-		.mipLevels = 1,
-		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
-		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc,
-		.memoryProperties = EMemoryProperty::DeviceLocal,
-		.samples = SampleCount::e4
-	};
-
-	colorImage = std::make_unique<Image>(parent, colorInfo);
-
-	SImageViewCreateInfo viewInfo{
-		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
-		.isDepth = false
-	};
-
-	colorImage->CreateView(viewInfo);
-}
+//void core::gpu::Device::Impl::CreateColorImage()
+//{
+//	SImageCreateInfo colorInfo{
+//		.width = swapchainExtent.width,
+//		.height = swapchainExtent.height,
+//		.mipLevels = 1,
+//		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
+//		.tiling = ImageTiling::Optimal,
+//		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc,
+//		.memoryProperties = EMemoryProperty::DeviceLocal,
+//		.samples = SampleCount::e4
+//	};
+//
+//	colorImage = std::make_unique<Image>(parent, colorInfo);
+//
+//	SImageViewCreateInfo viewInfo{
+//		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
+//		.isDepth = false
+//	};
+//
+//	colorImage->CreateView(viewInfo);
+//}
 
 // Renderer
-void core::gpu::Device::Impl::CreateDepthImage()
-{
-	SImageCreateInfo depthInfo{
-		.width = swapchain->GetImpl().extent.width,
-		.height = swapchain->GetImpl().extent.height,
-		.mipLevels = 1,
-		.format = TextureFormat::Depth32F,
-		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::DepthStencilAttachment,
-		.memoryProperties = EMemoryProperty::DeviceLocal,
-		.samples = SampleCount::e4
-	};
-
-	depthImage = std::make_unique<Image>(parent, depthInfo);
-
-	SImageViewCreateInfo viewInfo{
-		.format = TextureFormat::Depth32F,
-		.isDepth = true
-	};
-
-	depthImage->CreateView(viewInfo);
-}
+//void core::gpu::Device::Impl::CreateDepthImage()
+//{
+//	SImageCreateInfo depthInfo{
+//		.width = swapchain->GetImpl().extent.width,
+//		.height = swapchain->GetImpl().extent.height,
+//		.mipLevels = 1,
+//		.format = TextureFormat::Depth32F,
+//		.tiling = ImageTiling::Optimal,
+//		.usage = ImageUsage::DepthStencilAttachment,
+//		.memoryProperties = EMemoryProperty::DeviceLocal,
+//		.samples = SampleCount::e4
+//	};
+//
+//	depthImage = std::make_unique<Image>(parent, depthInfo);
+//
+//	SImageViewCreateInfo viewInfo{
+//		.format = TextureFormat::Depth32F,
+//		.isDepth = true
+//	};
+//
+//	depthImage->CreateView(viewInfo);
+//}
 
 void core::gpu::Device::Impl::Cleanup()
 {

@@ -72,6 +72,9 @@ namespace core::gpu
 
         vk::raii::SwapchainKHR				swapchain = nullptr;
         std::vector<vk::raii::ImageView>    swapchainImageViews;
+		vk::Extent2D						swapchainExtent;
+        std::vector<std::unique_ptr<Image>>	swapchainImages;
+        vk::Format							swapchainImageFormat;
 
 		std::vector<vk::raii::Semaphore>	imageAvailable;
 		std::vector<vk::raii::Semaphore>	renderFinished;
@@ -102,8 +105,6 @@ namespace core::gpu
 
 		void CreateDefaultTextures();
 		void LoadMaterialTextures();
-		void CreateColorImage();
-		void CreateDepthImage();
 		void CreateDescriptorSets();
 		void CreateCommandBuffers();
 		void CreateSyncObjects();

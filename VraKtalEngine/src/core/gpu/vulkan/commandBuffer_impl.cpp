@@ -2,13 +2,9 @@
 #include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu/vulkan/commandBuffer_impl.h"
 #include "../src/core/gpu/vulkan/commandPool_impl.h"
-#include "../src/core/gpu/vulkan/descriptorSet_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu/vulkan/pipeline_impl.h"
-#include "../src/core/gpu/vulkan/swapchain_impl.h"
-
-#include "imgui/imgui_impl_vulkan.h"
 
 #include <stdexcept>
 
@@ -288,8 +284,8 @@ void core::gpu::CommandBuffer::Impl::BindDescriptorSets(
 
 void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth)
 {
-	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t width = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
 
 	vk::Viewport viewport(x, y, static_cast<float>(width), static_cast<float>(height), minDepth, maxDepth);
 	GetCommandBuffer(currentIndex).setViewport(0, viewport);
@@ -297,8 +293,8 @@ void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, const core::g
 
 void core::gpu::CommandBuffer::Impl::SetScissor(int32_t x, int32_t y, const core::gpu::Device* device)
 {
-	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t width = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
 
 	vk::Rect2D scissor({ x, y }, { width, height });
 	GetCommandBuffer(currentIndex).setScissor(0, scissor);
@@ -330,8 +326,8 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
 	depthAttachment.clearValue = vk::ClearDepthStencilValue(1.f, 0);
 
-	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t width = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
 
 	vk::RenderingInfo info{};
 	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });
@@ -383,7 +379,7 @@ void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
 	barrier.newLayout = newLayout;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image->GetImpl().GetVkImage();
+	barrier.image = image->GetImpl().image;
 
 	vk::ImageSubresourceRange subRange{};
 	subRange.aspectMask = isDepth ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
@@ -421,15 +417,15 @@ void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcIma
 	vk::Offset3D dstOffset = { 0, 0, 0 };
 	resolveRegion.dstOffset = dstOffset;
 
-	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t width = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
 
 	vk::Extent3D ext3D = { width, height, 1 };
 	resolveRegion.extent = ext3D;
 
 	GetCommandBuffer(currentIndex).resolveImage(
-		srcImage->GetImpl().GetVkImage(), vk::ImageLayout::eTransferSrcOptimal,
-		dstImage->GetImpl().GetVkImage(), vk::ImageLayout::eTransferDstOptimal,
+		srcImage->GetImpl().image, vk::ImageLayout::eTransferSrcOptimal,
+		dstImage->GetImpl().image, vk::ImageLayout::eTransferDstOptimal,
 		resolveRegion
 	);
 }

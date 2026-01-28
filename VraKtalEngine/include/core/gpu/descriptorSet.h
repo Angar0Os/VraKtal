@@ -21,17 +21,13 @@ namespace core::gpu
         std::unique_ptr<Impl> m_impl;
 
     public:
-        DescriptorSet(const core::gpu::Device* device, void* setsVector, size_t frame);
+        DescriptorSet(const core::gpu::Device* device, size_t frame);
         ~DescriptorSet();
-
-        DescriptorSet& BindBuffer(const Buffer& buffer, size_t offset, size_t range);
-        DescriptorSet& BindImage(const Sampler& sampler, const Texture* texture,
-            const Texture& defaultTexture, ImageLayout layout = ImageLayout::ShaderReadOnly);
 
         template<typename T>
         void Bind(uint32_t binding, const T& input);
         
-        void Update();
+        void Update(const core::gpu::Device& device);
 
         Impl& GetImpl() const;
     };
