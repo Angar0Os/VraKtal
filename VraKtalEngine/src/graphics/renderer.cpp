@@ -1,5 +1,6 @@
 #include <graphics/renderer.h>
 #include <core/gpu/imguiContext.h>
+#include <core/gpu/buffer.h>
 
 #include <memory>
 #include <iostream>

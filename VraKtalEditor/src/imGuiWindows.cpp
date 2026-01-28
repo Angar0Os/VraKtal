@@ -2,6 +2,9 @@
 #include "imGuiWindows.h"
 #include "contentDrawer.h"
 #include "imgui/imgui.h"
+
+#include <core/gpu/buffer.h>
+
 #include <graphics/resources/object/camera.h>
 #include <graphics/renderer.h>
 

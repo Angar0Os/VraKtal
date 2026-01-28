@@ -83,8 +83,8 @@ void core::gpu::Device::Impl::Initialize()
 	CreateSyncObjects();
 
 	// Renderer 
-	CreateDefaultTextures();
-	LoadMaterialTextures();
+	//CreateDefaultTextures();
+	//LoadMaterialTextures();
 	CreateGraphicsPipeline();
 	CreateDescriptorSets();
 }

@@ -209,6 +209,7 @@
     <ClInclude Include="include\graphics\resources\property\transform.h" />
     <ClInclude Include="include\graphics\resources\scene.h" />
     <ClInclude Include="include\loaders\meshLoader.h" />
+    <ClInclude Include="include\loaders\textureLoader.h" />
     <ClInclude Include="src\core\gpu\vulkan\accelerationStructure_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\commandBuffer_impl.h" />
@@ -253,6 +254,7 @@
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\graphics\resources\object\scene.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />
+    <ClCompile Include="src\loaders\textureLoader.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>

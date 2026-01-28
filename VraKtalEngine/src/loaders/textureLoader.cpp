@@ -2,7 +2,6 @@
 #include <core/gpu/image.h>
 #include <core/gpu/texture.h>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include <memory>
@@ -35,11 +34,11 @@ std::unique_ptr<core::gpu::Texture> loaders::TextureLoader::LoadTexture(const co
         .usage = core::ImageUsage::TransferDst | core::ImageUsage::Sampled
     };
 
-    auto image = std::make_unique<core::gpu::Image>(device, imageInfo);
+    auto image = std::make_unique<core::gpu::Image>(&device, imageInfo);
 
     stbi_image_free(pixels);
 
-    auto textureOutput = std::make_unique<core::gpu::Texture>(device, std::move(image));
+    auto textureOutput = std::make_unique<core::gpu::Texture>(device, *image);
 
     return textureOutput;
 }

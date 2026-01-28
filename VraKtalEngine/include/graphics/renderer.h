@@ -69,9 +69,6 @@ namespace graphics
 		glm::vec3 GetCameraPosition()	{ return m_cameraPosition;	};
 
 		std::vector<std::pair<resources::Mesh*, glm::mat4>>* GetMeshInstances() { return &m_meshInstances; };
-
-		void CreateDefaultTextures();
-
 	};
 }
 

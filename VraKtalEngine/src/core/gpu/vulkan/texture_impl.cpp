@@ -25,3 +25,6 @@ core::gpu::Texture::Texture(const core::gpu::Device& _device, const core::gpu::I
     m_impl->image = &_image;
     m_impl->sampler = vk::raii::Sampler(_device.GetImpl().device, samplerInfo);
 }
+
+core::gpu::Texture::Impl::~Impl() = default;
+core::gpu::Texture::~Texture() = default;
