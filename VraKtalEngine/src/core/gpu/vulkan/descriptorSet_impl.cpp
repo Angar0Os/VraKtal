@@ -59,10 +59,7 @@ template<>
 void core::gpu::DescriptorSet::Bind<core::gpu::AccelerationStructure>(uint32_t binding, const core::gpu::AccelerationStructure& accelStructure)
 {
 	size_t infoIndex = m_impl->asInfos.size();
-	m_impl->asInfos.emplace_back(
-		1,
-		accelStructure.GetImpl().accelerationStructure
-	);
+	m_impl->asInfos.emplace_back();
 
 	m_impl->bindingInfos.push_back({
 		binding,

@@ -4,7 +4,7 @@
 
 #include <stdexcept>
 
-core::gpu::Image::Impl::Impl(Image& p, const core::gpu::Device* device, const SImageCreateInfo& info)
+core::gpu::Image::Impl::Impl(const core::gpu::Device* device, const SImageCreateInfo& info)
 	: format(info.format), samples(info.samples)
 {
 	if(info.width == 0 || info.height == 0)
@@ -247,12 +247,12 @@ uint32_t core::gpu::Image::Impl::FindMemoryType(const core::gpu::Device& device,
 
 core::gpu::Image::Image(const core::gpu::Device* device, const SImageCreateInfo& info)
 {
-	m_impl = std::make_unique<Impl>(*this, device, info);
+	m_impl = std::make_unique<Impl>(device, info);
 }
 
 core::gpu::Image::Image(const core::gpu::Device* device, const SPredefinedImageCreateInfo& info)
 {
-	m_impl = std::make_unique<Impl>(*this, device, info);
+	m_impl = std::make_unique<Impl>(device, info);
 }
 
 core::gpu::Image::~Image() = default;
@@ -260,11 +260,4 @@ core::gpu::Image::~Image() = default;
 core::gpu::Image::Impl& core::gpu::Image::GetImpl() const
 {
 	return *m_impl;
-}
-
-core::gpu::Image::Image(const core::gpu::Device* device, void* swapchainImage,
-						uint32_t width, uint32_t height, TextureFormat format)
-{
-	vk::Image vkImage = static_cast<vk::Image>(reinterpret_cast<VkImage>(swapchainImage));
-	m_impl = std::make_unique<Impl>(*this, device, vkImage, width, height, format);
 }

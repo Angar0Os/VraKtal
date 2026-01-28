@@ -47,9 +47,6 @@ namespace core::gpu
 		Image(const core::gpu::Device* device, const SImageCreateInfo& info);
 		Image(const core::gpu::Device* device, const SPredefinedImageCreateInfo& info);
 
-		Image(const core::gpu::Device* device, void* image, uint32_t width,
-              uint32_t height, TextureFormat format);
-
 		~Image();
 
 		Impl& GetImpl() const;

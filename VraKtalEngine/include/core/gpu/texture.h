@@ -16,7 +16,7 @@ namespace core::gpu
         std::unique_ptr<Impl> m_impl;
 
     public:
-        Texture(const core::gpu::Device& _device, const const::core::gpu::Image& _info);
+        Texture(const core::gpu::Device& _device, const core::gpu::Image& _info);
 
         ~Texture();
 

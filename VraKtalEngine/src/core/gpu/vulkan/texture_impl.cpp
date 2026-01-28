@@ -5,7 +5,7 @@
 
 
 core::gpu::Texture::Texture(const core::gpu::Device& _device, const core::gpu::Image& _image)
-    : m_impl(std::make_unique<Impl>(new Impl))
+    : m_impl(std::make_unique<Impl>())
 { 
     vk::PhysicalDeviceProperties properties = _device.GetImpl().physicalDevice.getProperties();
 

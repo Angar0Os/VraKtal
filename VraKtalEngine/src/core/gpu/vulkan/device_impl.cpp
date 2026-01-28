@@ -424,20 +424,20 @@ void core::gpu::Device::Impl::CreateCommandPool()
 // Renderer
 void core::gpu::Device::Impl::CreateDefaultTextures()
 {
-	defaultWhiteTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	defaultBlackTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
-	defaultNormalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
+	//defaultWhiteTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
+	//defaultBlackTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
+	//defaultNormalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
 }
 
 // Renderer
 void core::gpu::Device::Impl::LoadMaterialTextures()
 {
-	albedoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	normalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
-	metallicTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	roughnessTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	aoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	emissiveTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
+	//albedoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
+	//normalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
+	//metallicTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
+	//roughnessTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
+	//aoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
+	//emissiveTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
 
 	/* Loader une image via un path puis creer une texture*/
 
@@ -564,15 +564,15 @@ void core::gpu::Device::Impl::CreateSwapchain()
 		};
 		swapchainImageViews.emplace_back(device, viewInfo);
 
-		swapchainImages.emplace_back(
-			std::make_unique<Image>(
-				parent, 
-				static_cast<void*>(image),
-				extent.width,
-				extent.height,
-                core::gpu_detail::FromVulkan(surfaceFormat.format)
-			)
-		);
+		core::gpu::SPredefinedImageCreateInfo imageInfo
+		{
+			.image = image,
+			.extent = extent,
+			.aspectFlags = vk::ImageAspectFlagBits::eColor,
+			.format = surfaceFormat.format
+		};
+
+		swapchainImages.emplace_back(std::make_unique<Image>(parent, imageInfo));
 	}
 
     swapchainImageFormat = surfaceFormat.format;
