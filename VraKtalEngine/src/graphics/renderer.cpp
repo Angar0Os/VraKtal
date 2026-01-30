@@ -1,10 +1,18 @@
 #include <graphics/renderer.h>
+
 #include <core/gpu/imguiContext.h>
 #include <core/gpu/buffer.h>
+#include <core/gpu/pipeline.h>
+
+#include <core/enum.h>
+
+#include <loaders/shaderLoader.h>
 
 #include <memory>
 #include <iostream>
 
+using namespace core;
+using namespace core::gpu;
 using namespace graphics;
 
 //#define VRAKTAL_EDITOR
@@ -160,6 +168,58 @@ void Renderer::RebuildAccelerationStructures()
 
 	cmdBuffer.End(0);
 	cmdBuffer.SubmitAndWait(&m_device);
+}
+
+void Renderer::CreateGraphicsPipeline()
+{
+	auto shaderCode = loaders::ReadFile("../bin/assets/shaders/slang.spv");
+
+	SVertexInputBinding vertexBinding
+	{
+		.binding = 0,
+		.stride = sizeof(graphics::resources::Vertex),
+		.inputRate = VertexInputRate::Vertex
+	};
+
+	std::vector<SVertexInputAttribute> vertexAttributes = {
+		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, position)},
+		{1, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, normal)},
+		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::Vertex, uv)}
+	};
+
+	std::vector<core::gpu::ShaderStage> shaderStages = {
+		{ShaderStageFlags::Vertex, shaderCode, "vertMain"},
+		{ShaderStageFlags::Fragment, shaderCode, "fragMain"}
+	};
+
+	std::vector<PushConstantRange> pushConstants = {
+		{
+			.stageFlags = static_cast<uint32_t>(ShaderStageFlags::Vertex),
+			.offset = 0,
+			.size = sizeof(glm::mat4)
+		}
+	};
+
+	PipelineCreateInfo pipelineInfo{};
+	pipelineInfo.shaderStages = shaderStages;
+	pipelineInfo.vertexBindings = {vertexBinding};
+	pipelineInfo.vertexAttributes = vertexAttributes;
+	pipelineInfo.topology = PrimitiveTopology::TriangleList;
+	pipelineInfo.polygonMode = PolygonMode::Fill;
+	pipelineInfo.cullMode = CullMode::None;
+	pipelineInfo.frontFace = FrontFace::Clockwise;
+	pipelineInfo.depthTestEnable = true;
+	pipelineInfo.depthWriteEnable = true;
+	pipelineInfo.depthCompareOp = CompareOp::Less;
+	pipelineInfo.blendEnable = false;
+	pipelineInfo.samples = SampleCount::e4;
+	pipelineInfo.colorAttachmentFormats = {TextureFormat::RGBA8_SRGB};
+	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
+	pipelineInfo.descriptorSetLayouts = {descriptorSetLayout.get()};
+	pipelineInfo.pushConstantRanges = pushConstants;
+	pipelineInfo.dynamicStates = {DynamicState::Viewport, DynamicState::Scissor};
+
+	graphicsPipeline = std::make_unique<Pipeline>(m_device, pipelineInfo);
 }
 
 void Renderer::UpdateUniformBuffer(uint32_t frameIndex)

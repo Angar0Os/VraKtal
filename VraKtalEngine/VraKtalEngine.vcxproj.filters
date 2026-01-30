@@ -246,6 +246,9 @@
     <ClInclude Include="include\loaders\textureLoader.h">
       <Filter>Header Files\loaders</Filter>
     </ClInclude>
+    <ClInclude Include="include\loaders\shaderLoader.h">
+      <Filter>Header Files\loaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -339,6 +342,9 @@
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\loaders\textureLoader.cpp">
+      <Filter>Source Files\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\loaders\shaderLoader.cpp">
       <Filter>Source Files\loaders</Filter>
     </ClCompile>
   </ItemGroup>

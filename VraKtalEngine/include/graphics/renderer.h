@@ -3,11 +3,11 @@
 #pragma once
 
 #include <core/window.h>
-#include <core/gpu/device.h>
-#include <core/gpu/commandBuffer.h>
 #include <core/gpu/accelerationStructure.h>
+#include <core/gpu/commandBuffer.h>
+#include <core/gpu/device.h>
 #include <core/gpu/image.h>
-
+#include <core/gpu/pipeline.h>
 #include <core/gpu/texture.h>
 
 #include <graphics/resources/object/mesh.h>
@@ -38,6 +38,8 @@ namespace graphics
 		std::vector<std::unique_ptr<core::gpu::AccelerationStructure>> m_tlasPerFrame;
 		std::vector<resources::Light> m_lights;
 
+		std::unique_ptr<core::gpu::Pipeline> graphicsPipeline;
+
 		uint32_t m_currentFrame;
 		uint64_t m_frameCounter;
 		bool m_running;
@@ -50,6 +52,8 @@ namespace graphics
 		void BuildTLAS();
 		void RebuildAccelerationStructures();
 		void UpdateUniformBuffer(uint32_t frameIndex);
+
+		void CreateGraphicsPipeline();
 
 	public:
 		Renderer(core::Window& window, core::gpu::Device& device);
