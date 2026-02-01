@@ -8,29 +8,29 @@
 
 namespace core::gpu
 {
-    class AccelerationStructure;
-    class Buffer;     
-    class Device;
-    class Sampler;     
-    class Texture;
+	class AccelerationStructure;
+	class Buffer;
+	class Device;
+	class Sampler;
+	class Texture;
 
-    class DescriptorSet
-    {
-    private:
-        struct Impl;
-        std::unique_ptr<Impl> m_impl;
+	class DescriptorSet
+	{
+	private:
+		struct Impl;
+		std::unique_ptr<Impl> m_impl;
 
-    public:
-        DescriptorSet(const core::gpu::Device* device, size_t frame);
-        ~DescriptorSet();
+	public:
+		DescriptorSet(const core::gpu::Device* device);
+		~DescriptorSet();
 
-        template<typename T>
-        void Bind(uint32_t binding, const T& input);
-        
-        void Update(const core::gpu::Device& device);
+		template<typename T>
+		void Bind(uint32_t binding, const T& input);
 
-        Impl& GetImpl() const;
-    };
+		void Update(const core::gpu::Device& device);
+
+		Impl& GetImpl() const;
+	};
 }
 
 #endif //VRAKTAL_CORE_VULKAN_DESCRIPTORSET_H

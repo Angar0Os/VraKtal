@@ -5,10 +5,11 @@
 #include <core/window.h>
 #include <core/gpu/accelerationStructure.h>
 #include <core/gpu/commandBuffer.h>
+#include <core/gpu/descriptorSetLayout.h>
 #include <core/gpu/device.h>
 #include <core/gpu/image.h>
 #include <core/gpu/pipeline.h>
-#include <core/gpu/texture.h>
+#include <core/gpu/texture.h> 
 
 #include <graphics/resources/object/mesh.h>
 #include <graphics/resources/object/light.h>
@@ -38,7 +39,10 @@ namespace graphics
 		std::vector<std::unique_ptr<core::gpu::AccelerationStructure>> m_tlasPerFrame;
 		std::vector<resources::Light> m_lights;
 
-		std::unique_ptr<core::gpu::Pipeline> graphicsPipeline;
+		std::unique_ptr<core::gpu::Pipeline> graphicsPipeline = nullptr;
+		std::unique_ptr<DescriptorSetLayout>	descriptorSetLayout = nullptr;
+
+		std::unique_ptr<DescriptorSet> graphicsDescriptorSet;
 
 		uint32_t m_currentFrame;
 		uint64_t m_frameCounter;
@@ -48,12 +52,22 @@ namespace graphics
 		glm::mat4 m_projMatrix;
 		glm::vec3 m_cameraPosition;
 
+		std::unique_ptr<Texture> albedoTexture;
+		std::unique_ptr<Texture> normalTexture;
+		std::unique_ptr<Texture> metallicTexture;
+		std::unique_ptr<Texture> roughnessTexture;
+		std::unique_ptr<Texture> aoTexture;
+		std::unique_ptr<Texture> emissiveTexture;
+
 		void CreateCommandBuffers();
 		void BuildTLAS();
 		void RebuildAccelerationStructures();
 		void UpdateUniformBuffer(uint32_t frameIndex);
 
 		void CreateGraphicsPipeline();
+		void CreateDescriptorSetLayout();
+		void CreateGraphicsDescriptorSet();
+		void CreateTextures();
 
 	public:
 		Renderer(core::Window& window, core::gpu::Device& device);
@@ -68,9 +82,9 @@ namespace graphics
 
 		core::gpu::AccelerationStructure* GetTLAS() const { return m_tlas.get(); }
 
-		glm::mat4 GetViewMatrix()		{ return m_viewMatrix;		};
-		glm::mat4 GetProjectionMatrix()	{ return m_projMatrix;		};
-		glm::vec3 GetCameraPosition()	{ return m_cameraPosition;	};
+		glm::mat4 GetViewMatrix() { return m_viewMatrix; };
+		glm::mat4 GetProjectionMatrix() { return m_projMatrix; };
+		glm::vec3 GetCameraPosition() { return m_cameraPosition; };
 
 		std::vector<std::pair<resources::Mesh*, glm::mat4>>* GetMeshInstances() { return &m_meshInstances; };
 	};

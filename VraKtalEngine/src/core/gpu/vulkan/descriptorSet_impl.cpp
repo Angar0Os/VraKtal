@@ -9,8 +9,8 @@
 
 
 
-core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gpu::Device* dev, size_t frame)
-    : parent(p)
+core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gpu::Device* dev)
+	: parent(p)
 {
 	bufferInfos.reserve(8);
 	imageInfos.reserve(8);
@@ -28,14 +28,14 @@ void core::gpu::DescriptorSet::Bind<core::gpu::Texture>(uint32_t binding, const 
 	m_impl->imageInfos.emplace_back(
 		texture.GetImpl().sampler,
 		texture.GetImpl().image->GetImpl().view,
-        texture.GetImpl().image->GetImpl().currentLayout
+		texture.GetImpl().image->GetImpl().currentLayout
 	);
 
 	m_impl->bindingInfos.push_back({
 		binding,
 		vk::DescriptorType::eCombinedImageSampler,
 		infoIndex
-	});
+		});
 }
 
 template<>
@@ -52,7 +52,7 @@ void core::gpu::DescriptorSet::Bind<core::gpu::Buffer>(uint32_t binding, const c
 		binding,
 		vk::DescriptorType::eUniformBuffer,
 		infoIndex
-	});
+		});
 }
 
 template<>
@@ -65,60 +65,60 @@ void core::gpu::DescriptorSet::Bind<core::gpu::AccelerationStructure>(uint32_t b
 		binding,
 		vk::DescriptorType::eAccelerationStructureKHR,
 		infoIndex
-	});
+		});
 }
 
 void core::gpu::DescriptorSet::Update(const core::gpu::Device& device)
 {
-    if(m_impl->bindingInfos.empty())
-        return;
+	if (m_impl->bindingInfos.empty())
+		return;
 
-    std::vector<vk::WriteDescriptorSet> writes;
-    writes.reserve(m_impl->bindingInfos.size());
+	std::vector<vk::WriteDescriptorSet> writes;
+	writes.reserve(m_impl->bindingInfos.size());
 
-    for(const auto& bindingInfo : m_impl->bindingInfos)
-    {
-        vk::WriteDescriptorSet write{};
-        write.dstSet = m_impl->descriptorSet;
-        write.dstBinding = bindingInfo.binding;
-        write.dstArrayElement = 0;
-        write.descriptorCount = 1;
-        write.descriptorType = bindingInfo.type;
+	for (const auto& bindingInfo : m_impl->bindingInfos)
+	{
+		vk::WriteDescriptorSet write{};
+		write.dstSet = m_impl->descriptorSet;
+		write.dstBinding = bindingInfo.binding;
+		write.dstArrayElement = 0;
+		write.descriptorCount = 1;
+		write.descriptorType = bindingInfo.type;
 
-        switch(bindingInfo.type)
-        {
-            case vk::DescriptorType::eCombinedImageSampler:
-                write.pImageInfo = &m_impl->imageInfos[bindingInfo.infoIndex];
-                break;
+		switch (bindingInfo.type)
+		{
+		case vk::DescriptorType::eCombinedImageSampler:
+			write.pImageInfo = &m_impl->imageInfos[bindingInfo.infoIndex];
+			break;
 
-            case vk::DescriptorType::eUniformBuffer:
-                write.pBufferInfo = &m_impl->bufferInfos[bindingInfo.infoIndex];
-                break;
+		case vk::DescriptorType::eUniformBuffer:
+			write.pBufferInfo = &m_impl->bufferInfos[bindingInfo.infoIndex];
+			break;
 
-            case vk::DescriptorType::eAccelerationStructureKHR:
-            {
-                vk::WriteDescriptorSetAccelerationStructureKHR asWrite{};
-                asWrite.accelerationStructureCount = m_impl->asInfos[bindingInfo.infoIndex].accelerationStructureCount;
-                asWrite.pAccelerationStructures = m_impl->asInfos[bindingInfo.infoIndex].pAccelerationStructures;
-                write.pNext = &asWrite;
-                break;
-            }
-        }
+		case vk::DescriptorType::eAccelerationStructureKHR:
+		{
+			vk::WriteDescriptorSetAccelerationStructureKHR asWrite{};
+			asWrite.accelerationStructureCount = m_impl->asInfos[bindingInfo.infoIndex].accelerationStructureCount;
+			asWrite.pAccelerationStructures = m_impl->asInfos[bindingInfo.infoIndex].pAccelerationStructures;
+			write.pNext = &asWrite;
+			break;
+		}
+		}
 
-        writes.push_back(write);
-    }
+		writes.push_back(write);
+	}
 
-    device.GetImpl().device.updateDescriptorSets(writes, nullptr);
+	device.GetImpl().device.updateDescriptorSets(writes, nullptr);
 
-    m_impl->imageInfos.clear();
-    m_impl->bufferInfos.clear();
-    m_impl->asInfos.clear();
-    m_impl->bindingInfos.clear();
+	m_impl->imageInfos.clear();
+	m_impl->bufferInfos.clear();
+	m_impl->asInfos.clear();
+	m_impl->bindingInfos.clear();
 }
 
-core::gpu::DescriptorSet::DescriptorSet(const core::gpu::Device* device, size_t frame)
+core::gpu::DescriptorSet::DescriptorSet(const core::gpu::Device* device)
 {
-	m_impl = std::make_unique<Impl>(*this, device, frame);
+	m_impl = std::make_unique<Impl>(*this, device);
 }
 
 core::gpu::DescriptorSet::~DescriptorSet() = default;

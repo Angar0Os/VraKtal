@@ -34,7 +34,7 @@ namespace core::gpu
 {
 	struct Device::Impl
 	{
-        const core::gpu::Device*			parent = nullptr;
+		const core::gpu::Device* parent = nullptr;
 
 		vk::raii::Context					context;
 		vk::raii::Instance					instance = nullptr;
@@ -66,11 +66,11 @@ namespace core::gpu
 
 		std::vector<CommandBuffer>	commandBuffers;
 
-        vk::raii::SwapchainKHR				swapchain = nullptr;
-        std::vector<vk::raii::ImageView>    swapchainImageViews;
+		vk::raii::SwapchainKHR				swapchain = nullptr;
+		std::vector<vk::raii::ImageView>    swapchainImageViews;
 		vk::Extent2D						swapchainExtent;
-        std::vector<std::unique_ptr<Image>>	swapchainImages;
-        vk::Format							swapchainImageFormat;
+		std::vector<std::unique_ptr<Image>>	swapchainImages;
+		vk::Format							swapchainImageFormat;
 
 		std::vector<vk::raii::Semaphore>	imageAvailable;
 		std::vector<vk::raii::Semaphore>	renderFinished;
@@ -79,8 +79,6 @@ namespace core::gpu
 		std::vector<std::unique_ptr<vk::raii::CommandBuffer>> tempCmdBufs;
 
 		const Window& m_window;
-
-		std::vector<char> ReadFile(const std::string& filename);
 
 		explicit Impl(Window& window, const core::gpu::Device* parent);
 		~Impl();
@@ -93,7 +91,6 @@ namespace core::gpu
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void CreateSwapchain();
-		void CreateGraphicsPipeline();
 		void RecreateSwapchain();
 
 		void CreateCommandPool();
@@ -123,7 +120,7 @@ namespace core::gpu
 		vk::PresentModeKHR		ChoosePresentMode(const std::vector<vk::PresentModeKHR>& availableModes, PresentMode preferredMode);
 		vk::Extent2D			ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
 
-        const core::gpu::Pipeline* GetGraphicsPipeline() const;
+		const core::gpu::Pipeline* GetGraphicsPipeline() const;
 
 		void WaitIdle();
 

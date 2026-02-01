@@ -85,7 +85,6 @@ void core::gpu::Device::Impl::Initialize()
 	// Renderer 
 	//CreateDefaultTextures();
 	//LoadMaterialTextures();
-	CreateGraphicsPipeline();
 	CreateDescriptorSets();
 }
 
@@ -445,19 +444,19 @@ vk::SurfaceFormatKHR core::gpu::Device::Impl::ChooseSurfaceFormat(const std::vec
 {
 	vk::Format vkPreferredFormat = core::gpu_detail::ToVulkan(preferredFormat);
 
-	for(const auto& format : availableFormats)
+	for (const auto& format : availableFormats)
 	{
-		if(format.format == vkPreferredFormat &&
-		   format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+		if (format.format == vkPreferredFormat &&
+			format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
 		{
 			return format;
 		}
 	}
 
-	for(const auto& format : availableFormats)
+	for (const auto& format : availableFormats)
 	{
-		if(format.format == vk::Format::eB8G8R8A8Srgb &&
-		   format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+		if (format.format == vk::Format::eB8G8R8A8Srgb &&
+			format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
 		{
 			return format;
 		}
@@ -470,9 +469,9 @@ vk::PresentModeKHR core::gpu::Device::Impl::ChoosePresentMode(const std::vector<
 {
 	vk::PresentModeKHR vkPreferredMode = core::gpu_detail::ToVulkan(preferredMode);
 
-	for(const auto& mode : availableModes)
+	for (const auto& mode : availableModes)
 	{
-		if(mode == vkPreferredMode)
+		if (mode == vkPreferredMode)
 		{
 			return mode;
 		}
@@ -483,19 +482,19 @@ vk::PresentModeKHR core::gpu::Device::Impl::ChoosePresentMode(const std::vector<
 
 vk::Extent2D core::gpu::Device::Impl::ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height)
 {
-	if(capabilities.currentExtent.width != 0xFFFFFFFF)
+	if (capabilities.currentExtent.width != 0xFFFFFFFF)
 	{
 		return capabilities.currentExtent;
 	}
 
-	vk::Extent2D actualExtent = {width, height};
+	vk::Extent2D actualExtent = { width, height };
 
 	actualExtent.width = std::clamp(actualExtent.width,
-									capabilities.minImageExtent.width,
-									capabilities.maxImageExtent.width);
+		capabilities.minImageExtent.width,
+		capabilities.maxImageExtent.width);
 	actualExtent.height = std::clamp(actualExtent.height,
-									 capabilities.minImageExtent.height,
-									 capabilities.maxImageExtent.height);
+		capabilities.minImageExtent.height,
+		capabilities.maxImageExtent.height);
 
 	return actualExtent;
 }
@@ -512,7 +511,7 @@ void core::gpu::Device::Impl::CreateSwapchain()
 	vk::Extent2D extent = ChooseExtent(capabilities, 0, 0);
 
 	uint32_t imageCount = std::max(2u, capabilities.minImageCount);
-	if(capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
+	if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
 	{
 		imageCount = capabilities.maxImageCount;
 	}
@@ -534,13 +533,13 @@ void core::gpu::Device::Impl::CreateSwapchain()
 	};
 
 	swapchain = vk::raii::SwapchainKHR(device, createInfo);
-    swapchainExtent = extent;
+	swapchainExtent = extent;
 
 	std::vector<vk::Image> vkImages = swapchain.getImages();
 	swapchainImageViews.clear();
 	swapchainImageViews.reserve(vkImages.size());
 
-	for(vk::Image image : vkImages)
+	for (vk::Image image : vkImages)
 	{
 		vk::ImageViewCreateInfo viewInfo{
 			.image = image,
@@ -567,14 +566,14 @@ void core::gpu::Device::Impl::CreateSwapchain()
 		swapchainImages.emplace_back(std::make_unique<Image>(parent, imageInfo));
 	}
 
-    swapchainImageFormat = surfaceFormat.format;
+	swapchainImageFormat = surfaceFormat.format;
 }
 
 void core::gpu::Device::Impl::RecreateSwapchain()
 {
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
-	while(width == 0 || height == 0)
+	while (width == 0 || height == 0)
 	{
 		glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
 		glfwWaitEvents();
@@ -595,7 +594,7 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 	vk::Extent2D extent = ChooseExtent(capabilities, width, height);
 
 	uint32_t imageCount = std::max(3u, capabilities.minImageCount);
-	if(capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
+	if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
 	{
 		imageCount = capabilities.maxImageCount;
 	}
@@ -613,7 +612,7 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 		.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
 		.presentMode = presentMode,
 		.clipped = vk::True,
-		.oldSwapchain = oldSwapchain 
+		.oldSwapchain = oldSwapchain
 	};
 
 	swapchain = vk::raii::SwapchainKHR(device, createInfo);
@@ -622,7 +621,7 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 	swapchainImageViews.clear();
 	swapchainImageViews.reserve(vkImages.size());
 
-	for(vk::Image image : vkImages)
+	for (vk::Image image : vkImages)
 	{
 		vk::ImageViewCreateInfo viewInfo{
 			.image = image,
@@ -640,7 +639,6 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 	}
 
 	// Renderer
-	CreateGraphicsPipeline();
 	CreateSyncObjects();
 	CreateDescriptorSets();
 }

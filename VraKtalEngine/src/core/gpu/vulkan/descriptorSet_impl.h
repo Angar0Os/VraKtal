@@ -30,7 +30,7 @@ namespace core::gpu
 		};
 		std::vector<BindingInfo> bindingInfos;
 
-		explicit Impl(DescriptorSet& p, const core::gpu::Device* device, size_t frame);
+		explicit Impl(DescriptorSet& p, const core::gpu::Device* device);
 		~Impl();
 	};
 }

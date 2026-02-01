@@ -1,5 +1,6 @@
 #include <graphics/renderer.h>
 
+#include <core/gpu/descriptorSet.h>
 #include <core/gpu/imguiContext.h>
 #include <core/gpu/buffer.h>
 #include <core/gpu/pipeline.h>
@@ -170,6 +171,45 @@ void Renderer::RebuildAccelerationStructures()
 	cmdBuffer.SubmitAndWait(&m_device);
 }
 
+void Renderer::CreateDescriptorSetLayout()
+{
+	auto bindingsInfo = SDescriptorSetLayoutBinding{};
+	bindingsInfo.binding = 0;
+	bindingsInfo.descriptorCount = 1;
+	bindingsInfo.descriptorType = EDescriptorType::UniformBuffer;
+	bindingsInfo.stageFlags = core::ShaderStage::Vertex;
+
+	auto bindingsInfo1 = SDescriptorSetLayoutBinding{};
+	bindingsInfo.binding = 1;
+	bindingsInfo.descriptorCount = 2;
+	bindingsInfo.descriptorType = EDescriptorType::CombinedImageSampler;
+	bindingsInfo.stageFlags = core::ShaderStage::Fragment;
+
+	auto layoutInfo = SDescriptorSetLayoutCreateInfo{};
+	layoutInfo.bindings = { bindingsInfo, bindingsInfo1 };
+
+	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(layoutInfo);
+}
+
+void Renderer::CreateGraphicsDescriptorSet()
+{
+	auto descriptor = std::make_unique<DescriptorSet>(m_device);
+
+	descriptor->Bind(0, /*buffer*/);
+	descriptor->Bind(1, /*albedoTex*/);
+	descriptor->Bind(1, /*normalTex*/);
+	descriptor->Bind(1, /*metallicTex*/);
+	descriptor->Bind(1, /*roughnessTex*/);
+	descriptor->Bind(1, /*aoTex*/);
+	descriptor->Bind(1, /*emmissiveTex*/);
+
+	descriptor->Update(m_device);
+}
+
+void graphics::Renderer::CreateTextures()
+{
+}
+
 void Renderer::CreateGraphicsPipeline()
 {
 	auto shaderCode = loaders::ReadFile("../bin/assets/shaders/slang.spv");
@@ -202,7 +242,7 @@ void Renderer::CreateGraphicsPipeline()
 
 	PipelineCreateInfo pipelineInfo{};
 	pipelineInfo.shaderStages = shaderStages;
-	pipelineInfo.vertexBindings = {vertexBinding};
+	pipelineInfo.vertexBindings = { vertexBinding };
 	pipelineInfo.vertexAttributes = vertexAttributes;
 	pipelineInfo.topology = PrimitiveTopology::TriangleList;
 	pipelineInfo.polygonMode = PolygonMode::Fill;
@@ -213,11 +253,11 @@ void Renderer::CreateGraphicsPipeline()
 	pipelineInfo.depthCompareOp = CompareOp::Less;
 	pipelineInfo.blendEnable = false;
 	pipelineInfo.samples = SampleCount::e4;
-	pipelineInfo.colorAttachmentFormats = {TextureFormat::RGBA8_SRGB};
+	pipelineInfo.colorAttachmentFormats = { TextureFormat::RGBA8_SRGB };
 	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
-	pipelineInfo.descriptorSetLayouts = {descriptorSetLayout.get()};
+	pipelineInfo.descriptorSetLayouts = { descriptorSetLayout.get() };
 	pipelineInfo.pushConstantRanges = pushConstants;
-	pipelineInfo.dynamicStates = {DynamicState::Viewport, DynamicState::Scissor};
+	pipelineInfo.dynamicStates = { DynamicState::Viewport, DynamicState::Scissor };
 
 	graphicsPipeline = std::make_unique<Pipeline>(m_device, pipelineInfo);
 }
