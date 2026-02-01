@@ -12,7 +12,7 @@ namespace loaders
     class TextureLoader
     {
     public:
-        static std::unique_ptr<core::gpu::Texture> LoadTexture(const core::gpu::Device& device, std::string& filepath);
+        static std::unique_ptr<core::gpu::Texture> LoadTexture(const core::gpu::Device& device, const  std::string& filepath);
     };
 }
 

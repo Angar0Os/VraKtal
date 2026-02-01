@@ -81,11 +81,6 @@ void core::gpu::Device::Impl::Initialize()
 	CreateCommandPool();
 
 	CreateSyncObjects();
-
-	// Renderer 
-	//CreateDefaultTextures();
-	//LoadMaterialTextures();
-	CreateDescriptorSets();
 }
 
 core::gpu::Device::Impl::~Impl()
@@ -420,26 +415,6 @@ void core::gpu::Device::Impl::CreateCommandPool()
 	commandPool = std::make_unique<CommandPool>(parent, poolInfo);
 }
 
-// Renderer
-void core::gpu::Device::Impl::LoadMaterialTextures()
-{
-	//albedoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	//normalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
-	//metallicTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	//roughnessTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	//aoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	//emissiveTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
-
-	/* Loader une image via un path puis creer une texture*/
-
-	/*albedoTexture->LoadTextureIfExists(parent, "../bin/assets/textures/viking_room.png");
-	normalTexture->LoadTextureIfExists(parent, "assets/textures/normal.png");
-	metallicTexture->LoadTextureIfExists(parent, "assets/textures/metallic.png");
-	roughnessTexture->LoadTextureIfExists(parent, "assets/textures/roughness.png");
-	aoTexture->LoadTextureIfExists(parent, "assets/textures/ao.png");
-	emissiveTexture->LoadTextureIfExists(parent, "assets/textures/emissive.png");*/
-}
-
 vk::SurfaceFormatKHR core::gpu::Device::Impl::ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats, TextureFormat preferredFormat)
 {
 	vk::Format vkPreferredFormat = core::gpu_detail::ToVulkan(preferredFormat);
@@ -643,23 +618,6 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 	CreateDescriptorSets();
 }
 
-// Renderer
-void core::gpu::Device::Impl::CreateDescriptorSets()
-{
-	//for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	//{
-	//	DescriptorSet(parent, &descriptorSets, i)
-	//		.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
-	//		.BindImage(*textureSampler, albedoTexture.get(), *defaultWhiteTexture)
-	//		.BindImage(*textureSampler, normalTexture.get(), *defaultNormalTexture)
-	//		.BindImage(*textureSampler, metallicTexture.get(), *defaultWhiteTexture)
-	//		.BindImage(*textureSampler, roughnessTexture.get(), *defaultWhiteTexture)
-	//		.BindImage(*textureSampler, aoTexture.get(), *defaultWhiteTexture)
-	//		.BindImage(*textureSampler, emissiveTexture.get(), *defaultBlackTexture)
-	//		.Update();
-	//}
-}
-
 void core::gpu::Device::Impl::CreateSyncObjects()
 {
 	imageAvailable.clear();
@@ -669,8 +627,8 @@ void core::gpu::Device::Impl::CreateSyncObjects()
 	tempCmdBufs.clear();
 
 	vk::SemaphoreCreateInfo semInfo{};
-	imageAvailable.reserve(MAX_FRAMES_IN_FLIGHT);
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+	imageAvailable.reserve(core::gpu::Device::s_FRAMES_IN_FLIGHT);
+	for (size_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; ++i)
 	{
 		imageAvailable.emplace_back(device, semInfo);
 	}
@@ -683,14 +641,14 @@ void core::gpu::Device::Impl::CreateSyncObjects()
 	}
 
 	vk::FenceCreateInfo fenceInfo{ .flags = vk::FenceCreateFlagBits::eSignaled };
-	inFlightFences.reserve(MAX_FRAMES_IN_FLIGHT);
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+	inFlightFences.reserve(core::gpu::Device::s_FRAMES_IN_FLIGHT);
+	for (size_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; ++i)
 	{
 		inFlightFences.emplace_back(device, fenceInfo);
 	}
 
 	imagesInFlight.resize(swapchainImageCount, nullptr);
-	tempCmdBufs.resize(MAX_FRAMES_IN_FLIGHT);
+	tempCmdBufs.resize(core::gpu::Device::s_FRAMES_IN_FLIGHT);
 }
 
 void core::gpu::Device::Impl::BeginFrame(uint32_t frameIndex)
@@ -964,11 +922,6 @@ void core::gpu::Device::Impl::CreateCommandBuffers()
 	return;
 }
 
-core::gpu::Buffer* core::gpu::Device::Impl::GetUniformBuffer(uint32_t frameIndex) const
-{
-	if (frameIndex >= uniformBuffers.size()) return nullptr;
-	return uniformBuffers[frameIndex].get();
-}
 
 const core::gpu::Pipeline* core::gpu::Device::Impl::GetGraphicsPipeline() const
 {

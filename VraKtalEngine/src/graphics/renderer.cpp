@@ -1,5 +1,6 @@
 #include <graphics/renderer.h>
 
+#include <core/gpu/buffer.h>
 #include <core/gpu/descriptorSet.h>
 #include <core/gpu/imguiContext.h>
 #include <core/gpu/buffer.h>
@@ -8,6 +9,7 @@
 #include <core/enum.h>
 
 #include <loaders/shaderLoader.h>
+#include <loaders/textureLoader.h>
 
 #include <memory>
 #include <iostream>
@@ -29,6 +31,12 @@ Renderer::Renderer(core::Window& window, core::gpu::Device& device)
 	m_cameraPosition(glm::vec3(0.0f))
 {
 	CreateCommandBuffers();
+	CreateGraphicsPipeline();
+	CreateUniformBuffers();
+	CreateDescriptorSetLayout();
+	CreateTextures();
+	CreateGraphicsDescriptorSet();
+
 	m_tlasPerFrame.resize(core::gpu::Device::s_FRAMES_IN_FLIGHT);
 }
 
@@ -173,41 +181,66 @@ void Renderer::RebuildAccelerationStructures()
 
 void Renderer::CreateDescriptorSetLayout()
 {
-	auto bindingsInfo = SDescriptorSetLayoutBinding{};
-	bindingsInfo.binding = 0;
-	bindingsInfo.descriptorCount = 1;
-	bindingsInfo.descriptorType = EDescriptorType::UniformBuffer;
-	bindingsInfo.stageFlags = core::ShaderStage::Vertex;
+	auto bindingsVertex = SDescriptorSetLayoutBinding{};
+	bindingsVertex.binding = 0;
+	bindingsVertex.descriptorType = EDescriptorType::UniformBuffer;
+	bindingsVertex.stageFlags = core::ShaderStage::Vertex;
 
-	auto bindingsInfo1 = SDescriptorSetLayoutBinding{};
-	bindingsInfo.binding = 1;
-	bindingsInfo.descriptorCount = 2;
-	bindingsInfo.descriptorType = EDescriptorType::CombinedImageSampler;
-	bindingsInfo.stageFlags = core::ShaderStage::Fragment;
+	auto bindingFragment = SDescriptorSetLayoutBinding{};
+	bindingFragment.binding = 1;
+	bindingFragment.descriptorType = EDescriptorType::CombinedImageSampler;
+	bindingFragment.stageFlags = core::ShaderStage::Fragment;
 
 	auto layoutInfo = SDescriptorSetLayoutCreateInfo{};
-	layoutInfo.bindings = { bindingsInfo, bindingsInfo1 };
+	layoutInfo.bindings = { bindingsVertex, bindingFragment };
 
 	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(layoutInfo);
 }
 
 void Renderer::CreateGraphicsDescriptorSet()
 {
-	auto descriptor = std::make_unique<DescriptorSet>(m_device);
+	for (size_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; i++)
+	{
+		auto descriptor = std::make_unique<DescriptorSet>(m_device);
 
-	descriptor->Bind(0, /*buffer*/);
-	descriptor->Bind(1, /*albedoTex*/);
-	descriptor->Bind(1, /*normalTex*/);
-	descriptor->Bind(1, /*metallicTex*/);
-	descriptor->Bind(1, /*roughnessTex*/);
-	descriptor->Bind(1, /*aoTex*/);
-	descriptor->Bind(1, /*emmissiveTex*/);
+		descriptor->Bind(0, uniformBuffers[i]);
+		descriptor->Bind(1, albedoTexture);
+		descriptor->Bind(1, normalTexture);
+		descriptor->Bind(1, metallicTexture);
+		descriptor->Bind(1, roughnessTexture);
+		descriptor->Bind(1, aoTexture);
+		descriptor->Bind(1, emissiveTexture);
 
-	descriptor->Update(m_device);
+		descriptor->Update(m_device);
+
+		graphicsDescriptorSets.push_back(descriptor);
+	}
 }
 
 void graphics::Renderer::CreateTextures()
 {
+	albedoTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/albedoTexture.png");
+	normalTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/normalTexture.png");
+	metallicTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/metallicTexture.png");
+	roughnessTexture	= loaders::TextureLoader::LoadTexture(m_device, "textures/roughnessTexture.png");
+	aoTexture			= loaders::TextureLoader::LoadTexture(m_device, "textures/aoTexture.png");
+	emissiveTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/emissiveTexture.png");
+}
+
+void graphics::Renderer::CreateUniformBuffers()
+{
+	uniformBuffers.clear();
+	uniformBuffers.reserve(core::gpu::Device::s_FRAMES_IN_FLIGHT);
+
+	for (size_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; i++)
+	{
+		SBufferCreateInfo bufferInfo{
+			.size = sizeof(UniformBufferObject),
+			.usage = EBufferUsage::UniformBuffer,
+			.memoryProperties = EMemoryProperty::HostVisible | EMemoryProperty::HostCoherent
+		};
+		uniformBuffers.push_back(std::make_unique<Buffer>(m_device, bufferInfo));
+	}
 }
 
 void Renderer::CreateGraphicsPipeline()

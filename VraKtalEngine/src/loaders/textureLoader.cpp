@@ -7,7 +7,7 @@
 #include <memory>
 #include <stdexcept>
 
-std::unique_ptr<core::gpu::Texture> loaders::TextureLoader::LoadTexture(const core::gpu::Device& device, std::string& filepath)
+std::unique_ptr<core::gpu::Texture> loaders::TextureLoader::LoadTexture(const core::gpu::Device& device, const std::string& filepath)
 {
     int width, height, channels;
 

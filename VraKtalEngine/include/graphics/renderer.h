@@ -40,9 +40,9 @@ namespace graphics
 		std::vector<resources::Light> m_lights;
 
 		std::unique_ptr<core::gpu::Pipeline> graphicsPipeline = nullptr;
-		std::unique_ptr<DescriptorSetLayout>	descriptorSetLayout = nullptr;
+		std::unique_ptr<core::gpu::DescriptorSetLayout>	descriptorSetLayout = nullptr;
 
-		std::unique_ptr<DescriptorSet> graphicsDescriptorSet;
+		std::vector<std::unique_ptr<core::gpu::DescriptorSet>> graphicsDescriptorSets;
 
 		uint32_t m_currentFrame;
 		uint64_t m_frameCounter;
@@ -52,12 +52,14 @@ namespace graphics
 		glm::mat4 m_projMatrix;
 		glm::vec3 m_cameraPosition;
 
-		std::unique_ptr<Texture> albedoTexture;
-		std::unique_ptr<Texture> normalTexture;
-		std::unique_ptr<Texture> metallicTexture;
-		std::unique_ptr<Texture> roughnessTexture;
-		std::unique_ptr<Texture> aoTexture;
-		std::unique_ptr<Texture> emissiveTexture;
+		std::unique_ptr<core::gpu::Texture> albedoTexture;
+		std::unique_ptr<core::gpu::Texture> normalTexture;
+		std::unique_ptr<core::gpu::Texture> metallicTexture;
+		std::unique_ptr<core::gpu::Texture> roughnessTexture;
+		std::unique_ptr<core::gpu::Texture> aoTexture;
+		std::unique_ptr<core::gpu::Texture> emissiveTexture;
+
+		std::vector<std::unique_ptr<core::gpu::Buffer>> uniformBuffers;
 
 		void CreateCommandBuffers();
 		void BuildTLAS();
@@ -67,6 +69,7 @@ namespace graphics
 		void CreateGraphicsPipeline();
 		void CreateDescriptorSetLayout();
 		void CreateGraphicsDescriptorSet();
+		void CreateUniformBuffers();
 		void CreateTextures();
 
 	public:

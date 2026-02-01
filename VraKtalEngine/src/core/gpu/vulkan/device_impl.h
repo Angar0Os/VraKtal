@@ -28,8 +28,6 @@ constexpr bool enableValidationLayers = false;
 constexpr bool enableValidationLayers = true;
 #endif
 
-constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-
 namespace core::gpu
 {
 	struct Device::Impl
@@ -49,8 +47,6 @@ namespace core::gpu
 		std::unique_ptr<DescriptorSetLayout>	descriptorSetLayout;
 		std::unique_ptr<DescriptorPool>			descriptorPool;
 		std::vector<vk::raii::DescriptorSet*>	descriptorSets;
-
-		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
 
 		std::unique_ptr<Texture> albedoTexture;
 		std::unique_ptr<Texture> normalTexture;
