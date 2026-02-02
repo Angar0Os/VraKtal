@@ -79,7 +79,6 @@ namespace core
 			void Present(uint32_t imageIndex);
 			void Cleanup();
 
-			core::gpu::Buffer* GetUniformBuffer(uint32_t frameIndex);
 			const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
 			const core::gpu::Image* GetColorImage() const;
 			const core::gpu::Image* GetDepthImage() const;

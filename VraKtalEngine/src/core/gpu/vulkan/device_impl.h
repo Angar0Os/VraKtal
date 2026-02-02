@@ -92,9 +92,6 @@ namespace core::gpu
 		void CreateCommandPool();
 		void CreateDescriptorPool();
 
-		void CreateDefaultTextures();
-		void LoadMaterialTextures();
-		void CreateDescriptorSets();
 		void CreateCommandBuffers();
 		void CreateSyncObjects();
 
@@ -105,8 +102,6 @@ namespace core::gpu
 		void* GetInFlightFence(uint32_t frameIndex) const;
 		void Present(uint32_t imageIndex);
 		void Cleanup();
-
-		Buffer* GetUniformBuffer(uint32_t frameIndex) const;
 
 		const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
 		const core::gpu::Image* GetColorImage() const;

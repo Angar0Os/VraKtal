@@ -1,6 +1,8 @@
 #include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
 #include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu/vulkan/descriptorSet_impl.h"
+#include "../src/core/gpu/vulkan/descriptorPool_impl.h"]
+#include "../src/core/gpu/vulkan/descriptorSetLayout_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu/vulkan/texture_impl.h"
@@ -9,9 +11,18 @@
 
 
 
-core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gpu::Device* dev)
+core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gpu::Device* dev, const core::gpu::DescriptorSetLayout* dsLayout)
 	: parent(p)
 {
+	vk::DescriptorSetAllocateInfo allocInfo{};
+	allocInfo.descriptorPool = *dev->GetImpl().descriptorPool->GetImpl().pool;
+	allocInfo.descriptorSetCount = 1;
+	vk::DescriptorSetLayout vkLayout = dsLayout->GetImpl().layout;
+	allocInfo.pSetLayouts = &vkLayout;
+
+	auto sets = vk::raii::DescriptorSets(dev->GetImpl().device, allocInfo);
+	descriptorSet = std::move(sets[0]);
+
 	bufferInfos.reserve(8);
 	imageInfos.reserve(8);
 	asInfos.reserve(8);
@@ -116,9 +127,9 @@ void core::gpu::DescriptorSet::Update(const core::gpu::Device& device)
 	m_impl->bindingInfos.clear();
 }
 
-core::gpu::DescriptorSet::DescriptorSet(const core::gpu::Device* device)
+core::gpu::DescriptorSet::DescriptorSet(const core::gpu::Device* device, const core::gpu::DescriptorSetLayout* dsLayout)
 {
-	m_impl = std::make_unique<Impl>(*this, device);
+	m_impl = std::make_unique<Impl>(*this, device, dsLayout);
 }
 
 core::gpu::DescriptorSet::~DescriptorSet() = default;

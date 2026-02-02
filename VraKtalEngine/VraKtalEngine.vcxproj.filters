@@ -344,15 +344,9 @@
     <ClCompile Include="src\loaders\textureLoader.cpp">
       <Filter>Source Files\loaders</Filter>
     </ClCompile>
-    <ClCompile Include="src\loaders\shaderLoader.cpp">
-      <Filter>Source Files\loaders</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\shaders\shader.slang">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="..\bin\assets\shaders\frameUniforms.slang">
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="..\external\include\imGuizmo\.editorconfig">

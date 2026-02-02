@@ -615,7 +615,6 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 
 	// Renderer
 	CreateSyncObjects();
-	CreateDescriptorSets();
 }
 
 void core::gpu::Device::Impl::CreateSyncObjects()
@@ -971,11 +970,6 @@ void core::gpu::Device::Present(uint32_t imageIndex)
 void core::gpu::Device::Cleanup()
 {
 	if (m_impl) m_impl->Cleanup();
-}
-
-core::gpu::Buffer* core::gpu::Device::GetUniformBuffer(uint32_t frameIndex)
-{
-	return m_impl ? m_impl->GetUniformBuffer(frameIndex) : nullptr;
 }
 
 void core::gpu::Device::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)

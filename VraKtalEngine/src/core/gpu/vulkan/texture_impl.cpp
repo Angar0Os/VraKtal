@@ -28,3 +28,8 @@ core::gpu::Texture::Texture(const core::gpu::Device& _device, const core::gpu::I
 
 core::gpu::Texture::Impl::~Impl() = default;
 core::gpu::Texture::~Texture() = default;
+
+core::gpu::Texture::Impl& core::gpu::Texture::GetImpl() const
+{
+    return *m_impl;
+}

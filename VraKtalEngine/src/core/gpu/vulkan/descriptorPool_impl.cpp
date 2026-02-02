@@ -68,16 +68,6 @@ std::vector<vk::raii::DescriptorSet*> core::gpu::DescriptorPool::Impl::AllocateD
 	return result;
 }
 
-vk::raii::DescriptorPool& core::gpu::DescriptorPool::Impl::GetPool()
-{
-	return pool;
-}	
-
-const vk::raii::DescriptorPool& core::gpu::DescriptorPool::Impl::GetPool() const
-{
-	return pool;
-}
-
 core::gpu::DescriptorPool::DescriptorPool(const core::gpu::Device* device)
 {
 	m_impl = std::make_unique<Impl>(*this, device);

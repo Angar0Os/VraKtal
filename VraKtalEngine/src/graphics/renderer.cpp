@@ -31,9 +31,9 @@ Renderer::Renderer(core::Window& window, core::gpu::Device& device)
 	m_cameraPosition(glm::vec3(0.0f))
 {
 	CreateCommandBuffers();
+	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	CreateUniformBuffers();
-	CreateDescriptorSetLayout();
 	CreateTextures();
 	CreateGraphicsDescriptorSet();
 
@@ -184,7 +184,7 @@ void Renderer::CreateDescriptorSetLayout()
 	auto bindingsVertex = SDescriptorSetLayoutBinding{};
 	bindingsVertex.binding = 0;
 	bindingsVertex.descriptorType = EDescriptorType::UniformBuffer;
-	bindingsVertex.stageFlags = core::ShaderStage::Vertex;
+	bindingsVertex.stageFlags = core::ShaderStage::Vertex | core::ShaderStage::Fragment;
 
 	auto bindingFragment = SDescriptorSetLayoutBinding{};
 	bindingFragment.binding = 1;
@@ -194,37 +194,40 @@ void Renderer::CreateDescriptorSetLayout()
 	auto layoutInfo = SDescriptorSetLayoutCreateInfo{};
 	layoutInfo.bindings = { bindingsVertex, bindingFragment };
 
-	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(layoutInfo);
+	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(&m_device, layoutInfo);
 }
 
 void Renderer::CreateGraphicsDescriptorSet()
 {
 	for (size_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; i++)
 	{
-		auto descriptor = std::make_unique<DescriptorSet>(m_device);
+		auto descriptor = std::make_unique<DescriptorSet>(&m_device, descriptorSetLayout.get());
 
-		descriptor->Bind(0, uniformBuffers[i]);
-		descriptor->Bind(1, albedoTexture);
-		descriptor->Bind(1, normalTexture);
-		descriptor->Bind(1, metallicTexture);
-		descriptor->Bind(1, roughnessTexture);
-		descriptor->Bind(1, aoTexture);
-		descriptor->Bind(1, emissiveTexture);
+		descriptor->Bind(0, *uniformBuffers[i]);
+		descriptor->Bind(1, *albedoTexture);
+		//descriptor->Bind(1, *normalTexture);
+		//descriptor->Bind(1, *metallicTexture);
+		//descriptor->Bind(1, *roughnessTexture);
+		//descriptor->Bind(1, *aoTexture);
+		//descriptor->Bind(1, *emissiveTexture);
 
 		descriptor->Update(m_device);
 
-		graphicsDescriptorSets.push_back(descriptor);
+		graphicsDescriptorSets.push_back(std::move(descriptor));
 	}
 }
 
 void graphics::Renderer::CreateTextures()
 {
-	albedoTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/albedoTexture.png");
-	normalTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/normalTexture.png");
+	albedoTexture		= loaders::TextureLoader::LoadTexture(m_device, "../bin/assets/textures/viking_room.png");
+
+
+
+	/*normalTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/normalTexture.png");
 	metallicTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/metallicTexture.png");
 	roughnessTexture	= loaders::TextureLoader::LoadTexture(m_device, "textures/roughnessTexture.png");
 	aoTexture			= loaders::TextureLoader::LoadTexture(m_device, "textures/aoTexture.png");
-	emissiveTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/emissiveTexture.png");
+	emissiveTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/emissiveTexture.png");*/
 }
 
 void graphics::Renderer::CreateUniformBuffers()
@@ -239,7 +242,7 @@ void graphics::Renderer::CreateUniformBuffers()
 			.usage = EBufferUsage::UniformBuffer,
 			.memoryProperties = EMemoryProperty::HostVisible | EMemoryProperty::HostCoherent
 		};
-		uniformBuffers.push_back(std::make_unique<Buffer>(m_device, bufferInfo));
+		uniformBuffers.push_back(std::make_unique<Buffer>(&m_device, bufferInfo));
 	}
 }
 
@@ -292,7 +295,7 @@ void Renderer::CreateGraphicsPipeline()
 	pipelineInfo.pushConstantRanges = pushConstants;
 	pipelineInfo.dynamicStates = { DynamicState::Viewport, DynamicState::Scissor };
 
-	graphicsPipeline = std::make_unique<Pipeline>(m_device, pipelineInfo);
+	graphicsPipeline = std::make_unique<Pipeline>(&m_device, pipelineInfo);
 }
 
 void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
@@ -332,7 +335,7 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 
 	ubo.frameCount = static_cast<uint32_t>(m_frameCounter);
 
-	auto* uniformBuffer = m_device.GetUniformBuffer(frameIndex);
+	const auto& uniformBuffer = uniformBuffers[frameIndex];
 	if (uniformBuffer)
 	{
 		uniformBuffer->CopyFrom(&ubo, sizeof(core::gpu::UniformBufferObject));

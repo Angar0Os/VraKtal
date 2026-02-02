@@ -255,12 +255,10 @@
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\graphics\resources\object\scene.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />
-    <ClCompile Include="src\loaders\shaderLoader.cpp" />
     <ClCompile Include="src\loaders\textureLoader.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\bin\assets\shaders\frameUniforms.slang" />
     <None Include="..\bin\assets\shaders\shader.slang" />
     <None Include="..\external\include\imGuizmo\.editorconfig" />
   </ItemGroup>

@@ -11,6 +11,7 @@ namespace core::gpu
 	class AccelerationStructure;
 	class Buffer;
 	class Device;
+	class DescriptorSetLayout;
 	class Sampler;
 	class Texture;
 
@@ -21,7 +22,7 @@ namespace core::gpu
 		std::unique_ptr<Impl> m_impl;
 
 	public:
-		DescriptorSet(const core::gpu::Device* device);
+		DescriptorSet(const core::gpu::Device* device, const core::gpu::DescriptorSetLayout* dsLayout);
 		~DescriptorSet();
 
 		template<typename T>
