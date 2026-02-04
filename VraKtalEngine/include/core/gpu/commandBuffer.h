@@ -49,7 +49,7 @@ namespace core::gpu
         void BindPipeline(const core::gpu::Pipeline* _pipeline);
         void BindVertexBuffer(const core::gpu::Buffer* _buffer, size_t _offset = 0);
         void BindIndexBuffer(const core::gpu::Buffer* _buffer, size_t _offset = 0);
-        void BindDescriptorSets(const core::gpu::Device* _device, uint32_t _frameIndex, uint32_t _firstSet = 0);
+        void BindDescriptorSets(const Pipeline* currentPipeline, const DescriptorSet* descriptorSet, uint32_t _frameIndex, uint32_t _firstSet = 0);
 
         void SetViewport(float _x, float _y, const core::gpu::Device* device, float _minDepth = 0.0f, float _maxDepth = 1.0f);
         void SetScissor(int32_t _x, int32_t _y, const core::gpu::Device* device);

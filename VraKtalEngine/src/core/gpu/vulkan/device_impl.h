@@ -48,16 +48,6 @@ namespace core::gpu
 		std::unique_ptr<DescriptorPool>			descriptorPool;
 		std::vector<vk::raii::DescriptorSet*>	descriptorSets;
 
-		std::unique_ptr<Texture> albedoTexture;
-		std::unique_ptr<Texture> normalTexture;
-		std::unique_ptr<Texture> metallicTexture;
-		std::unique_ptr<Texture> roughnessTexture;
-		std::unique_ptr<Texture> aoTexture;
-		std::unique_ptr<Texture> emissiveTexture;
-
-		std::unique_ptr<Image>	colorImage;
-		std::unique_ptr<Image>	depthImage;
-
 		std::unique_ptr<Pipeline>	graphicsPipeline;
 
 		std::vector<CommandBuffer>	commandBuffers;
@@ -104,8 +94,6 @@ namespace core::gpu
 		void Cleanup();
 
 		const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
-		const core::gpu::Image* GetColorImage() const;
-		const core::gpu::Image* GetDepthImage() const;
 
 		vk::SurfaceFormatKHR	ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats, TextureFormat preferredFormat);
 		vk::PresentModeKHR		ChoosePresentMode(const std::vector<vk::PresentModeKHR>& availableModes, PresentMode preferredMode);

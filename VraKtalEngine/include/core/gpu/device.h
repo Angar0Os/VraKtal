@@ -79,11 +79,10 @@ namespace core
 			void Present(uint32_t imageIndex);
 			void Cleanup();
 
-			const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
-			const core::gpu::Image* GetColorImage() const;
-			const core::gpu::Image* GetDepthImage() const;
+			std::pair<uint32_t, uint32_t> GetSwapchainExtent() const;
+			
 
-			const core::gpu::Pipeline* GetGraphicsPipeline() const;
+			const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
 
 			void UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle);
 

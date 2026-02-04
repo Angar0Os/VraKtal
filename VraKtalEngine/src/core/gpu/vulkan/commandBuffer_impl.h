@@ -32,7 +32,6 @@ namespace core::gpu
 		void BindPipeline(const core::gpu::Pipeline* device);
 		void BindVertexBuffer(const core::gpu::Buffer* buffer, size_t offset);
 		void BindIndexBuffer(const core::gpu::Buffer* buffer, size_t offset);
-		void BindDescriptorSets(const core::gpu::Device* device, uint32_t frameIndex, uint32_t firstSet);
 		void SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth);
 		void SetScissor(int32_t x, int32_t y, const core::gpu::Device* device);
 		void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);

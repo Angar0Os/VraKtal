@@ -9,8 +9,6 @@
 
 #include <core/gpu/texture.h>
 
-
-
 core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gpu::Device* dev, const core::gpu::DescriptorSetLayout* dsLayout)
 	: parent(p)
 {
@@ -37,8 +35,8 @@ void core::gpu::DescriptorSet::Bind<core::gpu::Texture>(uint32_t binding, const 
 {
 	size_t infoIndex = m_impl->imageInfos.size();
 	m_impl->imageInfos.emplace_back(
-		texture.GetImpl().sampler,
-		texture.GetImpl().image->GetImpl().view,
+		*texture.GetImpl().sampler,
+		*texture.GetImpl().image->GetImpl().view,
 		texture.GetImpl().image->GetImpl().currentLayout
 	);
 

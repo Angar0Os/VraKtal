@@ -3,10 +3,13 @@
 #include "../src/core/gpu/vulkan/commandBuffer_impl.h"
 #include "../src/core/gpu/vulkan/commandPool_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
+#include "../src/core/gpu/vulkan/descriptorSet_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu/vulkan/pipeline_impl.h"
 
 #include <stdexcept>
+
+using namespace core::gpu;
 
 core::gpu::CommandBuffer::Impl::Impl(core::gpu::CommandBuffer& p, const core::gpu::Device* device, const SCommandBufferCreateInfo& info)
 	: parent(p), commandBuffers(nullptr), isSingleTime(info.singleTime), currentIndex(0)
@@ -268,16 +271,13 @@ void core::gpu::CommandBuffer::Impl::BindIndexBuffer(const core::gpu::Buffer* bu
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::BindDescriptorSets(
-	const core::gpu::Device* device,
-	uint32_t frameIndex,
-	uint32_t firstSet)
+void CommandBuffer::BindDescriptorSets(const Pipeline* currentPipeline, const DescriptorSet* descriptorSet, uint32_t frameIndex, uint32_t firstSet)
 {
-	GetCommandBuffer(currentIndex).bindDescriptorSets(
+	m_impl->GetCommandBuffer(m_impl->currentIndex).bindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,
-		device->GetImpl().graphicsPipeline->GetImpl().pipelineLayout,
+		currentPipeline->GetImpl().pipelineLayout,
 		firstSet,
-		**device->GetImpl().descriptorSets[frameIndex],
+		*descriptorSet->GetImpl().descriptorSet,
 		nullptr
 	);
 }
@@ -478,11 +478,6 @@ void core::gpu::CommandBuffer::BindVertexBuffer(const core::gpu::Buffer* buffer,
 void core::gpu::CommandBuffer::BindIndexBuffer(const core::gpu::Buffer* buffer, size_t offset)
 {
 	m_impl->BindIndexBuffer(buffer, offset);
-}
-
-void core::gpu::CommandBuffer::BindDescriptorSets(const core::gpu::Device* device, uint32_t frameIndex, uint32_t firstSet)
-{
-	m_impl->BindDescriptorSets(device, frameIndex, firstSet);
 }
 
 void core::gpu::CommandBuffer::SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth)

@@ -530,13 +530,11 @@ void core::gpu::Device::Impl::CreateSwapchain()
 		};
 		swapchainImageViews.emplace_back(device, viewInfo);
 
-		core::gpu::SPredefinedImageCreateInfo imageInfo
-		{
-			.image = image,
-			.extent = extent,
-			.aspectFlags = vk::ImageAspectFlagBits::eColor,
-			.format = surfaceFormat.format
-		};
+		core::gpu::SPredefinedImageCreateInfo imageInfo{};		
+		imageInfo.image = image;
+		imageInfo.extent = extent;
+		imageInfo.aspectFlags = vk::ImageAspectFlagBits::eColor;
+		imageInfo.format = surfaceFormat.format;
 
 		swapchainImages.emplace_back(std::make_unique<Image>(parent, imageInfo));
 	}
@@ -754,11 +752,6 @@ const core::gpu::Image* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imag
 	return swapchainImages[imageIndex].get();
 }
 
-const core::gpu::Image* core::gpu::Device::Impl::GetColorImage() const
-{
-	return colorImage.get();
-}
-
 void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
 {
 	const core::gpu::Image* swapchainImage = swapchainImages[imageIndex].get();
@@ -855,55 +848,6 @@ void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 	}
 }
 
-
-// Renderer
-//void core::gpu::Device::Impl::CreateColorImage()
-//{
-//	SImageCreateInfo colorInfo{
-//		.width = swapchainExtent.width,
-//		.height = swapchainExtent.height,
-//		.mipLevels = 1,
-//		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
-//		.tiling = ImageTiling::Optimal,
-//		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc,
-//		.memoryProperties = EMemoryProperty::DeviceLocal,
-//		.samples = SampleCount::e4
-//	};
-//
-//	colorImage = std::make_unique<Image>(parent, colorInfo);
-//
-//	SImageViewCreateInfo viewInfo{
-//		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
-//		.isDepth = false
-//	};
-//
-//	colorImage->CreateView(viewInfo);
-//}
-
-// Renderer
-//void core::gpu::Device::Impl::CreateDepthImage()
-//{
-//	SImageCreateInfo depthInfo{
-//		.width = swapchain->GetImpl().extent.width,
-//		.height = swapchain->GetImpl().extent.height,
-//		.mipLevels = 1,
-//		.format = TextureFormat::Depth32F,
-//		.tiling = ImageTiling::Optimal,
-//		.usage = ImageUsage::DepthStencilAttachment,
-//		.memoryProperties = EMemoryProperty::DeviceLocal,
-//		.samples = SampleCount::e4
-//	};
-//
-//	depthImage = std::make_unique<Image>(parent, depthInfo);
-//
-//	SImageViewCreateInfo viewInfo{
-//		.format = TextureFormat::Depth32F,
-//		.isDepth = true
-//	};
-//
-//	depthImage->CreateView(viewInfo);
-//}
-
 void core::gpu::Device::Impl::Cleanup()
 {
 	device.waitIdle();
@@ -921,15 +865,13 @@ void core::gpu::Device::Impl::CreateCommandBuffers()
 	return;
 }
 
-
-const core::gpu::Pipeline* core::gpu::Device::Impl::GetGraphicsPipeline() const
+std::pair<uint32_t , uint32_t> core::gpu::Device::GetSwapchainExtent() const
 {
-	return graphicsPipeline.get();
-}
-
-const core::gpu::Image* core::gpu::Device::Impl::GetDepthImage() const
-{
-	return depthImage.get();
+	if (m_impl)
+	{
+		return { m_impl->swapchainExtent.width, m_impl->swapchainExtent.height };
+	}
+	return { 0, 0 };
 }
 
 void core::gpu::Device::Impl::WaitIdle()
@@ -982,16 +924,6 @@ const core::gpu::Image* core::gpu::Device::GetSwapchainImage(uint32_t imageIndex
 	return m_impl ? m_impl->GetSwapchainImage(imageIndex) : nullptr;
 }
 
-const core::gpu::Image* core::gpu::Device::GetColorImage() const
-{
-	return m_impl ? m_impl->GetColorImage() : nullptr;
-}
-
-const core::gpu::Image* core::gpu::Device::GetDepthImage() const
-{
-	return m_impl ? m_impl->GetDepthImage() : nullptr;
-}
-
 void core::gpu::Device::WaitIdle()
 {
 	if (m_impl) m_impl->WaitIdle();
@@ -1000,11 +932,6 @@ void core::gpu::Device::WaitIdle()
 void core::gpu::Device::RecreateSwapchain()
 {
 	if (m_impl) m_impl->RecreateSwapchain();
-}
-
-const core::gpu::Pipeline* core::gpu::Device::GetGraphicsPipeline() const
-{
-	return m_impl ? m_impl->GetGraphicsPipeline() : nullptr;
 }
 
 void core::gpu::Device::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)

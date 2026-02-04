@@ -20,7 +20,7 @@ using namespace graphics;
 
 //#define VRAKTAL_EDITOR
 
-Renderer::Renderer(core::Window& window, core::gpu::Device& device)
+Renderer::Renderer(Window& window, Device& device)
 	: m_window(window),
 	m_device(device),
 	m_currentFrame(0),
@@ -34,10 +34,14 @@ Renderer::Renderer(core::Window& window, core::gpu::Device& device)
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	CreateUniformBuffers();
+
+	CreateColorImage();
+	CreateDepthImage();
+
 	CreateTextures();
 	CreateGraphicsDescriptorSet();
 
-	m_tlasPerFrame.resize(core::gpu::Device::s_FRAMES_IN_FLIGHT);
+	m_tlasPerFrame.resize(Device::s_FRAMES_IN_FLIGHT);
 }
 
 Renderer::~Renderer()
@@ -48,16 +52,16 @@ Renderer::~Renderer()
 void Renderer::CreateCommandBuffers()
 {
 	m_commandBuffers.clear();
-	m_commandBuffers.reserve(core::gpu::Device::s_FRAMES_IN_FLIGHT);
+	m_commandBuffers.reserve(Device::s_FRAMES_IN_FLIGHT);
 
-	for (uint32_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; i++)
+	for (uint32_t i = 0; i < Device::s_FRAMES_IN_FLIGHT; i++)
 	{
-		core::gpu::SCommandBufferCreateInfo cmdInfo{};
+		SCommandBufferCreateInfo cmdInfo{};
 		cmdInfo.device = &m_device;
-		cmdInfo.level = core::ECommandBufferLevel::Primary;
+		cmdInfo.level = ECommandBufferLevel::Primary;
 		cmdInfo.count = 1;
 
-		auto cmdBuffer = std::make_unique<core::gpu::CommandBuffer>(
+		auto cmdBuffer = std::make_unique<CommandBuffer>(
 			&m_device,
 			cmdInfo
 		);
@@ -99,7 +103,7 @@ void Renderer::BuildTLAS()
 		return;
 	}
 
-	std::vector<core::gpu::SAccelerationStructureInstance> instances;
+	std::vector<SAccelerationStructureInstance> instances;
 	instances.reserve(m_meshInstances.size());
 
 	uint32_t instanceIndex = 0;
@@ -120,7 +124,7 @@ void Renderer::BuildTLAS()
 			{mat[0][2], mat[1][2], mat[2][2], mat[3][2]}
 		};
 
-		core::gpu::SAccelerationStructureInstance instance{};
+		SAccelerationStructureInstance instance{};
 		std::memcpy(&instance.transform, &transform, sizeof(transform));
 		instance.instanceCustomIndex = instanceIndex++;
 		instance.mask = 0xFF;
@@ -143,13 +147,13 @@ void Renderer::BuildTLAS()
 		return;
 	}
 
-	core::gpu::SAccelerationStructureCreateInfo tlasInfo{};
-	tlasInfo.type = core::gpu::EAccelerationStructureType::TopLevel;
+	SAccelerationStructureCreateInfo tlasInfo{};
+	tlasInfo.type = EAccelerationStructureType::TopLevel;
 	tlasInfo.instances = instances;
 	tlasInfo.preferFastTrace = true;
 	tlasInfo.allowUpdate = false;
 
-	m_tlasPerFrame[m_currentFrame] = std::make_unique<core::gpu::AccelerationStructure>(
+	m_tlasPerFrame[m_currentFrame] = std::make_unique<AccelerationStructure>(
 		&m_device,
 		tlasInfo
 	);
@@ -157,13 +161,13 @@ void Renderer::BuildTLAS()
 
 void Renderer::RebuildAccelerationStructures()
 {
-	core::gpu::SCommandBufferCreateInfo cmdInfo{};
+	SCommandBufferCreateInfo cmdInfo{};
 	cmdInfo.device = &m_device;
 	cmdInfo.count = 1;
 	cmdInfo.singleTime = true;
-	cmdInfo.level = core::ECommandBufferLevel::Primary;
+	cmdInfo.level = ECommandBufferLevel::Primary;
 
-	core::gpu::CommandBuffer cmdBuffer(
+	gpu::CommandBuffer cmdBuffer(
 		&m_device,
 		cmdInfo
 	);
@@ -199,7 +203,7 @@ void Renderer::CreateDescriptorSetLayout()
 
 void Renderer::CreateGraphicsDescriptorSet()
 {
-	for (size_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; i++)
+	for (size_t i = 0; i < Device::s_FRAMES_IN_FLIGHT; i++)
 	{
 		auto descriptor = std::make_unique<DescriptorSet>(&m_device, descriptorSetLayout.get());
 
@@ -219,9 +223,7 @@ void Renderer::CreateGraphicsDescriptorSet()
 
 void graphics::Renderer::CreateTextures()
 {
-	albedoTexture		= loaders::TextureLoader::LoadTexture(m_device, "../bin/assets/textures/viking_room.png");
-
-
+	albedoTexture = loaders::TextureLoader::LoadTexture(m_device, "../bin/assets/textures/viking_room.png");
 
 	/*normalTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/normalTexture.png");
 	metallicTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/metallicTexture.png");
@@ -233,9 +235,9 @@ void graphics::Renderer::CreateTextures()
 void graphics::Renderer::CreateUniformBuffers()
 {
 	uniformBuffers.clear();
-	uniformBuffers.reserve(core::gpu::Device::s_FRAMES_IN_FLIGHT);
+	uniformBuffers.reserve(Device::s_FRAMES_IN_FLIGHT);
 
-	for (size_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; i++)
+	for (size_t i = 0; i < Device::s_FRAMES_IN_FLIGHT; i++)
 	{
 		SBufferCreateInfo bufferInfo{
 			.size = sizeof(UniformBufferObject),
@@ -300,14 +302,14 @@ void Renderer::CreateGraphicsPipeline()
 
 void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 {
-	core::gpu::UniformBufferObject ubo{};
+	UniformBufferObject ubo{};
 
 	ubo.view = m_viewMatrix;
 	ubo.proj = m_projMatrix;
 	ubo.viewPos = m_cameraPosition;
 
 	ubo.numLights = std::min(static_cast<int>(m_lights.size()),
-		core::gpu::MAX_LIGHTS);
+		MAX_LIGHTS);
 
 	for (int i = 0; i < ubo.numLights; i++)
 	{
@@ -338,12 +340,13 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 	const auto& uniformBuffer = uniformBuffers[frameIndex];
 	if (uniformBuffer)
 	{
-		uniformBuffer->CopyFrom(&ubo, sizeof(core::gpu::UniformBufferObject));
+		uniformBuffer->CopyFrom(&ubo, sizeof(UniformBufferObject));
 	}
 }
 
-void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
+void Renderer::Render(const Image* image, uint32_t imageIndex)
 {
+	// Le render crash car les images sont nulles, il faut recréer les images dans le renderer et les enlever du device.
 	if (!m_running) return;
 
 	m_device.BeginFrame(m_currentFrame);
@@ -362,12 +365,10 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 
 	cmd->Begin(0);
 
-	const auto* colorImageHandle = m_device.GetColorImage();
 	const auto* swapchainImageHandle = m_device.GetSwapchainImage(imageIndex);
-	const auto* depthImageHandle = m_device.GetDepthImage();
 
 	cmd->TransitionImageLayout(
-		colorImageHandle,
+		colorImage.get(),
 		core::ImageLayout::Undefined,
 		core::ImageLayout::ColorAttachment,
 		false
@@ -381,7 +382,7 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 	);
 
 	cmd->TransitionImageLayout(
-		depthImageHandle,
+		depthImage.get(),
 		core::ImageLayout::Undefined,
 		core::ImageLayout::DepthStencilAttachment,
 		true
@@ -389,16 +390,17 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 
 	cmd->BeginRendering(
 		&m_device,
-		colorImageHandle,
-		depthImageHandle
+		colorImage.get(),
+		depthImage.get()
 	);
 
-	cmd->BindPipeline(m_device.GetGraphicsPipeline());
+	cmd->BindPipeline(graphicsPipeline.get());
 	cmd->SetViewport(0.0f, 0.0f, &m_device);
 	cmd->SetScissor(0, 0, &m_device);
 
 	cmd->BindDescriptorSets(
-		&m_device,
+		graphicsPipeline.get(),
+		graphicsDescriptorSets[m_currentFrame].get(),
 		m_currentFrame,
 		0
 	);
@@ -414,7 +416,7 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 		pushConstants.model = meshInstance.second;
 
 		cmd->PushConstants(
-			m_device.GetGraphicsPipeline(),
+			graphicsPipeline.get(),
 			static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
 			0,
 			sizeof(PushConstants),
@@ -434,14 +436,14 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 	cmd->EndRendering();
 
 	cmd->TransitionImageLayout(
-		colorImageHandle,
+		colorImage.get(),
 		core::ImageLayout::ColorAttachment,
 		core::ImageLayout::TransferSrc,
 		false
 	);
 
 	cmd->ResolveImage(
-		colorImageHandle,
+		colorImage.get(),
 		swapchainImageHandle,
 		&m_device
 	);
@@ -461,7 +463,7 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 
 	m_commandBuffers[m_currentFrame]->Submit(&m_device, waitSemaphore, signalSemaphore, fence);
 
-	m_currentFrame = (m_currentFrame + 1) % core::gpu::Device::s_FRAMES_IN_FLIGHT;
+	m_currentFrame = (m_currentFrame + 1) % Device::s_FRAMES_IN_FLIGHT;
 	m_frameCounter++;
 
 	m_meshInstances.clear();
@@ -478,4 +480,36 @@ void Renderer::Cleanup()
 	m_tlasPerFrame.clear();
 	m_commandBuffers.clear();
 	m_device.Cleanup();
+}
+
+void Renderer::CreateColorImage()
+{
+	SImageCreateInfo colorInfo{
+		.width = m_device.GetSwapchainExtent().first,
+		.height = m_device.GetSwapchainExtent().second,
+		.mipLevels = 1,
+		.format = TextureFormat::RGBA8_SRGB,
+		.tiling = ImageTiling::Optimal,
+		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc,
+		.memoryProperties = EMemoryProperty::DeviceLocal,
+		.samples = SampleCount::e4
+	};
+
+	colorImage = std::make_unique<Image>(&m_device, colorInfo);
+}
+
+void Renderer::CreateDepthImage()
+{
+	SImageCreateInfo depthInfo{
+		.width = m_device.GetSwapchainExtent().first,
+		.height = m_device.GetSwapchainExtent().second,
+		.mipLevels = 1,
+		.format = TextureFormat::Depth32F,
+		.tiling = ImageTiling::Optimal,
+		.usage = ImageUsage::DepthStencilAttachment,
+		.memoryProperties = EMemoryProperty::DeviceLocal,
+		.samples = SampleCount::e4
+	};
+
+	depthImage = std::make_unique<Image>(&m_device, depthInfo);
 }

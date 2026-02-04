@@ -19,6 +19,11 @@
 #include <memory>
 #include <vector>
 
+using namespace core;
+using namespace core::gpu;
+using namespace graphics::resources;
+
+
 namespace graphics
 {
 	struct PushConstants
@@ -29,20 +34,20 @@ namespace graphics
 	class Renderer
 	{
 	private:
-		core::Window& m_window;
-		core::gpu::Device& m_device;
+		Window& m_window;
+		Device& m_device;
 
-		std::vector<std::unique_ptr<core::gpu::CommandBuffer>> m_commandBuffers;
-		std::unique_ptr<core::gpu::AccelerationStructure> m_tlas;
+		std::vector<std::unique_ptr<CommandBuffer>> m_commandBuffers;
+		std::unique_ptr<AccelerationStructure> m_tlas;
 
 		std::vector<std::pair<resources::Mesh*, glm::mat4>> m_meshInstances;
-		std::vector<std::unique_ptr<core::gpu::AccelerationStructure>> m_tlasPerFrame;
-		std::vector<resources::Light> m_lights;
+		std::vector<std::unique_ptr<AccelerationStructure>> m_tlasPerFrame;
+		std::vector<Light> m_lights;
 
-		std::unique_ptr<core::gpu::Pipeline> graphicsPipeline = nullptr;
-		std::unique_ptr<core::gpu::DescriptorSetLayout>	descriptorSetLayout = nullptr;
+		std::unique_ptr<Pipeline> graphicsPipeline = nullptr;
+		std::unique_ptr<DescriptorSetLayout>	descriptorSetLayout = nullptr;
 
-		std::vector<std::unique_ptr<core::gpu::DescriptorSet>> graphicsDescriptorSets;
+		std::vector<std::unique_ptr<DescriptorSet>> graphicsDescriptorSets;
 
 		uint32_t m_currentFrame;
 		uint64_t m_frameCounter;
@@ -52,14 +57,17 @@ namespace graphics
 		glm::mat4 m_projMatrix;
 		glm::vec3 m_cameraPosition;
 
-		std::unique_ptr<core::gpu::Texture> albedoTexture;
-		std::unique_ptr<core::gpu::Texture> normalTexture;
-		std::unique_ptr<core::gpu::Texture> metallicTexture;
-		std::unique_ptr<core::gpu::Texture> roughnessTexture;
-		std::unique_ptr<core::gpu::Texture> aoTexture;
-		std::unique_ptr<core::gpu::Texture> emissiveTexture;
+		std::unique_ptr<Texture> albedoTexture;
+		std::unique_ptr<Texture> normalTexture;
+		std::unique_ptr<Texture> metallicTexture;
+		std::unique_ptr<Texture> roughnessTexture;
+		std::unique_ptr<Texture> aoTexture;
+		std::unique_ptr<Texture> emissiveTexture;
 
-		std::vector<std::unique_ptr<core::gpu::Buffer>> uniformBuffers;
+		std::unique_ptr<Image>	colorImage;
+		std::unique_ptr<Image>	depthImage;
+
+		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
 
 		void CreateCommandBuffers();
 		void BuildTLAS();
@@ -72,8 +80,11 @@ namespace graphics
 		void CreateUniformBuffers();
 		void CreateTextures();
 
+		void CreateColorImage();
+		void CreateDepthImage();
+
 	public:
-		Renderer(core::Window& window, core::gpu::Device& device);
+		Renderer(core::Window& window, Device& device);
 		~Renderer();
 
 		void SetCamera(const glm::mat4& view, const glm::mat4& projection);
