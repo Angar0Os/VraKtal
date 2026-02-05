@@ -513,3 +513,4 @@ void Renderer::CreateDepthImage()
 
 	depthImage = std::make_unique<Image>(&m_device, depthInfo);
 }
+

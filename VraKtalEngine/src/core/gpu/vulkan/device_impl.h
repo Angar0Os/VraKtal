@@ -35,20 +35,17 @@ namespace core::gpu
 		const core::gpu::Device* parent = nullptr;
 
 		vk::raii::Context					context;
-		vk::raii::Instance					instance = nullptr;
-		vk::raii::DebugUtilsMessengerEXT	debugMessenger = nullptr;
-		vk::raii::SurfaceKHR				surface = nullptr;
-		vk::raii::Device					device = nullptr;
-		vk::raii::PhysicalDevice			physicalDevice = nullptr;
-		vk::raii::Queue						graphicsQueue = nullptr;
-		uint32_t							queueIndex = ~0;
+		vk::raii::Instance					instance		= nullptr;
+		vk::raii::DebugUtilsMessengerEXT	debugMessenger	= nullptr;
+		vk::raii::SurfaceKHR				surface			= nullptr;
+		vk::raii::Device					device			= nullptr;
+		vk::raii::PhysicalDevice			physicalDevice	= nullptr;
+		vk::raii::Queue						graphicsQueue	= nullptr;
+		uint32_t							queueIndex		= ~0;
 
 		std::unique_ptr<CommandPool>			commandPool;
 		std::unique_ptr<DescriptorSetLayout>	descriptorSetLayout;
 		std::unique_ptr<DescriptorPool>			descriptorPool;
-		std::vector<vk::raii::DescriptorSet*>	descriptorSets;
-
-		std::unique_ptr<Pipeline>	graphicsPipeline;
 
 		std::vector<CommandBuffer>	commandBuffers;
 
@@ -99,13 +96,11 @@ namespace core::gpu
 		vk::PresentModeKHR		ChoosePresentMode(const std::vector<vk::PresentModeKHR>& availableModes, PresentMode preferredMode);
 		vk::Extent2D			ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
 
-		const core::gpu::Pipeline* GetGraphicsPipeline() const;
-
 		void WaitIdle();
 
 		void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
 
-		void UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle);
+		//void UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle);
 
 		std::vector<const char*> requiredDeviceExtension = {
 			vk::KHRSwapchainExtensionName,
