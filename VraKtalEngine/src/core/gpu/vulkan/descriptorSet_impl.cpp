@@ -53,6 +53,7 @@ void core::gpu::DescriptorSet::Bind<core::gpu::Buffer>(uint32_t binding, const c
 	size_t infoIndex = m_impl->bufferInfos.size();
 	m_impl->bufferInfos.emplace_back(
 		buffer.GetImpl().buffer,
+		0,
 		buffer.GetImpl().bufferSize
 	);
 

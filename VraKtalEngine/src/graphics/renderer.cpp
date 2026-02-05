@@ -31,14 +31,13 @@ Renderer::Renderer(Window& window, Device& device)
 	m_cameraPosition(glm::vec3(0.0f))
 {
 	CreateCommandBuffers();
-	CreateDescriptorSetLayout();
-	CreateGraphicsPipeline();
 	CreateUniformBuffers();
 
 	CreateColorImage();
 	CreateDepthImage();
 
-	CreateTextures();
+	CreateDescriptorSetLayout();
+	CreateGraphicsPipeline();
 	CreateGraphicsDescriptorSet();
 
 	m_tlasPerFrame.resize(Device::s_FRAMES_IN_FLIGHT);
@@ -185,18 +184,23 @@ void Renderer::RebuildAccelerationStructures()
 
 void Renderer::CreateDescriptorSetLayout()
 {
-	auto bindingsVertex = SDescriptorSetLayoutBinding{};
-	bindingsVertex.binding = 0;
-	bindingsVertex.descriptorType = EDescriptorType::UniformBuffer;
-	bindingsVertex.stageFlags = core::ShaderStage::Vertex | core::ShaderStage::Fragment;
+	auto bindingUBO = SDescriptorSetLayoutBinding{};
+	bindingUBO.binding = 0;
+	bindingUBO.descriptorType = EDescriptorType::UniformBuffer;
+	bindingUBO.stageFlags = core::ShaderStage::Vertex | core::ShaderStage::Fragment;
+	
+	auto bindingColorTexture = SDescriptorSetLayoutBinding{};
+	bindingColorTexture.binding = 1;
+	bindingColorTexture.descriptorType = EDescriptorType::CombinedImageSampler;
+	bindingColorTexture.stageFlags = core::ShaderStage::Fragment;
 
-	auto bindingFragment = SDescriptorSetLayoutBinding{};
-	bindingFragment.binding = 1;
-	bindingFragment.descriptorType = EDescriptorType::CombinedImageSampler;
-	bindingFragment.stageFlags = core::ShaderStage::Fragment;
+	auto bindingDepthTexture = SDescriptorSetLayoutBinding{};
+	bindingDepthTexture.binding = 2;
+	bindingDepthTexture.descriptorType = EDescriptorType::CombinedImageSampler;
+	bindingDepthTexture.stageFlags = core::ShaderStage::Fragment;
 
 	auto layoutInfo = SDescriptorSetLayoutCreateInfo{};
-	layoutInfo.bindings = { bindingsVertex, bindingFragment };
+	layoutInfo.bindings = { bindingUBO, bindingColorTexture, bindingDepthTexture };
 
 	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(&m_device, layoutInfo);
 }
@@ -208,12 +212,8 @@ void Renderer::CreateGraphicsDescriptorSet()
 		auto descriptor = std::make_unique<DescriptorSet>(&m_device, descriptorSetLayout.get());
 
 		descriptor->Bind(0, *uniformBuffers[i]);
-		descriptor->Bind(1, *albedoTexture);
-		//descriptor->Bind(1, *normalTexture);
-		//descriptor->Bind(1, *metallicTexture);
-		//descriptor->Bind(1, *roughnessTexture);
-		//descriptor->Bind(1, *aoTexture);
-		//descriptor->Bind(1, *emissiveTexture);
+		descriptor->Bind(1, *colorTexture);
+		descriptor->Bind(2, *depthTexture);
 
 		descriptor->Update(m_device);
 
@@ -221,16 +221,6 @@ void Renderer::CreateGraphicsDescriptorSet()
 	}
 }
 
-void graphics::Renderer::CreateTextures()
-{
-	albedoTexture = loaders::TextureLoader::LoadTexture(m_device, "../bin/assets/textures/viking_room.png");
-
-	/*normalTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/normalTexture.png");
-	metallicTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/metallicTexture.png");
-	roughnessTexture	= loaders::TextureLoader::LoadTexture(m_device, "textures/roughnessTexture.png");
-	aoTexture			= loaders::TextureLoader::LoadTexture(m_device, "textures/aoTexture.png");
-	emissiveTexture		= loaders::TextureLoader::LoadTexture(m_device, "textures/emissiveTexture.png");*/
-}
 
 void graphics::Renderer::CreateUniformBuffers()
 {
@@ -322,7 +312,7 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 		ubo.lights[i].lightRadius = light.radius;
 	}
 
-	ubo.albedo = glm::vec3(1.0f);
+	/*ubo.albedo = glm::vec3(1.0f);
 	ubo.metallic = 0.0f;
 	ubo.roughness = 0.5f;
 	ubo.ao = 1.0f;
@@ -333,7 +323,7 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 	ubo.useMetallicMap = 0;
 	ubo.useRoughnessMap = 0;
 	ubo.useAOMap = 0;
-	ubo.useEmissiveMap = 0;
+	ubo.useEmissiveMap = 0;*/
 
 	ubo.frameCount = static_cast<uint32_t>(m_frameCounter);
 
@@ -354,10 +344,10 @@ void Renderer::Render(const Image* image, uint32_t imageIndex)
 	BuildTLAS();
 	RebuildAccelerationStructures();
 
-	if (m_tlasPerFrame[m_currentFrame])
-	{
-		m_device.UpdateDescriptorWithTLAS(m_currentFrame, m_tlasPerFrame[m_currentFrame].get());
-	}
+	//if (m_tlasPerFrame[m_currentFrame])
+	//{
+	//	m_device.UpdateDescriptorWithTLAS(m_currentFrame, m_tlasPerFrame[m_currentFrame].get());
+	//}
 
 	UpdateUniformBuffer(m_currentFrame);
 
@@ -496,6 +486,7 @@ void Renderer::CreateColorImage()
 	};
 
 	colorImage = std::make_unique<Image>(&m_device, colorInfo);
+	colorTexture = std::make_unique<Texture>(m_device, *colorImage);
 }
 
 void Renderer::CreateDepthImage()
@@ -512,5 +503,5 @@ void Renderer::CreateDepthImage()
 	};
 
 	depthImage = std::make_unique<Image>(&m_device, depthInfo);
+	depthTexture = std::make_unique<Texture>(m_device, *depthImage);
 }
-

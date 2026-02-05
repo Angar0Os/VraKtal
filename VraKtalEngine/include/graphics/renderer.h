@@ -26,6 +26,31 @@ using namespace graphics::resources;
 
 namespace graphics
 {
+	constexpr int MAX_LIGHTS = 10;
+
+	struct UniformBufferObject
+	{
+		glm::mat4 view;
+		glm::mat4 proj;
+		glm::mat4 lightSpaceMatrix;
+		glm::vec3 viewPos;
+
+		struct LightData
+		{
+			glm::vec3 position;
+			glm::vec3 color;
+			float intensity;
+			int enabled;
+			int type;
+			float lightRadius;
+		};
+
+		LightData lights[MAX_LIGHTS];
+		int numLights;
+		uint32_t frameCount;
+		alignas(4) uint32_t pad[7];
+	};
+
 	struct PushConstants
 	{
 		glm::mat4 model;
@@ -57,15 +82,11 @@ namespace graphics
 		glm::mat4 m_projMatrix;
 		glm::vec3 m_cameraPosition;
 
-		std::unique_ptr<Texture> albedoTexture;
-		std::unique_ptr<Texture> normalTexture;
-		std::unique_ptr<Texture> metallicTexture;
-		std::unique_ptr<Texture> roughnessTexture;
-		std::unique_ptr<Texture> aoTexture;
-		std::unique_ptr<Texture> emissiveTexture;
-
 		std::unique_ptr<Image>	colorImage;
 		std::unique_ptr<Image>	depthImage;
+
+		std::unique_ptr<core::gpu::Texture> colorTexture;
+		std::unique_ptr<core::gpu::Texture> depthTexture;
 
 		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
 
@@ -78,11 +99,9 @@ namespace graphics
 		void CreateDescriptorSetLayout();
 		void CreateGraphicsDescriptorSet();
 		void CreateUniformBuffers();
-		void CreateTextures();
 
 		void CreateColorImage();
 		void CreateDepthImage();
-
 	public:
 		Renderer(core::Window& window, Device& device);
 		~Renderer();

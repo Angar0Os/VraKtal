@@ -611,7 +611,6 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 		swapchainImageViews.emplace_back(device, viewInfo);
 	}
 
-	// Renderer
 	CreateSyncObjects();
 }
 
@@ -932,11 +931,6 @@ void core::gpu::Device::WaitIdle()
 void core::gpu::Device::RecreateSwapchain()
 {
 	if (m_impl) m_impl->RecreateSwapchain();
-}
-
-void core::gpu::Device::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)
-{
-	if (m_impl) m_impl->UpdateDescriptorWithTLAS(frameIndex, tlasHandle);
 }
 
 core::gpu::ImguiContext* core::gpu::Device::GetImGuiContext()

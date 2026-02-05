@@ -5,7 +5,6 @@ cbuffer UniformBufferObject
     float4x4 proj;
     float4x4 lightSpaceMatrix;
     float3 viewPos;
-
     struct LightData
     {
         float3 position;
@@ -15,28 +14,16 @@ cbuffer UniformBufferObject
         int type;
         float lightRadius;
     };
-
     LightData lights[10];
     int numLights;
-
-    float3 albedo;
-    float metallic;
-    float roughness;
-    float ao;
-    float3 emissive;
-
-    int useAlbedoMap;
-    int useNormalMap;
-    int useMetallicMap;
-    int useRoughnessMap;
-    int useAOMap;
-    int useEmissiveMap;
-
     uint frameCount;
 };
 
 [[vk::binding(1, 0)]]
-Sampler2D albedoMap;
+Sampler2D colorTexture;
+
+[[vk::binding(2, 0)]]
+Sampler2D depthTexture;
 
 [[vk::push_constant]]
 cbuffer PushConstants
@@ -59,43 +46,30 @@ VSOutput vertMain(
     float2 uv       : TEXCOORD0)
 {
     VSOutput o;
-
     float4 worldPos = mul(model, float4(position, 1.0));
     o.worldPos = worldPos.xyz;
-
     o.position = mul(proj, mul(view, worldPos));
     o.normal = normalize(mul((float3x3)model, normal));
     o.uv = uv;
-
     return o;
 }
 
 [shader("fragment")]
 float4 fragMain(VSOutput input) : SV_Target
 {
-    float3 baseColor = albedo;
-    if (useAlbedoMap != 0)
-    {
-        baseColor = albedoMap.Sample(input.uv).rgb;
-    }
-
+    float3 baseColor = colorTexture.Sample(input.uv).rgb;
+    
     if (numLights == 0 || lights[0].enabled == 0)
     {
         return float4(baseColor, 1.0);
     }
-
+    
     LightData light = lights[0];
-
     float3 N = normalize(input.normal);
     float3 L = normalize(light.position - input.worldPos);
-
     float NdotL = max(dot(N, L), 0.0);
-
-    float3 diffuse =
-        baseColor *
-        light.color *
-        light.intensity *
-        NdotL;
-
+    
+    float3 diffuse = baseColor * light.color * light.intensity * NdotL;
+    
     return float4(diffuse, 1.0);
 }
