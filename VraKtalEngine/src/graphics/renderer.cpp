@@ -294,7 +294,7 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 
 	ubo.view = m_viewMatrix;
 	ubo.proj = m_projMatrix;
-	ubo.viewPos = m_cameraPosition;
+	ubo.viewPos = glm::vec4(m_cameraPosition, 1.0);
 
 	ubo.numLights = std::min(static_cast<int>(m_lights.size()),
 		MAX_LIGHTS);
@@ -302,8 +302,8 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 	for (int i = 0; i < ubo.numLights; i++)
 	{
 		const auto& light = m_lights[i];
-		ubo.lights[i].position = light.position;
-		ubo.lights[i].color = light.color;
+		ubo.lights[i].position = glm::vec4(light.position, 1.0);
+		ubo.lights[i].color = glm::vec4(light.color, 1.0);
 		ubo.lights[i].intensity = light.intensity;
 		ubo.lights[i].enabled = light.enabled ? 1 : 0;
 		ubo.lights[i].type = 0;

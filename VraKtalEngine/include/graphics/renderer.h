@@ -33,12 +33,12 @@ namespace graphics
 		glm::mat4 view;
 		glm::mat4 proj;
 		glm::mat4 lightSpaceMatrix;
-		glm::vec3 viewPos;
+		glm::vec4 viewPos;
 
 		struct LightData
 		{
-			glm::vec3 position;
-			glm::vec3 color;
+			glm::vec4 position;
+			glm::vec4 color;
 			float intensity;
 			int enabled;
 			int type;

@@ -103,8 +103,8 @@ int main()
 			4.0f,
 			3.0f * glm::sin(time)
 		);
-		mainLight.color = glm::vec3(1.0f, 1.0f, 0.0f);
-		mainLight.intensity = 5.0f;
+		mainLight.color = glm::vec3(1.0f, 0.95f, 0.4f);
+		mainLight.intensity = 1.0f;
 		mainLight.radius = 0.2f + 0.2f * glm::sin(time * 2.0f);
 		mainLight.enabled = true;
 
