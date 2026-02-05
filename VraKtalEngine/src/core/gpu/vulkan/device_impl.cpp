@@ -382,29 +382,6 @@ void core::gpu::Device::Impl::CreateDescriptorPool()
 	descriptorPool = std::make_unique<DescriptorPool>(parent);
 }
 
-// Renderer / Faire bindAccelerationStructure dans descriptor Set et changer l'update par Bind + update
-//void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)
-//{
-//	if (frameIndex >= descriptorSets.size() || !tlasHandle) return;
-//
-//	vk::DescriptorSet descSet = **descriptorSets[frameIndex];
-//	vk::AccelerationStructureKHR accelStructHandle = **tlasHandle->GetImpl().accelerationStructure;
-//
-//	vk::WriteDescriptorSetAccelerationStructureKHR accelInfo{};
-//	accelInfo.accelerationStructureCount = 1;
-//	accelInfo.pAccelerationStructures = &accelStructHandle;
-//
-//	vk::WriteDescriptorSet writeDesc{};
-//	writeDesc.dstSet = descSet;
-//	writeDesc.dstBinding = 8;
-//	writeDesc.dstArrayElement = 0;
-//	writeDesc.descriptorCount = 1;
-//	writeDesc.descriptorType = vk::DescriptorType::eAccelerationStructureKHR;
-//	writeDesc.pNext = &accelInfo;
-//
-//	device.updateDescriptorSets(writeDesc, nullptr);
-//}
-
 void core::gpu::Device::Impl::CreateCommandPool()
 {
 	CommandPoolCreateInfo poolInfo{

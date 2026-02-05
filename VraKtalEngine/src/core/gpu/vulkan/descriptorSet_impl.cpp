@@ -1,7 +1,7 @@
 #include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
 #include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu/vulkan/descriptorSet_impl.h"
-#include "../src/core/gpu/vulkan/descriptorPool_impl.h"]
+#include "../src/core/gpu/vulkan/descriptorPool_impl.h"
 #include "../src/core/gpu/vulkan/descriptorSetLayout_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
@@ -24,6 +24,7 @@ core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gp
 	bufferInfos.reserve(8);
 	imageInfos.reserve(8);
 	asInfos.reserve(8);
+	asHandles.reserve(8);
 	writes.reserve(8);
 	bindingInfos.reserve(8);
 }
@@ -57,7 +58,7 @@ void core::gpu::DescriptorSet::Bind<core::gpu::Buffer>(uint32_t binding, const c
 		buffer.GetImpl().bufferSize
 	);
 
-	// Peut être changer le type de buffer qu'on ne push pas que des UB
+	// TODO : Peut être changer le type de buffer qu'on ne push pas que des UB
 	m_impl->bindingInfos.push_back({
 		binding,
 		vk::DescriptorType::eUniformBuffer,
@@ -68,8 +69,17 @@ void core::gpu::DescriptorSet::Bind<core::gpu::Buffer>(uint32_t binding, const c
 template<>
 void core::gpu::DescriptorSet::Bind<core::gpu::AccelerationStructure>(uint32_t binding, const core::gpu::AccelerationStructure& accelStructure)
 {
+	vk::AccelerationStructureKHR handle = static_cast<vk::AccelerationStructureKHR>(*accelStructure.GetImpl().accelerationStructure);
+
+	m_impl->asHandles.push_back(handle);
+
+	vk::WriteDescriptorSetAccelerationStructureKHR asWrite{};
+	asWrite.sType = vk::StructureType::eWriteDescriptorSetAccelerationStructureKHR;
+	asWrite.accelerationStructureCount = 1;
+	asWrite.pAccelerationStructures = &m_impl->asHandles.back();
+
 	size_t infoIndex = m_impl->asInfos.size();
-	m_impl->asInfos.emplace_back();
+	m_impl->asInfos.push_back(asWrite);
 
 	m_impl->bindingInfos.push_back({
 		binding,
@@ -100,29 +110,23 @@ void core::gpu::DescriptorSet::Update(const core::gpu::Device& device)
 		case vk::DescriptorType::eCombinedImageSampler:
 			write.pImageInfo = &m_impl->imageInfos[bindingInfo.infoIndex];
 			break;
-
 		case vk::DescriptorType::eUniformBuffer:
 			write.pBufferInfo = &m_impl->bufferInfos[bindingInfo.infoIndex];
 			break;
-
 		case vk::DescriptorType::eAccelerationStructureKHR:
-		{
-			vk::WriteDescriptorSetAccelerationStructureKHR asWrite{};
-			asWrite.accelerationStructureCount = m_impl->asInfos[bindingInfo.infoIndex].accelerationStructureCount;
-			asWrite.pAccelerationStructures = m_impl->asInfos[bindingInfo.infoIndex].pAccelerationStructures;
-			write.pNext = &asWrite;
+			write.pNext = &m_impl->asInfos[bindingInfo.infoIndex];
 			break;
-		}
 		}
 
 		writes.push_back(write);
 	}
 
-	device.GetImpl().device.updateDescriptorSets(writes, nullptr);
+	device.GetImpl().device.updateDescriptorSets(writes, {});
 
 	m_impl->imageInfos.clear();
 	m_impl->bufferInfos.clear();
 	m_impl->asInfos.clear();
+	m_impl->asHandles.clear();
 	m_impl->bindingInfos.clear();
 }
 

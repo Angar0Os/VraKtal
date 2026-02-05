@@ -193,8 +193,13 @@ void Renderer::CreateDescriptorSetLayout()
 	bindingDepthTexture.descriptorType = EDescriptorType::CombinedImageSampler;
 	bindingDepthTexture.stageFlags = core::ShaderStage::Fragment;
 
+	auto bindingTLAS = SDescriptorSetLayoutBinding{};
+	bindingTLAS.binding = 2;
+	bindingTLAS.descriptorType = EDescriptorType::AccelerationStructure;
+	bindingTLAS.stageFlags = core::ShaderStage::Fragment;
+
 	auto layoutInfo = SDescriptorSetLayoutCreateInfo{};
-	layoutInfo.bindings = { bindingUBO, bindingDepthTexture };
+	layoutInfo.bindings = { bindingUBO, bindingDepthTexture, bindingTLAS };
 
 	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(&m_device, layoutInfo);
 }
@@ -305,19 +310,6 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 		ubo.lights[i].lightRadius = light.radius;
 	}
 
-	/*ubo.albedo = glm::vec3(1.0f);
-	ubo.metallic = 0.0f;
-	ubo.roughness = 0.5f;
-	ubo.ao = 1.0f;
-	ubo.emissive = glm::vec3(0.0f);
-
-	ubo.useAlbedoMap = 0;
-	ubo.useNormalMap = 0;
-	ubo.useMetallicMap = 0;
-	ubo.useRoughnessMap = 0;
-	ubo.useAOMap = 0;
-	ubo.useEmissiveMap = 0;*/
-
 	ubo.frameCount = static_cast<uint32_t>(m_frameCounter);
 
 	const auto& uniformBuffer = uniformBuffers[frameIndex];
@@ -337,10 +329,11 @@ void Renderer::Render(const Image* image, uint32_t imageIndex)
 	BuildTLAS();
 	RebuildAccelerationStructures();
 
-	//if (m_tlasPerFrame[m_currentFrame])
-	//{
-	//	m_device.UpdateDescriptorWithTLAS(m_currentFrame, m_tlasPerFrame[m_currentFrame].get());
-	//}
+	if (m_tlasPerFrame[m_currentFrame])
+	{
+		graphicsDescriptorSets[m_currentFrame]->Bind(2, *m_tlasPerFrame[m_currentFrame]);
+		graphicsDescriptorSets[m_currentFrame]->Update(m_device);
+	}
 
 	UpdateUniformBuffer(m_currentFrame);
 

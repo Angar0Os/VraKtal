@@ -19,7 +19,10 @@ namespace core::gpu
 
 		std::vector<vk::DescriptorBufferInfo> bufferInfos;
 		std::vector<vk::DescriptorImageInfo> imageInfos;
+
+		std::vector<vk::AccelerationStructureKHR> asHandles;
 		std::vector<vk::WriteDescriptorSetAccelerationStructureKHR> asInfos;
+
 		std::vector<vk::WriteDescriptorSet> writes;
 
 		struct BindingInfo

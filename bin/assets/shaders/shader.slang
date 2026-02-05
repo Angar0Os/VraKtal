@@ -22,6 +22,9 @@ cbuffer UniformBufferObject
 [[vk::binding(1, 0)]]
 Sampler2D depthTexture;
 
+[[vk::binding(2, 0)]]  
+RaytracingAccelerationStructure tlas;
+
 [[vk::push_constant]]
 cbuffer PushConstants
 {
@@ -51,6 +54,29 @@ VSOutput vertMain(
     return o;
 }
 
+bool TraceShadowRay(float3 origin, float3 direction, float maxDistance)
+{
+    RayDesc ray;
+    ray.Origin = origin;
+    ray.Direction = direction;
+    ray.TMin = 0.001;
+    ray.TMax = maxDistance;
+    
+    RayQuery<RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | 
+             RAY_FLAG_SKIP_CLOSEST_HIT_SHADER> query;
+    
+    query.TraceRayInline(
+        tlas,
+        RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH,
+        0xFF, // Mask
+        ray
+    );
+    
+    query.Proceed();
+    
+    return query.CommittedStatus() == COMMITTED_TRIANGLE_HIT;
+}
+
 [shader("fragment")]
 float4 fragMain(VSOutput input) : SV_Target
 {
@@ -66,7 +92,16 @@ float4 fragMain(VSOutput input) : SV_Target
     float3 L = normalize(light.position - input.worldPos);
     float NdotL = max(dot(N, L), 0.0);
     
-    float3 diffuse = baseColor * light.color * light.intensity * NdotL;
+    float3 shadowRayOrigin = input.worldPos + N * 0.001; 
+    float3 shadowRayDir = L;
+    float distanceToLight = length(light.position - input.worldPos);
     
-    return float4(diffuse, 1.0);
+    bool inShadow = TraceShadowRay(shadowRayOrigin, shadowRayDir, distanceToLight);
+    
+    float shadowFactor = inShadow ? 0.0 : 1.0;
+    
+    float3 ambient = baseColor * 0.1; 
+    float3 diffuse = baseColor * light.color * light.intensity * NdotL * shadowFactor;
+    
+    return float4(ambient + diffuse, 1.0);
 }
