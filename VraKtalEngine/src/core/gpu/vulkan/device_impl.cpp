@@ -498,7 +498,7 @@ void core::gpu::Device::Impl::CreateSwapchain()
 		.imageColorSpace = surfaceFormat.colorSpace,
 		.imageExtent = extent,
 		.imageArrayLayers = 1,
-		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst,
 		.imageSharingMode = vk::SharingMode::eExclusive,
 		.preTransform = capabilities.currentTransform,
 		.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,

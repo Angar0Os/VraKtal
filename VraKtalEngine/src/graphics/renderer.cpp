@@ -3,7 +3,6 @@
 #include <core/gpu/buffer.h>
 #include <core/gpu/descriptorSet.h>
 #include <core/gpu/imguiContext.h>
-#include <core/gpu/buffer.h>
 #include <core/gpu/pipeline.h>
 
 #include <core/enum.h>
@@ -188,19 +187,14 @@ void Renderer::CreateDescriptorSetLayout()
 	bindingUBO.binding = 0;
 	bindingUBO.descriptorType = EDescriptorType::UniformBuffer;
 	bindingUBO.stageFlags = core::ShaderStage::Vertex | core::ShaderStage::Fragment;
-	
-	auto bindingColorTexture = SDescriptorSetLayoutBinding{};
-	bindingColorTexture.binding = 1;
-	bindingColorTexture.descriptorType = EDescriptorType::CombinedImageSampler;
-	bindingColorTexture.stageFlags = core::ShaderStage::Fragment;
 
 	auto bindingDepthTexture = SDescriptorSetLayoutBinding{};
-	bindingDepthTexture.binding = 2;
+	bindingDepthTexture.binding = 1;
 	bindingDepthTexture.descriptorType = EDescriptorType::CombinedImageSampler;
 	bindingDepthTexture.stageFlags = core::ShaderStage::Fragment;
 
 	auto layoutInfo = SDescriptorSetLayoutCreateInfo{};
-	layoutInfo.bindings = { bindingUBO, bindingColorTexture, bindingDepthTexture };
+	layoutInfo.bindings = { bindingUBO, bindingDepthTexture };
 
 	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(&m_device, layoutInfo);
 }
@@ -212,8 +206,7 @@ void Renderer::CreateGraphicsDescriptorSet()
 		auto descriptor = std::make_unique<DescriptorSet>(&m_device, descriptorSetLayout.get());
 
 		descriptor->Bind(0, *uniformBuffers[i]);
-		descriptor->Bind(1, *colorTexture);
-		descriptor->Bind(2, *depthTexture);
+		descriptor->Bind(1, *depthTexture);
 
 		descriptor->Update(m_device);
 
@@ -480,7 +473,7 @@ void Renderer::CreateColorImage()
 		.mipLevels = 1,
 		.format = TextureFormat::RGBA8_SRGB,
 		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc,
+		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc | ImageUsage::Sampled,
 		.memoryProperties = EMemoryProperty::DeviceLocal,
 		.samples = SampleCount::e4
 	};
@@ -497,7 +490,7 @@ void Renderer::CreateDepthImage()
 		.mipLevels = 1,
 		.format = TextureFormat::Depth32F,
 		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::DepthStencilAttachment,
+		.usage = ImageUsage::DepthStencilAttachment | ImageUsage::Sampled,
 		.memoryProperties = EMemoryProperty::DeviceLocal,
 		.samples = SampleCount::e4
 	};

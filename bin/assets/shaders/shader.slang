@@ -20,9 +20,6 @@ cbuffer UniformBufferObject
 };
 
 [[vk::binding(1, 0)]]
-Sampler2D colorTexture;
-
-[[vk::binding(2, 0)]]
 Sampler2D depthTexture;
 
 [[vk::push_constant]]
@@ -57,7 +54,7 @@ VSOutput vertMain(
 [shader("fragment")]
 float4 fragMain(VSOutput input) : SV_Target
 {
-    float3 baseColor = colorTexture.Sample(input.uv).rgb;
+    float3 baseColor = float3(0.8, 0.8, 0.8);
     
     if (numLights == 0 || lights[0].enabled == 0)
     {

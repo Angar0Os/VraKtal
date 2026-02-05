@@ -37,7 +37,7 @@ void core::gpu::DescriptorSet::Bind<core::gpu::Texture>(uint32_t binding, const 
 	m_impl->imageInfos.emplace_back(
 		*texture.GetImpl().sampler,
 		*texture.GetImpl().image->GetImpl().view,
-		texture.GetImpl().image->GetImpl().currentLayout
+		vk::ImageLayout::eShaderReadOnlyOptimal
 	);
 
 	m_impl->bindingInfos.push_back({
