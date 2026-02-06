@@ -110,7 +110,7 @@ namespace graphics
 		void PushMesh(resources::Mesh* mesh, const glm::mat4& transform);
 		void PushLight(const resources::Light& light);
 
-		void Render(const core::gpu::Image* image, uint32_t imageIndex);
+		void Render(uint32_t imageIndex);
 		void Cleanup();
 
 		core::gpu::AccelerationStructure* GetTLAS() const { return m_tlas.get(); }

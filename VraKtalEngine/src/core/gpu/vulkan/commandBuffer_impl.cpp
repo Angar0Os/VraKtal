@@ -188,43 +188,6 @@ void core::gpu::CommandBuffer::Impl::End(uint32_t index)
 	commandBuffers[index].end();
 }
 
-void core::gpu::CommandBuffer::Impl::Submit(const core::gpu::Device* device, void* waitSemaphore, void* signalSemaphore, void* fence)
-{
-	if (currentIndex >= commandBuffers.size())
-	{
-		throw std::runtime_error("No command buffer has been begun");
-	}
-
-	vk::CommandBuffer cmdBuf = *commandBuffers[currentIndex];
-
-	vk::SubmitInfo submitInfo{};
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &cmdBuf;
-
-	vk::Semaphore vkWaitSemaphore = VK_NULL_HANDLE;
-	vk::Semaphore vkSignalSemaphore = VK_NULL_HANDLE;
-	vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-
-	if (waitSemaphore)
-	{
-		vkWaitSemaphore = static_cast<VkSemaphore>(waitSemaphore);
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = &vkWaitSemaphore;
-		submitInfo.pWaitDstStageMask = &waitStage;
-	}
-
-	if (signalSemaphore)
-	{
-		vkSignalSemaphore = static_cast<VkSemaphore>(signalSemaphore);
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &vkSignalSemaphore;
-	}
-
-	vk::Fence vkFence = fence ? static_cast<VkFence>(fence) : nullptr;
-
-	device->GetImpl().graphicsQueue.submit(submitInfo, vkFence);
-}
-
 void core::gpu::CommandBuffer::Impl::PushConstants(const core::gpu::Pipeline* pipeline,
 	uint32_t stageFlags,
 	uint32_t offset,
@@ -248,12 +211,6 @@ void core::gpu::CommandBuffer::Impl::PushConstants(const core::gpu::Pipeline* pi
 		offset,
 		vk::ArrayProxy<const uint8_t>(size, static_cast<const uint8_t*>(pValues))
 	);
-}
-
-void core::gpu::CommandBuffer::Impl::SubmitAndWait(const core::gpu::Device* device)
-{
-	Submit(device);
-	device->GetImpl().graphicsQueue.waitIdle();
 }
 
 void core::gpu::CommandBuffer::Impl::BindVertexBuffer(const core::gpu::Buffer* buffer, size_t offset)
@@ -337,6 +294,62 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 	info.pDepthAttachment = &depthAttachment;
 
 	GetCommandBuffer(currentIndex).beginRendering(info);
+}
+
+void core::gpu::CommandBuffer::Submit(const core::gpu::Device* device, uint32_t frameIndex)
+{
+	if (m_impl->currentIndex >= m_impl->commandBuffers.size())
+	{
+		throw std::runtime_error("No command buffer has been begun");
+	}
+
+	if (frameIndex >= device->GetImpl().frameSyncObjects.size())
+	{
+		throw std::runtime_error("Frame index out of range");
+	}
+
+	vk::CommandBuffer cmdBuf = *m_impl->commandBuffers[m_impl->currentIndex];
+
+	auto& frameSync = device->GetImpl().frameSyncObjects[frameIndex];
+
+	vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+
+	vk::Semaphore waitSemaphore = *frameSync.imageAvailable;    
+	vk::Semaphore signalSemaphore = *frameSync.renderFinished;  
+
+	vk::SubmitInfo submitInfo{};
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &waitSemaphore;
+	submitInfo.pWaitDstStageMask = &waitStage;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmdBuf;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &signalSemaphore;
+
+	device->GetImpl().graphicsQueue.submit(submitInfo, *frameSync.inFlightFence);
+}
+
+void core::gpu::CommandBuffer::SubmitAndWait(const core::gpu::Device* device, uint32_t frameIndex)
+{
+	Submit(device, frameIndex);
+	device->GetImpl().graphicsQueue.waitIdle();
+}
+
+void core::gpu::CommandBuffer::SubmitImmediate(const core::gpu::Device* device)
+{
+	if (m_impl->currentIndex >= m_impl->commandBuffers.size())
+	{
+		throw std::runtime_error("No command buffer has been begun");
+	}
+
+	vk::CommandBuffer cmdBuf = *m_impl->commandBuffers[m_impl->currentIndex];
+
+	vk::SubmitInfo submitInfo{};
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmdBuf;
+
+	device->GetImpl().graphicsQueue.submit(submitInfo, nullptr);
+	device->GetImpl().graphicsQueue.waitIdle();
 }
 
 void core::gpu::CommandBuffer::Impl::EndRendering()
@@ -453,16 +466,6 @@ void core::gpu::CommandBuffer::Begin(uint32_t index)
 void core::gpu::CommandBuffer::End(uint32_t index)
 {
 	m_impl->End(index);
-}
-
-void core::gpu::CommandBuffer::Submit(const core::gpu::Device* device, void* waitSemaphore, void* signalSemaphore, void* fence)
-{
-	m_impl->Submit(device, waitSemaphore, signalSemaphore, fence);
-}
-
-void core::gpu::CommandBuffer::SubmitAndWait(const core::gpu::Device* device)
-{
-	m_impl->SubmitAndWait(device);
 }
 
 void core::gpu::CommandBuffer::BindPipeline(const core::gpu::Pipeline* pipeline)
