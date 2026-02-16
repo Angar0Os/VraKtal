@@ -20,6 +20,12 @@
     <Filter Include="Source Files\utils">
       <UniqueIdentifier>{14760e3f-abe1-41b8-9e76-520568f183a7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\command">
+      <UniqueIdentifier>{77d0ba72-553f-4605-9763-9d6d31960670}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\command">
+      <UniqueIdentifier>{783db37f-cb72-4d71-8d30-fccedd63c20a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -37,12 +43,12 @@
     <ClCompile Include="src\utils\yamlParser.cpp">
       <Filter>Source Files\utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\command\commandHistory.cpp">
+      <Filter>Source Files\command</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\imGuiWindows.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="header\contentDrawer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="header\utils\fileTypeDetector.h">
@@ -50,6 +56,15 @@
     </ClInclude>
     <ClInclude Include="header\utils\yamlParser.h">
       <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="include\command\command.h">
+      <Filter>Header Files\command</Filter>
+    </ClInclude>
+    <ClInclude Include="include\contentDrawer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\command\commandHistory.h">
+      <Filter>Header Files\command</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
