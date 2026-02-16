@@ -13,10 +13,14 @@
 #include <imgui/imgui.h>
 
 #include <iostream>
+#include <MDI/IconsMaterialDesignIcons.h>
 
 ImGuiWindows::ImGuiWindows(graphics::Renderer* _renderer)
 {
 	m_renderer = _renderer;
+
+	m_commandHistory = std::make_unique<command::CommandHistory>(100);
+	m_contentDrawer.SetCommandHistory(m_commandHistory.get());
 }
 
 ImGuiWindows::~ImGuiWindows()
@@ -162,9 +166,28 @@ void ImGuiWindows::SetMenuBar() {
 		}
 
 		if (ImGui::BeginMenu("Edit")) {
-			if (ImGui::MenuItem("Undo (CTRL + Z)")) {}
+			bool canUndo = m_commandHistory->CanUndo();
+			std::string undoText = "Undo";
 
-			if (ImGui::MenuItem("Redo (CTRL + Y)")) {}
+			if (canUndo) {
+				undoText += " : " + m_commandHistory->GetCommandDescription(m_commandHistory->GetCurrentIndex());
+			}
+
+			if (ImGui::MenuItem((ICON_MDI_UNDO " " + undoText).c_str(), "Ctrl + Z", false, canUndo)) {
+				m_commandHistory->Undo();
+			}
+
+			bool canRedo = m_commandHistory->CanRedo();
+			std::string redoText = "Redo";
+
+			if (canRedo) {
+				redoText += " : " + m_commandHistory->GetCommandDescription(m_commandHistory->GetCurrentIndex() + 1);
+			}
+
+			if (ImGui::MenuItem((ICON_MDI_REDO " " + redoText).c_str(), "Ctrl + Y", false, canRedo)) {
+				m_commandHistory->Redo();
+			}
+
 			ImGui::EndMenu();
 		}
 
@@ -188,5 +211,17 @@ void ImGuiWindows::SetMenuBar() {
 			ImGui::EndPopup();
 		}
 		ImGui::EndMenuBar();
+	}
+
+	// Global shortcuts
+	if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z)) {
+		if (m_commandHistory->CanUndo()) {
+			m_commandHistory->Undo();
+		}
+	}
+	if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y)) {
+		if (m_commandHistory->CanRedo()) {
+			m_commandHistory->Redo();
+		}
 	}
 }

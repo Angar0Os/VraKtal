@@ -46,6 +46,9 @@
     <ClCompile Include="src\command\commandHistory.cpp">
       <Filter>Source Files\command</Filter>
     </ClCompile>
+    <ClCompile Include="src\command\fileCommands.cpp">
+      <Filter>Source Files\command</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header\imGuiWindows.h">
@@ -64,6 +67,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\command\commandHistory.h">
+      <Filter>Header Files\command</Filter>
+    </ClInclude>
+    <ClInclude Include="include\command\fileCommands.h">
       <Filter>Header Files\command</Filter>
     </ClInclude>
   </ItemGroup>

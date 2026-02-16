@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include "MDI/IconsMaterialDesignIcons.h"
+#include <command/fileCommands.h>
 
 constexpr const char* baseAssetPath = "assets";
 
@@ -305,16 +306,17 @@ void ContentDrawer::PerformCopy()
 
 void ContentDrawer::PerformCreateFolder()
 {
-	try {
-		std::filesystem::path newFolderPath = m_currentPath / "New folder";
+	if (!m_commandHistory) {
+		std::cerr << "Command history not set!" << std::endl;
+		return;
+	}
 
-		if (!std::filesystem::exists(newFolderPath)) {
-			std::filesystem::create_directory(newFolderPath);
-		}
-	}
-	catch (const std::exception& e) {
-		std::cerr << "Folder creation failed: " << e.what() << std::endl;
-	}
+	std::filesystem::path newFolderPath = m_currentPath / "New folder";
+
+	auto cmd = std::make_unique<command::CreateFolderCommand>(newFolderPath);
+	m_commandHistory->ExecuteCommand(std::move(cmd));
+
+	m_needsRefresh = true;
 }
 
 void ContentDrawer::PerformCut()
@@ -331,53 +333,23 @@ void ContentDrawer::PerformCut()
 
 void ContentDrawer::PerformPaste()
 {
+	if (!m_commandHistory) {
+		std::cerr << "Command history not set!" << std::endl;
+		return;
+	}
+
 	if (m_clipboardPaths.empty() || m_clipboardAction == ClipboardAction::None) {
 		return;
 	}
 
-	for (const auto& sourcePath : m_clipboardPaths) {
-		std::filesystem::path destPath = m_currentPath / sourcePath.filename();
-
-		if (std::filesystem::exists(destPath)) {
-			std::cerr << "Destination already exists: " << destPath << std::endl;
-			continue;
-		}
-
-		if (std::filesystem::is_directory(sourcePath)) {
-			try {
-				std::string sourceStr = std::filesystem::canonical(sourcePath).string();
-				std::string currentStr = std::filesystem::canonical(m_currentPath).string();
-
-				if (currentStr == sourceStr || currentStr.find(sourceStr + "\\") == 0 || currentStr.find(sourceStr + "/") == 0) {
-					std::cerr << "Cannot paste folder into itself or its subdirectory: "
-						<< sourcePath.filename() << std::endl;
-					continue;
-				}
-			}
-			catch (const std::filesystem::filesystem_error& e) {
-				std::cerr << "Warning: Could not verify path: " << e.what() << std::endl;
-			}
-		}
-
-		try {
-			if (m_clipboardAction == ClipboardAction::Copy) {
-				if (std::filesystem::is_directory(sourcePath)) {
-					std::filesystem::copy(sourcePath, destPath, std::filesystem::copy_options::recursive);
-				}
-				else {
-					std::filesystem::copy_file(sourcePath, destPath);
-				}
-			}
-			else if (m_clipboardAction == ClipboardAction::Cut) {
-				std::filesystem::rename(sourcePath, destPath);
-			}
-		}
-		catch (const std::exception& e) {
-			std::cerr << "Paste failed for " << sourcePath.filename() << ": " << e.what() << std::endl;
-		}
+	if (m_clipboardAction == ClipboardAction::Copy) {
+		auto cmd = std::make_unique<command::CopyFileCommand>(m_clipboardPaths, m_currentPath);
+		m_commandHistory->ExecuteCommand(std::move(cmd));
 	}
+	else if (m_clipboardAction == ClipboardAction::Cut) {
+		auto cmd = std::make_unique<command::MoveFileCommand>(m_clipboardPaths, m_currentPath);
+		m_commandHistory->ExecuteCommand(std::move(cmd));
 
-	if (m_clipboardAction == ClipboardAction::Cut) {
 		m_clipboardPaths.clear();
 		m_clipboardAction = ClipboardAction::None;
 	}
@@ -387,24 +359,21 @@ void ContentDrawer::PerformPaste()
 
 void ContentDrawer::PerformDelete()
 {
-	for (size_t idx : m_selectedIndices) {
-		if (idx >= m_cachedFiles.size()) {
-			continue;
-		}
+	if (!m_commandHistory) {
+		std::cerr << "Command history not set!" << std::endl;
+		return;
+	}
 
-		auto& file = m_cachedFiles[idx];
-		try {
-			if (file.isDirectory) {
-				std::filesystem::remove_all(file.path);
-			}
-			else {
-				std::filesystem::remove(file.path);
-			}
-		}
-		catch (const std::exception& e) {
-			std::cerr << "Delete failed for " << file.filename << ": " << e.what() << std::endl;
+	std::vector<std::filesystem::path> pathsToDelete;
+
+	for (size_t idx : m_selectedIndices) {
+		if (idx < m_cachedFiles.size()) {
+			pathsToDelete.push_back(m_cachedFiles[idx].path);
 		}
 	}
+
+	auto cmd = std::make_unique<command::DeleteFileCommand>(pathsToDelete);
+	m_commandHistory->ExecuteCommand(std::move(cmd));
 
 	ClearSelection();
 	m_needsRefresh = true;
@@ -412,6 +381,12 @@ void ContentDrawer::PerformDelete()
 
 void ContentDrawer::PerformImport()
 {
+	if (!m_commandHistory) {
+		std::cerr << "Command history not set!" << std::endl;
+		return;
+	}
+
+
 	auto selection = pfd::open_file(
 		"Import Files",
 		"",
@@ -430,27 +405,24 @@ void ContentDrawer::PerformImport()
 		return;
 	}
 
-	for (const auto& sourceFile : files) {
-		std::filesystem::path sourcePath(sourceFile);
-		std::filesystem::path destPath = m_currentPath / sourcePath.filename();
-
-		try {
-			if (std::filesystem::exists(destPath)) {
-				continue;
-			}
-
-			std::filesystem::copy_file(sourcePath, destPath);
-		}
-		catch (const std::exception& e) {
-			std::cerr << "Import failed for " << sourcePath.filename() << ": " << e.what() << std::endl;
-		}
+	std::vector<std::filesystem::path> sourcePaths;
+	for (const auto& file : files) {
+		sourcePaths.push_back(std::filesystem::path(file));
 	}
+
+	auto cmd = std::make_unique<command::ImportFileCommand>(sourcePaths, m_currentPath);
+	m_commandHistory->ExecuteCommand(std::move(cmd));
 
 	m_needsRefresh = true;
 }
 
 void ContentDrawer::PerformRename()
 {
+	if (!m_commandHistory) {
+		std::cerr << "Command history not set!" << std::endl;
+		return;
+	}
+
 	if (m_renameTargetIndex >= m_cachedFiles.size()) {
 		return;
 	}
@@ -464,13 +436,10 @@ void ContentDrawer::PerformRename()
 	auto& file = m_cachedFiles[m_renameTargetIndex];
 	std::filesystem::path newPath = file.path.parent_path() / newName;
 
-	try {
-		std::filesystem::rename(file.path, newPath);
-		m_needsRefresh = true;
-	}
-	catch (const std::exception& e) {
-		std::cerr << "Rename failed: " << e.what() << std::endl;
-	}
+	auto cmd = std::make_unique<command::RenameFileCommand>(file.path, newPath);
+	m_commandHistory->ExecuteCommand(std::move(cmd));
+
+	m_needsRefresh = true;
 }
 
 void ContentDrawer::RefreshFileList() {
