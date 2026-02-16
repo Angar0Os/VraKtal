@@ -22,6 +22,10 @@ namespace command
 			m_history.erase(m_history.begin());
 			m_currentIndex--;
 		}
+
+		if (m_onHistoryChanged) {
+			m_onHistoryChanged();
+		}
 	}
 
 	bool CommandHistory::Undo()
@@ -32,6 +36,10 @@ namespace command
 
 		m_history[m_currentIndex]->Undo();
 		m_currentIndex--;
+
+		if (m_onHistoryChanged) {
+			m_onHistoryChanged();
+		}
 
 		return true;
 	}
@@ -45,6 +53,10 @@ namespace command
 		m_currentIndex++;
 		m_history[m_currentIndex]->Execute();
 
+		if (m_onHistoryChanged) {
+			m_onHistoryChanged();
+		}
+
 		return true;
 	}
 
@@ -52,6 +64,10 @@ namespace command
 	{
 		m_history.clear();
 		m_currentIndex = -1;
+
+		if (m_onHistoryChanged) {
+			m_onHistoryChanged();
+		}
 	}
 
 	std::string CommandHistory::GetCommandDescription(int index) const

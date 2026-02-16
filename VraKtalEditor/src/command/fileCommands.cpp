@@ -2,11 +2,24 @@
 #include <iostream>
 
 namespace command {
+	void ClearBackupDirectory()
+	{
+		std::filesystem::path backupDir = GetBackupDirectory();
+		if (std::filesystem::exists(backupDir)) {
+			try {
+				std::filesystem::remove_all(backupDir);
+			}
+			catch (const std::exception& e) {
+				std::cerr << "Failed to clear backup directory: " << e.what() << std::endl;
+			}
+		}
+	}
+
 	// DeleteFileCommand
 
 	DeleteFileCommand::DeleteFileCommand(const std::vector<std::filesystem::path>& paths) : m_paths(paths)
 	{
-		std::filesystem::path backupDir = std::filesystem::temp_directory_path() / "EditorBackup";
+		std::filesystem::path backupDir = GetBackupDirectory();
 		std::filesystem::create_directories(backupDir);
 
 		for (const auto& path : m_paths) {
@@ -23,12 +36,15 @@ namespace command {
 		try	{
 			for (size_t i = 0; i < m_paths.size(); ++i)	{
 				if (std::filesystem::exists(m_paths[i])) {
-					std::filesystem::copy(m_paths[i], m_backupPaths[i], std::filesystem::copy_options::recursive);
-				} else {
-					std::filesystem::copy_file(m_paths[i], m_backupPaths[i]);
-				}
+					if (std::filesystem::is_directory(m_paths[i])) {
+						std::filesystem::copy(m_paths[i], m_backupPaths[i], std::filesystem::copy_options::recursive);
+					}
+					else {
+						std::filesystem::copy_file(m_paths[i], m_backupPaths[i]);
+					}
 
-				std::filesystem::remove_all(m_paths[i]);
+					std::filesystem::remove_all(m_paths[i]);
+				}
 			}
 
 			m_executed = true;

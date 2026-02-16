@@ -1,6 +1,7 @@
 
 #include "imGuiWindows.h"
 #include "contentDrawer.h"
+#include "command/fileCommands.h"
 #include "imgui/imgui.h"
 #include <graphics/resources/object/camera.h>
 #include <graphics/renderer.h>
@@ -19,12 +20,15 @@ ImGuiWindows::ImGuiWindows(graphics::Renderer* _renderer)
 {
 	m_renderer = _renderer;
 
+	command::ClearBackupDirectory();
+
 	m_commandHistory = std::make_unique<command::CommandHistory>(100);
 	m_contentDrawer.SetCommandHistory(m_commandHistory.get());
 }
 
 ImGuiWindows::~ImGuiWindows()
 {
+	command::ClearBackupDirectory();
 }
 
 void ImGuiWindows::PrepareImGuiWindows()

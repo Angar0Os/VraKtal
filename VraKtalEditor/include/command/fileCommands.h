@@ -9,6 +9,13 @@
 
 namespace command
 {
+	inline std::filesystem::path GetBackupDirectory()
+	{
+		return std::filesystem::temp_directory_path() / "EditorBackup";
+	}
+
+	void ClearBackupDirectory();
+
 	class DeleteFileCommand : public Command
 	{
 	private:

@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <memory>
+#include <functional>
 
 #include "command.h"
 
@@ -15,6 +16,8 @@ namespace command
 		std::vector<std::unique_ptr<Command>> m_history;
 		int m_currentIndex = -1;
 		size_t m_maxHistorySize = 100;
+
+		std::function<void()> m_onHistoryChanged;
 
 	public:
 		CommandHistory() = default;
@@ -38,6 +41,8 @@ namespace command
 		int GetCurrentIndex() const { return m_currentIndex; }
 
 		void SetMaxHistorySize(size_t maxSize) { m_maxHistorySize = maxSize; }
+
+		void SetOnHistoryChangedCallback(std::function<void()> callback) { m_onHistoryChanged = std::move(callback); }
 	};
 }
 

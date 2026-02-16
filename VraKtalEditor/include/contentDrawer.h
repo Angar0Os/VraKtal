@@ -57,8 +57,9 @@ private:
 
 public:
 	ContentDrawer();
+	~ContentDrawer();
 
 	void GetContentDrawerWindow();
 
-	void SetCommandHistory(command::CommandHistory* history) { m_commandHistory = history; }
+	void SetCommandHistory(command::CommandHistory* history);
 };

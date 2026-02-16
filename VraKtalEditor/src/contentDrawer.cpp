@@ -21,12 +21,32 @@ ContentDrawer::ContentDrawer() : m_currentPath(baseAssetPath), m_needsRefresh(tr
 	m_currentPath = baseAssetPath;
 }
 
+ContentDrawer::~ContentDrawer()
+{
+	if (m_commandHistory) {
+		m_commandHistory->SetOnHistoryChangedCallback(nullptr);
+	}
+}
+
+void ContentDrawer::SetCommandHistory(command::CommandHistory* history)
+{
+	m_commandHistory = history;
+
+	if (m_commandHistory) {
+		m_commandHistory->SetOnHistoryChangedCallback([this]() {
+			m_needsRefresh = true;
+		});
+	}
+}
+
 void ContentDrawer::ClearSelection()
 {
 	m_selectedIndices.clear();
 	for (auto& file : m_cachedFiles) {
 		file.isSelected = false;
 	}
+
+	m_renameTargetIndex = 0;
 }
 
 void ContentDrawer::GetContentDrawerWindow()
@@ -255,6 +275,13 @@ void ContentDrawer::HandleFileActions()
 		if (ImGui::MenuItem(ICON_MDI_PENCIL " Rename", "", false, m_selectedIndices.size() == 1)) {
 			m_renameTargetIndex = *m_selectedIndices.begin();
 
+			if (m_renameTargetIndex < m_cachedFiles.size()) {
+				// Windows specific
+				strncpy_s(m_renameBuffer, m_cachedFiles[m_renameTargetIndex].filename.c_str(), sizeof(m_renameBuffer) - 1);
+				
+				m_showRenameDialog = true;
+			}
+
 			// Windows specific
 			strncpy_s(m_renameBuffer, m_cachedFiles[m_renameTargetIndex].filename.c_str(), sizeof(m_renameBuffer) - 1);
 
@@ -456,18 +483,34 @@ void ContentDrawer::RefreshFileList() {
 		m_cachedFiles.push_back(fileEntry);
 	}
 
+	ClearSelection();
+
 	m_needsRefresh = false;
 }
 
 void ContentDrawer::ShowRenameDialog()
 {
 	if (m_showRenameDialog) {
+		if (m_renameTargetIndex >= m_cachedFiles.size()) {
+			m_showRenameDialog = false;
+			std::cerr << "Error: Cannot rename - file no longer exists" << std::endl;
+
+			return;
+		}
+
 		ImGui::OpenPopup("Rename");
 		m_showRenameDialog = false;
 	}
 
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+	if (m_renameTargetIndex >= m_cachedFiles.size()) {
+		ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+
+		return;
+	}
 
 	if (ImGui::BeginPopupModal("Rename", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 		ImGui::Text("Rename: %s", m_cachedFiles[m_renameTargetIndex].filename.c_str());
