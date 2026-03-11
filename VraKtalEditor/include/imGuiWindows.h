@@ -5,14 +5,14 @@
 #include "contentDrawer.h"
 #include "command/commandHistory.h"
 
-namespace graphics {
-    class Renderer;
+namespace core::gpu {
+	class ImguiContext;
 }
 
 class ImGuiWindows
 {
 public:
-	ImGuiWindows(graphics::Renderer* _renderer);
+	ImGuiWindows(core::gpu::ImguiContext* _imGuiContext);
 	~ImGuiWindows();
 
     void PrepareImGuiWindows();
@@ -26,6 +26,8 @@ private:
     void HierarchyWindow();
     void mainWindow();
     void testWindow();
+	void Viewport();
+
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
 
 	ContentDrawer m_contentDrawer;
@@ -33,5 +35,5 @@ private:
 	std::unique_ptr<command::CommandHistory> m_commandHistory;
 
 private :
-    graphics::Renderer* m_renderer;
+	core::gpu::ImguiContext* m_imGuiContext;
 };

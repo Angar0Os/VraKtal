@@ -23,9 +23,7 @@ ContentDrawer::ContentDrawer() : m_currentPath(baseAssetPath), m_needsRefresh(tr
 
 ContentDrawer::~ContentDrawer()
 {
-	if (m_commandHistory) {
-		m_commandHistory->SetOnHistoryChangedCallback(nullptr);
-	}
+
 }
 
 void ContentDrawer::SetCommandHistory(command::CommandHistory* history)

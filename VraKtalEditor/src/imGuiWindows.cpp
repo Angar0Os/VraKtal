@@ -1,10 +1,10 @@
 
 #include "imGuiWindows.h"
+#include <core/gpu/imguiContext.h>
+#include "imgui/imgui.h"
 #include "contentDrawer.h"
 #include "command/fileCommands.h"
-#include "imgui/imgui.h"
 #include <graphics/resources/object/camera.h>
-#include <graphics/renderer.h>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/type_ptr.inl>
@@ -16,10 +16,8 @@
 #include <iostream>
 #include <MDI/IconsMaterialDesignIcons.h>
 
-ImGuiWindows::ImGuiWindows(graphics::Renderer* _renderer)
+ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext) : m_imGuiContext(_imGuiContext)
 {
-	m_renderer = _renderer;
-
 	command::ClearBackupDirectory();
 
 	m_commandHistory = std::make_unique<command::CommandHistory>(100);
@@ -33,13 +31,6 @@ ImGuiWindows::~ImGuiWindows()
 
 void ImGuiWindows::PrepareImGuiWindows()
 {
-	//const float* viewMatrix = glm::value_ptr(m_renderer->GetViewMatrix());
- //   glm::mat4 NdcProj = m_renderer->GetProjectionMatrix();
- //   NdcProj[1][1] *= -1.0f;
-	//const float* proj = glm::value_ptr(NdcProj);
-
-	//EditTransformByIndice(viewMatrix, proj, objectIndex);
-
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->WorkPos);
 	ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -50,7 +41,7 @@ void ImGuiWindows::PrepareImGuiWindows()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f,0.0f));
 
 	mainWindow();
-
+	Viewport();
     testWindow();
 	ContentDrawerWindow();
     HierarchyWindow();
@@ -68,13 +59,20 @@ void ImGuiWindows::HierarchyWindow()
 
 void ImGuiWindows::testWindow()
 {
-	ImGui::Begin("Hello ImGui + Vulkan");
 
-	ImGui::Text("If you see this, ImGui works!");
-	ImGui::Separator();
-	static float f = 0.0f;
-	ImGui::SliderFloat("Test slider", &f, 0.0f, 1.0f);
-	ImGui::Text("Value = %.3f", f);
+}
+
+void ImGuiWindows::Viewport()
+{
+	ImGui::Begin("Viewport");
+
+	ImVec2 avail = ImGui::GetContentRegionAvail();
+
+	uint32_t width = std::max(1u, static_cast<uint32_t>(avail.x));
+	uint32_t height = std::max(1u, static_cast<uint32_t>(avail.y));
+
+	m_imGuiContext->DrawViewportComponent(width , height);
+
 	ImGui::End();
 }
 

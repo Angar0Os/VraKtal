@@ -584,7 +584,7 @@ void core::gpu::Device::Impl::CreateGraphicsPipeline()
 	pipelineInfo.depthWriteEnable = true;
 	pipelineInfo.depthCompareOp = CompareOp::Less;
 	pipelineInfo.blendEnable = false;
-	pipelineInfo.samples = SampleCount::e4;
+	pipelineInfo.samples = SampleCount::e1;
 	pipelineInfo.colorAttachmentFormats = { core::gpu_detail::FromVulkan(swapchain->GetImpl().format) };
 	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
 	pipelineInfo.descriptorSetLayouts = { descriptorSetLayout.get() };

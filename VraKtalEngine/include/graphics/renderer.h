@@ -59,6 +59,9 @@ namespace graphics
 		void PushLight(const resources::Light& light);
 
 		void Render(const core::gpu::Image* image, uint32_t imageIndex);
+
+		void DrawScene(core::gpu::CommandBuffer* _cmd);
+
 		void Cleanup();
 
 		core::gpu::AccelerationStructure* GetTLAS() const { return m_tlas.get(); }
@@ -68,6 +71,8 @@ namespace graphics
 		glm::vec3 GetCameraPosition()	{ return m_cameraPosition;	};
 
 		std::vector<std::pair<resources::Mesh*, glm::mat4>>* GetMeshInstances() { return &m_meshInstances; };
+
+		uint32_t GetCurrentFrame() { return m_currentFrame; };
 
 	};
 }

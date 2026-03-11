@@ -304,6 +304,26 @@ void core::gpu::CommandBuffer::Impl::SetScissor(int32_t x, int32_t y, const core
 	GetCommandBuffer(currentIndex).setScissor(0, scissor);
 }
 
+void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
+{
+	vk::Viewport viewport(
+		x,
+		y,
+		width,
+		height,
+		minDepth,
+		maxDepth
+	);
+
+	GetCommandBuffer(currentIndex).setViewport(0, viewport);
+}
+
+void core::gpu::CommandBuffer::Impl::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
+{
+	vk::Rect2D scissor({ x, y }, { width, height });
+	GetCommandBuffer(currentIndex).setScissor(0, scissor);
+}
+
 void core::gpu::CommandBuffer::Impl::DrawIndexed(uint32_t indexCount, uint32_t instanceCount,
 	uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
@@ -323,22 +343,30 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
 	colorAttachment.clearValue = vk::ClearColorValue(0.1f, 0.1f, 0.15f, 1.f);
 
-	vk::RenderingAttachmentInfo depthAttachment{};
-	depthAttachment.imageView = depthImage->GetImpl().view;
-	depthAttachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
-	depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
-	depthAttachment.clearValue = vk::ClearDepthStencilValue(1.f, 0);
-
-	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
-
 	vk::RenderingInfo info{};
+
+	vk::RenderingAttachmentInfo depthAttachment{};
+	if (depthImage)
+	{
+		depthAttachment.imageView = depthImage->GetImpl().view;
+		depthAttachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+		depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+		depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+		depthAttachment.clearValue = vk::ClearDepthStencilValue(1.f, 0);
+		info.pDepthAttachment = &depthAttachment;
+	}
+	else
+	{
+		info.pDepthAttachment = nullptr;
+	}
+
+	uint32_t width = colorImage->GetImpl().width;
+	uint32_t height = colorImage->GetImpl().height;
+
 	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });
 	info.layerCount = 1;
 	info.colorAttachmentCount = 1;
 	info.pColorAttachments = &colorAttachment;
-	info.pDepthAttachment = &depthAttachment;
 
 	GetCommandBuffer(currentIndex).beginRendering(info);
 }
@@ -499,6 +527,16 @@ void core::gpu::CommandBuffer::SetScissor(int32_t x, int32_t y, const core::gpu:
 	m_impl->SetScissor(x, y, device);
 }
 
+void core::gpu::CommandBuffer::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
+{
+	m_impl->SetViewport(x, y, width, height, minDepth, maxDepth);
+}
+
+void core::gpu::CommandBuffer::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
+{
+	m_impl->SetScissor(x, y, width, height);
+}
+
 void core::gpu::CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
 	m_impl->DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
@@ -587,6 +625,27 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 		dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
 		srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
 		dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
+	else if (oldLayout == ImageLayout::ColorAttachment && newLayout == ImageLayout::ShaderReadOnly)
+	{
+		srcAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		dstAccess = vk::AccessFlagBits::eShaderRead;
+		srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+	}
+	else if (oldLayout == ImageLayout::ShaderReadOnly && newLayout == ImageLayout::ColorAttachment)
+	{
+		srcAccess = vk::AccessFlagBits::eShaderRead;
+		dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		srcStage = vk::PipelineStageFlagBits::eFragmentShader;
+		dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
+	else if (oldLayout == ImageLayout::Undefined && newLayout == ImageLayout::ShaderReadOnly)
+	{
+		srcAccess = {};
+		dstAccess = vk::AccessFlagBits::eShaderRead;
+		srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
 	}
 	else
 	{

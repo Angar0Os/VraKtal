@@ -211,6 +211,11 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 
 	m_device.BeginFrame(m_currentFrame);
 
+#ifdef VRAKTAL_EDITOR
+	m_device.GetImGuiContext()->PrepareForDrawing();
+#endif
+
+
 	BuildTLAS();
 	RebuildAccelerationStructures();
 
@@ -224,6 +229,10 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 	auto& cmd = m_commandBuffers[m_currentFrame];
 
 	cmd->Begin(0);
+
+#ifdef VRAKTAL_EDITOR
+	m_device.GetImGuiContext()->RenderSceneToViewport(cmd.get(), this);
+#endif
 
 	const auto* colorImageHandle = m_device.GetColorImage();
 	const auto* swapchainImageHandle = m_device.GetSwapchainImage(imageIndex);
@@ -266,32 +275,16 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 		0
 	);
 
-	for (const auto& meshInstance : m_meshInstances)
-	{
-		if (!meshInstance.first->vertexBuffer || !meshInstance.first->indexBuffer)
-		{
-			continue;
-		}
-
-		PushConstants pushConstants;
-		pushConstants.model = meshInstance.second;
-
-		cmd->PushConstants(
-			m_device.GetGraphicsPipeline(),
-			static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
-			0,
-			sizeof(PushConstants),
-			&pushConstants
-		);
-
-		cmd->BindVertexBuffer(meshInstance.first->vertexBuffer.get());
-		cmd->BindIndexBuffer(meshInstance.first->indexBuffer.get());
-		cmd->DrawIndexed(meshInstance.first->indexCount);
-	}
-
 #ifdef VRAKTAL_EDITOR
 	m_device.GetImGuiContext()->PrepareDrawData();
 	m_device.GetImGuiContext()->DrawEditors(static_cast<void*>(cmd.get()));
+
+#else
+	cmd->BindPipeline(m_device.GetGraphicsPipeline());
+	cmd->SetViewport(0.0f, 0.0f, &m_device);
+	cmd->SetScissor(0, 0, &m_device);
+	cmd->BindDescriptorSets(&m_device, m_currentFrame, 0);
+	DrawScene(cmd.get());
 #endif
 
 	cmd->EndRendering();
@@ -329,6 +322,35 @@ void Renderer::Render(const core::gpu::Image* image, uint32_t imageIndex)
 
 	m_meshInstances.clear();
 	m_lights.clear();
+}
+
+
+
+void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)
+{
+	for (const auto& meshInstance : m_meshInstances)
+	{
+		if (!meshInstance.first->vertexBuffer || !meshInstance.first->indexBuffer)
+		{
+			continue;
+		}
+
+		PushConstants pushConstants;
+		pushConstants.model = meshInstance.second;
+
+		_cmd->PushConstants(
+			m_device.GetGraphicsPipeline(),
+			static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
+			0,
+			sizeof(PushConstants),
+			&pushConstants
+		);
+
+		_cmd->BindVertexBuffer(meshInstance.first->vertexBuffer.get());
+		_cmd->BindIndexBuffer(meshInstance.first->indexBuffer.get());
+		_cmd->DrawIndexed(meshInstance.first->indexCount);
+	}
+
 }
 
 void Renderer::Cleanup()

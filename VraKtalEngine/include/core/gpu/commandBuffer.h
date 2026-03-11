@@ -54,6 +54,9 @@ namespace core::gpu
         void SetViewport(float _x, float _y, const core::gpu::Device* device, float _minDepth = 0.0f, float _maxDepth = 1.0f);
         void SetScissor(int32_t _x, int32_t _y, const core::gpu::Device* device);
 
+        void SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth);
+        void SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height);
+
         void DrawIndexed(uint32_t _indexCount, uint32_t _instanceCount = 1,
                          uint32_t _firstIndex = 0, int32_t _vertexOffset = 0, uint32_t _firstInstance = 0);
 
