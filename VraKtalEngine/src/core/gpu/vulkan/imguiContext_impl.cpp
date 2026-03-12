@@ -155,7 +155,7 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	init_info.PipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 
 	ImGui_ImplVulkan_Init(&init_info);
-	ImGuizmo::SetRect(0, 0, _device.GetImpl().GetSwapchain()->GetImpl().extent.height, _device.GetImpl().GetSwapchain()->GetImpl().extent.width);
+	ImGuizmo::SetRect(0, 0, (float)_device.GetImpl().GetSwapchain()->GetImpl().extent.width, (float)_device.GetImpl().GetSwapchain()->GetImpl().extent.height);
 	ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
 
 	m_device = &_device;
@@ -267,6 +267,9 @@ void core::gpu::ImguiContext::Impl::SyncViewportResources()
 
 void core::gpu::ImguiContext::Impl::SetDesiredViewportSize(uint32_t width, uint32_t height)
 {
+	if (width >= m_device->GetImpl().physicalDevice.getProperties().limits.maxFramebufferWidth - 10 || height >= m_device->GetImpl().physicalDevice.getProperties().limits.maxFramebufferHeight - 10)
+		return; //Imgui return max si la fenetre a width ou height a 0
+
 	m_viewport.desiredWidth = width;
 	m_viewport.desiredHeight = height;
 }
@@ -294,8 +297,30 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 	if(!m_viewport.colorImage || !m_viewport.readyForUse)
 		return;
 
-	if (m_viewport.width == 0 || m_viewport.height == 0)
+	if (m_viewport.width <= 1 || m_viewport.height <= 1)
 		return;
+
+	//On doit ajuster la camera
+	const float aspectRatio = static_cast<float>(m_viewport.width) / static_cast<float>(m_viewport.height);
+
+	glm::mat4 projection = glm::perspectiveLH_ZO(
+		glm::radians(45.0f),
+		aspectRatio,
+		0.1f,
+		100.0f
+	);
+	projection[1][1] *= -1;
+
+	//TODO CAMERA POS SHOULD BE IN ECS IN THE FUTURE
+	glm::vec3 cameraPosition = glm::vec3(0.0f, 3.0f, -5.0f);
+
+	glm::mat4 view = glm::lookAtLH(
+		cameraPosition,
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f)
+	);
+
+	renderer->SetCamera(view, projection);
 
 	cmd->TransitionImageLayout(
 		m_viewport.colorImage.get(),
