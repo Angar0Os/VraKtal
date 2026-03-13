@@ -32,14 +32,7 @@ namespace core::gpu
 {
 	struct Device::Impl
 	{
-		struct FrameSync
-		{
-			vk::raii::Fence     inFlightFence;
-			vk::raii::Semaphore imageAvailable;
-			vk::raii::Semaphore renderFinished;
-		};
-
-		const Device* parent = nullptr;
+		const core::gpu::Device* parent = nullptr;
 
 		vk::raii::Context					context;
 		vk::raii::Instance					instance		= nullptr;
@@ -62,7 +55,10 @@ namespace core::gpu
 		std::vector<std::unique_ptr<Image>>	swapchainImages;
 		vk::Format							swapchainImageFormat;
 
-		std::vector<FrameSync>              frameSyncObjects;
+		std::vector<vk::raii::Semaphore>	imageAvailable;
+		std::vector<vk::raii::Semaphore>	renderFinished;
+		std::vector<vk::raii::Fence>		inFlightFences;
+		std::vector<const vk::raii::Fence*> imagesInFlight;
 		std::vector<std::unique_ptr<vk::raii::CommandBuffer>> tempCmdBufs;
 
 		const Window& m_window;
@@ -83,11 +79,24 @@ namespace core::gpu
 		void CreateCommandPool();
 		void CreateDescriptorPool();
 
+		void CreateCommandBuffers();
 		void CreateSyncObjects();
+
+		void BeginFrame(uint32_t frameIndex);
+		uint32_t AcquireNextImage(uint32_t frameIndex);
+		void* GetImageAvailableSemaphore(uint32_t frameIndex) const;
+		void* GetRenderFinishedSemaphore(uint32_t imageIndex) const;
+		void* GetInFlightFence(uint32_t frameIndex) const;
+		void Present(uint32_t imageIndex);
+		void Cleanup();
+
+		const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
 
 		vk::SurfaceFormatKHR	ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats, TextureFormat preferredFormat);
 		vk::PresentModeKHR		ChoosePresentMode(const std::vector<vk::PresentModeKHR>& availableModes, PresentMode preferredMode);
 		vk::Extent2D			ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
+
+		void WaitIdle();
 
 		void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
 

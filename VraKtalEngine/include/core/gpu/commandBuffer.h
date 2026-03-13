@@ -43,9 +43,8 @@ namespace core::gpu
         void Begin(uint32_t _index = 0);
         void End(uint32_t _index = 0);
 
-        void Submit(const core::gpu::Device* _device, uint32_t frameIndex);
-        void SubmitAndWait(const core::gpu::Device* _device, uint32_t frameIndex);
-        void SubmitImmediate(const core::gpu::Device* device);
+        void Submit(const core::gpu::Device* _device, void* _waitSemaphore = nullptr, void* _signalSemaphore = nullptr, void* _fence = nullptr);
+        void SubmitAndWait(const core::gpu::Device* _device);
 
         void BindPipeline(const core::gpu::Pipeline* _pipeline);
         void BindVertexBuffer(const core::gpu::Buffer* _buffer, size_t _offset = 0);

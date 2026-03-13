@@ -77,6 +77,10 @@ int main()
 			continue;
 		}
 
+		const core::gpu::Image* swapchainImage = device.GetSwapchainImage(imageIndex);
+		if (!swapchainImage)
+			continue;
+
 		time += timeStep;
 
 		renderer.SetCamera(view, projection);
@@ -106,8 +110,8 @@ int main()
 
 		renderer.PushLight(mainLight);
 
-		renderer.Render(imageIndex);
-		device.Present(imageIndex, currentFrameIndex);
+		renderer.Render(swapchainImage, imageIndex);
+		device.Present(imageIndex);
 
 		currentFrameIndex = (currentFrameIndex + 1) % core::gpu::Device::s_FRAMES_IN_FLIGHT;
 		frameCounter++;

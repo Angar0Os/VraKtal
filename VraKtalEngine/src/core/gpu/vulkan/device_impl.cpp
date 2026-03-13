@@ -19,9 +19,6 @@
 
 #include <fstream>
 
-using namespace core;
-using namespace core::gpu;
-
 #pragma comment(lib, "vulkan-1.lib")
 
 // Validation layers used in debug
@@ -43,22 +40,12 @@ std::vector<const char*> GetRequiredExtensions()
 	return extensions;
 }
 
-::Device::Impl& ::Device::GetImpl() const
+core::gpu::Device::Impl& core::gpu::Device::GetImpl() const
 {
 	return *m_impl;
 }
 
-CommandPool& ::Device::GetCommandPool() const
-{
-	return *m_impl->commandPool;
-}
-
-DescriptorPool& ::Device::GetDescriptorPool() const
-{
-	return *m_impl->descriptorPool;
-}
-
-::Device::Device(core::Window& window)
+core::gpu::Device::Device(core::Window& window)
 {
 	m_impl = std::make_unique<Impl>(window, nullptr);
 	m_impl->parent = this;
@@ -66,7 +53,7 @@ DescriptorPool& ::Device::GetDescriptorPool() const
 	m_imGuiContext = new ImguiContext(window, *this);
 }
 
-::Device::~Device()
+core::gpu::Device::~Device()
 {
 	if (m_imGuiContext)
 	{
@@ -75,12 +62,12 @@ DescriptorPool& ::Device::GetDescriptorPool() const
 	}
 }
 
-::Device::Impl::Impl(core::Window& _window, const ::Device* _parent)
+core::gpu::Device::Impl::Impl(core::Window& _window, const core::gpu::Device* _parent)
 	: m_window(_window), parent(_parent)
 {
 }
 
-void ::Device::Impl::Initialize()
+void core::gpu::Device::Impl::Initialize()
 {
 	CreateInstance();
 	SetupDebugMessenger();
@@ -96,12 +83,12 @@ void ::Device::Impl::Initialize()
 	CreateSyncObjects();
 }
 
-::Device::Impl::~Impl()
+core::gpu::Device::Impl::~Impl()
 {
 	descriptorPool.reset();
 }
 
-void ::Device::Impl::CreateInstance()
+void core::gpu::Device::Impl::CreateInstance()
 {
 	// Application info for the instance: not required but helpful for drivers		
 	constexpr vk::ApplicationInfo appInfo
@@ -169,7 +156,7 @@ static VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSever
 	return vk::False;
 }
 
-void ::Device::Impl::SetupDebugMessenger()
+void core::gpu::Device::Impl::SetupDebugMessenger()
 {
 	if (!enableValidationLayers) return;
 
@@ -191,7 +178,7 @@ void ::Device::Impl::SetupDebugMessenger()
 	debugMessenger = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
 }
 
-void ::Device::Impl::CreateSurface()
+void core::gpu::Device::Impl::CreateSurface()
 {
 	GLFWwindow* glfwWindow = m_window.GlfwHandle();
 	if (!glfwWindow) {
@@ -207,7 +194,7 @@ void ::Device::Impl::CreateSurface()
 	surface = vk::raii::SurfaceKHR(instance, _surface);
 }
 
-void ::Device::Impl::PickPhysicalDevice()
+void core::gpu::Device::Impl::PickPhysicalDevice()
 {
 	std::vector<vk::raii::PhysicalDevice> devices = instance.enumeratePhysicalDevices();
 
@@ -320,7 +307,7 @@ void ::Device::Impl::PickPhysicalDevice()
 	}
 }
 
-void ::Device::Impl::CreateLogicalDevice()
+void core::gpu::Device::Impl::CreateLogicalDevice()
 {
 	std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
 
@@ -390,12 +377,12 @@ void ::Device::Impl::CreateLogicalDevice()
 	const auto& rtPipelineProps = rtProps.get<vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
 }
 
-void ::Device::Impl::CreateDescriptorPool()
+void core::gpu::Device::Impl::CreateDescriptorPool()
 {
 	descriptorPool = std::make_unique<DescriptorPool>(parent);
 }
 
-void ::Device::Impl::CreateCommandPool()
+void core::gpu::Device::Impl::CreateCommandPool()
 {
 	CommandPoolCreateInfo poolInfo{
 		.queueFamilyIndex = queueIndex,
@@ -405,9 +392,9 @@ void ::Device::Impl::CreateCommandPool()
 	commandPool = std::make_unique<CommandPool>(parent, poolInfo);
 }
 
-vk::SurfaceFormatKHR Device::Impl::ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats, TextureFormat preferredFormat)
+vk::SurfaceFormatKHR core::gpu::Device::Impl::ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats, TextureFormat preferredFormat)
 {
-	vk::Format vkPreferredFormat = gpu_detail::ToVulkan(preferredFormat);
+	vk::Format vkPreferredFormat = core::gpu_detail::ToVulkan(preferredFormat);
 
 	for (const auto& format : availableFormats)
 	{
@@ -430,9 +417,9 @@ vk::SurfaceFormatKHR Device::Impl::ChooseSurfaceFormat(const std::vector<vk::Sur
 	return availableFormats[0];
 }
 
-vk::PresentModeKHR Device::Impl::ChoosePresentMode(const std::vector<vk::PresentModeKHR>& availableModes, PresentMode preferredMode)
+vk::PresentModeKHR core::gpu::Device::Impl::ChoosePresentMode(const std::vector<vk::PresentModeKHR>& availableModes, PresentMode preferredMode)
 {
-	vk::PresentModeKHR vkPreferredMode = gpu_detail::ToVulkan(preferredMode);
+	vk::PresentModeKHR vkPreferredMode = core::gpu_detail::ToVulkan(preferredMode);
 
 	for (const auto& mode : availableModes)
 	{
@@ -445,7 +432,7 @@ vk::PresentModeKHR Device::Impl::ChoosePresentMode(const std::vector<vk::Present
 	return vk::PresentModeKHR::eFifo;
 }
 
-vk::Extent2D Device::Impl::ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height)
+vk::Extent2D core::gpu::Device::Impl::ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height)
 {
 	if (capabilities.currentExtent.width != 0xFFFFFFFF)
 	{
@@ -465,7 +452,7 @@ vk::Extent2D Device::Impl::ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabi
 }
 
 
-void ::Device::Impl::CreateSwapchain()
+void core::gpu::Device::Impl::CreateSwapchain()
 {
 	vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
 	auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface);
@@ -520,7 +507,7 @@ void ::Device::Impl::CreateSwapchain()
 		};
 		swapchainImageViews.emplace_back(device, viewInfo);
 
-		::SPredefinedImageCreateInfo imageInfo{};		
+		core::gpu::SPredefinedImageCreateInfo imageInfo{};		
 		imageInfo.image = image;
 		imageInfo.extent = extent;
 		imageInfo.aspectFlags = vk::ImageAspectFlagBits::eColor;
@@ -532,7 +519,7 @@ void ::Device::Impl::CreateSwapchain()
 	swapchainImageFormat = surfaceFormat.format;
 }
 
-void ::Device::Impl::RecreateSwapchain()
+void core::gpu::Device::Impl::RecreateSwapchain()
 {
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
@@ -604,51 +591,146 @@ void ::Device::Impl::RecreateSwapchain()
 	CreateSyncObjects();
 }
 
-void ::Device::Impl::CreateSyncObjects()
+void core::gpu::Device::Impl::CreateSyncObjects()
 {
-	frameSyncObjects.clear();
+	imageAvailable.clear();
+	renderFinished.clear();
+	inFlightFences.clear();
+	imagesInFlight.clear();
 	tempCmdBufs.clear();
 
 	vk::SemaphoreCreateInfo semInfo{};
-	vk::FenceCreateInfo fenceInfo{ .flags = vk::FenceCreateFlagBits::eSignaled };
-
-	frameSyncObjects.reserve(::Device::s_FRAMES_IN_FLIGHT);
-	for (size_t i = 0; i < ::Device::s_FRAMES_IN_FLIGHT; ++i)
+	imageAvailable.reserve(core::gpu::Device::s_FRAMES_IN_FLIGHT);
+	for (size_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; ++i)
 	{
-		FrameSync frameSync{
-			.inFlightFence = vk::raii::Fence(device, fenceInfo),
-			.imageAvailable = vk::raii::Semaphore(device, semInfo),
-			.renderFinished = vk::raii::Semaphore(device, semInfo)
-		};
-
-		frameSyncObjects.push_back(std::move(frameSync));
+		imageAvailable.emplace_back(device, semInfo);
 	}
 
 	uint32_t swapchainImageCount = swapchain.getImages().size();
-	tempCmdBufs.resize(::Device::s_FRAMES_IN_FLIGHT);
+	renderFinished.reserve(swapchainImageCount);
+	for (size_t i = 0; i < swapchainImageCount; ++i)
+	{
+		renderFinished.emplace_back(device, semInfo);
+	}
+
+	vk::FenceCreateInfo fenceInfo{ .flags = vk::FenceCreateFlagBits::eSignaled };
+	inFlightFences.reserve(core::gpu::Device::s_FRAMES_IN_FLIGHT);
+	for (size_t i = 0; i < core::gpu::Device::s_FRAMES_IN_FLIGHT; ++i)
+	{
+		inFlightFences.emplace_back(device, fenceInfo);
+	}
+
+	imagesInFlight.resize(swapchainImageCount, nullptr);
+	tempCmdBufs.resize(core::gpu::Device::s_FRAMES_IN_FLIGHT);
 }
 
-void Device::BeginFrame(uint32_t frameIndex)
+void core::gpu::Device::Impl::BeginFrame(uint32_t frameIndex)
 {
-	if (frameIndex >= m_impl->frameSyncObjects.size())
+	if (frameIndex >= inFlightFences.size())
 	{
 		return;
 	}
 
-	auto& frameSync = m_impl->frameSyncObjects[frameIndex];
+	device.waitForFences(*inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
+	device.resetFences(*inFlightFences[frameIndex]);
 
-	m_impl->device.waitForFences(*frameSync.inFlightFence, VK_TRUE, UINT64_MAX);
-	m_impl->device.resetFences(*frameSync.inFlightFence);
-
-	if (frameIndex < m_impl->tempCmdBufs.size())
+	if (frameIndex < tempCmdBufs.size())
 	{
-		m_impl->tempCmdBufs[frameIndex].reset();
+		tempCmdBufs[frameIndex].reset();
 	}
 }
 
-void Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
+
+uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
 {
-	const ::Image* swapchainImage = swapchainImages[imageIndex].get();
+	if (frameIndex >= imageAvailable.size())
+	{
+		return UINT32_MAX;
+	}
+
+	try
+	{
+		vk::ResultValue<uint32_t> result = device.acquireNextImage2KHR(
+			vk::AcquireNextImageInfoKHR{
+				.swapchain = swapchain,
+				.timeout = UINT64_MAX,
+				.semaphore = *imageAvailable[frameIndex],
+				.fence = nullptr,
+				.deviceMask = 1
+			}
+		);
+
+		uint32_t imageIndex = result.value;
+
+		if (result.result == vk::Result::eErrorOutOfDateKHR)
+		{
+			return UINT32_MAX;
+		}
+
+		if (result.result != vk::Result::eSuccess && result.result != vk::Result::eSuboptimalKHR)
+		{
+			return UINT32_MAX;
+		}
+
+		if (imageIndex < imagesInFlight.size() && imagesInFlight[imageIndex] != nullptr)
+		{
+			device.waitForFences(**imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+		}
+
+		imagesInFlight[imageIndex] = &inFlightFences[frameIndex];
+
+		return imageIndex;
+	}
+	catch (const vk::OutOfDateKHRError&)
+	{
+		return UINT32_MAX;
+	}
+	catch (const vk::SystemError& e)
+	{
+		return UINT32_MAX;
+	}
+}
+
+void* core::gpu::Device::Impl::GetImageAvailableSemaphore(uint32_t frameIndex) const
+{
+	if (frameIndex >= imageAvailable.size()) return nullptr;
+	return reinterpret_cast<void*>(static_cast<VkSemaphore>(*imageAvailable[frameIndex]));
+}
+
+void* core::gpu::Device::Impl::GetRenderFinishedSemaphore(uint32_t imageIndex) const
+{
+	if (imageIndex >= renderFinished.size()) return nullptr;
+	return static_cast<void*>(static_cast<VkSemaphore>(*renderFinished[imageIndex]));
+}
+
+void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
+{
+	if (frameIndex >= inFlightFences.size()) return nullptr;
+	return static_cast<void*>(static_cast<VkFence>(*inFlightFences[frameIndex]));
+}
+
+const core::gpu::Image* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
+{
+	if (swapchain == nullptr)
+	{
+		std::cerr << "ERROR: Swapchain is null!" << std::endl;
+		return nullptr;
+	}
+
+	if (imageIndex >= swapchain.getImages().size())
+	{
+		std::cerr << "ERROR: Image index " << imageIndex
+			<< " out of range (swapchain has "
+			<< swapchain.getImages().size() << " images)" << std::endl;
+		return nullptr;
+	}
+
+	return swapchainImages[imageIndex].get();
+}
+
+void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
+{
+	const core::gpu::Image* swapchainImage = swapchainImages[imageIndex].get();
 
 	vk::CommandBufferAllocateInfo allocInfo{
 		.commandPool = commandPool->GetImpl().pool,
@@ -717,77 +799,49 @@ void Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t image
 	}
 }
 
-uint32_t Device::AcquireNextImage(uint32_t frameIndex)
+void core::gpu::Device::Impl::Present(uint32_t imageIndex)
 {
-	if (frameIndex >= m_impl->frameSyncObjects.size())
-	{
-		return UINT32_MAX;
-	}
+	if (imageIndex >= renderFinished.size()) return;
 
-	auto& frameSync = m_impl->frameSyncObjects[frameIndex];
-
-	vk::ResultValue<uint32_t> result = m_impl->device.acquireNextImage2KHR(
-		vk::AcquireNextImageInfoKHR{
-			.swapchain = m_impl->swapchain,
-			.timeout = UINT64_MAX,
-			.semaphore = *frameSync.imageAvailable,
-			.fence = nullptr,
-			.deviceMask = 1
-		}
-	);
-
-	if (result.result == vk::Result::eErrorOutOfDateKHR)
-	{
-		return UINT32_MAX;
-	}
-
-	if (result.result != vk::Result::eSuccess &&
-		result.result != vk::Result::eSuboptimalKHR)
-	{
-		return UINT32_MAX;
-	}
-
-	return result.value;
-}
-
-void Device::Present(uint32_t imageIndex, uint32_t frameIndex)
-{
-	if (frameIndex >= m_impl->frameSyncObjects.size()) return;
-
-	auto& frameSync = m_impl->frameSyncObjects[frameIndex];
-	vk::Semaphore presentWait = *frameSync.renderFinished;
+	vk::Semaphore presentWait = *renderFinished[imageIndex];
 
 	vk::PresentInfoKHR presentInfo{
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores = &presentWait,
 		.swapchainCount = 1,
-		.pSwapchains = &*m_impl->swapchain,
+		.pSwapchains = &*swapchain,
 		.pImageIndices = &imageIndex
 	};
-
-	vk::Result result = m_impl->graphicsQueue.presentKHR(presentInfo);
-}
-
-void Device::Cleanup()
-{
-	m_impl->device.waitIdle();
-
-	m_impl->frameSyncObjects.clear();  
-	m_impl->tempCmdBufs.clear();
-}
-
-const Image* Device::GetSwapchainImage(uint32_t imageIndex) const
-{
-	if (m_impl->swapchain == nullptr)
+	try
 	{
-		std::cerr << "ERROR: Swapchain is null!" << std::endl;
-		return nullptr;
+		vk::Result result = graphicsQueue.presentKHR(presentInfo);
 	}
-
-	return m_impl->swapchainImages[imageIndex].get();
+	catch (const vk::OutOfDateKHRError&)
+	{
+	}
+	catch (const vk::SystemError& e)
+	{
+	}
 }
 
-std::pair<uint32_t , uint32_t> Device::GetSwapchainExtent() const
+void core::gpu::Device::Impl::Cleanup()
+{
+	device.waitIdle();
+
+	imageAvailable.clear();
+	renderFinished.clear();
+	inFlightFences.clear();
+	imagesInFlight.clear();
+
+	tempCmdBufs.clear();
+}
+
+void core::gpu::Device::Impl::CreateCommandBuffers()
+{
+	return;
+}
+
+std::pair<uint32_t , uint32_t> core::gpu::Device::GetSwapchainExtent() const
 {
 	if (m_impl)
 	{
@@ -796,22 +850,67 @@ std::pair<uint32_t , uint32_t> Device::GetSwapchainExtent() const
 	return { 0, 0 };
 }
 
-void Device::WaitIdle()
+void core::gpu::Device::Impl::WaitIdle()
 {
-	m_impl->device.waitIdle();
+	device.waitIdle();
 }
 
-void Device::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
+void core::gpu::Device::BeginFrame(uint32_t frameIndex)
+{
+	if (m_impl) m_impl->BeginFrame(frameIndex);
+}
+
+uint32_t core::gpu::Device::AcquireNextImage(uint32_t frameIndex)
+{
+	return m_impl ? m_impl->AcquireNextImage(frameIndex) : UINT32_MAX;
+}
+
+void* core::gpu::Device::GetImageAvailableSemaphore(uint32_t frameIndex) const
+{
+	return m_impl ? m_impl->GetImageAvailableSemaphore(frameIndex) : nullptr;
+}
+
+void* core::gpu::Device::GetRenderFinishedSemaphore(uint32_t imageIndex) const
+{
+	return m_impl ? m_impl->GetRenderFinishedSemaphore(imageIndex) : nullptr;
+}
+
+void* core::gpu::Device::GetInFlightFence(uint32_t frameIndex) const
+{
+	return m_impl ? m_impl->GetInFlightFence(frameIndex) : nullptr;
+}
+
+void core::gpu::Device::Present(uint32_t imageIndex)
+{
+	if (m_impl) m_impl->Present(imageIndex);
+}
+
+void core::gpu::Device::Cleanup()
+{
+	if (m_impl) m_impl->Cleanup();
+}
+
+void core::gpu::Device::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
 {
 	if (m_impl) m_impl->TransitionImageForPresent(frameIndex, imageIndex);
 }
 
-void Device::RecreateSwapchain()
+const core::gpu::Image* core::gpu::Device::GetSwapchainImage(uint32_t imageIndex) const
+{
+	return m_impl ? m_impl->GetSwapchainImage(imageIndex) : nullptr;
+}
+
+void core::gpu::Device::WaitIdle()
+{
+	if (m_impl) m_impl->WaitIdle();
+}
+
+void core::gpu::Device::RecreateSwapchain()
 {
 	if (m_impl) m_impl->RecreateSwapchain();
 }
 
-ImguiContext* Device::GetImGuiContext()
+core::gpu::ImguiContext* core::gpu::Device::GetImGuiContext()
 {
 	return m_imGuiContext;
 }
