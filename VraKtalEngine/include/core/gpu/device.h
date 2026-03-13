@@ -15,6 +15,8 @@ namespace core
 	{
 		class AccelerationStructure;
 		class Buffer;
+		class CommandPool;
+		class DescriptorPool;
 		class Image;
         class Pipeline;
 		class ImguiContext;
@@ -31,25 +33,30 @@ namespace core
 
 			Impl& GetImpl() const;
 
-			void BeginFrame(uint32_t frameIndex);
+			CommandPool& GetCommandPool() const;
+			DescriptorPool& GetDescriptorPool() const;
+
 			uint32_t AcquireNextImage(uint32_t frameIndex);
-			void* GetImageAvailableSemaphore(uint32_t frameIndex) const;
-			void* GetRenderFinishedSemaphore(uint32_t imageIndex) const;
-			void* GetInFlightFence(uint32_t frameIndex) const;
-			void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
-			void Present(uint32_t imageIndex);
+
+			void Present(uint32_t imageIndex, uint32_t frameIndex);
 			void Cleanup();
 
-			std::pair<uint32_t, uint32_t> GetSwapchainExtent() const;
-			
+			void WaitIdle();
 
 			const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
 
-			void RecreateSwapchain();
-			void WaitIdle();
 			static constexpr uint32_t s_FRAMES_IN_FLIGHT = 2;
 
 			ImguiContext* GetImGuiContext();
+
+			void BeginFrame(uint32_t frameIndex);
+			std::pair<uint32_t, uint32_t> GetSwapchainExtent() const;
+			
+			void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
+			
+
+			void RecreateSwapchain();
+
 		};
 	}
 }

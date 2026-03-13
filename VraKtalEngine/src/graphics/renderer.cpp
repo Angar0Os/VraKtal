@@ -178,7 +178,7 @@ void Renderer::RebuildAccelerationStructures()
 	}
 
 	cmdBuffer.End(0);
-	cmdBuffer.SubmitAndWait(&m_device);
+	cmdBuffer.SubmitImmediate(&m_device);
 }
 
 void Renderer::CreateDescriptorSetLayout()
@@ -319,10 +319,11 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 	}
 }
 
-void Renderer::Render(const Image* image, uint32_t imageIndex)
+void Renderer::Render(uint32_t imageIndex)
 {
-	// Le render crash car les images sont nulles, il faut recréer les images dans le renderer et les enlever du device.
 	if (!m_running) return;
+	auto image = m_device.GetSwapchainImage(imageIndex);
+
 
 	m_device.BeginFrame(m_currentFrame);
 
@@ -341,8 +342,6 @@ void Renderer::Render(const Image* image, uint32_t imageIndex)
 
 	cmd->Begin(0);
 
-	const auto* swapchainImageHandle = m_device.GetSwapchainImage(imageIndex);
-
 	cmd->TransitionImageLayout(
 		colorImage.get(),
 		core::ImageLayout::Undefined,
@@ -351,7 +350,7 @@ void Renderer::Render(const Image* image, uint32_t imageIndex)
 	);
 
 	cmd->TransitionImageLayout(
-		swapchainImageHandle,
+		image,
 		core::ImageLayout::Undefined,
 		core::ImageLayout::TransferDst,
 		false
@@ -420,12 +419,12 @@ void Renderer::Render(const Image* image, uint32_t imageIndex)
 
 	cmd->ResolveImage(
 		colorImage.get(),
-		swapchainImageHandle,
+		image,
 		&m_device
 	);
 
 	cmd->TransitionImageLayout(
-		swapchainImageHandle,
+		image,
 		core::ImageLayout::TransferDst,
 		core::ImageLayout::Present,
 		false
@@ -433,11 +432,7 @@ void Renderer::Render(const Image* image, uint32_t imageIndex)
 
 	cmd->End(0);
 
-	void* waitSemaphore = m_device.GetImageAvailableSemaphore(m_currentFrame);
-	void* signalSemaphore = m_device.GetRenderFinishedSemaphore(imageIndex);
-	void* fence = m_device.GetInFlightFence(m_currentFrame);
-
-	m_commandBuffers[m_currentFrame]->Submit(&m_device, waitSemaphore, signalSemaphore, fence);
+	m_commandBuffers[m_currentFrame]->Submit(&m_device, m_currentFrame);
 
 	m_currentFrame = (m_currentFrame + 1) % Device::s_FRAMES_IN_FLIGHT;
 	m_frameCounter++;
