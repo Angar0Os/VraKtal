@@ -34,6 +34,9 @@ namespace core::gpu
 		void SetScissor(int32_t x, int32_t y, const core::gpu::Device* device);
 		void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
 		void BeginRendering(const core::gpu::Device* device, const core::gpu::Image* colorImageView, const core::gpu::Image* depthImageView);
+		void BeginRendering(const core::gpu::Device* device,
+			const std::vector<CommandBuffer::RenderingAttachmentInfo>& colorAttachments,
+			const CommandBuffer::DepthAttachmentInfo& depthAttachment);
 		void EndRendering();
 
 		void CopyBuffer(const core::gpu::Buffer* srcBuffer, const core::gpu::Buffer* dstBuffer, size_t size);

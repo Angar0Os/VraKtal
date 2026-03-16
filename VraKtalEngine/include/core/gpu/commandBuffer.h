@@ -3,6 +3,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 #include <core/enum.h>
 
 namespace core::gpu
@@ -56,9 +57,29 @@ namespace core::gpu
         void SetScissor(int32_t _x, int32_t _y, const core::gpu::Device* device);
 
         void DrawIndexed(uint32_t _indexCount, uint32_t _instanceCount = 1,
-                         uint32_t _firstIndex = 0, int32_t _vertexOffset = 0, uint32_t _firstInstance = 0);
+            uint32_t _firstIndex = 0, int32_t _vertexOffset = 0, uint32_t _firstInstance = 0);
 
         void BeginRendering(const core::gpu::Device* device, const core::gpu::Image* _colorImageView, const core::gpu::Image* _depthImageView);
+
+        struct RenderingAttachmentInfo
+        {
+            const core::gpu::Image* image = nullptr;
+            bool                    clear = true;
+            float                   clearR = 0.0f;
+            float                   clearG = 0.0f;
+            float                   clearB = 0.0f;
+            float                   clearA = 1.0f;
+        };
+        struct DepthAttachmentInfo
+        {
+            const core::gpu::Image* image = nullptr;
+            bool                    clear = true;
+            float                   clearDepth = 1.0f;
+        };
+        void BeginRendering(const core::gpu::Device* device,
+            const std::vector<RenderingAttachmentInfo>& colorAttachments,
+            const DepthAttachmentInfo& depthAttachment);
+
         void EndRendering();
 
         void TransitionImageLayout(const core::gpu::Image* _image, ImageLayout _oldLayout, ImageLayout _newLayout, bool _isDepth = false);

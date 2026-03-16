@@ -198,7 +198,9 @@
     <ClInclude Include="include\core\gpu\imguiContext.h" />
     <ClInclude Include="include\core\gpu\pipeline.h" />
     <ClInclude Include="include\core\window.h" />
+    <ClInclude Include="include\graphics\pass.h" />
     <ClInclude Include="include\graphics\renderer.h" />
+    <ClInclude Include="include\graphics\renderPass\gBufferPass.h" />
     <ClInclude Include="include\graphics\resources\object\camera.h" />
     <ClInclude Include="include\graphics\resources\object\light.h" />
     <ClInclude Include="include\graphics\resources\object\material.h" />
@@ -253,13 +255,14 @@
     <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp" />
     <ClCompile Include="src\core\gpu_detail\converters.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
+    <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp" />
     <ClCompile Include="src\graphics\resources\object\scene.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />
     <ClCompile Include="src\loaders\textureLoader.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\bin\assets\shaders\shader.slang" />
+    <None Include="..\bin\assets\shaders\gbuffer.slang" />
     <None Include="..\external\include\imGuizmo\.editorconfig" />
   </ItemGroup>
   <ItemGroup>

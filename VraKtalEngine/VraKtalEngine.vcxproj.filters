@@ -82,6 +82,12 @@
     <Filter Include="external\portableFileDialogs">
       <UniqueIdentifier>{9060703a-032f-4e39-9ead-06e259c1f291}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\graphics\renderPass">
+      <UniqueIdentifier>{53035896-8da1-4e1d-9be4-2aecda31c710}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphics\renderPass">
+      <UniqueIdentifier>{0e0c78fb-1f6e-4e66-bfd3-f647c2b57927}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -249,6 +255,12 @@
     <ClInclude Include="include\loaders\shaderLoader.h">
       <Filter>Header Files\loaders</Filter>
     </ClInclude>
+    <ClInclude Include="include\graphics\pass.h">
+      <Filter>Header Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\renderPass\gBufferPass.h">
+      <Filter>Header Files\graphics\renderPass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -344,13 +356,16 @@
     <ClCompile Include="src\loaders\textureLoader.cpp">
       <Filter>Source Files\loaders</Filter>
     </ClCompile>
+    <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp">
+      <Filter>Source Files\graphics\renderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\bin\assets\shaders\shader.slang">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
     <None Include="..\external\include\imGuizmo\.editorconfig">
       <Filter>External\ImGuizmo</Filter>
+    </None>
+    <None Include="..\bin\assets\shaders\gbuffer.slang">
+      <Filter>Resource Files\shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

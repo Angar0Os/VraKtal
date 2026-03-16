@@ -296,6 +296,48 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 	GetCommandBuffer(currentIndex).beginRendering(info);
 }
 
+void core::gpu::CommandBuffer::Impl::BeginRendering(
+	const core::gpu::Device*                                  device,
+	const std::vector<CommandBuffer::RenderingAttachmentInfo>& colorAttachments,
+	const CommandBuffer::DepthAttachmentInfo&                  depthAttachment)
+{
+	std::vector<vk::RenderingAttachmentInfo> vkColorAttachments;
+	vkColorAttachments.reserve(colorAttachments.size());
+
+	for (const auto& ca : colorAttachments)
+	{
+		vk::RenderingAttachmentInfo info{};
+		info.imageView   = ca.image->GetImpl().view;
+		info.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		info.loadOp      = ca.clear ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
+		info.storeOp     = vk::AttachmentStoreOp::eStore;
+		info.clearValue  = vk::ClearColorValue(ca.clearR, ca.clearG, ca.clearB, ca.clearA);
+		vkColorAttachments.push_back(info);
+	}
+
+	vk::RenderingAttachmentInfo vkDepth{};
+	if (depthAttachment.image)
+	{
+		vkDepth.imageView   = depthAttachment.image->GetImpl().view;
+		vkDepth.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+		vkDepth.loadOp      = depthAttachment.clear ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
+		vkDepth.storeOp     = vk::AttachmentStoreOp::eStore;
+		vkDepth.clearValue  = vk::ClearDepthStencilValue(depthAttachment.clearDepth, 0);
+	}
+
+	uint32_t width  = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
+
+	vk::RenderingInfo info{};
+	info.renderArea             = vk::Rect2D({ 0, 0 }, { width, height });
+	info.layerCount             = 1;
+	info.colorAttachmentCount   = static_cast<uint32_t>(vkColorAttachments.size());
+	info.pColorAttachments      = vkColorAttachments.data();
+	info.pDepthAttachment       = depthAttachment.image ? &vkDepth : nullptr;
+
+	GetCommandBuffer(currentIndex).beginRendering(info);
+}
+
 void core::gpu::CommandBuffer::Submit(const core::gpu::Device* device, uint32_t frameIndex)
 {
 	if (m_impl->currentIndex >= m_impl->commandBuffers.size())
@@ -503,6 +545,14 @@ void core::gpu::CommandBuffer::BeginRendering(const core::gpu::Device* device, c
 	m_impl->BeginRendering(device, colorImageView, depthImageView);
 }
 
+void core::gpu::CommandBuffer::BeginRendering(
+	const core::gpu::Device*                    device,
+	const std::vector<RenderingAttachmentInfo>& colorAttachments,
+	const DepthAttachmentInfo&                  depthAttachment)
+{
+	m_impl->BeginRendering(device, colorAttachments, depthAttachment);
+}
+
 void core::gpu::CommandBuffer::EndRendering()
 {
 	m_impl->EndRendering();
@@ -581,6 +631,27 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 		dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
 		srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
 		dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
+	else if (oldLayout == ImageLayout::ColorAttachment && newLayout == ImageLayout::ShaderReadOnly)
+	{
+		srcAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		dstAccess = vk::AccessFlagBits::eShaderRead;
+		srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+	}
+	else if (oldLayout == ImageLayout::ShaderReadOnly && newLayout == ImageLayout::TransferSrc)
+	{
+		srcAccess = vk::AccessFlagBits::eShaderRead;
+		dstAccess = vk::AccessFlagBits::eTransferRead;
+		srcStage = vk::PipelineStageFlagBits::eFragmentShader;
+		dstStage = vk::PipelineStageFlagBits::eTransfer;
+	}
+	else if (oldLayout == ImageLayout::DepthStencilAttachment && newLayout == ImageLayout::ShaderReadOnly)
+	{
+		srcAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		dstAccess = vk::AccessFlagBits::eShaderRead;
+		srcStage = vk::PipelineStageFlagBits::eLateFragmentTests;
+		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
 	}
 	else
 	{

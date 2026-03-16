@@ -9,8 +9,9 @@
 #include <core/gpu/device.h>
 #include <core/gpu/image.h>
 #include <core/gpu/pipeline.h>
-#include <core/gpu/texture.h> 
+#include <core/gpu/texture.h>
 
+#include <graphics/pass.h>
 #include <graphics/resources/object/mesh.h>
 #include <graphics/resources/object/light.h>
 
@@ -39,15 +40,15 @@ namespace graphics
 		{
 			glm::vec4 position;
 			glm::vec4 color;
-			float intensity;
-			int enabled;
-			int type;
-			float lightRadius;
+			float     intensity;
+			int       enabled;
+			int       type;
+			float     lightRadius;
 		};
 
 		LightData lights[MAX_LIGHTS];
-		int numLights;
-		uint32_t frameCount;
+		int       numLights;
+		uint32_t  frameCount;
 		alignas(4) uint32_t pad[7];
 	};
 
@@ -63,45 +64,34 @@ namespace graphics
 		Device& m_device;
 
 		std::vector<std::unique_ptr<CommandBuffer>> m_commandBuffers;
-		std::unique_ptr<AccelerationStructure> m_tlas;
+		std::unique_ptr<AccelerationStructure>      m_tlas;
 
 		std::vector<std::pair<resources::Mesh*, glm::mat4>> m_meshInstances;
 		std::vector<std::unique_ptr<AccelerationStructure>> m_tlasPerFrame;
-		std::vector<Light> m_lights;
+		std::vector<Light>                                  m_lights;
 
-		std::unique_ptr<Pipeline> graphicsPipeline = nullptr;
-		std::unique_ptr<DescriptorSetLayout>	descriptorSetLayout = nullptr;
+		std::vector<std::unique_ptr<Pass>> m_passes;
 
-		std::vector<std::unique_ptr<DescriptorSet>> graphicsDescriptorSets;
+		class GBufferPass* m_gBufferPass = nullptr;
+
+		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
 
 		uint32_t m_currentFrame;
 		uint64_t m_frameCounter;
-		bool m_running;
+		bool     m_running;
 
 		glm::mat4 m_viewMatrix;
 		glm::mat4 m_projMatrix;
 		glm::vec3 m_cameraPosition;
 
-		std::unique_ptr<Image>	colorImage;
-		std::unique_ptr<Image>	depthImage;
-
-		std::unique_ptr<core::gpu::Texture> colorTexture;
-		std::unique_ptr<core::gpu::Texture> depthTexture;
-
-		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
-
 		void CreateCommandBuffers();
 		void BuildTLAS();
 		void RebuildAccelerationStructures();
 		void UpdateUniformBuffer(uint32_t frameIndex);
-
-		void CreateGraphicsPipeline();
-		void CreateDescriptorSetLayout();
-		void CreateGraphicsDescriptorSet();
 		void CreateUniformBuffers();
 
-		void CreateColorImage();
-		void CreateDepthImage();
+		void InitPasses();
+
 	public:
 		Renderer(core::Window& window, Device& device);
 		~Renderer();
@@ -115,11 +105,23 @@ namespace graphics
 
 		core::gpu::AccelerationStructure* GetTLAS() const { return m_tlas.get(); }
 
-		glm::mat4 GetViewMatrix() { return m_viewMatrix; };
-		glm::mat4 GetProjectionMatrix() { return m_projMatrix; };
-		glm::vec3 GetCameraPosition() { return m_cameraPosition; };
+		glm::mat4 GetViewMatrix() { return m_viewMatrix; }
+		glm::mat4 GetProjectionMatrix() { return m_projMatrix; }
+		glm::vec3 GetCameraPosition() { return m_cameraPosition; }
 
-		std::vector<std::pair<resources::Mesh*, glm::mat4>>* GetMeshInstances() { return &m_meshInstances; };
+		std::vector<std::pair<resources::Mesh*, glm::mat4>>* GetMeshInstances()
+		{
+			return &m_meshInstances;
+		}
+
+		template<typename T>
+		T* GetPass(const std::string& name)
+		{
+			for (auto& p : m_passes)
+				if (p->GetName() == name)
+					return dynamic_cast<T*>(p.get());
+			return nullptr;
+		}
 	};
 }
 

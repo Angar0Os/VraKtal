@@ -1,4 +1,5 @@
 #include <graphics/renderer.h>
+#include <graphics/renderPass/gBufferPass.h>
 
 #include <core/gpu/buffer.h>
 #include <core/gpu/descriptorSet.h>
@@ -20,24 +21,19 @@ using namespace graphics;
 //#define VRAKTAL_EDITOR
 
 Renderer::Renderer(Window& window, Device& device)
-	: m_window(window),
-	m_device(device),
-	m_currentFrame(0),
-	m_running(true),
-	m_frameCounter(0),
-	m_viewMatrix(glm::mat4(1.0f)),
-	m_projMatrix(glm::mat4(1.0f)),
-	m_cameraPosition(glm::vec3(0.0f))
+	: m_window(window)
+	, m_device(device)
+	, m_currentFrame(0)
+	, m_running(true)
+	, m_frameCounter(0)
+	, m_viewMatrix(glm::mat4(1.0f))
+	, m_projMatrix(glm::mat4(1.0f))
+	, m_cameraPosition(glm::vec3(0.0f))
 {
 	CreateCommandBuffers();
 	CreateUniformBuffers();
 
-	CreateColorImage();
-	CreateDepthImage();
-
-	CreateDescriptorSetLayout();
-	CreateGraphicsPipeline();
-	CreateGraphicsDescriptorSet();
+	InitPasses();
 
 	m_tlasPerFrame.resize(Device::s_FRAMES_IN_FLIGHT);
 }
@@ -47,25 +43,11 @@ Renderer::~Renderer()
 	Cleanup();
 }
 
-void Renderer::CreateCommandBuffers()
+void Renderer::InitPasses()
 {
-	m_commandBuffers.clear();
-	m_commandBuffers.reserve(Device::s_FRAMES_IN_FLIGHT);
-
-	for (uint32_t i = 0; i < Device::s_FRAMES_IN_FLIGHT; i++)
-	{
-		SCommandBufferCreateInfo cmdInfo{};
-		cmdInfo.device = &m_device;
-		cmdInfo.level = ECommandBufferLevel::Primary;
-		cmdInfo.count = 1;
-
-		auto cmdBuffer = std::make_unique<CommandBuffer>(
-			&m_device,
-			cmdInfo
-		);
-
-		m_commandBuffers.push_back(std::move(cmdBuffer));
-	}
+	auto gBufferPass = std::make_unique<GBufferPass>(m_device, uniformBuffers);
+	m_gBufferPass = gBufferPass.get();
+	m_passes.push_back(std::move(gBufferPass));
 }
 
 void Renderer::SetCamera(const glm::mat4& view, const glm::mat4& projection)
@@ -82,11 +64,9 @@ void Renderer::PushMesh(resources::Mesh* mesh, const glm::mat4& transform)
 	if (!mesh) return;
 
 	if (!mesh->blas)
-	{
-		std::cerr << "Warning: Mesh pushed without BLAS!" << std::endl;
-	}
+		std::cerr << "Warning: Mesh pushed without BLAS!\n";
 
-	m_meshInstances.push_back(std::make_pair(mesh, transform));
+	m_meshInstances.push_back({ mesh, transform });
 }
 
 void Renderer::PushLight(const resources::Light& light)
@@ -96,10 +76,7 @@ void Renderer::PushLight(const resources::Light& light)
 
 void Renderer::BuildTLAS()
 {
-	if (m_meshInstances.empty())
-	{
-		return;
-	}
+	if (m_meshInstances.empty()) return;
 
 	std::vector<SAccelerationStructureInstance> instances;
 	instances.reserve(m_meshInstances.size());
@@ -110,7 +87,7 @@ void Renderer::BuildTLAS()
 	{
 		if (!meshInstance.first->blas)
 		{
-			std::cerr << "Warning: BLAS not found for mesh instance!" << std::endl;
+			std::cerr << "Warning: BLAS not found for mesh instance!\n";
 			continue;
 		}
 
@@ -129,21 +106,16 @@ void Renderer::BuildTLAS()
 		instance.instanceShaderBindingTableRecordOffset = 0;
 		instance.blas = meshInstance.first->blas.get();
 
-		instances.push_back(instance);
-
-		uint64_t blasAddr = meshInstance.first->blas->GetDeviceAddress();
-
-		if (blasAddr == 0)
+		if (meshInstance.first->blas->GetDeviceAddress() == 0)
 		{
-			std::cerr << "ERROR: BLAS has invalid device address!" << std::endl;
+			std::cerr << "ERROR: BLAS has invalid device address!\n";
 			continue;
 		}
+
+		instances.push_back(instance);
 	}
 
-	if (instances.empty())
-	{
-		return;
-	}
+	if (instances.empty()) return;
 
 	SAccelerationStructureCreateInfo tlasInfo{};
 	tlasInfo.type = EAccelerationStructureType::TopLevel;
@@ -152,9 +124,7 @@ void Renderer::BuildTLAS()
 	tlasInfo.allowUpdate = false;
 
 	m_tlasPerFrame[m_currentFrame] = std::make_unique<AccelerationStructure>(
-		&m_device,
-		tlasInfo
-	);
+		&m_device, tlasInfo);
 }
 
 void Renderer::RebuildAccelerationStructures()
@@ -165,62 +135,21 @@ void Renderer::RebuildAccelerationStructures()
 	cmdInfo.singleTime = true;
 	cmdInfo.level = ECommandBufferLevel::Primary;
 
-	gpu::CommandBuffer cmdBuffer(
-		&m_device,
-		cmdInfo
-	);
-
+	gpu::CommandBuffer cmdBuffer(&m_device, cmdInfo);
 	cmdBuffer.Begin(0);
 
 	if (m_tlasPerFrame[m_currentFrame])
-	{
 		cmdBuffer.BuildAccelerationStructure(m_tlasPerFrame[m_currentFrame].get());
-	}
 
 	cmdBuffer.End(0);
 	cmdBuffer.SubmitImmediate(&m_device);
 }
 
-void Renderer::CreateDescriptorSetLayout()
-{
-	auto bindingUBO = SDescriptorSetLayoutBinding{};
-	bindingUBO.binding = 0;
-	bindingUBO.descriptorType = EDescriptorType::UniformBuffer;
-	bindingUBO.stageFlags = core::ShaderStage::Vertex | core::ShaderStage::Fragment;
+// =============================================================================
+// Uniform buffer
+// =============================================================================
 
-	auto bindingDepthTexture = SDescriptorSetLayoutBinding{};
-	bindingDepthTexture.binding = 1;
-	bindingDepthTexture.descriptorType = EDescriptorType::CombinedImageSampler;
-	bindingDepthTexture.stageFlags = core::ShaderStage::Fragment;
-
-	auto bindingTLAS = SDescriptorSetLayoutBinding{};
-	bindingTLAS.binding = 2;
-	bindingTLAS.descriptorType = EDescriptorType::AccelerationStructure;
-	bindingTLAS.stageFlags = core::ShaderStage::Fragment;
-
-	auto layoutInfo = SDescriptorSetLayoutCreateInfo{};
-	layoutInfo.bindings = { bindingUBO, bindingDepthTexture, bindingTLAS };
-
-	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(&m_device, layoutInfo);
-}
-
-void Renderer::CreateGraphicsDescriptorSet()
-{
-	for (size_t i = 0; i < Device::s_FRAMES_IN_FLIGHT; i++)
-	{
-		auto descriptor = std::make_unique<DescriptorSet>(&m_device, descriptorSetLayout.get());
-
-		descriptor->Bind(0, *uniformBuffers[i]);
-		descriptor->Bind(1, *depthTexture);
-
-		descriptor->Update(m_device);
-
-		graphicsDescriptorSets.push_back(std::move(descriptor));
-	}
-}
-
-
-void graphics::Renderer::CreateUniformBuffers()
+void Renderer::CreateUniformBuffers()
 {
 	uniformBuffers.clear();
 	uniformBuffers.reserve(Device::s_FRAMES_IN_FLIGHT);
@@ -236,74 +165,21 @@ void graphics::Renderer::CreateUniformBuffers()
 	}
 }
 
-void Renderer::CreateGraphicsPipeline()
-{
-	auto shaderCode = loaders::ReadFile("../bin/assets/shaders/slang.spv");
-
-	SVertexInputBinding vertexBinding
-	{
-		.binding = 0,
-		.stride = sizeof(graphics::resources::Vertex),
-		.inputRate = VertexInputRate::Vertex
-	};
-
-	std::vector<SVertexInputAttribute> vertexAttributes = {
-		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, position)},
-		{1, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, normal)},
-		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::Vertex, uv)}
-	};
-
-	std::vector<core::gpu::ShaderStage> shaderStages = {
-		{ShaderStageFlags::Vertex, shaderCode, "vertMain"},
-		{ShaderStageFlags::Fragment, shaderCode, "fragMain"}
-	};
-
-	std::vector<PushConstantRange> pushConstants = {
-		{
-			.stageFlags = static_cast<uint32_t>(ShaderStageFlags::Vertex),
-			.offset = 0,
-			.size = sizeof(glm::mat4)
-		}
-	};
-
-	PipelineCreateInfo pipelineInfo{};
-	pipelineInfo.shaderStages = shaderStages;
-	pipelineInfo.vertexBindings = { vertexBinding };
-	pipelineInfo.vertexAttributes = vertexAttributes;
-	pipelineInfo.topology = PrimitiveTopology::TriangleList;
-	pipelineInfo.polygonMode = PolygonMode::Fill;
-	pipelineInfo.cullMode = CullMode::None;
-	pipelineInfo.frontFace = FrontFace::Clockwise;
-	pipelineInfo.depthTestEnable = true;
-	pipelineInfo.depthWriteEnable = true;
-	pipelineInfo.depthCompareOp = CompareOp::Less;
-	pipelineInfo.blendEnable = false;
-	pipelineInfo.samples = SampleCount::e4;
-	pipelineInfo.colorAttachmentFormats = { TextureFormat::RGBA8_SRGB };
-	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
-	pipelineInfo.descriptorSetLayouts = { descriptorSetLayout.get() };
-	pipelineInfo.pushConstantRanges = pushConstants;
-	pipelineInfo.dynamicStates = { DynamicState::Viewport, DynamicState::Scissor };
-
-	graphicsPipeline = std::make_unique<Pipeline>(&m_device, pipelineInfo);
-}
-
 void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 {
 	UniformBufferObject ubo{};
 
 	ubo.view = m_viewMatrix;
 	ubo.proj = m_projMatrix;
-	ubo.viewPos = glm::vec4(m_cameraPosition, 1.0);
+	ubo.viewPos = glm::vec4(m_cameraPosition, 1.0f);
 
-	ubo.numLights = std::min(static_cast<int>(m_lights.size()),
-		MAX_LIGHTS);
+	ubo.numLights = std::min(static_cast<int>(m_lights.size()), MAX_LIGHTS);
 
 	for (int i = 0; i < ubo.numLights; i++)
 	{
 		const auto& light = m_lights[i];
-		ubo.lights[i].position = glm::vec4(light.position, 1.0);
-		ubo.lights[i].color = glm::vec4(light.color, 1.0);
+		ubo.lights[i].position = glm::vec4(light.position, 1.0f);
+		ubo.lights[i].color = glm::vec4(light.color, 1.0f);
 		ubo.lights[i].intensity = light.intensity;
 		ubo.lights[i].enabled = light.enabled ? 1 : 0;
 		ubo.lights[i].type = 0;
@@ -312,95 +188,101 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 
 	ubo.frameCount = static_cast<uint32_t>(m_frameCounter);
 
-	const auto& uniformBuffer = uniformBuffers[frameIndex];
-	if (uniformBuffer)
+	if (uniformBuffers[frameIndex])
+		uniformBuffers[frameIndex]->CopyFrom(&ubo, sizeof(UniformBufferObject));
+}
+
+void Renderer::CreateCommandBuffers()
+{
+	m_commandBuffers.clear();
+	m_commandBuffers.reserve(Device::s_FRAMES_IN_FLIGHT);
+
+	for (uint32_t i = 0; i < Device::s_FRAMES_IN_FLIGHT; i++)
 	{
-		uniformBuffer->CopyFrom(&ubo, sizeof(UniformBufferObject));
+		SCommandBufferCreateInfo cmdInfo{};
+		cmdInfo.device = &m_device;
+		cmdInfo.level = ECommandBufferLevel::Primary;
+		cmdInfo.count = 1;
+
+		m_commandBuffers.push_back(
+			std::make_unique<CommandBuffer>(&m_device, cmdInfo));
 	}
 }
 
 void Renderer::Render(uint32_t imageIndex)
 {
 	if (!m_running) return;
-	auto image = m_device.GetSwapchainImage(imageIndex);
 
+	auto* swapchainImage = m_device.GetSwapchainImage(imageIndex);
 
 	m_device.BeginFrame(m_currentFrame);
 
 	BuildTLAS();
 	RebuildAccelerationStructures();
 
-	if (m_tlasPerFrame[m_currentFrame])
-	{
-		graphicsDescriptorSets[m_currentFrame]->Bind(2, *m_tlasPerFrame[m_currentFrame]);
-		graphicsDescriptorSets[m_currentFrame]->Update(m_device);
-	}
-
 	UpdateUniformBuffer(m_currentFrame);
 
 	auto& cmd = m_commandBuffers[m_currentFrame];
-
 	cmd->Begin(0);
 
-	cmd->TransitionImageLayout(
-		colorImage.get(),
-		core::ImageLayout::Undefined,
-		core::ImageLayout::ColorAttachment,
-		false
-	);
-
-	cmd->TransitionImageLayout(
-		image,
-		core::ImageLayout::Undefined,
-		core::ImageLayout::TransferDst,
-		false
-	);
-
-	cmd->TransitionImageLayout(
-		depthImage.get(),
-		core::ImageLayout::Undefined,
-		core::ImageLayout::DepthStencilAttachment,
-		true
-	);
-
-	cmd->BeginRendering(
-		&m_device,
-		colorImage.get(),
-		depthImage.get()
-	);
-
-	cmd->BindPipeline(graphicsPipeline.get());
-	cmd->SetViewport(0.0f, 0.0f, &m_device);
-	cmd->SetScissor(0, 0, &m_device);
-
-	cmd->BindDescriptorSets(
-		graphicsPipeline.get(),
-		graphicsDescriptorSets[m_currentFrame].get(),
-		m_currentFrame,
-		0
-	);
-
-	for (const auto& meshInstance : m_meshInstances)
+	if (m_gBufferPass)
 	{
-		if (!meshInstance.first->vertexBuffer || !meshInstance.first->indexBuffer)
+		m_gBufferPass->SetMeshInstances(&m_meshInstances);
+
+		m_gBufferPass->UpdateDescriptorSets(m_currentFrame);
+
+		m_gBufferPass->BindDescriptorSets(*cmd, m_currentFrame);
+
+		std::vector<ColorAttachmentDesc> colorDescs;
+		for (const auto& ca : m_gBufferPass->GetColorAttachments())
 		{
-			continue;
+			ColorAttachmentDesc desc{};
+			desc.image = ca.image.get();
+			desc.clear = true;
+			desc.clearR = 0.0f;
+			desc.clearG = 0.0f;
+			desc.clearB = 0.0f;
+			desc.clearA = 1.0f;
+			colorDescs.push_back(desc);
 		}
 
-		PushConstants pushConstants;
-		pushConstants.model = meshInstance.second;
+		DepthAttachmentDesc depthDesc{};
+		if (const auto* depth = m_gBufferPass->GetDepthAttachment())
+		{
+			depthDesc.image = depth->image.get();
+			depthDesc.clear = true;
+			depthDesc.clearDepth = 1.0f;
+		}
 
-		cmd->PushConstants(
-			graphicsPipeline.get(),
-			static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
-			0,
-			sizeof(PushConstants),
-			&pushConstants
+		m_gBufferPass->Draw(*cmd, colorDescs, depthDesc);
+	}
+
+	if (m_gBufferPass && !m_gBufferPass->GetColorAttachments().empty())
+	{
+		const auto* finalImage = m_gBufferPass->GetColorAttachments()[0].image.get();
+
+		cmd->TransitionImageLayout(
+			finalImage,
+			ImageLayout::ShaderReadOnly,
+			ImageLayout::TransferSrc,
+			false
 		);
 
-		cmd->BindVertexBuffer(meshInstance.first->vertexBuffer.get());
-		cmd->BindIndexBuffer(meshInstance.first->indexBuffer.get());
-		cmd->DrawIndexed(meshInstance.first->indexCount);
+		cmd->TransitionImageLayout(
+			swapchainImage,
+			ImageLayout::Undefined,
+			ImageLayout::TransferDst,
+			false
+		);
+
+		cmd->ResolveImage(finalImage, swapchainImage, &m_device);
+
+		cmd->TransitionImageLayout(
+			swapchainImage,
+			ImageLayout::TransferDst,
+			ImageLayout::Present,
+			false
+		);
 	}
 
 #ifdef VRAKTAL_EDITOR
@@ -408,30 +290,7 @@ void Renderer::Render(uint32_t imageIndex)
 	m_device.GetImGuiContext()->DrawEditors(static_cast<void*>(cmd.get()));
 #endif
 
-	cmd->EndRendering();
-
-	cmd->TransitionImageLayout(
-		colorImage.get(),
-		core::ImageLayout::ColorAttachment,
-		core::ImageLayout::TransferSrc,
-		false
-	);
-
-	cmd->ResolveImage(
-		colorImage.get(),
-		image,
-		&m_device
-	);
-
-	cmd->TransitionImageLayout(
-		image,
-		core::ImageLayout::TransferDst,
-		core::ImageLayout::Present,
-		false
-	);
-
 	cmd->End(0);
-
 	m_commandBuffers[m_currentFrame]->Submit(&m_device, m_currentFrame);
 
 	m_currentFrame = (m_currentFrame + 1) % Device::s_FRAMES_IN_FLIGHT;
@@ -441,6 +300,7 @@ void Renderer::Render(uint32_t imageIndex)
 	m_lights.clear();
 }
 
+
 void Renderer::Cleanup()
 {
 	m_device.WaitIdle();
@@ -448,41 +308,10 @@ void Renderer::Cleanup()
 	if (!m_running) return;
 	m_running = false;
 
+	m_passes.clear(); 
+	m_gBufferPass = nullptr;
+
 	m_tlasPerFrame.clear();
 	m_commandBuffers.clear();
 	m_device.Cleanup();
-}
-
-void Renderer::CreateColorImage()
-{
-	SImageCreateInfo colorInfo{
-		.width = m_device.GetSwapchainExtent().first,
-		.height = m_device.GetSwapchainExtent().second,
-		.mipLevels = 1,
-		.format = TextureFormat::RGBA8_SRGB,
-		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc | ImageUsage::Sampled,
-		.memoryProperties = EMemoryProperty::DeviceLocal,
-		.samples = SampleCount::e4
-	};
-
-	colorImage = std::make_unique<Image>(&m_device, colorInfo);
-	colorTexture = std::make_unique<Texture>(m_device, *colorImage);
-}
-
-void Renderer::CreateDepthImage()
-{
-	SImageCreateInfo depthInfo{
-		.width = m_device.GetSwapchainExtent().first,
-		.height = m_device.GetSwapchainExtent().second,
-		.mipLevels = 1,
-		.format = TextureFormat::Depth32F,
-		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::DepthStencilAttachment | ImageUsage::Sampled,
-		.memoryProperties = EMemoryProperty::DeviceLocal,
-		.samples = SampleCount::e4
-	};
-
-	depthImage = std::make_unique<Image>(&m_device, depthInfo);
-	depthTexture = std::make_unique<Texture>(m_device, *depthImage);
 }
