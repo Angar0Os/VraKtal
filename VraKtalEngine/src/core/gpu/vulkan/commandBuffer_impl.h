@@ -53,6 +53,7 @@ namespace core::gpu
 			bool isDepth);
 
 		void ResolveImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, const core::gpu::Device* device);
+		void BlitImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, const core::gpu::Device* device);
 
 		void BuildAccelerationStructure(const core::gpu::AccelerationStructure* accelerationStructure);
 

@@ -1,13 +1,12 @@
 #include <graphics/renderer.h>
 #include <graphics/renderPass/gBufferPass.h>
+#include <graphics/renderPass/lightingPass.h>
 
 #include <core/gpu/buffer.h>
 #include <core/gpu/descriptorSet.h>
 #include <core/gpu/imguiContext.h>
 #include <core/gpu/pipeline.h>
-
 #include <core/enum.h>
-
 #include <loaders/shaderLoader.h>
 #include <loaders/textureLoader.h>
 
@@ -32,9 +31,7 @@ Renderer::Renderer(Window& window, Device& device)
 {
 	CreateCommandBuffers();
 	CreateUniformBuffers();
-
 	InitPasses();
-
 	m_tlasPerFrame.resize(Device::s_FRAMES_IN_FLIGHT);
 }
 
@@ -48,24 +45,29 @@ void Renderer::InitPasses()
 	auto gBufferPass = std::make_unique<GBufferPass>(m_device, uniformBuffers);
 	m_gBufferPass = gBufferPass.get();
 	m_passes.push_back(std::move(gBufferPass));
+
+	auto lightingPass = std::make_unique<LightingPass>(m_device, uniformBuffers);
+	m_lightingPass = lightingPass.get();
+	m_passes.push_back(std::move(lightingPass));
+
+	m_lightingPass->SetGBufferInputs(
+		m_gBufferPass->GetColorAttachments(),
+		*m_gBufferPass->GetDepthAttachment()
+	);
 }
 
 void Renderer::SetCamera(const glm::mat4& view, const glm::mat4& projection)
 {
 	m_viewMatrix = view;
 	m_projMatrix = projection;
-
-	glm::mat4 invView = glm::inverse(view);
-	m_cameraPosition = glm::vec3(invView[3]);
+	m_cameraPosition = glm::vec3(glm::inverse(view)[3]);
 }
 
 void Renderer::PushMesh(resources::Mesh* mesh, const glm::mat4& transform)
 {
 	if (!mesh) return;
-
 	if (!mesh->blas)
 		std::cerr << "Warning: Mesh pushed without BLAS!\n";
-
 	m_meshInstances.push_back({ mesh, transform });
 }
 
@@ -82,7 +84,6 @@ void Renderer::BuildTLAS()
 	instances.reserve(m_meshInstances.size());
 
 	uint32_t instanceIndex = 0;
-
 	for (const auto& meshInstance : m_meshInstances)
 	{
 		if (!meshInstance.first->blas)
@@ -92,7 +93,6 @@ void Renderer::BuildTLAS()
 		}
 
 		const glm::mat4& mat = meshInstance.second;
-
 		float transform[3][4] = {
 			{mat[0][0], mat[1][0], mat[2][0], mat[3][0]},
 			{mat[0][1], mat[1][1], mat[2][1], mat[3][1]},
@@ -123,8 +123,7 @@ void Renderer::BuildTLAS()
 	tlasInfo.preferFastTrace = true;
 	tlasInfo.allowUpdate = false;
 
-	m_tlasPerFrame[m_currentFrame] = std::make_unique<AccelerationStructure>(
-		&m_device, tlasInfo);
+	m_tlasPerFrame[m_currentFrame] = std::make_unique<AccelerationStructure>(&m_device, tlasInfo);
 }
 
 void Renderer::RebuildAccelerationStructures()
@@ -144,10 +143,6 @@ void Renderer::RebuildAccelerationStructures()
 	cmdBuffer.End(0);
 	cmdBuffer.SubmitImmediate(&m_device);
 }
-
-// =============================================================================
-// Uniform buffer
-// =============================================================================
 
 void Renderer::CreateUniformBuffers()
 {
@@ -172,9 +167,9 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 	ubo.view = m_viewMatrix;
 	ubo.proj = m_projMatrix;
 	ubo.viewPos = glm::vec4(m_cameraPosition, 1.0f);
+	ubo.viewProjInverse = glm::inverse(m_projMatrix * m_viewMatrix);
 
 	ubo.numLights = std::min(static_cast<int>(m_lights.size()), MAX_LIGHTS);
-
 	for (int i = 0; i < ubo.numLights; i++)
 	{
 		const auto& light = m_lights[i];
@@ -203,9 +198,7 @@ void Renderer::CreateCommandBuffers()
 		cmdInfo.device = &m_device;
 		cmdInfo.level = ECommandBufferLevel::Primary;
 		cmdInfo.count = 1;
-
-		m_commandBuffers.push_back(
-			std::make_unique<CommandBuffer>(&m_device, cmdInfo));
+		m_commandBuffers.push_back(std::make_unique<CommandBuffer>(&m_device, cmdInfo));
 	}
 }
 
@@ -219,7 +212,6 @@ void Renderer::Render(uint32_t imageIndex)
 
 	BuildTLAS();
 	RebuildAccelerationStructures();
-
 	UpdateUniformBuffer(m_currentFrame);
 
 	auto& cmd = m_commandBuffers[m_currentFrame];
@@ -228,9 +220,7 @@ void Renderer::Render(uint32_t imageIndex)
 	if (m_gBufferPass)
 	{
 		m_gBufferPass->SetMeshInstances(&m_meshInstances);
-
 		m_gBufferPass->UpdateDescriptorSets(m_currentFrame);
-
 		m_gBufferPass->BindDescriptorSets(*cmd, m_currentFrame);
 
 		std::vector<ColorAttachmentDesc> colorDescs;
@@ -239,10 +229,6 @@ void Renderer::Render(uint32_t imageIndex)
 			ColorAttachmentDesc desc{};
 			desc.image = ca.image.get();
 			desc.clear = true;
-			desc.clearR = 0.0f;
-			desc.clearG = 0.0f;
-			desc.clearB = 0.0f;
-			desc.clearA = 1.0f;
 			colorDescs.push_back(desc);
 		}
 
@@ -257,33 +243,38 @@ void Renderer::Render(uint32_t imageIndex)
 		m_gBufferPass->Draw(*cmd, colorDescs, depthDesc);
 	}
 
-	if (m_gBufferPass && !m_gBufferPass->GetColorAttachments().empty())
+	if (m_lightingPass)
 	{
-		const auto* finalImage = m_gBufferPass->GetColorAttachments()[0].image.get();
+		if (m_tlasPerFrame[m_currentFrame])
+			m_lightingPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
 
-		cmd->TransitionImageLayout(
-			finalImage,
-			ImageLayout::ShaderReadOnly,
-			ImageLayout::TransferSrc,
-			false
-		);
+		m_lightingPass->UpdateDescriptorSets(m_currentFrame);
+		m_lightingPass->BindDescriptorSets(*cmd, m_currentFrame);
+		m_lightingPass->Draw(*cmd, {}, {});
+	}
 
-		cmd->TransitionImageLayout(
+	cmd->TransitionImageLayout(
+		swapchainImage,
+		ImageLayout::Undefined,
+		ImageLayout::TransferDst,
+		false
+	);
+
+	if (m_lightingPass && !m_lightingPass->GetColorAttachments().empty())
+	{
+		cmd->BlitImage(
+			m_lightingPass->GetColorAttachments()[0].image.get(),
 			swapchainImage,
-			ImageLayout::Undefined,
-			ImageLayout::TransferDst,
-			false
-		);
-
-		cmd->ResolveImage(finalImage, swapchainImage, &m_device);
-
-		cmd->TransitionImageLayout(
-			swapchainImage,
-			ImageLayout::TransferDst,
-			ImageLayout::Present,
-			false
+			&m_device
 		);
 	}
+
+	cmd->TransitionImageLayout(
+		swapchainImage,
+		ImageLayout::TransferDst,
+		ImageLayout::Present,
+		false
+	);
 
 #ifdef VRAKTAL_EDITOR
 	m_device.GetImGuiContext()->PrepareDrawData();
@@ -300,7 +291,6 @@ void Renderer::Render(uint32_t imageIndex)
 	m_lights.clear();
 }
 
-
 void Renderer::Cleanup()
 {
 	m_device.WaitIdle();
@@ -308,8 +298,9 @@ void Renderer::Cleanup()
 	if (!m_running) return;
 	m_running = false;
 
-	m_passes.clear(); 
+	m_passes.clear();
 	m_gBufferPass = nullptr;
+	m_lightingPass = nullptr;
 
 	m_tlasPerFrame.clear();
 	m_commandBuffers.clear();

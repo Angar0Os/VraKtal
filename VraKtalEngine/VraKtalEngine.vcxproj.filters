@@ -261,6 +261,9 @@
     <ClInclude Include="include\graphics\renderPass\gBufferPass.h">
       <Filter>Header Files\graphics\renderPass</Filter>
     </ClInclude>
+    <ClInclude Include="include\graphics\renderPass\lightingPass.h">
+      <Filter>Header Files\graphics\renderPass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -359,12 +362,18 @@
     <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp">
       <Filter>Source Files\graphics\renderPass</Filter>
     </ClCompile>
+    <ClCompile Include="src\graphics\renderPass\lightingPass.cpp">
+      <Filter>Source Files\graphics\renderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\external\include\imGuizmo\.editorconfig">
       <Filter>External\ImGuizmo</Filter>
     </None>
     <None Include="..\bin\assets\shaders\gbuffer.slang">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="..\bin\assets\shaders\lighting.slang">
       <Filter>Resource Files\shaders</Filter>
     </None>
   </ItemGroup>

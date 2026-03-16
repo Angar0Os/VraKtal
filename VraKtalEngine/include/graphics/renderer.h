@@ -34,6 +34,7 @@ namespace graphics
 		glm::mat4 view;
 		glm::mat4 proj;
 		glm::mat4 lightSpaceMatrix;
+		glm::mat4 viewProjInverse;  
 		glm::vec4 viewPos;
 
 		struct LightData
@@ -49,7 +50,7 @@ namespace graphics
 		LightData lights[MAX_LIGHTS];
 		int       numLights;
 		uint32_t  frameCount;
-		alignas(4) uint32_t pad[7];
+		alignas(4) uint32_t pad[3]; 
 	};
 
 	struct PushConstants
@@ -73,6 +74,7 @@ namespace graphics
 		std::vector<std::unique_ptr<Pass>> m_passes;
 
 		class GBufferPass* m_gBufferPass = nullptr;
+		class LightingPass* m_lightingPass = nullptr;
 
 		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
 

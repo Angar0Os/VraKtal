@@ -297,9 +297,9 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 }
 
 void core::gpu::CommandBuffer::Impl::BeginRendering(
-	const core::gpu::Device*                                  device,
+	const core::gpu::Device* device,
 	const std::vector<CommandBuffer::RenderingAttachmentInfo>& colorAttachments,
-	const CommandBuffer::DepthAttachmentInfo&                  depthAttachment)
+	const CommandBuffer::DepthAttachmentInfo& depthAttachment)
 {
 	std::vector<vk::RenderingAttachmentInfo> vkColorAttachments;
 	vkColorAttachments.reserve(colorAttachments.size());
@@ -307,33 +307,33 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 	for (const auto& ca : colorAttachments)
 	{
 		vk::RenderingAttachmentInfo info{};
-		info.imageView   = ca.image->GetImpl().view;
+		info.imageView = ca.image->GetImpl().view;
 		info.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
-		info.loadOp      = ca.clear ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
-		info.storeOp     = vk::AttachmentStoreOp::eStore;
-		info.clearValue  = vk::ClearColorValue(ca.clearR, ca.clearG, ca.clearB, ca.clearA);
+		info.loadOp = ca.clear ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
+		info.storeOp = vk::AttachmentStoreOp::eStore;
+		info.clearValue = vk::ClearColorValue(ca.clearR, ca.clearG, ca.clearB, ca.clearA);
 		vkColorAttachments.push_back(info);
 	}
 
 	vk::RenderingAttachmentInfo vkDepth{};
 	if (depthAttachment.image)
 	{
-		vkDepth.imageView   = depthAttachment.image->GetImpl().view;
+		vkDepth.imageView = depthAttachment.image->GetImpl().view;
 		vkDepth.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
-		vkDepth.loadOp      = depthAttachment.clear ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
-		vkDepth.storeOp     = vk::AttachmentStoreOp::eStore;
-		vkDepth.clearValue  = vk::ClearDepthStencilValue(depthAttachment.clearDepth, 0);
+		vkDepth.loadOp = depthAttachment.clear ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
+		vkDepth.storeOp = vk::AttachmentStoreOp::eStore;
+		vkDepth.clearValue = vk::ClearDepthStencilValue(depthAttachment.clearDepth, 0);
 	}
 
-	uint32_t width  = device->GetImpl().swapchainExtent.width;
+	uint32_t width = device->GetImpl().swapchainExtent.width;
 	uint32_t height = device->GetImpl().swapchainExtent.height;
 
 	vk::RenderingInfo info{};
-	info.renderArea             = vk::Rect2D({ 0, 0 }, { width, height });
-	info.layerCount             = 1;
-	info.colorAttachmentCount   = static_cast<uint32_t>(vkColorAttachments.size());
-	info.pColorAttachments      = vkColorAttachments.data();
-	info.pDepthAttachment       = depthAttachment.image ? &vkDepth : nullptr;
+	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });
+	info.layerCount = 1;
+	info.colorAttachmentCount = static_cast<uint32_t>(vkColorAttachments.size());
+	info.pColorAttachments = vkColorAttachments.data();
+	info.pDepthAttachment = depthAttachment.image ? &vkDepth : nullptr;
 
 	GetCommandBuffer(currentIndex).beginRendering(info);
 }
@@ -356,8 +356,8 @@ void core::gpu::CommandBuffer::Submit(const core::gpu::Device* device, uint32_t 
 
 	vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
-	vk::Semaphore waitSemaphore = *frameSync.imageAvailable;    
-	vk::Semaphore signalSemaphore = *frameSync.renderFinished;  
+	vk::Semaphore waitSemaphore = *frameSync.imageAvailable;
+	vk::Semaphore signalSemaphore = *frameSync.renderFinished;
 
 	vk::SubmitInfo submitInfo{};
 	submitInfo.waitSemaphoreCount = 1;
@@ -546,9 +546,9 @@ void core::gpu::CommandBuffer::BeginRendering(const core::gpu::Device* device, c
 }
 
 void core::gpu::CommandBuffer::BeginRendering(
-	const core::gpu::Device*                    device,
+	const core::gpu::Device* device,
 	const std::vector<RenderingAttachmentInfo>& colorAttachments,
-	const DepthAttachmentInfo&                  depthAttachment)
+	const DepthAttachmentInfo& depthAttachment)
 {
 	m_impl->BeginRendering(device, colorAttachments, depthAttachment);
 }
@@ -664,6 +664,44 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 void core::gpu::CommandBuffer::ResolveImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, const core::gpu::Device* device)
 {
 	m_impl->ResolveImage(srcImage, dstImage, device);
+}
+
+void core::gpu::CommandBuffer::Impl::BlitImage(
+	const core::gpu::Image* srcImage,
+	const core::gpu::Image* dstImage,
+	const core::gpu::Device* device)
+{
+	uint32_t width = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
+
+	vk::ImageSubresourceLayers subRes{};
+	subRes.aspectMask = vk::ImageAspectFlagBits::eColor;
+	subRes.mipLevel = 0;
+	subRes.baseArrayLayer = 0;
+	subRes.layerCount = 1;
+
+	vk::ImageBlit region{};
+	region.srcSubresource = subRes;
+	region.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+	region.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(width), static_cast<int32_t>(height), 1 };
+	region.dstSubresource = subRes;
+	region.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+	region.dstOffsets[1] = vk::Offset3D{ static_cast<int32_t>(width), static_cast<int32_t>(height), 1 };
+
+	GetCommandBuffer(currentIndex).blitImage(
+		srcImage->GetImpl().image, vk::ImageLayout::eTransferSrcOptimal,
+		dstImage->GetImpl().image, vk::ImageLayout::eTransferDstOptimal,
+		region,
+		vk::Filter::eLinear
+	);
+}
+
+void core::gpu::CommandBuffer::BlitImage(
+	const core::gpu::Image* srcImage,
+	const core::gpu::Image* dstImage,
+	const core::gpu::Device* device)
+{
+	m_impl->BlitImage(srcImage, dstImage, device);
 }
 
 void core::gpu::CommandBuffer::CopyBuffer(const core::gpu::Buffer* srcBuffer, const core::gpu::Buffer* dstBuffer, size_t size)

@@ -356,9 +356,11 @@ void ::Device::Impl::CreateLogicalDevice()
 
 	vk::StructureChain
 		<vk::PhysicalDeviceFeatures2,
+		vk::PhysicalDeviceVulkan11Features,
 		vk::PhysicalDeviceVulkan13Features,
 		vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT> featureChain = {
 	   {.features = {.samplerAnisotropy = true} },
+	   {.shaderDrawParameters = true},
 	   {.synchronization2 = true, .dynamicRendering = true},
 	   {.extendedDynamicState = true}
 	};
@@ -520,7 +522,7 @@ void ::Device::Impl::CreateSwapchain()
 		};
 		swapchainImageViews.emplace_back(device, viewInfo);
 
-		::SPredefinedImageCreateInfo imageInfo{};		
+		::SPredefinedImageCreateInfo imageInfo{};
 		imageInfo.image = image;
 		imageInfo.extent = extent;
 		imageInfo.aspectFlags = vk::ImageAspectFlagBits::eColor;
@@ -772,7 +774,7 @@ void Device::Cleanup()
 {
 	m_impl->device.waitIdle();
 
-	m_impl->frameSyncObjects.clear();  
+	m_impl->frameSyncObjects.clear();
 	m_impl->tempCmdBufs.clear();
 }
 
@@ -787,7 +789,7 @@ const Image* Device::GetSwapchainImage(uint32_t imageIndex) const
 	return m_impl->swapchainImages[imageIndex].get();
 }
 
-std::pair<uint32_t , uint32_t> Device::GetSwapchainExtent() const
+std::pair<uint32_t, uint32_t> Device::GetSwapchainExtent() const
 {
 	if (m_impl)
 	{
@@ -815,4 +817,3 @@ ImguiContext* Device::GetImGuiContext()
 {
 	return m_imGuiContext;
 }
-

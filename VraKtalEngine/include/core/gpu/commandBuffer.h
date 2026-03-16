@@ -84,6 +84,7 @@ namespace core::gpu
 
         void TransitionImageLayout(const core::gpu::Image* _image, ImageLayout _oldLayout, ImageLayout _newLayout, bool _isDepth = false);
         void ResolveImage(const core::gpu::Image* _srcImage, const core::gpu::Image* _dstImage, const core::gpu::Device* device);
+        void BlitImage(const core::gpu::Image* _srcImage, const core::gpu::Image* _dstImage, const core::gpu::Device* device);
 
         void CopyBuffer(const core::gpu::Buffer* _srcBuffer, const core::gpu::Buffer* _dstBuffer, size_t _size);
 
