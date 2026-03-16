@@ -17,7 +17,7 @@ using namespace core;
 using namespace core::gpu;
 using namespace graphics;
 
-//#define VRAKTAL_EDITOR
+#define VRAKTAL_EDITOR
 
 Renderer::Renderer(Window& window, Device& device)
 	: m_window(window)
@@ -277,8 +277,33 @@ void Renderer::Render(uint32_t imageIndex)
 	);
 
 #ifdef VRAKTAL_EDITOR
+	cmd->TransitionImageLayout(
+		swapchainImage,
+		ImageLayout::Present,
+		ImageLayout::ColorAttachment, 
+		false
+	);
+
+	CommandBuffer::RenderingAttachmentInfo imguiColor{};
+	imguiColor.image = swapchainImage;
+	imguiColor.clear = false;
+
+	CommandBuffer::DepthAttachmentInfo noDepth{};
+	noDepth.image = nullptr;
+
+	cmd->BeginRendering(&m_device, { imguiColor }, noDepth);
+
 	m_device.GetImGuiContext()->PrepareDrawData();
 	m_device.GetImGuiContext()->DrawEditors(static_cast<void*>(cmd.get()));
+
+	cmd->EndRendering();
+
+	cmd->TransitionImageLayout(
+		swapchainImage,
+		ImageLayout::ColorAttachment,  
+		ImageLayout::Present,
+		false
+	);
 #endif
 
 	cmd->End(0);

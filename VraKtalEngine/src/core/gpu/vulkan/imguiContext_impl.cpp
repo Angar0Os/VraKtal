@@ -131,7 +131,7 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	init_info.DescriptorPool = imguiDescriptorPool;
 	init_info.MinImageCount = 2;
 	init_info.ImageCount = _device.GetImpl().swapchainImages.size();
-	init_info.MSAASamples = VK_SAMPLE_COUNT_4_BIT;
+	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 	init_info.RenderPass = VK_NULL_HANDLE;
     init_info.UseDynamicRendering = VK_TRUE;
     init_info.PipelineRenderingCreateInfo = {};

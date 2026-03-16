@@ -714,6 +714,34 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 		srcStage = vk::PipelineStageFlagBits::eTransfer;
 		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
 	}
+	else if (oldLayout == ImageLayout::TransferDst && newLayout == ImageLayout::ColorAttachment)
+	{
+		srcAccess = vk::AccessFlagBits::eTransferWrite;
+		dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		srcStage = vk::PipelineStageFlagBits::eTransfer;
+		dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
+	else if (oldLayout == ImageLayout::ColorAttachment && newLayout == ImageLayout::Present)
+	{
+		srcAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		dstAccess = vk::AccessFlagBits::eMemoryRead;
+		srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		dstStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+	}
+	else if (oldLayout == ImageLayout::Present && newLayout == ImageLayout::TransferDst)
+	{
+		srcAccess = vk::AccessFlagBits::eMemoryRead;
+		dstAccess = vk::AccessFlagBits::eTransferWrite;
+		srcStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+		dstStage = vk::PipelineStageFlagBits::eTransfer;
+	}
+	else if (oldLayout == ImageLayout::Present && newLayout == ImageLayout::ColorAttachment)
+	{
+		srcAccess = vk::AccessFlagBits::eMemoryRead;
+		dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		srcStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+		dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
 	else
 	{
 		throw std::runtime_error("Unsupported layout transition!");
