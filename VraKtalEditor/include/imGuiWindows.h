@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "contentDrawer.h"
+#include <core/window.h>
 #include "newProjectModal.h"
 #include "command/commandHistory.h"
 
@@ -15,7 +16,7 @@ namespace graphics {
 class ImGuiWindows
 {
 public:
-	ImGuiWindows(graphics::Renderer* _renderer);
+	ImGuiWindows(graphics::Renderer* _renderer, core::Window* window);
 	~ImGuiWindows();
 
     void PrepareImGuiWindows();
@@ -33,6 +34,7 @@ private:
     void LoadProject();
 
 	ContentDrawer m_contentDrawer;
+    core::Window* m_window;
     NewProjectModal m_newProjectModal;
 
 	std::unique_ptr<command::CommandHistory> m_commandHistory;
