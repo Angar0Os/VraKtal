@@ -1,14 +1,15 @@
 #include <graphics/renderPass/gBufferPass.h>
 
+#include <loaders/materialLoader.h>
+
 #include <core/gpu/descriptorSet.h>
 #include <core/enum.h>
 #include <loaders/shaderLoader.h>
 
-#include <iostream>
-
 using namespace core;
 using namespace core::gpu;
 using namespace graphics::resources;
+
 
 graphics::GBufferPass::GBufferPass(Device& device,
 	const std::vector<std::unique_ptr<Buffer>>& uniformBuffers)
@@ -21,13 +22,12 @@ graphics::GBufferPass::GBufferPass(Device& device,
 
 void graphics::GBufferPass::Init(Device& device)
 {
-	if (m_debugEnabled)
-		std::cout << "[Pass:" << m_name << "] Init\n";
-
 	CreateAttachments();
 	CreateDescriptorSetLayout();
+	CreateMaterialLayout();
 	CreatePipeline();
 	CreateDescriptorSets();
+	CreateFallbackMaterial();
 }
 
 void graphics::GBufferPass::CreateAttachments()
@@ -35,7 +35,7 @@ void graphics::GBufferPass::CreateAttachments()
 	auto [width, height] = m_device.GetSwapchainExtent();
 
 	const TextureFormat colorFormats[] = {
-		TextureFormat::RGBA8_UNorm,
+		TextureFormat::RGBA8_SRGB,
 		TextureFormat::RGBA16_Float,
 	};
 
@@ -54,28 +54,22 @@ void graphics::GBufferPass::CreateAttachments()
 			.memoryProperties = EMemoryProperty::DeviceLocal,
 			.samples = SampleCount::e1
 		};
-
 		m_colorAttachments[i].image = std::make_unique<Image>(&m_device, info);
-		m_colorAttachments[i].texture = std::make_unique<Texture>(m_device,
-			*m_colorAttachments[i].image);
+		m_colorAttachments[i].texture = std::make_unique<Texture>(m_device, *m_colorAttachments[i].image);
 	}
 
-	{
-		SImageCreateInfo depthInfo{
-			.width = width,
-			.height = height,
-			.mipLevels = 1,
-			.format = TextureFormat::Depth32F,
-			.tiling = ImageTiling::Optimal,
-			.usage = ImageUsage::DepthStencilAttachment | ImageUsage::Sampled,
-			.memoryProperties = EMemoryProperty::DeviceLocal,
-			.samples = SampleCount::e1
-		};
-
-		m_depthAttachment.image = std::make_unique<Image>(&m_device, depthInfo);
-		m_depthAttachment.texture = std::make_unique<Texture>(m_device,
-			*m_depthAttachment.image);
-	}
+	SImageCreateInfo depthInfo{
+		.width = width,
+		.height = height,
+		.mipLevels = 1,
+		.format = TextureFormat::Depth32F,
+		.tiling = ImageTiling::Optimal,
+		.usage = ImageUsage::DepthStencilAttachment | ImageUsage::Sampled,
+		.memoryProperties = EMemoryProperty::DeviceLocal,
+		.samples = SampleCount::e1
+	};
+	m_depthAttachment.image = std::make_unique<Image>(&m_device, depthInfo);
+	m_depthAttachment.texture = std::make_unique<Texture>(m_device, *m_depthAttachment.image);
 }
 
 void graphics::GBufferPass::CreateDescriptorSetLayout()
@@ -86,13 +80,40 @@ void graphics::GBufferPass::CreateDescriptorSetLayout()
 		.stageFlags = core::ShaderStage::Vertex | core::ShaderStage::Fragment
 	};
 
-	SDescriptorSetLayoutCreateInfo layoutInfo{
-		.bindings = { uboBinding }
+	m_dsLayouts.clear();
+	m_dsLayouts.push_back(std::make_unique<DescriptorSetLayout>(
+		&m_device,
+		SDescriptorSetLayoutCreateInfo{ .bindings = { uboBinding } }
+	));
+}
+
+void graphics::GBufferPass::CreateMaterialLayout()
+{
+	SDescriptorSetLayoutBinding albedoBinding{
+		.binding = 1,
+		.descriptorType = EDescriptorType::CombinedImageSampler,
+		.stageFlags = core::ShaderStage::Fragment
+	};
+	SDescriptorSetLayoutBinding normalBinding{
+		.binding = 2,
+		.descriptorType = EDescriptorType::CombinedImageSampler,
+		.stageFlags = core::ShaderStage::Fragment
+	};
+	SDescriptorSetLayoutBinding roughMetalBinding{
+		.binding = 3,
+		.descriptorType = EDescriptorType::CombinedImageSampler,
+		.stageFlags = core::ShaderStage::Fragment
 	};
 
-	m_dsLayouts.clear();
-	m_dsLayouts.push_back(
-		std::make_unique<DescriptorSetLayout>(&m_device, layoutInfo));
+	m_materialLayout = std::make_unique<DescriptorSetLayout>(
+		&m_device,
+		SDescriptorSetLayoutCreateInfo{ .bindings = { albedoBinding, normalBinding, roughMetalBinding } }
+	);
+}
+
+void graphics::GBufferPass::CreateFallbackMaterial()
+{
+	m_fallbackMaterial = loaders::MaterialLoader::CreateDefault(m_device, m_materialLayout.get());
 }
 
 void graphics::GBufferPass::CreatePipeline()
@@ -111,11 +132,6 @@ void graphics::GBufferPass::CreatePipeline()
 		{2, 0, TextureFormat::RG32_Float,  offsetof(resources::Vertex, uv)}
 	};
 
-	std::vector<core::gpu::ShaderStage> shaderStages = {
-		{ShaderStageFlags::Vertex,   shaderCode, "vertMain"},
-		{ShaderStageFlags::Fragment, shaderCode, "fragMain"}
-	};
-
 	std::vector<PushConstantRange> pushConstants = {
 		{
 			.stageFlags = static_cast<uint32_t>(ShaderStageFlags::Vertex),
@@ -124,13 +140,11 @@ void graphics::GBufferPass::CreatePipeline()
 		}
 	};
 
-	std::vector<TextureFormat> colorFormats = {
-		TextureFormat::RGBA8_UNorm,
-		TextureFormat::RGBA16_Float,
-	};
-
 	PipelineCreateInfo pipelineInfo{};
-	pipelineInfo.shaderStages = shaderStages;
+	pipelineInfo.shaderStages = {
+		{ShaderStageFlags::Vertex,   shaderCode, "vertMain"},
+		{ShaderStageFlags::Fragment, shaderCode, "fragMain"}
+	};
 	pipelineInfo.vertexBindings = { vertexBinding };
 	pipelineInfo.vertexAttributes = vertexAttributes;
 	pipelineInfo.topology = PrimitiveTopology::TriangleList;
@@ -142,9 +156,9 @@ void graphics::GBufferPass::CreatePipeline()
 	pipelineInfo.depthCompareOp = CompareOp::Less;
 	pipelineInfo.blendEnable = false;
 	pipelineInfo.samples = SampleCount::e1;
-	pipelineInfo.colorAttachmentFormats = colorFormats;
+	pipelineInfo.colorAttachmentFormats = { TextureFormat::RGBA8_SRGB, TextureFormat::RGBA16_Float };
 	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
-	pipelineInfo.descriptorSetLayouts = { m_dsLayouts[0].get() };
+	pipelineInfo.descriptorSetLayouts = { m_dsLayouts[0].get(), m_materialLayout.get() };
 	pipelineInfo.pushConstantRanges = pushConstants;
 	pipelineInfo.dynamicStates = { DynamicState::Viewport, DynamicState::Scissor };
 
@@ -172,39 +186,17 @@ void graphics::GBufferPass::UpdateDescriptorSets(uint32_t frameIndex)
 
 void graphics::GBufferPass::BindDescriptorSets(CommandBuffer& cmd, uint32_t frameIndex)
 {
-	cmd.BindDescriptorSets(
-		m_pipeline.get(),
-		m_descriptorSets[frameIndex].get(),
-		frameIndex,
-		0
-	);
+	cmd.BindDescriptorSets(m_pipeline.get(), m_descriptorSets[frameIndex].get(), frameIndex, 0);
 }
 
 void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 	const std::vector<ColorAttachmentDesc>& colorAttachments,
 	const DepthAttachmentDesc& depthAttachment)
 {
-	if (m_debugEnabled)
-		std::cout << "[Pass:" << m_name << "] Draw\n";
-
-	auto [width, height] = m_device.GetSwapchainExtent();
-
 	for (auto& ca : m_colorAttachments)
-	{
-		cmd.TransitionImageLayout(
-			ca.image.get(),
-			ImageLayout::Undefined,
-			ImageLayout::ColorAttachment,
-			false
-		);
-	}
+		cmd.TransitionImageLayout(ca.image.get(), ImageLayout::Undefined, ImageLayout::ColorAttachment, false);
 
-	cmd.TransitionImageLayout(
-		m_depthAttachment.image.get(),
-		ImageLayout::Undefined,
-		ImageLayout::DepthStencilAttachment,
-		true
-	);
+	cmd.TransitionImageLayout(m_depthAttachment.image.get(), ImageLayout::Undefined, ImageLayout::DepthStencilAttachment, true);
 
 	std::vector<CommandBuffer::RenderingAttachmentInfo> colorInfos;
 	colorInfos.reserve(m_colorAttachments.size());
@@ -213,10 +205,6 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 		CommandBuffer::RenderingAttachmentInfo info{};
 		info.image = ca.image.get();
 		info.clear = true;
-		info.clearR = 0.0f;
-		info.clearG = 0.0f;
-		info.clearB = 0.0f;
-		info.clearA = 1.0f;
 		colorInfos.push_back(info);
 	}
 
@@ -226,7 +214,6 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 	depthInfo.clearDepth = 1.0f;
 
 	cmd.BeginRendering(&m_device, colorInfos, depthInfo);
-
 	cmd.BindPipeline(m_pipeline.get());
 	cmd.SetViewport(0.0f, 0.0f, &m_device);
 	cmd.SetScissor(0, 0, &m_device);
@@ -238,39 +225,35 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 			if (!mesh->vertexBuffer || !mesh->indexBuffer)
 				continue;
 
+			cmd.BindVertexBuffer(mesh->vertexBuffer.get());
+			cmd.BindIndexBuffer(mesh->indexBuffer.get());
+
 			glm::mat4 model = transform;
 			cmd.PushConstants(
 				m_pipeline.get(),
 				static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
-				0,
-				sizeof(glm::mat4),
-				&model
+				0, sizeof(glm::mat4), &model
 			);
 
-			cmd.BindVertexBuffer(mesh->vertexBuffer.get());
-			cmd.BindIndexBuffer(mesh->indexBuffer.get());
-			cmd.DrawIndexed(mesh->indexCount);
+			for (const auto& submesh : mesh->GetSubmeshes())
+			{
+				auto* mat = mesh->GetMaterial(submesh.materialIndex);
+				if (!mat) mat = m_fallbackMaterial.get();
+
+				if (mat && mat->descriptorSet)
+					cmd.BindDescriptorSets(m_pipeline.get(), mat->descriptorSet.get(), 0, 1);
+
+				cmd.DrawIndexed(submesh.indexCount, 1, submesh.firstIndex, submesh.vertexOffset, 0);
+			}
 		}
 	}
 
 	cmd.EndRendering();
 
 	for (auto& ca : m_colorAttachments)
-	{
-		cmd.TransitionImageLayout(
-			ca.image.get(),
-			ImageLayout::ColorAttachment,
-			ImageLayout::ShaderReadOnly,
-			false
-		);
-	}
+		cmd.TransitionImageLayout(ca.image.get(), ImageLayout::ColorAttachment, ImageLayout::ShaderReadOnly, false);
 
-	cmd.TransitionImageLayout(
-		m_depthAttachment.image.get(),
-		ImageLayout::DepthStencilAttachment,
-		ImageLayout::ShaderReadOnly,
-		true
-	);
+	cmd.TransitionImageLayout(m_depthAttachment.image.get(), ImageLayout::DepthStencilAttachment, ImageLayout::ShaderReadOnly, true);
 }
 
 void graphics::GBufferPass::SetMeshInstances(

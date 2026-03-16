@@ -87,6 +87,7 @@ namespace core::gpu
         void BlitImage(const core::gpu::Image* _srcImage, const core::gpu::Image* _dstImage, const core::gpu::Device* device);
 
         void CopyBuffer(const core::gpu::Buffer* _srcBuffer, const core::gpu::Buffer* _dstBuffer, size_t _size);
+        void CopyBufferToImage(const core::gpu::Buffer* _srcBuffer, const core::gpu::Image* _dstImage, uint32_t width, uint32_t height);
 
         void PushConstants(const core::gpu::Pipeline* _pipeline, uint32_t _stageFlags, uint32_t _offset, uint32_t _size, const void* _pValues);
 

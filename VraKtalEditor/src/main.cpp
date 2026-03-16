@@ -1,17 +1,15 @@
 #include <iostream>
-
 #include <core/window.h>
 #include <core/gpu/device.h>
 #include <core/gpu/image.h>
-
-#include <graphics/renderer.h>
-#include <graphics/resources/object/light.h>
-
 #include <core/gpu/imguiContext.h>
-#include "imGuiWindows.h"
-
+#include <graphics/renderer.h>
+#include <graphics/renderPass/gBufferPass.h>
+#include <graphics/resources/object/light.h>
+#include <graphics/resources/object/material.h>
 #include <loaders/meshLoader.h>
-
+#include <loaders/materialLoader.h>
+#include "imGuiWindows.h"
 #include "utils/yamlParser.h"
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
@@ -19,22 +17,40 @@
 int main()
 {
 	core::Window window(800, 600, "VraKtal Engine");
-	
 	core::gpu::Device device(window);
 	graphics::Renderer renderer(window, device);
 	loaders::MeshLoader loader(&device);
 	ImGuiWindows imGuiWindows = ImGuiWindows(&renderer);
 
 	device.GetImGuiContext()->BindPrepareDrawData([&]()
-	{
-		 imGuiWindows.PrepareImGuiWindows();
-	});
+		{
+			imGuiWindows.PrepareImGuiWindows();
+		});
 
 	auto vikingRoomMesh = loader.LoadMesh("assets/models/viking_room.obj");
 	auto planeMesh = loader.CreatePlane(10.0f, 10.0f, 10, 10);
 
-	const float aspectRatio = 800.0f / 600.0f;
+	auto* matLayout = renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
 
+	{
+		graphics::resources::object::Material mat;
+		mat.SetTexture("assets/textures/viking_room.png", "albedo");
+		mat.SetMetallicRoughness(0.0f, 0.8f);
+		vikingRoomMesh->materials.push_back(
+			loaders::MaterialLoader::Load(device, mat, matLayout)
+		);
+	}
+
+	{
+		graphics::resources::object::Material mat;
+		mat.SetAlbedo(0.9f, 0.0f, 0.2f);
+		mat.SetMetallicRoughness(0.0f, 0.9f);
+		planeMesh->materials.push_back(
+			loaders::MaterialLoader::Load(device, mat, matLayout)
+		);
+	}
+
+	const float aspectRatio = 800.0f / 600.0f;
 	glm::mat4 projection = glm::perspectiveLH_ZO(
 		glm::radians(45.0f),
 		aspectRatio,
@@ -44,27 +60,22 @@ int main()
 	projection[1][1] *= -1;
 
 	glm::vec3 cameraPosition = glm::vec3(0.0f, 3.0f, -5.0f);
-
 	glm::mat4 view = glm::lookAtLH(
 		cameraPosition,
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 1.0f, 0.0f)
 	);
 
-	float time = 0.0f;
-	float timeStepT = 1.0f / 240.0f;
-	const float timeStep = timeStepT / 5.0f;
+	float       time = 0.0f;
+	const float timeStep = (1.0f / 240.0f) / 5.0f;
 
 	uint32_t currentFrameIndex = 0;
 	uint32_t frameCounter = 0;
 
 	utils::YamlParser parser("project.yaml");
-
 	std::vector<graphics::resources::Light> lights;
-
-	if (parser.IsValid()) {
+	if (parser.IsValid())
 		lights = parser.LoadLights();
-	}
 
 	while (!window.ShouldClose())
 	{
@@ -81,8 +92,7 @@ int main()
 
 		renderer.SetCamera(view, projection);
 
-		glm::mat4 planeTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-		renderer.PushMesh(planeMesh.get(), planeTransform);
+		renderer.PushMesh(planeMesh.get(), glm::mat4(1.0f));
 
 		glm::mat4 meshTransform1 = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 0.1f, 0.0f));
 		meshTransform1 = glm::rotate(meshTransform1, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -92,19 +102,32 @@ int main()
 		meshTransform2 = glm::rotate(meshTransform2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		renderer.PushMesh(vikingRoomMesh.get(), meshTransform2);
 
-		graphics::resources::Light mainLight;
-		mainLight.name = "Main Light";
-		mainLight.position = glm::vec3(
-			3.0f * glm::cos(time),
-			4.0f,
-			3.0f * glm::sin(time)
-		);
-		mainLight.color = glm::vec3(1.0f, 0.95f, 0.4f);
-		mainLight.intensity = 10.0f;
-		mainLight.radius = 0.2f + 0.2f * glm::sin(time * 2.0f);
-		mainLight.enabled = true;
+		graphics::resources::Light light1;
+		light1.name = "Yellow Light 1";
+		light1.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
+		light1.color = glm::vec3(1.0f, 0.9f, 0.2f);
+		light1.intensity = 10.0f;
+		light1.radius = 0.1f;
+		light1.enabled = true;
+		renderer.PushLight(light1);
 
-		renderer.PushLight(mainLight);
+		graphics::resources::Light light2;
+		light2.name = "Yellow Light 2";
+		light2.position = glm::vec3(3.0f * glm::cos(time + glm::pi<float>()), 3.0f, 3.0f * glm::sin(time + glm::pi<float>()));
+		light2.color = glm::vec3(1.0f, 0.85f, 0.1f);
+		light2.intensity = 8.0f;
+		light2.radius = 0.1f;
+		light2.enabled = true;
+		renderer.PushLight(light2);
+
+		graphics::resources::Light light3;
+		light3.name = "Blue Light";
+		light3.position = glm::vec3(0.0f, 6.0f, 0.0f);
+		light3.color = glm::vec3(0.2f, 0.4f, 1.0f);
+		light3.intensity = 15.0f;
+		light3.radius = 0.1f;
+		light3.enabled = true;
+		renderer.PushLight(light3);
 
 		renderer.Render(imageIndex);
 		device.Present(imageIndex, currentFrameIndex);

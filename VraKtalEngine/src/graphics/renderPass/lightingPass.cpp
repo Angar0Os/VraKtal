@@ -51,25 +51,21 @@ void graphics::LightingPass::CreateDescriptorSetLayout()
 		.descriptorType = EDescriptorType::UniformBuffer,
 		.stageFlags = core::ShaderStage::Fragment
 	};
-
 	SDescriptorSetLayoutBinding albedoBinding{
 		.binding = 1,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
 		.stageFlags = core::ShaderStage::Fragment
 	};
-
 	SDescriptorSetLayoutBinding normalBinding{
 		.binding = 2,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
 		.stageFlags = core::ShaderStage::Fragment
 	};
-
 	SDescriptorSetLayoutBinding depthBinding{
 		.binding = 3,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
 		.stageFlags = core::ShaderStage::Fragment
 	};
-
 	SDescriptorSetLayoutBinding tlasBinding{
 		.binding = 4,
 		.descriptorType = EDescriptorType::AccelerationStructure,
@@ -144,14 +140,6 @@ void graphics::LightingPass::SetGBufferInputs(const std::vector<PassAttachment>&
 void graphics::LightingPass::SetTLAS(AccelerationStructure* tlas)
 {
 	m_tlas = tlas;
-
-	if (!m_tlas) return;
-
-	for (uint32_t i = 0; i < Device::s_FRAMES_IN_FLIGHT; ++i)
-	{
-		m_descriptorSets[i]->Bind(4, *m_tlas);
-		m_descriptorSets[i]->Update(m_device);
-	}
 }
 
 void graphics::LightingPass::UpdateDescriptorSets(uint32_t frameIndex)

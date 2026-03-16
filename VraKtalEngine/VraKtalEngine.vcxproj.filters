@@ -264,6 +264,12 @@
     <ClInclude Include="include\graphics\renderPass\lightingPass.h">
       <Filter>Header Files\graphics\renderPass</Filter>
     </ClInclude>
+    <ClInclude Include="include\graphics\materialInstance.h">
+      <Filter>Header Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\loaders\materialLoader.h">
+      <Filter>Header Files\loaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -364,6 +370,9 @@
     </ClCompile>
     <ClCompile Include="src\graphics\renderPass\lightingPass.cpp">
       <Filter>Source Files\graphics\renderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="src\loaders\materialLoader.cpp">
+      <Filter>Source Files\loaders</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

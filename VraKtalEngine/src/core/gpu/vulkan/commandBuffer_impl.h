@@ -40,6 +40,7 @@ namespace core::gpu
 		void EndRendering();
 
 		void CopyBuffer(const core::gpu::Buffer* srcBuffer, const core::gpu::Buffer* dstBuffer, size_t size);
+		void CopyBufferToImage(const core::gpu::Buffer* srcBuffer, const core::gpu::Image* dstImage, uint32_t width, uint32_t height);
 
 		void PushConstants(const core::gpu::Pipeline* pipeline, uint32_t stageFlags, uint32_t offset, uint32_t size, const void* pValues);
 

@@ -485,6 +485,36 @@ void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcIma
 	);
 }
 
+void core::gpu::CommandBuffer::Impl::BlitImage(
+	const core::gpu::Image* srcImage,
+	const core::gpu::Image* dstImage,
+	const core::gpu::Device* device)
+{
+	uint32_t width = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
+
+	vk::ImageSubresourceLayers subRes{};
+	subRes.aspectMask = vk::ImageAspectFlagBits::eColor;
+	subRes.mipLevel = 0;
+	subRes.baseArrayLayer = 0;
+	subRes.layerCount = 1;
+
+	vk::ImageBlit region{};
+	region.srcSubresource = subRes;
+	region.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+	region.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(width), static_cast<int32_t>(height), 1 };
+	region.dstSubresource = subRes;
+	region.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+	region.dstOffsets[1] = vk::Offset3D{ static_cast<int32_t>(width), static_cast<int32_t>(height), 1 };
+
+	GetCommandBuffer(currentIndex).blitImage(
+		srcImage->GetImpl().image, vk::ImageLayout::eTransferSrcOptimal,
+		dstImage->GetImpl().image, vk::ImageLayout::eTransferDstOptimal,
+		region,
+		vk::Filter::eLinear
+	);
+}
+
 void core::gpu::CommandBuffer::Impl::CopyBuffer(const core::gpu::Buffer* srcBuffer, const core::gpu::Buffer* dstBuffer, size_t size)
 {
 	vk::BufferCopy copyRegion;
@@ -493,6 +523,30 @@ void core::gpu::CommandBuffer::Impl::CopyBuffer(const core::gpu::Buffer* srcBuff
 	copyRegion.size = size;
 
 	GetCommandBuffer(currentIndex).copyBuffer(srcBuffer->GetImpl().buffer, dstBuffer->GetImpl().buffer, copyRegion);
+}
+
+void core::gpu::CommandBuffer::Impl::CopyBufferToImage(
+	const core::gpu::Buffer* srcBuffer,
+	const core::gpu::Image* dstImage,
+	uint32_t width, uint32_t height)
+{
+	vk::BufferImageCopy region{};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+	region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	region.imageOffset = vk::Offset3D{ 0, 0, 0 };
+	region.imageExtent = vk::Extent3D{ width, height, 1 };
+
+	GetCommandBuffer(currentIndex).copyBufferToImage(
+		srcBuffer->GetImpl().buffer,
+		dstImage->GetImpl().image,
+		vk::ImageLayout::eTransferDstOptimal,
+		region
+	);
 }
 
 uint32_t core::gpu::CommandBuffer::GetCount() const
@@ -653,6 +707,13 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 		srcStage = vk::PipelineStageFlagBits::eLateFragmentTests;
 		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
 	}
+	else if (oldLayout == ImageLayout::TransferDst && newLayout == ImageLayout::ShaderReadOnly)
+	{
+		srcAccess = vk::AccessFlagBits::eTransferWrite;
+		dstAccess = vk::AccessFlagBits::eShaderRead;
+		srcStage = vk::PipelineStageFlagBits::eTransfer;
+		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+	}
 	else
 	{
 		throw std::runtime_error("Unsupported layout transition!");
@@ -666,36 +727,6 @@ void core::gpu::CommandBuffer::ResolveImage(const core::gpu::Image* srcImage, co
 	m_impl->ResolveImage(srcImage, dstImage, device);
 }
 
-void core::gpu::CommandBuffer::Impl::BlitImage(
-	const core::gpu::Image* srcImage,
-	const core::gpu::Image* dstImage,
-	const core::gpu::Device* device)
-{
-	uint32_t width = device->GetImpl().swapchainExtent.width;
-	uint32_t height = device->GetImpl().swapchainExtent.height;
-
-	vk::ImageSubresourceLayers subRes{};
-	subRes.aspectMask = vk::ImageAspectFlagBits::eColor;
-	subRes.mipLevel = 0;
-	subRes.baseArrayLayer = 0;
-	subRes.layerCount = 1;
-
-	vk::ImageBlit region{};
-	region.srcSubresource = subRes;
-	region.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
-	region.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(width), static_cast<int32_t>(height), 1 };
-	region.dstSubresource = subRes;
-	region.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
-	region.dstOffsets[1] = vk::Offset3D{ static_cast<int32_t>(width), static_cast<int32_t>(height), 1 };
-
-	GetCommandBuffer(currentIndex).blitImage(
-		srcImage->GetImpl().image, vk::ImageLayout::eTransferSrcOptimal,
-		dstImage->GetImpl().image, vk::ImageLayout::eTransferDstOptimal,
-		region,
-		vk::Filter::eLinear
-	);
-}
-
 void core::gpu::CommandBuffer::BlitImage(
 	const core::gpu::Image* srcImage,
 	const core::gpu::Image* dstImage,
@@ -707,6 +738,14 @@ void core::gpu::CommandBuffer::BlitImage(
 void core::gpu::CommandBuffer::CopyBuffer(const core::gpu::Buffer* srcBuffer, const core::gpu::Buffer* dstBuffer, size_t size)
 {
 	m_impl->CopyBuffer(srcBuffer, dstBuffer, size);
+}
+
+void core::gpu::CommandBuffer::CopyBufferToImage(
+	const core::gpu::Buffer* srcBuffer,
+	const core::gpu::Image* dstImage,
+	uint32_t width, uint32_t height)
+{
+	m_impl->CopyBufferToImage(srcBuffer, dstImage, width, height);
 }
 
 void core::gpu::CommandBuffer::PushConstants(const core::gpu::Pipeline* pipeline,
