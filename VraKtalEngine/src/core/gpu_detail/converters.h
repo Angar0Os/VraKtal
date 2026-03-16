@@ -18,6 +18,7 @@ namespace core::gpu_detail
 	vk::ImageTiling             ToVulkan(core::ImageTiling tiling);
 	vk::SampleCountFlagBits     ToVulkan(core::SampleCount samples);
 	vk::Format                  ToVulkan(core::TextureFormat format);
+	vk::ImageAspectFlags        ToVulkanAspestMask(core::TextureFormat format);
 	vk::DescriptorType          ToVulkan(core::EDescriptorType type);
 	vk::CommandPoolCreateFlags  ToVulkan(core::CommandPoolCreateFlags flags);
 	vk::VertexInputRate         ToVulkan(core::VertexInputRate rate);

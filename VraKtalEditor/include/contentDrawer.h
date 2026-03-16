@@ -3,9 +3,11 @@
 #pragma once
 
 #include "utils/fileTypeDetector.h"
+#include "command/commandHistory.h"
 
 #include <filesystem>
 #include <set>
+#include <memory>
 
 struct FileEntry {
 	std::filesystem::path path;
@@ -38,6 +40,8 @@ private:
 	ClipboardAction m_clipboardAction = ClipboardAction::None;
 	std::vector<std::filesystem::path> m_clipboardPaths;
 
+	command::CommandHistory* m_commandHistory = nullptr;
+
 	const char* GetIconForFileType(FileType type);
 	void RefreshFileList();
 	void ClearSelection();
@@ -56,9 +60,13 @@ private:
 
 public:
 	ContentDrawer();
+	~ContentDrawer();
 
 	void GetContentDrawerWindow();
 	void SetCurrentPath(std::filesystem::path newPath);
 };
 
 #endif //EDITOR_WINDOWS_CONTENTDRAWER_H
+
+	void SetCommandHistory(command::CommandHistory* history);
+};
