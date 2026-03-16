@@ -16,7 +16,7 @@ namespace graphics {
 class ImGuiWindows
 {
 public:
-	ImGuiWindows(graphics::Renderer* _renderer, core::Window* window);
+    ImGuiWindows(graphics::Renderer* _renderer, core::Window* window);
 	~ImGuiWindows();
 
     void PrepareImGuiWindows();
