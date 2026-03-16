@@ -1,7 +1,11 @@
 
 #include "imGuiWindows.h"
 #include "contentDrawer.h"
+#include "command/fileCommands.h"
 #include "imgui/imgui.h"
+
+#include <core/gpu/buffer.h>
+
 #include <graphics/resources/object/camera.h>
 #include <graphics/renderer.h>
 
@@ -12,16 +16,25 @@
 #include <imGuizmo/ImGuizmo.h>
 #include <imgui/imgui.h>
 
+#include "portable-file-dialogs/portable-file-dialogs.h"
+
 #include <iostream>
+#include <MDI/IconsMaterialDesignIcons.h>
 
 ImGuiWindows::ImGuiWindows(graphics::Renderer* _renderer, core::Window* window)
 {
 	m_renderer = _renderer;
 	m_window = window;
+
+	command::ClearBackupDirectory();
+
+	m_commandHistory = std::make_unique<command::CommandHistory>(100);
+	m_contentDrawer.SetCommandHistory(m_commandHistory.get());
 }
 
 ImGuiWindows::~ImGuiWindows()
 {
+	command::ClearBackupDirectory();
 }
 
 void ImGuiWindows::PrepareImGuiWindows()
@@ -47,6 +60,18 @@ void ImGuiWindows::PrepareImGuiWindows()
     testWindow();
 	ContentDrawerWindow();
     HierarchyWindow();
+
+	m_newProjectModal.GetNewProjectModalWindow();
+
+	if (m_newProjectModal.HasNewProjectCreated()) {
+		std::filesystem::path lastProjectPath = m_newProjectModal.GetLastCreatedProjectPath();
+
+		if (!lastProjectPath.empty()) {
+			m_contentDrawer.SetCurrentPath(lastProjectPath);
+		}
+
+		m_newProjectModal.ResetProjectCreatedFlag();
+	}
 }
 
 void ImGuiWindows::ContentDrawerWindow()
@@ -152,9 +177,13 @@ void ImGuiWindows::mainWindow()
 void ImGuiWindows::SetMenuBar() {
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("New Project")) {}
+			if (ImGui::MenuItem("New Project")) {
+				m_newProjectModal.ToggleNewProjectModal();
+			}
 
-			if (ImGui::MenuItem("Open Project")) {}
+			if (ImGui::MenuItem("Open Project")) {
+				ImGuiWindows::LoadProject();
+			}
 
 			if (ImGui::MenuItem("Save Project")) {}
 
@@ -167,9 +196,28 @@ void ImGuiWindows::SetMenuBar() {
 		}
 
 		if (ImGui::BeginMenu("Edit")) {
-			if (ImGui::MenuItem("Undo (CTRL + Z)")) {}
+			bool canUndo = m_commandHistory->CanUndo();
+			std::string undoText = "Undo";
 
-			if (ImGui::MenuItem("Redo (CTRL + Y)")) {}
+			if (canUndo) {
+				undoText += " : " + m_commandHistory->GetCommandDescription(m_commandHistory->GetCurrentIndex());
+			}
+
+			if (ImGui::MenuItem((ICON_MDI_UNDO " " + undoText).c_str(), "Ctrl + Z", false, canUndo)) {
+				m_commandHistory->Undo();
+			}
+
+			bool canRedo = m_commandHistory->CanRedo();
+			std::string redoText = "Redo";
+
+			if (canRedo) {
+				redoText += " : " + m_commandHistory->GetCommandDescription(m_commandHistory->GetCurrentIndex() + 1);
+			}
+
+			if (ImGui::MenuItem((ICON_MDI_REDO " " + redoText).c_str(), "Ctrl + Y", false, canRedo)) {
+				m_commandHistory->Redo();
+			}
+
 			ImGui::EndMenu();
 		}
 
@@ -193,5 +241,39 @@ void ImGuiWindows::SetMenuBar() {
 			ImGui::EndPopup();
 		}
 		ImGui::EndMenuBar();
+	}
+}
+
+void ImGuiWindows::LoadProject()
+{
+	auto selection = pfd::open_file(
+		"Choose a project",
+		"",
+		{
+			"YAML", "*.yaml",
+		}
+		);
+
+	auto files = selection.result();
+
+	if (files.empty()) {
+		return;
+	}
+
+	std::filesystem::path projectPath(files[0]);
+
+	if (!projectPath.parent_path().empty()) {
+		m_contentDrawer.SetCurrentPath(projectPath.parent_path());
+
+	// Global shortcuts
+	if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z)) {
+		if (m_commandHistory->CanUndo()) {
+			m_commandHistory->Undo();
+		}
+	}
+	if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y)) {
+		if (m_commandHistory->CanRedo()) {
+			m_commandHistory->Redo();
+		}
 	}
 }

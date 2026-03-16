@@ -135,6 +135,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="newProjectModal.cpp" />
+    <ClCompile Include="src\command\commandHistory.cpp" />
+    <ClCompile Include="src\command\fileCommands.cpp" />
     <ClCompile Include="src\contentDrawer.cpp" />
     <ClCompile Include="src\imGuiWindows.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -144,10 +147,18 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="header\contentDrawer.h" />
+    <ClInclude Include="include\contentDrawer.h" />
+    <ClInclude Include="include\imGuiWindows.h" />
+    <ClInclude Include="include\newProjectModal.h" />
+    <ClInclude Include="include\utils\fileTypeDetector.h" />
+    <ClInclude Include="include\utils\yamlParser.h" />
     <ClInclude Include="header\imGuiWindows.h" />
     <ClInclude Include="header\utils\fileTypeDetector.h" />
     <ClInclude Include="header\utils\yamlParser.h" />
+    <ClInclude Include="include\command\command.h" />
+    <ClInclude Include="include\command\commandHistory.h" />
+    <ClInclude Include="include\command\fileCommands.h" />
+    <ClInclude Include="include\contentDrawer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

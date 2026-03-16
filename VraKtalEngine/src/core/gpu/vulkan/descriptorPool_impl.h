@@ -9,21 +9,17 @@ namespace core::gpu
 {
     struct DescriptorPool::Impl
     {
-    private:
         DescriptorPool& parent;
         const core::gpu::Device* device;
         vk::raii::DescriptorPool pool;
 
         std::vector<vk::raii::DescriptorSet> allocatedSets;
-    public:
+
         explicit Impl(DescriptorPool& _pool, const core::gpu::Device* _device);
         ~Impl();
 
         std::vector<vk::raii::DescriptorSet*> AllocateDescriptorSets(
             const std::vector<vk::raii::DescriptorSetLayout*>& _layouts, uint32_t _count);
-
-        vk::raii::DescriptorPool& GetPool();
-        const vk::raii::DescriptorPool& GetPool() const;
     };
 }
 

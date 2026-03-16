@@ -15,13 +15,11 @@ import vulkan_hpp;
 #include <core/window.h>
 #include <core/gpu/descriptorSetLayout.h>
 #include <core/gpu/buffer.h>
-#include <core/gpu/sampler.h>
 #include <core/gpu/image.h>
 #include <core/gpu/commandBuffer.h>
 #include <core/gpu/texture.h>
 #include <core/gpu/descriptorPool.h>
 #include <core/gpu/commandPool.h>
-#include <core/gpu/swapchain.h>
 #include <core/gpu/pipeline.h>
 
 #ifdef NDEBUG
@@ -30,60 +28,44 @@ constexpr bool enableValidationLayers = false;
 constexpr bool enableValidationLayers = true;
 #endif
 
-constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-
 namespace core::gpu
 {
 	struct Device::Impl
 	{
-        const core::gpu::Device*			parent = nullptr;
+		struct FrameSync
+		{
+			vk::raii::Fence     inFlightFence;
+			vk::raii::Semaphore imageAvailable;
+			vk::raii::Semaphore renderFinished;
+		};
+
+		const Device* parent = nullptr;
 
 		vk::raii::Context					context;
-		vk::raii::Instance					instance = nullptr;
-		vk::raii::DebugUtilsMessengerEXT	debugMessenger = nullptr;
-		vk::raii::SurfaceKHR				surface = nullptr;
-		vk::raii::Device					device = nullptr;
-		vk::raii::PhysicalDevice			physicalDevice = nullptr;
-		vk::raii::Queue						graphicsQueue = nullptr;
-		uint32_t							queueIndex = ~0;
+		vk::raii::Instance					instance		= nullptr;
+		vk::raii::DebugUtilsMessengerEXT	debugMessenger	= nullptr;
+		vk::raii::SurfaceKHR				surface			= nullptr;
+		vk::raii::Device					device			= nullptr;
+		vk::raii::PhysicalDevice			physicalDevice	= nullptr;
+		vk::raii::Queue						graphicsQueue	= nullptr;
+		uint32_t							queueIndex		= ~0;
 
 		std::unique_ptr<CommandPool>			commandPool;
 		std::unique_ptr<DescriptorSetLayout>	descriptorSetLayout;
 		std::unique_ptr<DescriptorPool>			descriptorPool;
-		std::vector<vk::raii::DescriptorSet*>	descriptorSets;
-
-		std::vector<std::unique_ptr<Buffer>> uniformBuffers;
-
-		std::unique_ptr<Sampler> textureSampler;
-
-		std::unique_ptr<Texture> defaultWhiteTexture;
-		std::unique_ptr<Texture> defaultBlackTexture;
-		std::unique_ptr<Texture> defaultNormalTexture;
-
-		std::unique_ptr<Texture> albedoTexture;
-		std::unique_ptr<Texture> normalTexture;
-		std::unique_ptr<Texture> metallicTexture;
-		std::unique_ptr<Texture> roughnessTexture;
-		std::unique_ptr<Texture> aoTexture;
-		std::unique_ptr<Texture> emissiveTexture;
-
-		std::unique_ptr<Image>	colorImage;
-		std::unique_ptr<Image>	depthImage;
-
-		std::unique_ptr<Swapchain>	swapchain;
-		std::unique_ptr<Pipeline>	graphicsPipeline;
 
 		std::vector<CommandBuffer>	commandBuffers;
 
-		std::vector<vk::raii::Semaphore>	imageAvailable;
-		std::vector<vk::raii::Semaphore>	renderFinished;
-		std::vector<vk::raii::Fence>		inFlightFences;
-		std::vector<const vk::raii::Fence*> imagesInFlight;
+		vk::raii::SwapchainKHR				swapchain = nullptr;
+		std::vector<vk::raii::ImageView>    swapchainImageViews;
+		vk::Extent2D						swapchainExtent;
+		std::vector<std::unique_ptr<Image>>	swapchainImages;
+		vk::Format							swapchainImageFormat;
+
+		std::vector<FrameSync>              frameSyncObjects;
 		std::vector<std::unique_ptr<vk::raii::CommandBuffer>> tempCmdBufs;
 
 		const Window& m_window;
-
-		std::vector<char> ReadFile(const std::string& filename);
 
 		explicit Impl(Window& window, const core::gpu::Device* parent);
 		~Impl();
@@ -96,45 +78,18 @@ namespace core::gpu
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void CreateSwapchain();
-		void CreateGraphicsPipeline();
 		void RecreateSwapchain();
 
-		void CreateDescriptorSetLayout();
 		void CreateCommandPool();
 		void CreateDescriptorPool();
-		void AllocateDescriptorSets();
-		void CreateUniformBuffers();
-		void CreateSamplers();
-		void CreateDefaultTextures();
-		void LoadMaterialTextures();
-		void CreateColorImage();
-		void CreateDepthImage();
-		void CreateDescriptorSets();
-		void CreateCommandBuffers();
+
 		void CreateSyncObjects();
 
-		void BeginFrame(uint32_t frameIndex);
-		uint32_t AcquireNextImage(uint32_t frameIndex);
-		void* GetImageAvailableSemaphore(uint32_t frameIndex) const;
-		void* GetRenderFinishedSemaphore(uint32_t imageIndex) const;
-		void* GetInFlightFence(uint32_t frameIndex) const;
-		void Present(uint32_t imageIndex);
-		void Cleanup();
-
-		Buffer* GetUniformBuffer(uint32_t frameIndex) const;
-
-		const Swapchain* GetSwapchain() const;
-		const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
-		const core::gpu::Image* GetColorImage() const;
-		const core::gpu::Image* GetDepthImage() const;
-
-        const core::gpu::Pipeline* GetGraphicsPipeline() const;
-
-		void WaitIdle();
+		vk::SurfaceFormatKHR	ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats, TextureFormat preferredFormat);
+		vk::PresentModeKHR		ChoosePresentMode(const std::vector<vk::PresentModeKHR>& availableModes, PresentMode preferredMode);
+		vk::Extent2D			ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
 
 		void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
-
-		void UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle);
 
 		std::vector<const char*> requiredDeviceExtension = {
 			vk::KHRSwapchainExtensionName,

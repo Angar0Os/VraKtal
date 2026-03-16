@@ -1,143 +1,141 @@
-#include "../src/core/gpu/vulkan/descriptorSet_impl.h"
+#include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
 #include "../src/core/gpu/vulkan/buffer_impl.h"
+#include "../src/core/gpu/vulkan/descriptorSet_impl.h"
+#include "../src/core/gpu/vulkan/descriptorPool_impl.h"
+#include "../src/core/gpu/vulkan/descriptorSetLayout_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
-#include "../src/core/gpu/vulkan/sampler_impl.h"
 #include "../src/core/gpu/vulkan/texture_impl.h"
-#include "../src/core/gpu_detail/converters.h"
 
-#include <core/gpu/buffer.h>
 #include <core/gpu/texture.h>
-#include <core/gpu/sampler.h>
 
-#include <core/enum.h>
-
-core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gpu::Device* dev, std::vector<vk::raii::DescriptorSet*>& sets, size_t frame)
-	: parent(p), device(dev), descriptorSets(sets), currentFrame(frame)
+core::gpu::DescriptorSet::Impl::Impl(core::gpu::DescriptorSet& p, const core::gpu::Device* dev, const core::gpu::DescriptorSetLayout* dsLayout)
+	: parent(p)
 {
+	vk::DescriptorSetAllocateInfo allocInfo{};
+	allocInfo.descriptorPool = *dev->GetImpl().descriptorPool->GetImpl().pool;
+	allocInfo.descriptorSetCount = 1;
+	vk::DescriptorSetLayout vkLayout = dsLayout->GetImpl().layout;
+	allocInfo.pSetLayouts = &vkLayout;
+
+	auto sets = vk::raii::DescriptorSets(dev->GetImpl().device, allocInfo);
+	descriptorSet = std::move(sets[0]);
+
 	bufferInfos.reserve(8);
 	imageInfos.reserve(8);
+	asInfos.reserve(8);
+	asHandles.reserve(8);
 	writes.reserve(8);
 	bindingInfos.reserve(8);
 }
 
 core::gpu::DescriptorSet::Impl::~Impl() = default;
 
-core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindBuffer(const Buffer& buffer, size_t offset, size_t range)
+template<>
+void core::gpu::DescriptorSet::Bind<core::gpu::Texture>(uint32_t binding, const core::gpu::Texture& texture)
 {
-	size_t infoIndex = bufferInfos.size();
-	bufferInfos.emplace_back(
-		buffer.GetImpl().buffer,
-		static_cast<vk::DeviceSize>(offset),
-		static_cast<vk::DeviceSize>(range)
+	size_t infoIndex = m_impl->imageInfos.size();
+	m_impl->imageInfos.emplace_back(
+		*texture.GetImpl().sampler,
+		*texture.GetImpl().image->GetImpl().view,
+		vk::ImageLayout::eShaderReadOnlyOptimal
 	);
 
-	bindingInfos.push_back({
-		currentBinding++,
-		vk::DescriptorType::eUniformBuffer,
-		infoIndex
-		});
-
-	return parent;
-}
-
-core::gpu::DescriptorSet& core::gpu::DescriptorSet::Impl::BindImage(const Sampler& sampler, const Texture* texture,
-	const Texture& defaultTexture, ImageLayout layout)
-{
-	const Texture* selectedTexture = (texture && texture != nullptr)
-		? texture
-		: &defaultTexture;
-
-	size_t infoIndex = imageInfos.size();
-	imageInfos.emplace_back(
-		sampler.GetImpl().sampler,
-		selectedTexture->GetImpl().image->GetImpl().view,
-		core::gpu_detail::ToVulkan(layout)
-	);
-
-	bindingInfos.push_back({
-		currentBinding++,
+	m_impl->bindingInfos.push_back({
+		binding,
 		vk::DescriptorType::eCombinedImageSampler,
 		infoIndex
 		});
-
-	return parent;
 }
 
-void core::gpu::DescriptorSet::Impl::Update()
+template<>
+void core::gpu::DescriptorSet::Bind<core::gpu::Buffer>(uint32_t binding, const core::gpu::Buffer& buffer)
 {
-	if (bindingInfos.empty())
+	size_t infoIndex = m_impl->bufferInfos.size();
+	m_impl->bufferInfos.emplace_back(
+		buffer.GetImpl().buffer,
+		0,
+		buffer.GetImpl().bufferSize
+	);
+
+	// TODO : Peut être changer le type de buffer qu'on ne push pas que des UB
+	m_impl->bindingInfos.push_back({
+		binding,
+		vk::DescriptorType::eUniformBuffer,
+		infoIndex
+		});
+}
+
+template<>
+void core::gpu::DescriptorSet::Bind<core::gpu::AccelerationStructure>(uint32_t binding, const core::gpu::AccelerationStructure& accelStructure)
+{
+	vk::AccelerationStructureKHR handle = static_cast<vk::AccelerationStructureKHR>(*accelStructure.GetImpl().accelerationStructure);
+
+	m_impl->asHandles.push_back(handle);
+
+	vk::WriteDescriptorSetAccelerationStructureKHR asWrite{};
+	asWrite.sType = vk::StructureType::eWriteDescriptorSetAccelerationStructureKHR;
+	asWrite.accelerationStructureCount = 1;
+	asWrite.pAccelerationStructures = &m_impl->asHandles.back();
+
+	size_t infoIndex = m_impl->asInfos.size();
+	m_impl->asInfos.push_back(asWrite);
+
+	m_impl->bindingInfos.push_back({
+		binding,
+		vk::DescriptorType::eAccelerationStructureKHR,
+		infoIndex
+		});
+}
+
+void core::gpu::DescriptorSet::Update(const core::gpu::Device& device)
+{
+	if (m_impl->bindingInfos.empty())
 		return;
 
-	writes.clear();
-	writes.reserve(bindingInfos.size());
+	std::vector<vk::WriteDescriptorSet> writes;
+	writes.reserve(m_impl->bindingInfos.size());
 
-	if (currentFrame >= descriptorSets.size() || descriptorSets[currentFrame] == nullptr)
-	{
-		throw std::runtime_error("Invalid descriptor set index or null descriptor set pointer");
-	}
-
-	vk::raii::DescriptorSet* raiiSet = descriptorSets[currentFrame];
-	vk::DescriptorSet dstSet = **raiiSet;
-
-	for (const auto& info : bindingInfos)
+	for (const auto& bindingInfo : m_impl->bindingInfos)
 	{
 		vk::WriteDescriptorSet write{};
-		write.dstSet = dstSet;
-		write.dstBinding = info.binding;
+		write.dstSet = m_impl->descriptorSet;
+		write.dstBinding = bindingInfo.binding;
 		write.dstArrayElement = 0;
 		write.descriptorCount = 1;
-		write.descriptorType = info.type;
+		write.descriptorType = bindingInfo.type;
 
-		if (info.type == vk::DescriptorType::eUniformBuffer)
+		switch (bindingInfo.type)
 		{
-			write.pBufferInfo = &bufferInfos[info.infoIndex];
-			write.pImageInfo = nullptr;
-		}
-		else if (info.type == vk::DescriptorType::eCombinedImageSampler)
-		{
-			write.pImageInfo = &imageInfos[info.infoIndex];
-			write.pBufferInfo = nullptr;
+		case vk::DescriptorType::eCombinedImageSampler:
+			write.pImageInfo = &m_impl->imageInfos[bindingInfo.infoIndex];
+			break;
+		case vk::DescriptorType::eUniformBuffer:
+			write.pBufferInfo = &m_impl->bufferInfos[bindingInfo.infoIndex];
+			break;
+		case vk::DescriptorType::eAccelerationStructureKHR:
+			write.pNext = &m_impl->asInfos[bindingInfo.infoIndex];
+			break;
 		}
 
 		writes.push_back(write);
 	}
 
-	device->GetImpl().device.updateDescriptorSets(writes, {});
+	device.GetImpl().device.updateDescriptorSets(writes, {});
 
-	currentBinding = 0;
-	bufferInfos.clear();
-	imageInfos.clear();
-	writes.clear();
-	bindingInfos.clear();
+	m_impl->imageInfos.clear();
+	m_impl->bufferInfos.clear();
+	m_impl->asInfos.clear();
+	m_impl->asHandles.clear();
+	m_impl->bindingInfos.clear();
 }
 
-core::gpu::DescriptorSet::DescriptorSet(const core::gpu::Device* device, void* setsVector, size_t frame)
+core::gpu::DescriptorSet::DescriptorSet(const core::gpu::Device* device, const core::gpu::DescriptorSetLayout* dsLayout)
 {
-	auto& vkSets = *static_cast<std::vector<vk::raii::DescriptorSet*>*>(setsVector);
-
-	m_impl = std::make_unique<Impl>(*this, device, vkSets, frame);
+	m_impl = std::make_unique<Impl>(*this, device, dsLayout);
 }
 
 core::gpu::DescriptorSet::~DescriptorSet() = default;
-
-core::gpu::DescriptorSet& core::gpu::DescriptorSet::BindBuffer(const Buffer& buffer, size_t offset, size_t range)
-{
-	m_impl->BindBuffer(buffer, offset, range);
-	return *this;
-}
-
-core::gpu::DescriptorSet& core::gpu::DescriptorSet::BindImage(const Sampler& sampler, const Texture* texture,
-	const Texture& defaultTexture, ImageLayout layout)
-{
-	m_impl->BindImage(sampler, texture, defaultTexture, layout);
-	return *this;
-}
-
-void core::gpu::DescriptorSet::Update()
-{
-	m_impl->Update();
-}
 
 core::gpu::DescriptorSet::Impl& core::gpu::DescriptorSet::GetImpl() const
 {

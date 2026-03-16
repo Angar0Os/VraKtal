@@ -200,6 +200,35 @@ vk::Format core::gpu_detail::ToVulkan(core::TextureFormat format)
 	}
 }
 
+vk::ImageAspectFlags core::gpu_detail::ToVulkanAspestMask(core::TextureFormat format)
+{
+	switch(format)
+	{
+		case core::TextureFormat::Undefined:       
+		case core::TextureFormat::R8_UNorm:        
+		case core::TextureFormat::RG8_UNorm:       
+		case core::TextureFormat::RGB8_UNorm:      
+		case core::TextureFormat::RGBA8_UNorm:     
+		case core::TextureFormat::RGBA8_SRGB:      
+		case core::TextureFormat::R16_Float:       
+		case core::TextureFormat::RG16_Float:      
+		case core::TextureFormat::RGBA16_Float:    
+		case core::TextureFormat::R32_Float:       
+		case core::TextureFormat::RG32_Float:      
+		case core::TextureFormat::RGB32_Float:     
+		case core::TextureFormat::RGBA32_Float:    
+		case core::TextureFormat::BC1_RGB_UNorm:   
+		case core::TextureFormat::BC3_RGBA_UNorm:  
+        case core::TextureFormat::BC7_RGBA_UNorm:  return vk::ImageAspectFlagBits::eColor;
+		case core::TextureFormat::Depth16:         
+		case core::TextureFormat::Depth24:         
+		case core::TextureFormat::Depth32F:        
+		case core::TextureFormat::Depth24Stencil8: 
+		case core::TextureFormat::Depth32FStencil8:return vk::ImageAspectFlagBits::eDepth;
+		default: return vk::ImageAspectFlagBits(0);
+	}
+}
+
 vk::DescriptorType core::gpu_detail::ToVulkan(core::EDescriptorType type)
 {
 	switch (type)
