@@ -86,10 +86,16 @@ core::gpu::Pipeline::Impl::Impl(core::gpu::Pipeline& p, const core::gpu::Device*
 	colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
 		vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 
+	uint32_t colorAttachmentCount = static_cast<uint32_t>(
+		info.colorAttachmentFormats.empty() ? 1 : info.colorAttachmentFormats.size());
+
+	std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachments(
+		colorAttachmentCount, colorBlendAttachment);
+
 	vk::PipelineColorBlendStateCreateInfo colorBlending{};
 	colorBlending.logicOpEnable = vk::False;
-	colorBlending.attachmentCount = 1;
-	colorBlending.pAttachments = &colorBlendAttachment;
+	colorBlending.attachmentCount = colorAttachmentCount;
+	colorBlending.pAttachments = colorBlendAttachments.data();
 
 	std::vector<vk::DynamicState> vkDynamicStates;
 	for (const auto& state : info.dynamicStates)

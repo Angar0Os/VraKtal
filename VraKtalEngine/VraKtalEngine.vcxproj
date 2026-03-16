@@ -197,10 +197,12 @@
     <ClInclude Include="include\core\gpu\image.h" />
     <ClInclude Include="include\core\gpu\imguiContext.h" />
     <ClInclude Include="include\core\gpu\pipeline.h" />
-    <ClInclude Include="include\core\gpu\sampler.h" />
-    <ClInclude Include="include\core\gpu\swapchain.h" />
     <ClInclude Include="include\core\window.h" />
+    <ClInclude Include="include\graphics\materialInstance.h" />
+    <ClInclude Include="include\graphics\pass.h" />
     <ClInclude Include="include\graphics\renderer.h" />
+    <ClInclude Include="include\graphics\renderPass\gBufferPass.h" />
+    <ClInclude Include="include\graphics\renderPass\lightingPass.h" />
     <ClInclude Include="include\graphics\resources\object\camera.h" />
     <ClInclude Include="include\graphics\resources\object\light.h" />
     <ClInclude Include="include\graphics\resources\object\material.h" />
@@ -210,7 +212,10 @@
     <ClInclude Include="include\graphics\resources\project.h" />
     <ClInclude Include="include\graphics\resources\property\transform.h" />
     <ClInclude Include="include\graphics\resources\scene.h" />
+    <ClInclude Include="include\loaders\materialLoader.h" />
     <ClInclude Include="include\loaders\meshLoader.h" />
+    <ClInclude Include="include\loaders\shaderLoader.h" />
+    <ClInclude Include="include\loaders\textureLoader.h" />
     <ClInclude Include="src\core\gpu\vulkan\accelerationStructure_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\commandBuffer_impl.h" />
@@ -222,8 +227,6 @@
     <ClInclude Include="src\core\gpu\vulkan\image_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\imguiContext_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\pipeline_impl.h" />
-    <ClInclude Include="src\core\gpu\vulkan\sampler_impl.h" />
-    <ClInclude Include="src\core\gpu\vulkan\swapchain_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\texture_impl.h" />
     <ClInclude Include="src\core\gpu_detail\converters.h" />
   </ItemGroup>
@@ -252,18 +255,20 @@
     <ClCompile Include="src\core\gpu\vulkan\image_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\imguiContext_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\pipeline_impl.cpp" />
-    <ClCompile Include="src\core\gpu\vulkan\sampler_impl.cpp" />
-    <ClCompile Include="src\core\gpu\vulkan\swapchain_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp" />
     <ClCompile Include="src\core\gpu_detail\converters.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
+    <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp" />
+    <ClCompile Include="src\graphics\renderPass\lightingPass.cpp" />
     <ClCompile Include="src\graphics\resources\object\scene.cpp" />
+    <ClCompile Include="src\loaders\materialLoader.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />
+    <ClCompile Include="src\loaders\textureLoader.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\bin\assets\shaders\frameUniforms.slang" />
-    <None Include="..\bin\assets\shaders\shader.slang" />
+    <None Include="..\bin\assets\shaders\gbuffer.slang" />
+    <None Include="..\bin\assets\shaders\lighting.slang" />
     <None Include="..\external\include\imGuizmo\.editorconfig" />
   </ItemGroup>
   <ItemGroup>

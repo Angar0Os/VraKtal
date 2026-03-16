@@ -5,14 +5,11 @@
 #include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
 #include "../src/core/gpu/vulkan/commandPool_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
-#include "../src/core/gpu/vulkan/swapchain_impl.h"
 #include "../src/core/gpu/vulkan/imguiContext_impl.h"
 
 #include "../src/core/gpu_detail/converters.h"
 
-#include <core/gpu/descriptorSet.h>
 #include <core/enum.h>
-#include <core/gpu/swapchain.h>
 
 #include <graphics/resources/object/mesh.h>
 
@@ -21,6 +18,9 @@
 #include <GLFW/glfw3.h>
 
 #include <fstream>
+
+using namespace core;
+using namespace core::gpu;
 
 #pragma comment(lib, "vulkan-1.lib")
 
@@ -43,12 +43,22 @@ std::vector<const char*> GetRequiredExtensions()
 	return extensions;
 }
 
-core::gpu::Device::Impl& core::gpu::Device::GetImpl() const
+::Device::Impl& ::Device::GetImpl() const
 {
 	return *m_impl;
 }
 
-core::gpu::Device::Device(core::Window& window)
+CommandPool& ::Device::GetCommandPool() const
+{
+	return *m_impl->commandPool;
+}
+
+DescriptorPool& ::Device::GetDescriptorPool() const
+{
+	return *m_impl->descriptorPool;
+}
+
+::Device::Device(core::Window& window)
 {
 	m_impl = std::make_unique<Impl>(window, nullptr);
 	m_impl->parent = this;
@@ -56,7 +66,7 @@ core::gpu::Device::Device(core::Window& window)
 	m_imGuiContext = new ImguiContext(window, *this);
 }
 
-core::gpu::Device::~Device()
+::Device::~Device()
 {
 	if (m_imGuiContext)
 	{
@@ -65,12 +75,12 @@ core::gpu::Device::~Device()
 	}
 }
 
-core::gpu::Device::Impl::Impl(core::Window& _window, const core::gpu::Device* _parent)
+::Device::Impl::Impl(core::Window& _window, const ::Device* _parent)
 	: m_window(_window), parent(_parent)
 {
 }
 
-void core::gpu::Device::Impl::Initialize()
+void ::Device::Impl::Initialize()
 {
 	CreateInstance();
 	SetupDebugMessenger();
@@ -80,33 +90,18 @@ void core::gpu::Device::Impl::Initialize()
 
 	CreateSwapchain();
 
-	CreateDescriptorSetLayout();
-
 	CreateDescriptorPool();
-	AllocateDescriptorSets();
-
-	CreateUniformBuffers();
 	CreateCommandPool();
-	CreateSamplers();
-
-	CreateDefaultTextures();
-	LoadMaterialTextures();
-	CreateColorImage();
-	CreateDepthImage();
-
-	CreateGraphicsPipeline();
-
-	CreateDescriptorSets();
 
 	CreateSyncObjects();
 }
 
-core::gpu::Device::Impl::~Impl()
+::Device::Impl::~Impl()
 {
 	descriptorPool.reset();
 }
 
-void core::gpu::Device::Impl::CreateInstance()
+void ::Device::Impl::CreateInstance()
 {
 	// Application info for the instance: not required but helpful for drivers		
 	constexpr vk::ApplicationInfo appInfo
@@ -174,7 +169,7 @@ static VKAPI_ATTR vk::Bool32 VKAPI_CALL DebugCallback(vk::DebugUtilsMessageSever
 	return vk::False;
 }
 
-void core::gpu::Device::Impl::SetupDebugMessenger()
+void ::Device::Impl::SetupDebugMessenger()
 {
 	if (!enableValidationLayers) return;
 
@@ -196,7 +191,7 @@ void core::gpu::Device::Impl::SetupDebugMessenger()
 	debugMessenger = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
 }
 
-void core::gpu::Device::Impl::CreateSurface()
+void ::Device::Impl::CreateSurface()
 {
 	GLFWwindow* glfwWindow = m_window.GlfwHandle();
 	if (!glfwWindow) {
@@ -212,7 +207,7 @@ void core::gpu::Device::Impl::CreateSurface()
 	surface = vk::raii::SurfaceKHR(instance, _surface);
 }
 
-void core::gpu::Device::Impl::PickPhysicalDevice()
+void ::Device::Impl::PickPhysicalDevice()
 {
 	std::vector<vk::raii::PhysicalDevice> devices = instance.enumeratePhysicalDevices();
 
@@ -325,7 +320,7 @@ void core::gpu::Device::Impl::PickPhysicalDevice()
 	}
 }
 
-void core::gpu::Device::Impl::CreateLogicalDevice()
+void ::Device::Impl::CreateLogicalDevice()
 {
 	std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
 
@@ -361,9 +356,11 @@ void core::gpu::Device::Impl::CreateLogicalDevice()
 
 	vk::StructureChain
 		<vk::PhysicalDeviceFeatures2,
+		vk::PhysicalDeviceVulkan11Features,
 		vk::PhysicalDeviceVulkan13Features,
 		vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT> featureChain = {
 	   {.features = {.samplerAnisotropy = true} },
+	   {.shaderDrawParameters = true},
 	   {.synchronization2 = true, .dynamicRendering = true},
 	   {.extendedDynamicState = true}
 	};
@@ -395,102 +392,12 @@ void core::gpu::Device::Impl::CreateLogicalDevice()
 	const auto& rtPipelineProps = rtProps.get<vk::PhysicalDeviceRayTracingPipelinePropertiesKHR>();
 }
 
-void core::gpu::Device::Impl::CreateDescriptorSetLayout()
-{
-	SDescriptorSetLayoutCreateInfo layoutInfo;
-	layoutInfo.bindings =
-	{
-		{0, EDescriptorType::UniformBuffer, 1, core::ShaderStage::Vertex | core::ShaderStage::Fragment},
-
-		{1, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{2, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{3, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{4, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{5, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{6, EDescriptorType::CombinedImageSampler, 1, core::ShaderStage::Fragment},
-		{8, EDescriptorType::AccelerationStructure, 1, core::ShaderStage::Fragment}
-	};
-
-	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(parent, layoutInfo);
-}
-
-void core::gpu::Device::Impl::CreateDescriptorPool()
+void ::Device::Impl::CreateDescriptorPool()
 {
 	descriptorPool = std::make_unique<DescriptorPool>(parent);
 }
 
-void core::gpu::Device::Impl::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)
-{
-	if (frameIndex >= descriptorSets.size() || !tlasHandle) return;
-
-	vk::DescriptorSet descSet = **descriptorSets[frameIndex];
-	vk::AccelerationStructureKHR accelStructHandle = **tlasHandle->GetImpl().accelerationStructure;
-
-	vk::WriteDescriptorSetAccelerationStructureKHR accelInfo{};
-	accelInfo.accelerationStructureCount = 1;
-	accelInfo.pAccelerationStructures = &accelStructHandle;
-
-	vk::WriteDescriptorSet writeDesc{};
-	writeDesc.dstSet = descSet;
-	writeDesc.dstBinding = 8;
-	writeDesc.dstArrayElement = 0;
-	writeDesc.descriptorCount = 1;
-	writeDesc.descriptorType = vk::DescriptorType::eAccelerationStructureKHR;
-	writeDesc.pNext = &accelInfo;
-
-	device.updateDescriptorSets(writeDesc, nullptr);
-}
-
-void core::gpu::Device::Impl::AllocateDescriptorSets()
-{
-	std::vector<DescriptorSetLayout*> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout.get());
-	auto allocatedSets = descriptorPool->AllocateDescriptorSets(layouts, MAX_FRAMES_IN_FLIGHT);
-
-	descriptorSets.clear();
-	descriptorSets.reserve(allocatedSets.size());
-	for (auto* setHandle : allocatedSets)
-	{
-		descriptorSets.push_back(static_cast<vk::raii::DescriptorSet*>(setHandle));
-	}
-}
-
-void core::gpu::Device::Impl::CreateUniformBuffers()
-{
-	uniformBuffers.clear();
-	uniformBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		SBufferCreateInfo bufferInfo{
-			.size = sizeof(UniformBufferObject),
-			.usage = EBufferUsage::UniformBuffer,
-			.memoryProperties = EMemoryProperty::HostVisible | EMemoryProperty::HostCoherent
-		};
-		uniformBuffers.push_back(std::make_unique<Buffer>(parent, bufferInfo));
-	}
-}
-
-void core::gpu::Device::Impl::CreateSamplers()
-{
-	SamplerCreateInfo samplerInfo{
-		.minFilter = Filter::Linear,
-		.magFilter = Filter::Linear,
-		.mipmapMode = SamplerMipmapMode::Linear,
-		.addressModeU = SamplerAddressMode::Repeat,
-		.addressModeV = SamplerAddressMode::Repeat,
-		.addressModeW = SamplerAddressMode::Repeat,
-		.mipLodBias = 0.0f,
-		.enableAnisotropy = true,
-		.maxAnisotropy = 8.0f,
-		.enableCompare = false,
-		.compareOp = CompareOp::Always,
-		.minLod = 0.0f,
-		.maxLod = 1000.0f
-	};
-	textureSampler = std::make_unique<Sampler>(parent, samplerInfo);
-}
-
-void core::gpu::Device::Impl::CreateCommandPool()
+void ::Device::Impl::CreateCommandPool()
 {
 	CommandPoolCreateInfo poolInfo{
 		.queueFamilyIndex = queueIndex,
@@ -500,124 +407,137 @@ void core::gpu::Device::Impl::CreateCommandPool()
 	commandPool = std::make_unique<CommandPool>(parent, poolInfo);
 }
 
-
-void core::gpu::Device::Impl::CreateDefaultTextures()
+vk::SurfaceFormatKHR Device::Impl::ChooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats, TextureFormat preferredFormat)
 {
-	defaultWhiteTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	defaultBlackTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
-	defaultNormalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
+	vk::Format vkPreferredFormat = gpu_detail::ToVulkan(preferredFormat);
+
+	for (const auto& format : availableFormats)
+	{
+		if (format.format == vkPreferredFormat &&
+			format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+		{
+			return format;
+		}
+	}
+
+	for (const auto& format : availableFormats)
+	{
+		if (format.format == vk::Format::eB8G8R8A8Srgb &&
+			format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+		{
+			return format;
+		}
+	}
+
+	return availableFormats[0];
 }
 
-void core::gpu::Device::Impl::LoadMaterialTextures()
+vk::PresentModeKHR Device::Impl::ChoosePresentMode(const std::vector<vk::PresentModeKHR>& availableModes, PresentMode preferredMode)
 {
-	albedoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	normalTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.5f, 0.5f, 1.0f, 1.0f);
-	metallicTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	roughnessTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	aoTexture = std::make_unique<Texture>(parent, commandPool.get(), 1.0f, 1.0f, 1.0f, 1.0f);
-	emissiveTexture = std::make_unique<Texture>(parent, commandPool.get(), 0.0f, 0.0f, 0.0f, 1.0f);
+	vk::PresentModeKHR vkPreferredMode = gpu_detail::ToVulkan(preferredMode);
 
-	albedoTexture->LoadTextureIfExists(parent, "../bin/assets/textures/viking_room.png");
-	normalTexture->LoadTextureIfExists(parent, "assets/textures/normal.png");
-	metallicTexture->LoadTextureIfExists(parent, "assets/textures/metallic.png");
-	roughnessTexture->LoadTextureIfExists(parent, "assets/textures/roughness.png");
-	aoTexture->LoadTextureIfExists(parent, "assets/textures/ao.png");
-	emissiveTexture->LoadTextureIfExists(parent, "assets/textures/emissive.png");
+	for (const auto& mode : availableModes)
+	{
+		if (mode == vkPreferredMode)
+		{
+			return mode;
+		}
+	}
+
+	return vk::PresentModeKHR::eFifo;
 }
 
-void core::gpu::Device::Impl::CreateSwapchain()
+vk::Extent2D Device::Impl::ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height)
 {
-	int width, height = 0;
-	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
+	if (capabilities.currentExtent.width != 0xFFFFFFFF)
+	{
+		return capabilities.currentExtent;
+	}
 
-	SwapchainCreateInfo swapchainInfo{
-		.surface = static_cast<void*>(static_cast<VkSurfaceKHR>(*surface)),
-		.width = static_cast<uint32_t>(width),
-		.height = static_cast<uint32_t>(height),
-		.preferredFormat = TextureFormat::RGBA8_SRGB,
-		.presentMode = PresentMode::Mailbox,
-		.minImageCount = 3,
+	vk::Extent2D actualExtent = { width, height };
+
+	actualExtent.width = std::clamp(actualExtent.width,
+		capabilities.minImageExtent.width,
+		capabilities.maxImageExtent.width);
+	actualExtent.height = std::clamp(actualExtent.height,
+		capabilities.minImageExtent.height,
+		capabilities.maxImageExtent.height);
+
+	return actualExtent;
+}
+
+
+void ::Device::Impl::CreateSwapchain()
+{
+	vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
+	auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface);
+	auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
+
+	vk::SurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(surfaceFormats, TextureFormat::RGBA8_SRGB);
+	vk::PresentModeKHR presentMode = ChoosePresentMode(presentModes, PresentMode::Fifo);
+	vk::Extent2D extent = ChooseExtent(capabilities, 0, 0);
+
+	uint32_t imageCount = std::max(2u, capabilities.minImageCount);
+	if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
+	{
+		imageCount = capabilities.maxImageCount;
+	}
+
+	vk::SwapchainCreateInfoKHR createInfo{
+		.surface = surface,
+		.minImageCount = imageCount,
+		.imageFormat = surfaceFormat.format,
+		.imageColorSpace = surfaceFormat.colorSpace,
+		.imageExtent = extent,
+		.imageArrayLayers = 1,
+		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst,
+		.imageSharingMode = vk::SharingMode::eExclusive,
+		.preTransform = capabilities.currentTransform,
+		.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+		.presentMode = presentMode,
+		.clipped = vk::True,
 		.oldSwapchain = nullptr
 	};
 
-	swapchain = std::make_unique<Swapchain>(parent, swapchainInfo);
-}
+	swapchain = vk::raii::SwapchainKHR(device, createInfo);
+	swapchainExtent = extent;
 
-void core::gpu::Device::Impl::CreateGraphicsPipeline()
-{
-	auto shaderCode = ReadFile("../bin/assets/shaders/slang.spv");
+	std::vector<vk::Image> vkImages = swapchain.getImages();
+	swapchainImageViews.clear();
+	swapchainImageViews.reserve(vkImages.size());
 
-	SVertexInputBinding vertexBinding{
-		.binding = 0,
-		.stride = sizeof(graphics::resources::Vertex),
-		.inputRate = VertexInputRate::Vertex
-	};
-
-	std::vector<SVertexInputAttribute> vertexAttributes = {
-		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, position)},
-		{1, 0, TextureFormat::RGB32_Float, offsetof(graphics::resources::Vertex, normal)},
-		{2, 0, TextureFormat::RG32_Float, offsetof(graphics::resources::Vertex, uv)}
-	};
-
-	std::vector<ShaderStage> shaderStages = {
-		{ShaderStageFlags::Vertex, shaderCode, "vertMain"},
-		{ShaderStageFlags::Fragment, shaderCode, "fragMain"}
-	};
-
-	std::vector<PushConstantRange> pushConstants = {
-		{
-			.stageFlags = static_cast<uint32_t>(ShaderStageFlags::Vertex),
-			.offset = 0,
-			.size = sizeof(glm::mat4)
-		}
-	};
-
-	PipelineCreateInfo pipelineInfo{};
-	pipelineInfo.shaderStages = shaderStages;
-	pipelineInfo.vertexBindings = { vertexBinding };
-	pipelineInfo.vertexAttributes = vertexAttributes;
-	pipelineInfo.topology = PrimitiveTopology::TriangleList;
-	pipelineInfo.polygonMode = PolygonMode::Fill;
-	pipelineInfo.cullMode = CullMode::None;
-	pipelineInfo.frontFace = FrontFace::Clockwise;
-	pipelineInfo.depthTestEnable = true;
-	pipelineInfo.depthWriteEnable = true;
-	pipelineInfo.depthCompareOp = CompareOp::Less;
-	pipelineInfo.blendEnable = false;
-	pipelineInfo.samples = SampleCount::e4;
-	pipelineInfo.colorAttachmentFormats = { core::gpu_detail::FromVulkan(swapchain->GetImpl().format) };
-	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
-	pipelineInfo.descriptorSetLayouts = { descriptorSetLayout.get() };
-	pipelineInfo.pushConstantRanges = pushConstants;
-	pipelineInfo.dynamicStates = { DynamicState::Viewport, DynamicState::Scissor };
-
-	graphicsPipeline = std::make_unique<Pipeline>(parent, pipelineInfo);
-}
-
-std::vector<char> core::gpu::Device::Impl::ReadFile(const std::string& filename)
-{
-	std::ifstream file(filename, std::ios::ate | std::ios::binary);
-
-	if (!file.is_open())
+	for (vk::Image image : vkImages)
 	{
-		throw std::runtime_error("Failed to open shader file: " + filename);
+		vk::ImageViewCreateInfo viewInfo{
+			.image = image,
+			.viewType = vk::ImageViewType::e2D,
+			.format = surfaceFormat.format,
+			.subresourceRange = {
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+		swapchainImageViews.emplace_back(device, viewInfo);
+
+		::SPredefinedImageCreateInfo imageInfo{};
+		imageInfo.image = image;
+		imageInfo.extent = extent;
+		imageInfo.aspectFlags = vk::ImageAspectFlagBits::eColor;
+		imageInfo.format = surfaceFormat.format;
+
+		swapchainImages.emplace_back(std::make_unique<Image>(parent, imageInfo));
 	}
 
-	size_t fileSize = static_cast<size_t>(file.tellg());
-	std::vector<char> buffer(fileSize);
-
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-	file.close();
-
-	return buffer;
+	swapchainImageFormat = surfaceFormat.format;
 }
 
-void core::gpu::Device::Impl::RecreateSwapchain()
+void ::Device::Impl::RecreateSwapchain()
 {
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
-
 	while (width == 0 || height == 0)
 	{
 		glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
@@ -626,196 +546,111 @@ void core::gpu::Device::Impl::RecreateSwapchain()
 
 	device.waitIdle();
 
-	imageAvailable.clear();
-	renderFinished.clear();
-	inFlightFences.clear();
-	imagesInFlight.clear();
-	tempCmdBufs.clear();
+	swapchainImageViews.clear();
 
-	SwapchainCreateInfo swapchainInfo{
-		.surface = static_cast<void*>(static_cast<VkSurfaceKHR>(*surface)),
-		.width = static_cast<uint32_t>(width),
-		.height = static_cast<uint32_t>(height),
-		.preferredFormat = TextureFormat::RGBA8_SRGB,
-		.presentMode = PresentMode::Mailbox,
-		.minImageCount = 3,
-		.oldSwapchain = swapchain.get()
-	};
-	swapchain = std::make_unique<Swapchain>(parent, swapchainInfo);
+	vk::SwapchainKHR oldSwapchain = *swapchain;
 
-	CreateColorImage();
-	CreateDepthImage();
-	CreateGraphicsPipeline();
-	CreateSyncObjects();
-	CreateDescriptorSets();
-}
+	vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(*surface);
+	auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(*surface);
+	auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
 
-void core::gpu::Device::Impl::CreateDescriptorSets()
-{
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	vk::SurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(surfaceFormats, TextureFormat::RGBA8_SRGB);
+	vk::PresentModeKHR presentMode = ChoosePresentMode(presentModes, PresentMode::Mailbox);
+	vk::Extent2D extent = ChooseExtent(capabilities, width, height);
+
+	uint32_t imageCount = std::max(3u, capabilities.minImageCount);
+	if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
 	{
-		DescriptorSet(parent, &descriptorSets, i)
-			.BindBuffer(*uniformBuffers[i], 0, sizeof(UniformBufferObject))
-			.BindImage(*textureSampler, albedoTexture.get(), *defaultWhiteTexture)
-			.BindImage(*textureSampler, normalTexture.get(), *defaultNormalTexture)
-			.BindImage(*textureSampler, metallicTexture.get(), *defaultWhiteTexture)
-			.BindImage(*textureSampler, roughnessTexture.get(), *defaultWhiteTexture)
-			.BindImage(*textureSampler, aoTexture.get(), *defaultWhiteTexture)
-			.BindImage(*textureSampler, emissiveTexture.get(), *defaultBlackTexture)
-			.Update();
+		imageCount = capabilities.maxImageCount;
 	}
+
+	vk::SwapchainCreateInfoKHR createInfo{
+		.surface = *surface,
+		.minImageCount = imageCount,
+		.imageFormat = surfaceFormat.format,
+		.imageColorSpace = surfaceFormat.colorSpace,
+		.imageExtent = extent,
+		.imageArrayLayers = 1,
+		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+		.imageSharingMode = vk::SharingMode::eExclusive,
+		.preTransform = capabilities.currentTransform,
+		.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+		.presentMode = presentMode,
+		.clipped = vk::True,
+		.oldSwapchain = oldSwapchain
+	};
+
+	swapchain = vk::raii::SwapchainKHR(device, createInfo);
+
+	std::vector<vk::Image> vkImages = swapchain.getImages();
+	swapchainImageViews.clear();
+	swapchainImageViews.reserve(vkImages.size());
+
+	for (vk::Image image : vkImages)
+	{
+		vk::ImageViewCreateInfo viewInfo{
+			.image = image,
+			.viewType = vk::ImageViewType::e2D,
+			.format = surfaceFormat.format,
+			.subresourceRange = {
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1
+			}
+		};
+		swapchainImageViews.emplace_back(device, viewInfo);
+	}
+
+	CreateSyncObjects();
 }
 
-void core::gpu::Device::Impl::CreateSyncObjects()
+void ::Device::Impl::CreateSyncObjects()
 {
-	imageAvailable.clear();
-	renderFinished.clear();
-	inFlightFences.clear();
-	imagesInFlight.clear();
+	frameSyncObjects.clear();
 	tempCmdBufs.clear();
 
 	vk::SemaphoreCreateInfo semInfo{};
-	imageAvailable.reserve(MAX_FRAMES_IN_FLIGHT);
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-	{
-		imageAvailable.emplace_back(device, semInfo);
-	}
-
-	uint32_t swapchainImageCount = swapchain->GetImpl().images.size();
-	renderFinished.reserve(swapchainImageCount);
-	for (size_t i = 0; i < swapchainImageCount; ++i)
-	{
-		renderFinished.emplace_back(device, semInfo);
-	}
-
 	vk::FenceCreateInfo fenceInfo{ .flags = vk::FenceCreateFlagBits::eSignaled };
-	inFlightFences.reserve(MAX_FRAMES_IN_FLIGHT);
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+
+	frameSyncObjects.reserve(::Device::s_FRAMES_IN_FLIGHT);
+	for (size_t i = 0; i < ::Device::s_FRAMES_IN_FLIGHT; ++i)
 	{
-		inFlightFences.emplace_back(device, fenceInfo);
+		FrameSync frameSync{
+			.inFlightFence = vk::raii::Fence(device, fenceInfo),
+			.imageAvailable = vk::raii::Semaphore(device, semInfo),
+			.renderFinished = vk::raii::Semaphore(device, semInfo)
+		};
+
+		frameSyncObjects.push_back(std::move(frameSync));
 	}
 
-	imagesInFlight.resize(swapchainImageCount, nullptr);
-	tempCmdBufs.resize(MAX_FRAMES_IN_FLIGHT);
+	uint32_t swapchainImageCount = swapchain.getImages().size();
+	tempCmdBufs.resize(::Device::s_FRAMES_IN_FLIGHT);
 }
 
-void core::gpu::Device::Impl::BeginFrame(uint32_t frameIndex)
+void Device::BeginFrame(uint32_t frameIndex)
 {
-	if (frameIndex >= inFlightFences.size())
+	if (frameIndex >= m_impl->frameSyncObjects.size())
 	{
 		return;
 	}
 
-	device.waitForFences(*inFlightFences[frameIndex], VK_TRUE, UINT64_MAX);
-	device.resetFences(*inFlightFences[frameIndex]);
+	auto& frameSync = m_impl->frameSyncObjects[frameIndex];
 
-	if (frameIndex < tempCmdBufs.size())
+	m_impl->device.waitForFences(*frameSync.inFlightFence, VK_TRUE, UINT64_MAX);
+	m_impl->device.resetFences(*frameSync.inFlightFence);
+
+	if (frameIndex < m_impl->tempCmdBufs.size())
 	{
-		tempCmdBufs[frameIndex].reset();
+		m_impl->tempCmdBufs[frameIndex].reset();
 	}
 }
 
-
-uint32_t core::gpu::Device::Impl::AcquireNextImage(uint32_t frameIndex)
+void Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
 {
-	if (frameIndex >= imageAvailable.size())
-	{
-		return UINT32_MAX;
-	}
-
-	try
-	{
-		vk::ResultValue<uint32_t> result = device.acquireNextImage2KHR(
-			vk::AcquireNextImageInfoKHR{
-				.swapchain = swapchain->GetImpl().swapchain,
-				.timeout = UINT64_MAX,
-				.semaphore = *imageAvailable[frameIndex],
-				.fence = nullptr,
-				.deviceMask = 1
-			}
-		);
-
-		uint32_t imageIndex = result.value;
-
-		if (result.result == vk::Result::eErrorOutOfDateKHR)
-		{
-			return UINT32_MAX;
-		}
-
-		if (result.result != vk::Result::eSuccess && result.result != vk::Result::eSuboptimalKHR)
-		{
-			return UINT32_MAX;
-		}
-
-		if (imageIndex < imagesInFlight.size() && imagesInFlight[imageIndex] != nullptr)
-		{
-			device.waitForFences(**imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
-		}
-
-		imagesInFlight[imageIndex] = &inFlightFences[frameIndex];
-
-		return imageIndex;
-	}
-	catch (const vk::OutOfDateKHRError&)
-	{
-		return UINT32_MAX;
-	}
-	catch (const vk::SystemError& e)
-	{
-		return UINT32_MAX;
-	}
-}
-
-void* core::gpu::Device::Impl::GetImageAvailableSemaphore(uint32_t frameIndex) const
-{
-	if (frameIndex >= imageAvailable.size()) return nullptr;
-	return reinterpret_cast<void*>(static_cast<VkSemaphore>(*imageAvailable[frameIndex]));
-}
-
-void* core::gpu::Device::Impl::GetRenderFinishedSemaphore(uint32_t imageIndex) const
-{
-	if (imageIndex >= renderFinished.size()) return nullptr;
-	return static_cast<void*>(static_cast<VkSemaphore>(*renderFinished[imageIndex]));
-}
-
-void* core::gpu::Device::Impl::GetInFlightFence(uint32_t frameIndex) const
-{
-	if (frameIndex >= inFlightFences.size()) return nullptr;
-	return static_cast<void*>(static_cast<VkFence>(*inFlightFences[frameIndex]));
-}
-
-const core::gpu::Swapchain* core::gpu::Device::Impl::GetSwapchain() const
-{
-	return swapchain.get();
-}
-
-const core::gpu::Image* core::gpu::Device::Impl::GetSwapchainImage(uint32_t imageIndex) const
-{
-	if (!swapchain)
-	{
-		std::cerr << "ERROR: Swapchain is null!" << std::endl;
-		return nullptr;
-	}
-
-	if (imageIndex >= swapchain->GetImpl().images.size())
-	{
-		std::cerr << "ERROR: Image index " << imageIndex
-			<< " out of range (swapchain has "
-			<< swapchain->GetImpl().images.size() << " images)" << std::endl;
-		return nullptr;
-	}
-
-	return swapchain->GetImpl().images[imageIndex].get();
-}
-
-const core::gpu::Image* core::gpu::Device::Impl::GetColorImage() const
-{
-	return colorImage.get();
-}
-
-void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
-{
-	const core::gpu::Image* swapchainImage = swapchain->GetImpl().images[imageIndex].get();
+	const ::Image* swapchainImage = swapchainImages[imageIndex].get();
 
 	vk::CommandBufferAllocateInfo allocInfo{
 		.commandPool = commandPool->GetImpl().pool,
@@ -842,7 +677,7 @@ void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uin
 			.newLayout = vk::ImageLayout::ePresentSrcKHR,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = swapchainImage->GetImpl().GetVkImage(),
+			.image = swapchainImage->GetImpl().image,
 			.subresourceRange = {
 				.aspectMask = vk::ImageAspectFlagBits::eColor,
 				.baseMipLevel = 0,
@@ -884,198 +719,101 @@ void core::gpu::Device::Impl::TransitionImageForPresent(uint32_t frameIndex, uin
 	}
 }
 
-void core::gpu::Device::Impl::Present(uint32_t imageIndex)
+uint32_t Device::AcquireNextImage(uint32_t frameIndex)
 {
-	if (imageIndex >= renderFinished.size()) return;
+	if (frameIndex >= m_impl->frameSyncObjects.size())
+	{
+		return UINT32_MAX;
+	}
 
-	vk::Semaphore presentWait = *renderFinished[imageIndex];
-	vk::SwapchainKHR swapchainHandle = swapchain->GetImpl().swapchain;
+	auto& frameSync = m_impl->frameSyncObjects[frameIndex];
+
+	vk::ResultValue<uint32_t> result = m_impl->device.acquireNextImage2KHR(
+		vk::AcquireNextImageInfoKHR{
+			.swapchain = m_impl->swapchain,
+			.timeout = UINT64_MAX,
+			.semaphore = *frameSync.imageAvailable,
+			.fence = nullptr,
+			.deviceMask = 1
+		}
+	);
+
+	if (result.result == vk::Result::eErrorOutOfDateKHR)
+	{
+		return UINT32_MAX;
+	}
+
+	if (result.result != vk::Result::eSuccess &&
+		result.result != vk::Result::eSuboptimalKHR)
+	{
+		return UINT32_MAX;
+	}
+
+	return result.value;
+}
+
+void Device::Present(uint32_t imageIndex, uint32_t frameIndex)
+{
+	if (frameIndex >= m_impl->frameSyncObjects.size()) return;
+
+	auto& frameSync = m_impl->frameSyncObjects[frameIndex];
+	vk::Semaphore presentWait = *frameSync.renderFinished;
 
 	vk::PresentInfoKHR presentInfo{
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores = &presentWait,
 		.swapchainCount = 1,
-		.pSwapchains = &swapchainHandle,
+		.pSwapchains = &*m_impl->swapchain,
 		.pImageIndices = &imageIndex
 	};
-	try
+
+	vk::Result result = m_impl->graphicsQueue.presentKHR(presentInfo);
+}
+
+void Device::Cleanup()
+{
+	m_impl->device.waitIdle();
+
+	m_impl->frameSyncObjects.clear();
+	m_impl->tempCmdBufs.clear();
+}
+
+const Image* Device::GetSwapchainImage(uint32_t imageIndex) const
+{
+	if (m_impl->swapchain == nullptr)
 	{
-		vk::Result result = graphicsQueue.presentKHR(presentInfo);
+		std::cerr << "ERROR: Swapchain is null!" << std::endl;
+		return nullptr;
 	}
-	catch (const vk::OutOfDateKHRError&)
+
+	return m_impl->swapchainImages[imageIndex].get();
+}
+
+std::pair<uint32_t, uint32_t> Device::GetSwapchainExtent() const
+{
+	if (m_impl)
 	{
+		return { m_impl->swapchainExtent.width, m_impl->swapchainExtent.height };
 	}
-	catch (const vk::SystemError& e)
-	{
-	}
+	return { 0, 0 };
 }
 
-void core::gpu::Device::Impl::CreateColorImage()
+void Device::WaitIdle()
 {
-	SImageCreateInfo colorInfo{
-		.width = swapchain->GetImpl().extent.width,
-		.height = swapchain->GetImpl().extent.height,
-		.mipLevels = 1,
-		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
-		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc,
-		.memoryProperties = EMemoryProperty::DeviceLocal,
-		.samples = SampleCount::e4
-	};
-
-	colorImage = std::make_unique<Image>(parent, colorInfo);
-
-	SImageViewCreateInfo viewInfo{
-		.format = core::gpu_detail::FromVulkan(swapchain->GetImpl().format),
-		.isDepth = false
-	};
-
-	colorImage->CreateView(viewInfo);
+	m_impl->device.waitIdle();
 }
 
-void core::gpu::Device::Impl::CreateDepthImage()
-{
-	SImageCreateInfo depthInfo{
-		.width = swapchain->GetImpl().extent.width,
-		.height = swapchain->GetImpl().extent.height,
-		.mipLevels = 1,
-		.format = TextureFormat::Depth32F,
-		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::DepthStencilAttachment,
-		.memoryProperties = EMemoryProperty::DeviceLocal,
-		.samples = SampleCount::e4
-	};
-
-	depthImage = std::make_unique<Image>(parent, depthInfo);
-
-	SImageViewCreateInfo viewInfo{
-		.format = TextureFormat::Depth32F,
-		.isDepth = true
-	};
-
-	depthImage->CreateView(viewInfo);
-}
-
-void core::gpu::Device::Impl::Cleanup()
-{
-	device.waitIdle();
-
-	imageAvailable.clear();
-	renderFinished.clear();
-	inFlightFences.clear();
-	imagesInFlight.clear();
-
-	tempCmdBufs.clear();
-}
-
-void core::gpu::Device::Impl::CreateCommandBuffers()
-{
-	return;
-}
-
-core::gpu::Buffer* core::gpu::Device::Impl::GetUniformBuffer(uint32_t frameIndex) const
-{
-	if (frameIndex >= uniformBuffers.size()) return nullptr;
-	return uniformBuffers[frameIndex].get();
-}
-
-const core::gpu::Pipeline* core::gpu::Device::Impl::GetGraphicsPipeline() const
-{
-	return graphicsPipeline.get();
-}
-
-const core::gpu::Image* core::gpu::Device::Impl::GetDepthImage() const
-{
-	return depthImage.get();
-}
-
-void core::gpu::Device::Impl::WaitIdle()
-{
-	device.waitIdle();
-}
-
-void core::gpu::Device::BeginFrame(uint32_t frameIndex)
-{
-	if (m_impl) m_impl->BeginFrame(frameIndex);
-}
-
-uint32_t core::gpu::Device::AcquireNextImage(uint32_t frameIndex)
-{
-	return m_impl ? m_impl->AcquireNextImage(frameIndex) : UINT32_MAX;
-}
-
-void* core::gpu::Device::GetImageAvailableSemaphore(uint32_t frameIndex) const
-{
-	return m_impl ? m_impl->GetImageAvailableSemaphore(frameIndex) : nullptr;
-}
-
-void* core::gpu::Device::GetRenderFinishedSemaphore(uint32_t imageIndex) const
-{
-	return m_impl ? m_impl->GetRenderFinishedSemaphore(imageIndex) : nullptr;
-}
-
-void* core::gpu::Device::GetInFlightFence(uint32_t frameIndex) const
-{
-	return m_impl ? m_impl->GetInFlightFence(frameIndex) : nullptr;
-}
-
-void core::gpu::Device::Present(uint32_t imageIndex)
-{
-	if (m_impl) m_impl->Present(imageIndex);
-}
-
-void core::gpu::Device::Cleanup()
-{
-	if (m_impl) m_impl->Cleanup();
-}
-
-core::gpu::Buffer* core::gpu::Device::GetUniformBuffer(uint32_t frameIndex)
-{
-	return m_impl ? m_impl->GetUniformBuffer(frameIndex) : nullptr;
-}
-
-void core::gpu::Device::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
+void Device::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
 {
 	if (m_impl) m_impl->TransitionImageForPresent(frameIndex, imageIndex);
 }
 
-const core::gpu::Image* core::gpu::Device::GetSwapchainImage(uint32_t imageIndex) const
-{
-	return m_impl ? m_impl->GetSwapchainImage(imageIndex) : nullptr;
-}
-
-const core::gpu::Image* core::gpu::Device::GetColorImage() const
-{
-	return m_impl ? m_impl->GetColorImage() : nullptr;
-}
-
-const core::gpu::Image* core::gpu::Device::GetDepthImage() const
-{
-	return m_impl ? m_impl->GetDepthImage() : nullptr;
-}
-
-void core::gpu::Device::WaitIdle()
-{
-	if (m_impl) m_impl->WaitIdle();
-}
-
-void core::gpu::Device::RecreateSwapchain()
+void Device::RecreateSwapchain()
 {
 	if (m_impl) m_impl->RecreateSwapchain();
 }
 
-const core::gpu::Pipeline* core::gpu::Device::GetGraphicsPipeline() const
-{
-	return m_impl ? m_impl->GetGraphicsPipeline() : nullptr;
-}
-
-void core::gpu::Device::UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle)
-{
-	if (m_impl) m_impl->UpdateDescriptorWithTLAS(frameIndex, tlasHandle);
-}
-
-core::gpu::ImguiContext* core::gpu::Device::GetImGuiContext()
+ImguiContext* Device::GetImGuiContext()
 {
 	return m_imGuiContext;
 }
-
