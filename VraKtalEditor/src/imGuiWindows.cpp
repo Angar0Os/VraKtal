@@ -259,6 +259,7 @@ void ImGuiWindows::LoadProject()
 
 	if (!projectPath.parent_path().empty()) {
 		m_contentDrawer.SetCurrentPath(projectPath.parent_path());
+	}
 
 	// Global shortcuts
 	if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z)) {

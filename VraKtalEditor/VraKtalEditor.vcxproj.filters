@@ -15,7 +15,6 @@
     </Filter>
     <Filter Include="Header Files\utils">
       <UniqueIdentifier>{bc4a6f24-0a63-42e9-a8d5-69a1a9b138ec}</UniqueIdentifier>
-      <UniqueIdentifier>{961cfaea-0ecc-4034-bd17-467104387ef1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\utils">
       <UniqueIdentifier>{14760e3f-abe1-41b8-9e76-520568f183a7}</UniqueIdentifier>
@@ -25,6 +24,7 @@
     </Filter>
     <Filter Include="Source Files\windows">
       <UniqueIdentifier>{e752945f-d482-4a1c-bd46-8e71113e0871}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Header Files\command">
       <UniqueIdentifier>{77d0ba72-553f-4605-9763-9d6d31960670}</UniqueIdentifier>
     </Filter>
@@ -48,8 +48,14 @@
     <ClCompile Include="src\contentDrawer.cpp">
       <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="newProjectModal.cpp">
-      <Filter>Source Files\windows</Filter>
+    <ClCompile Include="src\command\commandHistory.cpp">
+      <Filter>Source Files\command</Filter>
+    </ClCompile>
+    <ClCompile Include="src\command\fileCommands.cpp">
+      <Filter>Source Files\command</Filter>
+    </ClCompile>
+    <ClCompile Include="src\newProjectModal.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -57,18 +63,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\utils\fileTypeDetector.h">
-    <ClCompile Include="src\command\commandHistory.cpp">
-      <Filter>Source Files\command</Filter>
-    </ClCompile>
-    <ClCompile Include="src\command\fileCommands.cpp">
-      <Filter>Source Files\command</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="header\imGuiWindows.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="header\utils\fileTypeDetector.h">
       <Filter>Header Files\utils</Filter>
     </ClInclude>
     <ClInclude Include="include\utils\yamlParser.h">
@@ -77,19 +71,17 @@
     <ClInclude Include="include\contentDrawer.h">
       <Filter>Header Files\windows</Filter>
     </ClInclude>
-    <ClInclude Include="include\newProjectModal.h">
-      <Filter>Header Files\windows</Filter>
     <ClInclude Include="include\command\command.h">
       <Filter>Header Files\command</Filter>
-    </ClInclude>
-    <ClInclude Include="include\contentDrawer.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\command\commandHistory.h">
       <Filter>Header Files\command</Filter>
     </ClInclude>
     <ClInclude Include="include\command\fileCommands.h">
       <Filter>Header Files\command</Filter>
+    </ClInclude>
+    <ClInclude Include="include\newProjectModal.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -64,9 +64,7 @@ public:
 
 	void GetContentDrawerWindow();
 	void SetCurrentPath(std::filesystem::path newPath);
+	void SetCommandHistory(command::CommandHistory* history);
 };
 
 #endif //EDITOR_WINDOWS_CONTENTDRAWER_H
-
-	void SetCommandHistory(command::CommandHistory* history);
-};
