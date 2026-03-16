@@ -135,6 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="newProjectModal.cpp" />
     <ClCompile Include="src\command\commandHistory.cpp" />
     <ClCompile Include="src\command\fileCommands.cpp" />
     <ClCompile Include="src\contentDrawer.cpp" />
@@ -146,6 +147,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\contentDrawer.h" />
+    <ClInclude Include="include\imGuiWindows.h" />
+    <ClInclude Include="include\newProjectModal.h" />
+    <ClInclude Include="include\utils\fileTypeDetector.h" />
+    <ClInclude Include="include\utils\yamlParser.h" />
     <ClInclude Include="header\imGuiWindows.h" />
     <ClInclude Include="header\utils\fileTypeDetector.h" />
     <ClInclude Include="header\utils\yamlParser.h" />

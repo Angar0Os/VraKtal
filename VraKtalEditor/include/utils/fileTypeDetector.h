@@ -1,3 +1,5 @@
+#ifndef EDITOR_UTILS_FILETYPEDETECTOR_H
+#define EDITOR_UTILS_FILETYPEDETECTOR_H
 #pragma once
 
 #include <filesystem>
@@ -34,3 +36,5 @@ private:
 public:
 	static FileType DetectFileType(const std::filesystem::path&);
 };
+
+#endif //EDITOR_UTILS_FILETYPEDETECTOR_H

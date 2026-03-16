@@ -16,6 +16,8 @@
 #include <imGuizmo/ImGuizmo.h>
 #include <imgui/imgui.h>
 
+#include "portable-file-dialogs/portable-file-dialogs.h"
+
 #include <iostream>
 #include <MDI/IconsMaterialDesignIcons.h>
 
@@ -57,6 +59,18 @@ void ImGuiWindows::PrepareImGuiWindows()
     testWindow();
 	ContentDrawerWindow();
     HierarchyWindow();
+
+	m_newProjectModal.GetNewProjectModalWindow();
+
+	if (m_newProjectModal.HasNewProjectCreated()) {
+		std::filesystem::path lastProjectPath = m_newProjectModal.GetLastCreatedProjectPath();
+
+		if (!lastProjectPath.empty()) {
+			m_contentDrawer.SetCurrentPath(lastProjectPath);
+		}
+
+		m_newProjectModal.ResetProjectCreatedFlag();
+	}
 }
 
 void ImGuiWindows::ContentDrawerWindow()
@@ -162,9 +176,13 @@ void ImGuiWindows::mainWindow()
 void ImGuiWindows::SetMenuBar() {
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("New Project")) {}
+			if (ImGui::MenuItem("New Project")) {
+				m_newProjectModal.ToggleNewProjectModal();
+			}
 
-			if (ImGui::MenuItem("Open Project")) {}
+			if (ImGui::MenuItem("Open Project")) {
+				ImGuiWindows::LoadProject();
+			}
 
 			if (ImGui::MenuItem("Save Project")) {}
 
@@ -219,6 +237,28 @@ void ImGuiWindows::SetMenuBar() {
 		}
 		ImGui::EndMenuBar();
 	}
+}
+
+void ImGuiWindows::LoadProject()
+{
+	auto selection = pfd::open_file(
+		"Choose a project",
+		"",
+		{
+			"YAML", "*.yaml",
+		}
+		);
+
+	auto files = selection.result();
+
+	if (files.empty()) {
+		return;
+	}
+
+	std::filesystem::path projectPath(files[0]);
+
+	if (!projectPath.parent_path().empty()) {
+		m_contentDrawer.SetCurrentPath(projectPath.parent_path());
 
 	// Global shortcuts
 	if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z)) {
