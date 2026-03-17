@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <tiny_gltf.h>
@@ -130,7 +131,7 @@ void loaders::MeshLoader::CreateBuffersForMesh(graphics::resources::Mesh* mesh)
 	);
 	transferCmd->End(0);
 
-	transferCmd->SubmitAndWait(m_device);
+	transferCmd->SubmitImmediate(m_device);
 
 	mesh->indexCount = static_cast<uint32_t>(mesh->indices.size());
 }
@@ -177,7 +178,7 @@ void loaders::MeshLoader::CreateBLASForMesh(graphics::resources::Mesh* mesh)
 	cmdBuffer.Begin(0);
 	cmdBuffer.BuildAccelerationStructure(mesh->blas.get());
 	cmdBuffer.End(0);
-	cmdBuffer.SubmitAndWait(m_device);
+	cmdBuffer.SubmitImmediate(m_device);
 
 	std::cout << "BLAS built for mesh during loading" << std::endl;
 }

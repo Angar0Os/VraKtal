@@ -1,9 +1,9 @@
-
 #include "imGuiWindows.h"
 #include <core/gpu/imguiContext.h>
 #include "imgui/imgui.h"
 #include "contentDrawer.h"
 #include "command/fileCommands.h"
+#include <core/gpu/buffer.h>
 #include <graphics/resources/object/camera.h>
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -13,15 +13,21 @@
 #include <imGuizmo/ImGuizmo.h>
 #include <imgui/imgui.h>
 
+#include "portable-file-dialogs/portable-file-dialogs.h"
+
 #include <iostream>
 #include <MDI/IconsMaterialDesignIcons.h>
 
-ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext) : m_imGuiContext(_imGuiContext)
+ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window)
+    : m_imGuiContext(_imGuiContext)
 {
-	command::ClearBackupDirectory();
+    m_renderer = _renderer;
+    m_window = window;
 
-	m_commandHistory = std::make_unique<command::CommandHistory>(100);
-	m_contentDrawer.SetCommandHistory(m_commandHistory.get());
+    command::ClearBackupDirectory();
+
+    m_commandHistory = std::make_unique<command::CommandHistory>(100);
+    m_contentDrawer.SetCommandHistory(m_commandHistory.get());
 }
 
 ImGuiWindows::~ImGuiWindows()
@@ -45,6 +51,18 @@ void ImGuiWindows::PrepareImGuiWindows()
     testWindow();
 	ContentDrawerWindow();
     HierarchyWindow();
+
+	m_newProjectModal.GetNewProjectModalWindow();
+
+	if (m_newProjectModal.HasNewProjectCreated()) {
+		std::filesystem::path lastProjectPath = m_newProjectModal.GetLastCreatedProjectPath();
+
+		if (!lastProjectPath.empty()) {
+			m_contentDrawer.SetCurrentPath(lastProjectPath);
+		}
+
+		m_newProjectModal.ResetProjectCreatedFlag();
+	}
 }
 
 void ImGuiWindows::ContentDrawerWindow()
@@ -157,13 +175,21 @@ void ImGuiWindows::mainWindow()
 void ImGuiWindows::SetMenuBar() {
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("New Project")) {}
+			if (ImGui::MenuItem("New Project")) {
+				m_newProjectModal.ToggleNewProjectModal();
+			}
 
-			if (ImGui::MenuItem("Open Project")) {}
+			if (ImGui::MenuItem("Open Project")) {
+				ImGuiWindows::LoadProject();
+			}
 
 			if (ImGui::MenuItem("Save Project")) {}
 
-			if (ImGui::MenuItem("Quit")) {}
+			if (ImGui::MenuItem("Quit")) {
+				if (m_window) {
+					m_window->Close();
+				}
+			}
 			ImGui::EndMenu();
 		}
 
@@ -213,6 +239,29 @@ void ImGuiWindows::SetMenuBar() {
 			ImGui::EndPopup();
 		}
 		ImGui::EndMenuBar();
+	}
+}
+
+void ImGuiWindows::LoadProject()
+{
+	auto selection = pfd::open_file(
+		"Choose a project",
+		"",
+		{
+			"YAML", "*.yaml",
+		}
+		);
+
+	auto files = selection.result();
+
+	if (files.empty()) {
+		return;
+	}
+
+	std::filesystem::path projectPath(files[0]);
+
+	if (!projectPath.parent_path().empty()) {
+		m_contentDrawer.SetCurrentPath(projectPath.parent_path());
 	}
 
 	// Global shortcuts

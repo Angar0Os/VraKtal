@@ -5,13 +5,11 @@
 #include "../src/core/gpu/vulkan/imguiContext_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
-#include "../src/core/gpu/vulkan/swapchain_impl.h"
 #include "../src/core/gpu/vulkan/commandBuffer_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <core/window.h>
 #include <core/gpu/device.h>
-#include <graphics/renderer.h>
 
 
 #include <core/gpu/commandBuffer.h>
@@ -20,7 +18,6 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "imGuizmo/ImGuizmo.h"
 
-#include <glm/gtc/type_ptr.inl>
 
 #include "MDI/IconsMaterialDesignIcons.h"
 
@@ -143,14 +140,14 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	init_info.Queue = *_device.GetImpl().graphicsQueue;
 	init_info.DescriptorPool = imguiDescriptorPool;
 	init_info.MinImageCount = 2;
-	init_info.ImageCount = _device.GetImpl().GetSwapchain()->GetImpl().images.size();
-	init_info.MSAASamples = VK_SAMPLE_COUNT_4_BIT;
+	init_info.ImageCount = _device.GetImpl().swapchainImages.size();
+	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 	init_info.RenderPass = VK_NULL_HANDLE;
     init_info.UseDynamicRendering = VK_TRUE;
     init_info.PipelineRenderingCreateInfo = {};
     init_info.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
 	init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-	VkFormat format = static_cast<VkFormat>(_device.GetImpl().GetSwapchain()->GetImpl().format);
+	VkFormat format = static_cast<VkFormat>(_device.GetImpl().swapchainImageFormat);
 	init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &format;
 	init_info.PipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 

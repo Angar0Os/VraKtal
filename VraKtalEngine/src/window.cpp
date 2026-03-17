@@ -52,6 +52,13 @@ bool core::Window::ShouldClose() const
 	return glfwWindowShouldClose(m_window);
 }
 
+void core::Window::Close()
+{
+	if (m_window) {
+		glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+	}
+}
+
 std::pair<uint32_t, uint32_t> core::Window::Size() const
 {
 	return { m_width, m_height };

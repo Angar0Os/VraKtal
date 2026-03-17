@@ -12,6 +12,21 @@ namespace core::gpu
 	class Buffer;
 }
 
+#pragma once
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <core/gpu/accelerationStructure.h>
+#include <graphics/materialInstance.h>
+
+#include <vector>
+#include <memory>
+
+namespace core::gpu
+{
+	class Buffer;
+}
+
 namespace graphics::resources
 {
 	struct Vertex
@@ -44,9 +59,9 @@ namespace graphics::resources
 	class Mesh
 	{
 	public:
-		std::vector<Vertex> vertices;
+		std::vector<Vertex>   vertices;
 		std::vector<uint32_t> indices;
-		std::vector<SubMesh> subMeshes;
+		std::vector<SubMesh>  subMeshes;
 
 		std::unique_ptr<core::gpu::Buffer> vertexBuffer;
 		std::unique_ptr<core::gpu::Buffer> indexBuffer;
@@ -56,12 +71,19 @@ namespace graphics::resources
 		std::unique_ptr<core::gpu::Buffer> rtIndexBuffer;
 		std::unique_ptr<core::gpu::AccelerationStructure> blas;
 
+		std::vector<std::shared_ptr<MaterialInstance>> materials;
+
+		MaterialInstance* GetMaterial(uint32_t index) const
+		{
+			if (index < materials.size())
+				return materials[index].get();
+			return nullptr;
+		}
+
 		std::vector<SubMesh> GetSubmeshes() const
 		{
 			if (!subMeshes.empty())
-			{
 				return subMeshes;
-			}
 
 			SubMesh defaultSubmesh;
 			defaultSubmesh.firstIndex = 0;
@@ -74,11 +96,9 @@ namespace graphics::resources
 
 		bool HasSubmeshes() const { return !subMeshes.empty(); }
 
-
 		void Transform(const glm::mat4& matrix)
 		{
 			glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(matrix)));
-
 			for (auto& vertex : vertices)
 			{
 				vertex.position = glm::vec3(matrix * glm::vec4(vertex.position, 1.0f));
@@ -89,17 +109,13 @@ namespace graphics::resources
 		void Translate(const glm::vec3& offset)
 		{
 			for (auto& vertex : vertices)
-			{
 				vertex.position += offset;
-			}
 		}
 
 		void Scale(const glm::vec3& scale)
 		{
 			for (auto& vertex : vertices)
-			{
 				vertex.position *= scale;
-			}
 			RecalculateNormals();
 		}
 
@@ -112,9 +128,7 @@ namespace graphics::resources
 		void RecalculateNormals()
 		{
 			for (auto& vertex : vertices)
-			{
 				vertex.normal = glm::vec3(0.0f);
-			}
 
 			for (size_t i = 0; i < indices.size(); i += 3)
 			{
@@ -122,12 +136,8 @@ namespace graphics::resources
 				uint32_t i1 = indices[i + 1];
 				uint32_t i2 = indices[i + 2];
 
-				glm::vec3 v0 = vertices[i0].position;
-				glm::vec3 v1 = vertices[i1].position;
-				glm::vec3 v2 = vertices[i2].position;
-
-				glm::vec3 edge1 = v1 - v0;
-				glm::vec3 edge2 = v2 - v0;
+				glm::vec3 edge1 = vertices[i1].position - vertices[i0].position;
+				glm::vec3 edge2 = vertices[i2].position - vertices[i0].position;
 				glm::vec3 normal = glm::cross(edge1, edge2);
 
 				vertices[i0].normal += normal;
@@ -136,12 +146,8 @@ namespace graphics::resources
 			}
 
 			for (auto& vertex : vertices)
-			{
 				if (glm::length(vertex.normal) > 0.0f)
-				{
 					vertex.normal = glm::normalize(vertex.normal);
-				}
-			}
 		}
 
 		Mesh Clone() const
@@ -158,14 +164,15 @@ namespace graphics::resources
 			vertices.clear();
 			indices.clear();
 			subMeshes.clear();
+			materials.clear();
 			vertexBuffer.reset();
 			indexBuffer.reset();
 		}
 
-		core::gpu::Buffer* GetVertexBuffer() const { return vertexBuffer.get(); }
-		core::gpu::Buffer* GetIndexBuffer() const { return indexBuffer.get(); }
-		uint32_t GetVertexCount() const { return static_cast<uint32_t>(vertices.size()); }
-		uint32_t GetIndexCount() const { return static_cast<uint32_t>(indices.size()); }
+		core::gpu::Buffer* GetVertexBuffer()  const { return vertexBuffer.get(); }
+		core::gpu::Buffer* GetIndexBuffer()   const { return indexBuffer.get(); }
+		uint32_t           GetVertexCount()   const { return static_cast<uint32_t>(vertices.size()); }
+		uint32_t           GetIndexCount()    const { return static_cast<uint32_t>(indices.size()); }
 	};
 }
 

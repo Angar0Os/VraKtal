@@ -1,3 +1,5 @@
+#ifndef EDITOR_WINDOWS_CONTENTDRAWER_H
+#define EDITOR_WINDOWS_CONTENTDRAWER_H
 #pragma once
 
 #include "utils/fileTypeDetector.h"
@@ -25,6 +27,7 @@ class ContentDrawer
 {
 private:
 	std::filesystem::path m_currentPath;
+	std::filesystem::path m_baseAssetPath;
 	std::vector<FileEntry> m_cachedFiles;
 	bool m_needsRefresh;
 	std::set<size_t> m_selectedIndices;
@@ -60,6 +63,8 @@ public:
 	~ContentDrawer();
 
 	void GetContentDrawerWindow();
-
+	void SetCurrentPath(std::filesystem::path newPath);
 	void SetCommandHistory(command::CommandHistory* history);
 };
+
+#endif //EDITOR_WINDOWS_CONTENTDRAWER_H

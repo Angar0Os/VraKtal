@@ -26,25 +26,26 @@ namespace core::gpu
 
 		void Begin(uint32_t index);
 		void End(uint32_t index);
-		void Submit(const core::gpu::Device* device, void* waitSemaphore = nullptr, void* signalSemaphore = nullptr, void* fence = nullptr);
-		void SubmitAndWait(const core::gpu::Device* device);
 
 		void BindPipeline(const core::gpu::Pipeline* device);
 		void BindVertexBuffer(const core::gpu::Buffer* buffer, size_t offset);
 		void BindIndexBuffer(const core::gpu::Buffer* buffer, size_t offset);
-		void BindDescriptorSets(const core::gpu::Device* device, uint32_t frameIndex, uint32_t firstSet);
-
-		void SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth);
+    void BindDescriptorSets(const core::gpu::Device* device, uint32_t frameIndex, uint32_t firstSet);
+    void SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth);
 		void SetScissor(int32_t x, int32_t y, const core::gpu::Device* device);
-
+    
 		void SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth);
 		void SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height);
 
 		void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
 		void BeginRendering(const core::gpu::Device* device, const core::gpu::Image* colorImageView, const core::gpu::Image* depthImageView);
+		void BeginRendering(const core::gpu::Device* device,
+			const std::vector<CommandBuffer::RenderingAttachmentInfo>& colorAttachments,
+			const CommandBuffer::DepthAttachmentInfo& depthAttachment);
 		void EndRendering();
 
 		void CopyBuffer(const core::gpu::Buffer* srcBuffer, const core::gpu::Buffer* dstBuffer, size_t size);
+		void CopyBufferToImage(const core::gpu::Buffer* srcBuffer, const core::gpu::Image* dstImage, uint32_t width, uint32_t height);
 
 		void PushConstants(const core::gpu::Pipeline* pipeline, uint32_t stageFlags, uint32_t offset, uint32_t size, const void* pValues);
 
@@ -58,6 +59,7 @@ namespace core::gpu
 			bool isDepth);
 
 		void ResolveImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, const core::gpu::Device* device);
+		void BlitImage(const core::gpu::Image* srcImage, const core::gpu::Image* dstImage, const core::gpu::Device* device);
 
 		void BuildAccelerationStructure(const core::gpu::AccelerationStructure* accelerationStructure);
 

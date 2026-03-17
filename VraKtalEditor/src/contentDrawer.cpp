@@ -18,7 +18,16 @@ constexpr const char* baseAssetPath = "assets";
 
 ContentDrawer::ContentDrawer() : m_currentPath(baseAssetPath), m_needsRefresh(true)
 {
-	m_currentPath = baseAssetPath;
+	try {
+		m_currentPath = std::filesystem::absolute(baseAssetPath);
+		m_baseAssetPath = m_currentPath;
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Failed to initialize ContentDrawer: " << e.what() << std::endl;
+
+		m_currentPath = std::filesystem::current_path();
+		m_baseAssetPath = m_currentPath;
+	}
 }
 
 ContentDrawer::~ContentDrawer()
@@ -73,9 +82,19 @@ void ContentDrawer::GetContentDrawerWindow()
 		std::filesystem::path tempPath = m_currentPath;
 		std::vector<std::pair<std::string, std::filesystem::path>> breadcrumbs;
 
-		while (tempPath != std::filesystem::path(baseAssetPath).parent_path() && !tempPath.empty()) {
+		while (!tempPath.empty()) {
 			breadcrumbs.insert(breadcrumbs.begin(), { tempPath.filename().string(), tempPath });
-			tempPath = tempPath.parent_path();
+
+			if (tempPath == m_baseAssetPath || tempPath == tempPath.root_path()) {
+				break;
+			}
+
+			std::filesystem::path parentPath = tempPath.parent_path();
+			if (parentPath == tempPath) {
+				break;
+			}
+
+			tempPath = parentPath;
 		}
 
 		float breadcrumbWidth = 0.0f;
@@ -126,9 +145,12 @@ void ContentDrawer::GetContentDrawerWindow()
 		ImGui::EndMenuBar();
 	}
 
-	if (m_currentPath != baseAssetPath && ImGui::Button(ICON_MDI_ARROW_LEFT)) {
-		m_currentPath = m_currentPath.parent_path();
-		m_needsRefresh = true;
+	if (m_currentPath != m_baseAssetPath && ImGui::Button(ICON_MDI_ARROW_LEFT)) {
+		std::filesystem::path parentPath = m_currentPath.parent_path();
+		if (!parentPath.empty() && parentPath != m_currentPath) {
+			m_currentPath = parentPath;
+			m_needsRefresh = true;
+		}
 	}
 
 	if (m_needsRefresh) {
@@ -261,6 +283,31 @@ void ContentDrawer::GetContentDrawerWindow()
 	}
 
 	ImGui::End();
+}
+
+void ContentDrawer::SetCurrentPath(std::filesystem::path newPath)
+{
+	try {
+		std::filesystem::path absolutePath = std::filesystem::absolute(newPath / baseAssetPath);
+
+		if (!std::filesystem::exists(absolutePath)) {
+			std::cerr << "Path does not exist: " << absolutePath << std::endl;
+			return;
+		}
+
+		if (!std::filesystem::is_directory(absolutePath)) {
+			std::cerr << "Path is not a directory: " << absolutePath << std::endl;
+			return;
+		}
+
+		m_currentPath = absolutePath;
+		m_baseAssetPath = absolutePath;
+		m_needsRefresh = true;
+		ClearSelection();
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Failed to set current path: " << e.what() << std::endl;
+	}
 }
 
 void ContentDrawer::HandleFileActions()
@@ -470,15 +517,35 @@ void ContentDrawer::PerformRename()
 void ContentDrawer::RefreshFileList() {
 	m_cachedFiles.clear();
 
-	for (auto& entry : std::filesystem::directory_iterator(m_currentPath)) {
-		FileEntry fileEntry;
-		fileEntry.path = entry.path();
-		fileEntry.filename = entry.path().filename().string();
-		fileEntry.isDirectory = entry.is_directory();
-		fileEntry.fileType = FileTypeDetector::DetectFileType(fileEntry.path);
-		fileEntry.isSelected = false;
+	try {
+		if (!std::filesystem::exists(m_currentPath)) {
+			std::cerr << "Directory does not exist: " << m_currentPath << std::endl;
+			m_needsRefresh = false;
+			return;
+		}
 
-		m_cachedFiles.push_back(fileEntry);
+		if (!std::filesystem::is_directory(m_currentPath)) {
+			std::cerr << "Path is not a directory: " << m_currentPath << std::endl;
+			m_needsRefresh = false;
+			return;
+		}
+
+		for (auto& entry : std::filesystem::directory_iterator(m_currentPath)) {
+			FileEntry fileEntry;
+			fileEntry.path = entry.path();
+			fileEntry.filename = entry.path().filename().string();
+			fileEntry.isDirectory = entry.is_directory();
+			fileEntry.fileType = FileTypeDetector::DetectFileType(fileEntry.path);
+			fileEntry.isSelected = false;
+
+			m_cachedFiles.push_back(fileEntry);
+		}
+	}
+	catch (const std::filesystem::filesystem_error& e) {
+		std::cerr << "Error refreshing file list: " << e.what() << std::endl;
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Unexpected error refreshing file list: " << e.what() << std::endl;
 	}
 
 	ClearSelection();
