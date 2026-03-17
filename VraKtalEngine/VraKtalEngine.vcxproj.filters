@@ -82,6 +82,12 @@
     <Filter Include="external\portableFileDialogs">
       <UniqueIdentifier>{9060703a-032f-4e39-9ead-06e259c1f291}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\sound">
+      <UniqueIdentifier>{9638faa7-64c4-45e6-8b1d-f88c7f65f134}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sound">
+      <UniqueIdentifier>{ced7eb60-0d1b-43f5-90f9-92da3de6361d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -255,6 +261,9 @@
     <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h">
       <Filter>external\portableFileDialogs</Filter>
     </ClInclude>
+    <ClInclude Include="BassImpl.h">
+      <Filter>Header Files\sound</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -352,6 +361,9 @@
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\imguiContext_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="BassImpl.cpp">
+      <Filter>Source Files\sound</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
