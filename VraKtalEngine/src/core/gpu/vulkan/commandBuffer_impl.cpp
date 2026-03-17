@@ -313,8 +313,8 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 		info.pDepthAttachment = nullptr;
 	}
 
-	uint32_t width = device->GetImpl().swapchainExtent.width;
-	uint32_t height = device->GetImpl().swapchainExtent.height;
+	uint32_t width = colorImage->GetImpl().extent.width;
+	uint32_t height = colorImage->GetImpl().extent.height;
 
 	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });
 	info.layerCount = 1;
@@ -353,8 +353,10 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 		vkDepth.clearValue = vk::ClearDepthStencilValue(depthAttachment.clearDepth, 0);
 	}
 
-	uint32_t width = device->GetImpl().swapchainExtent.width;
-	uint32_t height = device->GetImpl().swapchainExtent.height;
+	uint32_t width = colorAttachments.empty() ? device->GetImpl().swapchainExtent.width
+		: colorAttachments[0].image->GetImpl().extent.width;
+	uint32_t height = colorAttachments.empty() ? device->GetImpl().swapchainExtent.height
+		: colorAttachments[0].image->GetImpl().extent.height;
 
 	vk::RenderingInfo info{};
 	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });

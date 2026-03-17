@@ -49,6 +49,7 @@ namespace core::gpu
 		vk::raii::PhysicalDevice			physicalDevice	= nullptr;
 		vk::raii::Queue						graphicsQueue	= nullptr;
 		uint32_t							queueIndex		= ~0;
+		bool								needsResize		= false;
 
 		std::unique_ptr<CommandPool>			commandPool;
 		std::unique_ptr<DescriptorSetLayout>	descriptorSetLayout;

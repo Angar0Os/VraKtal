@@ -86,8 +86,8 @@ namespace graphics
         void SetCamera(const glm::mat4& view, const glm::mat4& projection);
         void PushMesh(resources::Mesh* mesh, const glm::mat4& transform);
         void PushLight(const resources::Light& light);
-        void Render(const core::gpu::Image* image, uint32_t imageIndex);
         void Render(uint32_t imageIndex);
+        void OnResize();
         void DrawScene(core::gpu::CommandBuffer* _cmd);
         void Cleanup();
 

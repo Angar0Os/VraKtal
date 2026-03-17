@@ -17,7 +17,7 @@ using namespace core;
 using namespace core::gpu;
 using namespace graphics;
 
-//#define VRAKTAL_EDITOR
+#define VRAKTAL_EDITOR
 
 Renderer::Renderer(Window& window, Device& device)
 	: m_window(window)
@@ -187,6 +187,15 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 		uniformBuffers[frameIndex]->CopyFrom(&ubo, sizeof(UniformBufferObject));
 }
 
+void Renderer::OnResize()
+{
+	m_device.WaitIdle();
+	m_passes.clear();
+	m_gBufferPass = nullptr;
+	m_lightingPass = nullptr;
+	InitPasses();
+}
+
 void Renderer::CreateCommandBuffers()
 {
 	m_commandBuffers.clear();
@@ -208,11 +217,11 @@ void Renderer::Render(uint32_t imageIndex)
 
     auto* swapchainImage = m_device.GetSwapchainImage(imageIndex);
 
-    m_device.BeginFrame(m_currentFrame);
-
 #ifdef VRAKTAL_EDITOR
-    m_device.GetImGuiContext()->PrepareForDrawing();
+	m_device.GetImGuiContext()->PrepareForDrawing();
 #endif
+
+    m_device.BeginFrame(m_currentFrame);
 
     BuildTLAS();
     RebuildAccelerationStructures();

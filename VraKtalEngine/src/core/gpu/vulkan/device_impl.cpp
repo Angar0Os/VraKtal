@@ -536,6 +536,7 @@ void Device::Impl::CreateSwapchain()
 
 void ::Device::Impl::RecreateSwapchain()
 {
+	needsResize = false;
 	int width = 0, height = 0;
 	glfwGetFramebufferSize(m_window.GlfwHandle(), &width, &height);
 	while (width == 0 || height == 0)
@@ -547,6 +548,7 @@ void ::Device::Impl::RecreateSwapchain()
 	device.waitIdle();
 
 	swapchainImageViews.clear();
+	swapchainImages.clear();
 
 	vk::SwapchainKHR oldSwapchain = *swapchain;
 
@@ -555,14 +557,12 @@ void ::Device::Impl::RecreateSwapchain()
 	auto presentModes = physicalDevice.getSurfacePresentModesKHR(*surface);
 
 	vk::SurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(surfaceFormats, TextureFormat::RGBA8_SRGB);
-	vk::PresentModeKHR presentMode = ChoosePresentMode(presentModes, PresentMode::Mailbox);
-	vk::Extent2D extent = ChooseExtent(capabilities, width, height);
+	vk::PresentModeKHR   presentMode = ChoosePresentMode(presentModes, PresentMode::Mailbox);
+	vk::Extent2D         extent = ChooseExtent(capabilities, width, height);
 
 	uint32_t imageCount = std::max(3u, capabilities.minImageCount);
 	if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
-	{
 		imageCount = capabilities.maxImageCount;
-	}
 
 	vk::SwapchainCreateInfoKHR createInfo{
 		.surface = *surface,
@@ -571,7 +571,8 @@ void ::Device::Impl::RecreateSwapchain()
 		.imageColorSpace = surfaceFormat.colorSpace,
 		.imageExtent = extent,
 		.imageArrayLayers = 1,
-		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+		.imageUsage = vk::ImageUsageFlagBits::eColorAttachment
+						  | vk::ImageUsageFlagBits::eTransferDst,
 		.imageSharingMode = vk::SharingMode::eExclusive,
 		.preTransform = capabilities.currentTransform,
 		.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
@@ -581,9 +582,10 @@ void ::Device::Impl::RecreateSwapchain()
 	};
 
 	swapchain = vk::raii::SwapchainKHR(device, createInfo);
+	swapchainExtent = extent;
+	swapchainImageFormat = surfaceFormat.format;
 
 	std::vector<vk::Image> vkImages = swapchain.getImages();
-	swapchainImageViews.clear();
 	swapchainImageViews.reserve(vkImages.size());
 
 	for (vk::Image image : vkImages)
@@ -601,6 +603,13 @@ void ::Device::Impl::RecreateSwapchain()
 			}
 		};
 		swapchainImageViews.emplace_back(device, viewInfo);
+
+		::SPredefinedImageCreateInfo imageInfo{};
+		imageInfo.image = image;
+		imageInfo.extent = extent;
+		imageInfo.aspectFlags = vk::ImageAspectFlagBits::eColor;
+		imageInfo.format = surfaceFormat.format;
+		swapchainImages.emplace_back(std::make_unique<Image>(parent, imageInfo));
 	}
 
 	CreateSyncObjects();
@@ -767,7 +776,18 @@ void Device::Present(uint32_t imageIndex, uint32_t frameIndex)
 		.pImageIndices = &imageIndex
 	};
 
-	vk::Result result = m_impl->graphicsQueue.presentKHR(presentInfo);
+	try
+	{
+		vk::Result result = m_impl->graphicsQueue.presentKHR(presentInfo);
+		if (result == vk::Result::eSuboptimalKHR)
+		{
+			m_impl->needsResize = true;
+		}
+	}
+	catch (const vk::OutOfDateKHRError&)
+	{
+		m_impl->needsResize = true;
+	}
 }
 
 void Device::Cleanup()
@@ -806,6 +826,16 @@ void Device::WaitIdle()
 void Device::TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex)
 {
 	if (m_impl) m_impl->TransitionImageForPresent(frameIndex, imageIndex);
+}
+
+bool core::gpu::Device::NeedsResize() const
+{
+	return m_impl->needsResize;
+}
+
+void core::gpu::Device::ClearResizeFlag()
+{
+	m_impl->needsResize = false;
 }
 
 void Device::RecreateSwapchain()

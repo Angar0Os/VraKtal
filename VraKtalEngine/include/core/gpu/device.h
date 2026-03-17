@@ -54,7 +54,8 @@ namespace core
 			
 			void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
 			
-
+			bool NeedsResize() const;
+			void ClearResizeFlag();
 			void RecreateSwapchain();
 
 		};

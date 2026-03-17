@@ -46,7 +46,8 @@ namespace core
 			SceneViewport* GetSceneViewport() { return m_SceneViewport.get(); };
 			void DrawViewportComponent(uint32_t width, uint32_t height);
 			void RenderSceneToViewport(core::gpu::CommandBuffer* cmd, graphics::Renderer* renderer);
-
+			
+			void OnResize();
 			Impl* GetImpl() { return m_impl.get();};
 		};
 	}

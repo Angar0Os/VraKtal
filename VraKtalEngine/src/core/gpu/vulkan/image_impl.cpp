@@ -7,7 +7,7 @@
 core::gpu::Image::Impl::Impl(const core::gpu::Device* device, const SImageCreateInfo& info)
 	: format(info.format), samples(info.samples)
 {
-	if(info.width == 0 || info.height == 0)
+	if (info.width == 0 || info.height == 0)
 	{
 		throw std::runtime_error("Image width and height cannot be zero");
 	}
@@ -33,7 +33,7 @@ core::gpu::Image::Impl::Impl(const core::gpu::Device* device, const SImageCreate
 	vk::MemoryAllocateInfo allocInfo{};
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = FindMemoryType(
-		*device, 
+		*device,
 		memRequirements.memoryTypeBits,
 		core::gpu_detail::ToVulkan(info.memoryProperties)
 	);
@@ -43,11 +43,14 @@ core::gpu::Image::Impl::Impl(const core::gpu::Device* device, const SImageCreate
 	raiiImage.bindMemory(*memory, 0);
 	image = *raiiImage;
 
+	vk::Extent2D tempExtent = { info.width, info.height };
+	extent = tempExtent;
+
 	vk::ImageViewCreateInfo viewInfo{};
 	viewInfo.image = image;
 	viewInfo.viewType = vk::ImageViewType::e2D;
 	viewInfo.format = core::gpu_detail::ToVulkan(info.format);
-    viewInfo.subresourceRange.aspectMask = core::gpu_detail::ToVulkanAspestMask(info.format);
+	viewInfo.subresourceRange.aspectMask = core::gpu_detail::ToVulkanAspestMask(info.format);
 	viewInfo.subresourceRange.baseMipLevel = 0;
 	viewInfo.subresourceRange.levelCount = 1;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
@@ -58,19 +61,20 @@ core::gpu::Image::Impl::Impl(const core::gpu::Device* device, const SImageCreate
 
 core::gpu::Image::Impl::Impl(const core::gpu::Device* device, const SPredefinedImageCreateInfo& info)
 {
-    image = info.image;
+	image = info.image;
+	extent = info.extent; 
 
 	vk::ImageViewCreateInfo viewInfo{};
-    viewInfo.image = info.image;
-    viewInfo.viewType = vk::ImageViewType::e2D;
-    viewInfo.format = info.format;
-    viewInfo.subresourceRange.aspectMask = info.aspectFlags;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
+	viewInfo.image = info.image;
+	viewInfo.viewType = vk::ImageViewType::e2D;
+	viewInfo.format = info.format;
+	viewInfo.subresourceRange.aspectMask = info.aspectFlags;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
 
-    view = vk::raii::ImageView(device->GetImpl().device, viewInfo);
+	view = vk::raii::ImageView(device->GetImpl().device, viewInfo);
 }
 
 core::gpu::Image::Impl::~Impl() = default;

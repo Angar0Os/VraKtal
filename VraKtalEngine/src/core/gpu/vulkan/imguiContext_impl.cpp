@@ -1,4 +1,3 @@
-
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_raii.hpp>
 
@@ -27,8 +26,9 @@
 
 
 core::gpu::ImguiContext::ImguiContext(Window& _window, Device& _device)
-    : m_impl(std::make_unique<Impl>(_window, _device))
-{}
+	: m_impl(std::make_unique<Impl>(_window, _device))
+{
+}
 
 core::gpu::ImguiContext::~ImguiContext() {}
 
@@ -36,18 +36,21 @@ void core::gpu::ImguiContext::PrepareDrawData()
 {
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
+
+	ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+
 	ImGui::NewFrame();
 	ImGuizmo::BeginFrame();
 
-    m_prepareDrawDataFunc();
+	m_prepareDrawDataFunc();
 
 	ImGui::Render();
 }
 
-void core::gpu::ImguiContext::DrawEditors(void* _commandBuffer )
+void core::gpu::ImguiContext::DrawEditors(void* _commandBuffer)
 {
 	CommandBuffer* commandBuffer = static_cast<CommandBuffer*>(_commandBuffer);
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData() , static_cast<VkCommandBuffer>(*commandBuffer->GetImpl().GetCommandBuffer(0)));
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), static_cast<VkCommandBuffer>(*commandBuffer->GetImpl().GetCommandBuffer(0)));
 }
 
 void core::gpu::ImguiContext::PrepareForDrawing()
@@ -57,12 +60,12 @@ void core::gpu::ImguiContext::PrepareForDrawing()
 
 void core::gpu::ImguiContext::BindPrepareDrawData(std::function<void()> func)
 {
-    m_prepareDrawDataFunc = func;
+	m_prepareDrawDataFunc = func;
 }
 
 core::gpu::ImguiContext::Impl::Impl(Window& _window, Device& _device)
 {
-    CreateContext(_window, _device);
+	CreateContext(_window, _device);
 }
 
 core::gpu::ImguiContext::Impl::~Impl()
@@ -71,7 +74,7 @@ core::gpu::ImguiContext::Impl::~Impl()
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 
-	if(imguiDescriptorPool != VK_NULL_HANDLE)
+	if (imguiDescriptorPool != VK_NULL_HANDLE)
 	{
 		vkDestroyDescriptorPool(*m_device->GetImpl().device, imguiDescriptorPool, nullptr);
 		imguiDescriptorPool = VK_NULL_HANDLE;
@@ -104,8 +107,10 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	icons_config_large.GlyphMinAdvanceX = 50.0f;
 	io.Fonts->AddFontFromFileTTF("../external/fonts/" FONT_ICON_FILE_NAME_MDI, 50.0f, &icons_config_large, icons_ranges);
 
-	// Initialize GLFW 
+	// Initialize GLFW
 	ImGui_ImplGlfw_InitForVulkan(_window.GlfwHandle(), true);
+
+	io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
 
 	// Create a large descriptor pool for ImGui usage (it uses many descriptor types)
 	VkDescriptorPoolSize pool_sizes[] =
@@ -144,9 +149,9 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	init_info.ImageCount = _device.GetImpl().swapchainImages.size();
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 	init_info.RenderPass = VK_NULL_HANDLE;
-    init_info.UseDynamicRendering = VK_TRUE;
-    init_info.PipelineRenderingCreateInfo = {};
-    init_info.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+	init_info.UseDynamicRendering = VK_TRUE;
+	init_info.PipelineRenderingCreateInfo = {};
+	init_info.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
 	init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
 	VkFormat format = static_cast<VkFormat>(_device.GetImpl().swapchainImageFormat);
 	init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &format;
@@ -236,9 +241,9 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 
 	m_viewport.readyForUse = true;
 }
-void core::gpu::ImguiContext::DrawViewportComponent(uint32_t width , uint32_t height)
+void core::gpu::ImguiContext::DrawViewportComponent(uint32_t width, uint32_t height)
 {
-	m_impl->DrawViewportComponent(width , height);
+	m_impl->DrawViewportComponent(width, height);
 }
 
 void core::gpu::ImguiContext::RenderSceneToViewport(core::gpu::CommandBuffer* cmd, graphics::Renderer* renderer)
@@ -290,7 +295,7 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 	if (!cmd || !renderer)
 		return;
 
-	if(!m_viewport.colorImage || !m_viewport.readyForUse)
+	if (!m_viewport.colorImage || !m_viewport.readyForUse)
 		return;
 
 	if (m_viewport.width <= 1 || m_viewport.height <= 1)
@@ -307,7 +312,6 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 	);
 	projection[1][1] *= -1;
 
-	//TODO CAMERA POS SHOULD BE IN ECS IN THE FUTURE
 	glm::vec3 cameraPosition = glm::vec3(0.0f, 3.0f, -5.0f);
 
 	glm::mat4 view = glm::lookAtLH(
@@ -332,13 +336,13 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 	);
 
 	cmd->SetViewport(
-	0.0f,
-	0.0f,
-	static_cast<float>(m_viewport.width),
-	static_cast<float>(m_viewport.height),
-	0.0f,
-	1.0f
-);
+		0.0f,
+		0.0f,
+		static_cast<float>(m_viewport.width),
+		static_cast<float>(m_viewport.height),
+		0.0f,
+		1.0f
+	);
 
 	cmd->SetScissor(
 		0,
@@ -395,4 +399,23 @@ void core::gpu::ImguiContext::Impl::EnsureViewport(uint32_t width, uint32_t heig
 	{
 		ResizeViewport(width, height);
 	}
+}
+
+void core::gpu::ImguiContext::Impl::OnResize()
+{
+	ImGuizmo::SetRect(
+		0, 0,
+		(float)m_device->GetImpl().swapchainExtent.width,
+		(float)m_device->GetImpl().swapchainExtent.height
+	);
+
+	if (m_viewport.colorImage)
+	{
+		DestroyViewport();
+	}
+}
+
+void core::gpu::ImguiContext::OnResize()
+{
+	m_impl->OnResize();
 }

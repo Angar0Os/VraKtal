@@ -29,6 +29,7 @@ namespace core::gpu
 			VkDescriptorSet imguiDescriptorSet = VK_NULL_HANDLE;
 		};
 
+		void OnResize();
 		SceneViewportImpl m_viewport;
 
 	private:
