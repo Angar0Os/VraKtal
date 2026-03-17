@@ -467,7 +467,7 @@ vk::Extent2D Device::Impl::ChooseExtent(const vk::SurfaceCapabilitiesKHR& capabi
 }
 
 
-void ::Device::Impl::CreateSwapchain()
+void Device::Impl::CreateSwapchain()
 {
 	vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
 	auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface);
@@ -499,27 +499,8 @@ void ::Device::Impl::CreateSwapchain()
 		.oldSwapchain = nullptr
 	};
 
-	PipelineCreateInfo pipelineInfo{};
-	pipelineInfo.shaderStages = shaderStages;
-	pipelineInfo.vertexBindings = { vertexBinding };
-	pipelineInfo.vertexAttributes = vertexAttributes;
-	pipelineInfo.topology = PrimitiveTopology::TriangleList;
-	pipelineInfo.polygonMode = PolygonMode::Fill;
-	pipelineInfo.cullMode = CullMode::None;
-	pipelineInfo.frontFace = FrontFace::Clockwise;
-	pipelineInfo.depthTestEnable = true;
-	pipelineInfo.depthWriteEnable = true;
-	pipelineInfo.depthCompareOp = CompareOp::Less;
-	pipelineInfo.blendEnable = false;
-	pipelineInfo.samples = SampleCount::e1;
-	pipelineInfo.colorAttachmentFormats = { core::gpu_detail::FromVulkan(swapchain->GetImpl().format) };
-	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
-	pipelineInfo.descriptorSetLayouts = { descriptorSetLayout.get() };
-	pipelineInfo.pushConstantRanges = pushConstants;
-	pipelineInfo.dynamicStates = { DynamicState::Viewport, DynamicState::Scissor };
-
-	graphicsPipeline = std::make_unique<Pipeline>(parent, pipelineInfo);
-}
+	swapchain = vk::raii::SwapchainKHR(device, createInfo);
+	swapchainExtent = extent;
 
 	std::vector<vk::Image> vkImages = swapchain.getImages();
 	swapchainImageViews.clear();
@@ -541,7 +522,7 @@ void ::Device::Impl::CreateSwapchain()
 		};
 		swapchainImageViews.emplace_back(device, viewInfo);
 
-		::SPredefinedImageCreateInfo imageInfo{};
+		gpu::SPredefinedImageCreateInfo imageInfo{};
 		imageInfo.image = image;
 		imageInfo.extent = extent;
 		imageInfo.aspectFlags = vk::ImageAspectFlagBits::eColor;

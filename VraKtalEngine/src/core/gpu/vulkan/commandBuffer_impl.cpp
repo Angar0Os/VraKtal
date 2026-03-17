@@ -313,8 +313,8 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 		info.pDepthAttachment = nullptr;
 	}
 
-	uint32_t width = colorImage->GetImpl().width;
-	uint32_t height = colorImage->GetImpl().height;
+	uint32_t width = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
 
 	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });
 	info.layerCount = 1;

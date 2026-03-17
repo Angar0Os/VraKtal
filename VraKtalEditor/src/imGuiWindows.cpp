@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "imGuiWindows.h"
 #include <core/gpu/imguiContext.h>
 #include "imgui/imgui.h"
@@ -5,6 +6,7 @@
 #include "command/fileCommands.h"
 #include <core/gpu/buffer.h>
 #include <graphics/resources/object/camera.h>
+#include <algorithm>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/type_ptr.inl>

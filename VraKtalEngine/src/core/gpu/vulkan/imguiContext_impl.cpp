@@ -13,6 +13,7 @@
 
 
 #include <core/gpu/commandBuffer.h>
+#include <graphics/renderPass/gBufferPass.h>
 
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_vulkan.h"
@@ -152,7 +153,7 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	init_info.PipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 
 	ImGui_ImplVulkan_Init(&init_info);
-	ImGuizmo::SetRect(0, 0, (float)_device.GetImpl().GetSwapchain()->GetImpl().extent.width, (float)_device.GetImpl().GetSwapchain()->GetImpl().extent.height);
+	ImGuizmo::SetRect(0, 0, (float)_device.GetImpl().swapchainExtent.width, (float)_device.GetImpl().swapchainExtent.height);
 	ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
 
 	m_device = &_device;
@@ -170,7 +171,7 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 	imageInfo.height = height;
 	imageInfo.mipLevels = 1;
 	imageInfo.arrayLayers = 1;
-	imageInfo.format = gpu_detail::FromVulkan(m_device->GetImpl().GetSwapchain()->GetImpl().format);
+	imageInfo.format = gpu_detail::FromVulkan(m_device->GetImpl().swapchainImageFormat);
 	imageInfo.samples = SampleCount::e1;
 	imageInfo.tiling = ImageTiling::Optimal;
 	imageInfo.usage = ImageUsage::ColorAttachment | ImageUsage::Sampled;
@@ -185,8 +186,6 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 	viewInfo.levelCount = 1;
 	viewInfo.baseArrayLayer = 0;
 	viewInfo.layerCount = 1;
-
-	m_viewport.colorImage->CreateView(viewInfo);
 
 	vk::SamplerCreateInfo samplerInfo{};
 	samplerInfo.magFilter = vk::Filter::eLinear;
@@ -226,7 +225,7 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 		);
 
 		cmd.End(0);
-		cmd.SubmitAndWait(m_device);
+		cmd.SubmitImmediate(m_device);
 	}
 
 	m_viewport.imguiDescriptorSet = ImGui_ImplVulkan_AddTexture(
@@ -348,10 +347,8 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 		m_viewport.height
 	);
 
-	cmd->BindPipeline(m_device->GetGraphicsPipeline());
-	cmd->BindDescriptorSets(m_device, renderer->GetCurrentFrame(), 0);
-
 	renderer->DrawScene(cmd);
+
 	cmd->EndRendering();
 
 	cmd->TransitionImageLayout(

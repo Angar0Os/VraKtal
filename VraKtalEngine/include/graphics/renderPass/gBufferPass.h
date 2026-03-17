@@ -37,6 +37,7 @@ namespace graphics
 
 		const DescriptorSetLayout* GetMaterialLayout() const { return m_materialLayout.get(); }
 
+		const Pipeline* GetPipeline() const { return m_pipeline.get(); }
 	private:
 		Device& m_device;
 

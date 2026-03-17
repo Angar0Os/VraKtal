@@ -1,6 +1,7 @@
 #ifndef EDITOR_IMGUIWINDOWS_H
 #define EDITOR_IMGUIWINDOWS_H
 #pragma once
+
 #include <memory>
 #include "contentDrawer.h"
 #include <core/window.h>
@@ -9,6 +10,10 @@
 
 namespace core::gpu {
     class ImguiContext;
+}
+
+namespace graphics {
+    class Renderer;
 }
 
 class ImGuiWindows

@@ -17,7 +17,7 @@ using namespace core;
 using namespace core::gpu;
 using namespace graphics;
 
-#define VRAKTAL_EDITOR
+//#define VRAKTAL_EDITOR
 
 Renderer::Renderer(Window& window, Device& device)
 	: m_window(window)
@@ -327,6 +327,8 @@ void Renderer::Render(uint32_t imageIndex)
 
 void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)
 {
+	if (!m_gBufferPass) return;
+
 	for (const auto& meshInstance : m_meshInstances)
 	{
 		if (!meshInstance.first->vertexBuffer || !meshInstance.first->indexBuffer)
@@ -338,7 +340,7 @@ void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)
 		pushConstants.model = meshInstance.second;
 
 		_cmd->PushConstants(
-			m_device.GetGraphicsPipeline(),
+			m_gBufferPass->GetPipeline(),
 			static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
 			0,
 			sizeof(PushConstants),
@@ -349,7 +351,6 @@ void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)
 		_cmd->BindIndexBuffer(meshInstance.first->indexBuffer.get());
 		_cmd->DrawIndexed(meshInstance.first->indexCount);
 	}
-
 }
 
 void Renderer::Cleanup()
