@@ -499,8 +499,27 @@ void ::Device::Impl::CreateSwapchain()
 		.oldSwapchain = nullptr
 	};
 
-	swapchain = vk::raii::SwapchainKHR(device, createInfo);
-	swapchainExtent = extent;
+	PipelineCreateInfo pipelineInfo{};
+	pipelineInfo.shaderStages = shaderStages;
+	pipelineInfo.vertexBindings = { vertexBinding };
+	pipelineInfo.vertexAttributes = vertexAttributes;
+	pipelineInfo.topology = PrimitiveTopology::TriangleList;
+	pipelineInfo.polygonMode = PolygonMode::Fill;
+	pipelineInfo.cullMode = CullMode::None;
+	pipelineInfo.frontFace = FrontFace::Clockwise;
+	pipelineInfo.depthTestEnable = true;
+	pipelineInfo.depthWriteEnable = true;
+	pipelineInfo.depthCompareOp = CompareOp::Less;
+	pipelineInfo.blendEnable = false;
+	pipelineInfo.samples = SampleCount::e1;
+	pipelineInfo.colorAttachmentFormats = { core::gpu_detail::FromVulkan(swapchain->GetImpl().format) };
+	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
+	pipelineInfo.descriptorSetLayouts = { descriptorSetLayout.get() };
+	pipelineInfo.pushConstantRanges = pushConstants;
+	pipelineInfo.dynamicStates = { DynamicState::Viewport, DynamicState::Scissor };
+
+	graphicsPipeline = std::make_unique<Pipeline>(parent, pipelineInfo);
+}
 
 	std::vector<vk::Image> vkImages = swapchain.getImages();
 	swapchainImageViews.clear();

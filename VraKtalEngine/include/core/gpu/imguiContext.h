@@ -3,6 +3,10 @@
 #include <iostream>
 #include <functional>
 
+namespace graphics {
+	class Renderer;
+}
+
 namespace core
 {
 	class Window;
@@ -10,12 +14,26 @@ namespace core
 	{
         class Device;
         class CommandBuffer;
+
+		struct SceneViewport;
+
 		class ImguiContext
 		{
 		private:
 			struct Impl;
+
 			std::unique_ptr<Impl> m_impl;
             std::function<void()> m_prepareDrawDataFunc;
+			struct SceneViewport
+			{
+				uint32_t width = 0;
+				uint32_t height = 0;
+				uint32_t desiredWidth = 0;
+				uint32_t desiredHeight = 0;
+				bool firstFrame = true;
+				bool readyForUse = false;
+			};
+			std::unique_ptr<SceneViewport> m_SceneViewport;
 
 		public:
 			explicit ImguiContext(Window& _window, Device& _device);
@@ -23,8 +41,13 @@ namespace core
 
             void PrepareDrawData();
 			void DrawEditors(void* _vKCommand);
+			void PrepareForDrawing();
 			void BindPrepareDrawData(std::function<void()> func);
-			//void RenderDrawData(VkCommandBuffer& _commandBuffer, VkImageView _target, VkRenderingInfo info, VkRenderingAttachmentInfo attachement);
+			SceneViewport* GetSceneViewport() { return m_SceneViewport.get(); };
+			void DrawViewportComponent(uint32_t width, uint32_t height);
+			void RenderSceneToViewport(core::gpu::CommandBuffer* cmd, graphics::Renderer* renderer);
+
+			Impl* GetImpl() { return m_impl.get();};
 		};
 	}
 }
