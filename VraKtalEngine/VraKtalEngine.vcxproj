@@ -113,7 +113,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>TRACY_ENABLE;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp23</LanguageStandard>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)external\include\;$(ProjectDir)include;</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
