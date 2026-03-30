@@ -57,6 +57,9 @@
     <ClCompile Include="src\newProjectModal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\editorWindows\sceneInspector.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -82,6 +85,12 @@
     </ClInclude>
     <ClInclude Include="include\newProjectModal.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\editorWindows\sceneInspector.h">
+      <Filter>Header Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\sceneResource.h">
+      <Filter>Header Files\utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

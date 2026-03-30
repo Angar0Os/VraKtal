@@ -1,14 +1,21 @@
 #include <iostream>
+
 #include <core/window.h>
+
 #include <core/gpu/device.h>
 #include <core/gpu/image.h>
 #include <core/gpu/imguiContext.h>
+
 #include <graphics/renderer.h>
+
 #include <graphics/renderPass/gBufferPass.h>
+
 #include <graphics/resources/object/light.h>
 #include <graphics/resources/object/material.h>
+
 #include <loaders/meshLoader.h>
 #include <loaders/materialLoader.h>
+
 #include "imGuiWindows.h"
 #include "utils/yamlParser.h"
 
