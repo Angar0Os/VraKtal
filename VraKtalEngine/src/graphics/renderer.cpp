@@ -211,128 +211,98 @@ void Renderer::CreateCommandBuffers()
 	}
 }
 
-void Renderer::Render(uint32_t imageIndex)
+void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 {
-    if (!m_running) return;
+	if (!m_running) return;
 
-    auto* swapchainImage = m_device.GetSwapchainImage(imageIndex);
+	m_device.BeginFrame(m_currentFrame);
 
-#ifdef VRAKTAL_EDITOR
-	m_device.GetImGuiContext()->PrepareForDrawing();
-#endif
+	BuildTLAS();
+	RebuildAccelerationStructures();
+	UpdateUniformBuffer(m_currentFrame);
 
-    m_device.BeginFrame(m_currentFrame);
+	auto& cmd = m_commandBuffers[m_currentFrame];
+	cmd->Begin(0);
 
-    BuildTLAS();
-    RebuildAccelerationStructures();
-    UpdateUniformBuffer(m_currentFrame);
 
-    auto& cmd = m_commandBuffers[m_currentFrame];
-    cmd->Begin(0);
+	//G-Buffer Pass
+	m_gBufferPass->SetMeshInstances(&m_meshInstances);
+	m_gBufferPass->UpdateDescriptorSets(m_currentFrame);
+	m_gBufferPass->BindDescriptorSets(*cmd, m_currentFrame);
 
-    if (m_gBufferPass)
-    {
-        m_gBufferPass->SetMeshInstances(&m_meshInstances);
-        m_gBufferPass->UpdateDescriptorSets(m_currentFrame);
-        m_gBufferPass->BindDescriptorSets(*cmd, m_currentFrame);
+	std::vector<ColorAttachmentDesc> colorDescs;
+	for (const auto& ca : m_gBufferPass->GetColorAttachments())
+	{
+		ColorAttachmentDesc desc{};
+		desc.image = ca.image.get();
+		desc.clear = true;
+		colorDescs.push_back(desc);
+	}
 
-        std::vector<ColorAttachmentDesc> colorDescs;
-        for (const auto& ca : m_gBufferPass->GetColorAttachments())
-        {
-            ColorAttachmentDesc desc{};
-            desc.image = ca.image.get();
-            desc.clear = true;
-            colorDescs.push_back(desc);
-        }
+	DepthAttachmentDesc depthDesc{};
+	if (const auto* depth = m_gBufferPass->GetDepthAttachment())
+	{
+		depthDesc.image = depth->image.get();
+		depthDesc.clear = true;
+		depthDesc.clearDepth = 1.0f;
+	}
 
-        DepthAttachmentDesc depthDesc{};
-        if (const auto* depth = m_gBufferPass->GetDepthAttachment())
-        {
-            depthDesc.image = depth->image.get();
-            depthDesc.clear = true;
-            depthDesc.clearDepth = 1.0f;
-        }
+	m_gBufferPass->Draw(*cmd, colorDescs, depthDesc);
 
-        m_gBufferPass->Draw(*cmd, colorDescs, depthDesc);
-    }
+	//Lighting Pass
+	if (m_tlasPerFrame[m_currentFrame])
+	{
+		m_lightingPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
+	}
 
-    if (m_lightingPass)
-    {
-        if (m_tlasPerFrame[m_currentFrame])
-            m_lightingPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
+	m_lightingPass->UpdateDescriptorSets(m_currentFrame);
+	m_lightingPass->BindDescriptorSets(*cmd, m_currentFrame);
 
-        m_lightingPass->UpdateDescriptorSets(m_currentFrame);
-        m_lightingPass->BindDescriptorSets(*cmd, m_currentFrame);
-        m_lightingPass->Draw(*cmd, {}, {});
-    }
+	std::vector<ColorAttachmentDesc> lightColorDescs;
+	for (const auto& colorAttachments : m_lightingPass->GetColorAttachments())
+	{
+		ColorAttachmentDesc desc{};
+		desc.image = colorAttachments.image.get();
+		desc.clear = true;
+		lightColorDescs.push_back(desc);
+	}
 
-#ifdef VRAKTAL_EDITOR
-    m_device.GetImGuiContext()->RenderSceneToViewport(cmd.get(), this);
-#endif
+	DepthAttachmentDesc lightDepthDesc{};
+	if (const auto* depth = m_lightingPass->GetDepthAttachment())
+	{
+		lightDepthDesc.image = depth->image.get();
+		lightDepthDesc.clear = true;
+		lightDepthDesc.clearDepth = 1.0f;
+	}
 
-    cmd->TransitionImageLayout(
-        swapchainImage,
-        ImageLayout::Undefined,
-        ImageLayout::TransferDst,
-        false
-    );
+	m_lightingPass->Draw(*cmd, colorDescs, lightDepthDesc);
 
-    if (m_lightingPass && !m_lightingPass->GetColorAttachments().empty())
-    {
-        cmd->BlitImage(
-            m_lightingPass->GetColorAttachments()[0].image.get(),
-            swapchainImage,
-            &m_device
-        );
-    }
+	cmd->TransitionImageLayout(
+		outputImage,
+		ImageLayout::Undefined,
+		ImageLayout::TransferDst,
+		false
+	);
 
-    cmd->TransitionImageLayout(
-        swapchainImage,
-        ImageLayout::TransferDst,
-        ImageLayout::Present,
-        false
-    );
+	if (m_lightingPass && !m_lightingPass->GetColorAttachments().empty())
+	{
+		cmd->BlitImage(
+			m_lightingPass->GetColorAttachments()[0].image.get(),
+			outputImage,
+			&m_device
+		);
+	}
 
-#ifdef VRAKTAL_EDITOR
-    cmd->TransitionImageLayout(
-        swapchainImage,
-        ImageLayout::Present,
-        ImageLayout::ColorAttachment,
-        false
-    );
+	cmd->TransitionImageLayout(
+		outputImage,
+		ImageLayout::TransferDst,
+		outputLayout,
+		false
+	);
 
-    CommandBuffer::RenderingAttachmentInfo imguiColor{};
-    imguiColor.image = swapchainImage;
-    imguiColor.clear = false;
-
-    CommandBuffer::DepthAttachmentInfo noDepth{};
-    noDepth.image = nullptr;
-
-    cmd->BeginRendering(&m_device, { imguiColor }, noDepth);
-
-    m_device.GetImGuiContext()->PrepareDrawData();
-    m_device.GetImGuiContext()->DrawEditors(static_cast<void*>(cmd.get()));
-
-    cmd->EndRendering();
-
-    cmd->TransitionImageLayout(
-        swapchainImage,
-        ImageLayout::ColorAttachment,
-        ImageLayout::Present,
-        false
-    );
-#endif
-
-    cmd->End(0);
-    m_commandBuffers[m_currentFrame]->Submit(&m_device, m_currentFrame);
-
-    m_currentFrame = (m_currentFrame + 1) % Device::s_FRAMES_IN_FLIGHT;
-    m_frameCounter++;
-
-    m_meshInstances.clear();
-    m_lights.clear();
+	m_meshInstances.clear();
+	m_lights.clear();
 }
-
 
 void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)
 {
@@ -376,4 +346,17 @@ void Renderer::Cleanup()
 	m_tlasPerFrame.clear();
 	m_commandBuffers.clear();
 	m_device.Cleanup();
+}
+
+CommandBuffer* graphics::Renderer::GetCurrentCommandBuffer()
+{
+	return m_commandBuffers[m_currentFrame].get();
+}
+
+void graphics::Renderer::Advance()
+{
+	m_commandBuffers[m_currentFrame]->End(0);
+	m_commandBuffers[m_currentFrame]->Submit(&m_device, m_currentFrame);
+	m_currentFrame = (m_currentFrame + 1) % Device::s_FRAMES_IN_FLIGHT;
+	m_frameCounter++;
 }

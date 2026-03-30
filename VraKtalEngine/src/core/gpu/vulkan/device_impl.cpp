@@ -798,7 +798,7 @@ void Device::Cleanup()
 	m_impl->tempCmdBufs.clear();
 }
 
-const Image* Device::GetSwapchainImage(uint32_t imageIndex) const
+Image* Device::GetSwapchainImage(uint32_t imageIndex) const
 {
 	if (m_impl->swapchain == nullptr)
 	{

@@ -520,8 +520,11 @@ void core::gpu::CommandBuffer::Impl::BlitImage(
 	const core::gpu::Image* dstImage,
 	const core::gpu::Device* device)
 {
-	uint32_t width = device->GetImpl().swapchainExtent.width;
-	uint32_t height = device->GetImpl().swapchainExtent.height;
+	auto srcWidth = srcImage->GetImpl().extent.width;
+	auto srcHeight = srcImage->GetImpl().extent.height;
+
+	auto dstWidth = dstImage->GetImpl().extent.width;
+	auto dstHeight = dstImage->GetImpl().extent.height;
 
 	vk::ImageSubresourceLayers subRes{};
 	subRes.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -532,10 +535,10 @@ void core::gpu::CommandBuffer::Impl::BlitImage(
 	vk::ImageBlit region{};
 	region.srcSubresource = subRes;
 	region.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
-	region.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(width), static_cast<int32_t>(height), 1 };
+	region.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(srcWidth), static_cast<int32_t>(srcHeight), 1 };
 	region.dstSubresource = subRes;
 	region.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
-	region.dstOffsets[1] = vk::Offset3D{ static_cast<int32_t>(width), static_cast<int32_t>(height), 1 };
+	region.dstOffsets[1] = vk::Offset3D{ static_cast<int32_t>(dstWidth), static_cast<int32_t>(dstHeight), 1 };
 
 	GetCommandBuffer(currentIndex).blitImage(
 		srcImage->GetImpl().image, vk::ImageLayout::eTransferSrcOptimal,

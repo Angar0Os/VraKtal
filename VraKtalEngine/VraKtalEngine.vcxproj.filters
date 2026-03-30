@@ -362,9 +362,6 @@
     <ClCompile Include="src\core\gpu\vulkan\imguiContext_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
-<ClCompile Include="include\core\gpu\imguiContext.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\loaders\textureLoader.cpp">
       <Filter>Source Files\loaders</Filter>
     </ClCompile>

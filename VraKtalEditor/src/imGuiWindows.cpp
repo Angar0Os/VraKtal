@@ -67,6 +67,11 @@ void ImGuiWindows::PrepareImGuiWindows()
 	}
 }
 
+core::gpu::ImguiContext* ImGuiWindows::GetContext()
+{
+	return m_imGuiContext;
+}
+
 void ImGuiWindows::ContentDrawerWindow()
 {
 	m_contentDrawer.GetContentDrawerWindow();

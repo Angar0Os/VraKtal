@@ -86,10 +86,13 @@ namespace graphics
         void SetCamera(const glm::mat4& view, const glm::mat4& projection);
         void PushMesh(resources::Mesh* mesh, const glm::mat4& transform);
         void PushLight(const resources::Light& light);
-        void Render(uint32_t imageIndex);
+        void Render(core::gpu::Image* outputImage, ImageLayout outputLayout);
         void OnResize();
         void DrawScene(core::gpu::CommandBuffer* _cmd);
         void Cleanup();
+
+        CommandBuffer* GetCurrentCommandBuffer();
+        void Advance();
 
         core::gpu::AccelerationStructure* GetTLAS() const { return m_tlas.get(); }
         glm::mat4 GetViewMatrix()       { return m_viewMatrix;    }
