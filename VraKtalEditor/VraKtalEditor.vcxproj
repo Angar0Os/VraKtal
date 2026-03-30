@@ -148,12 +148,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\command\sceneCommands.h" />
+    <ClInclude Include="include\demo\scene.h" />
+    <ClInclude Include="include\demo\sceneResource.h" />
     <ClInclude Include="include\editorWindows\sceneInspector.h" />
     <ClInclude Include="include\imGuiWindows.h" />
     <ClInclude Include="include\contentDrawer.h" />
     <ClInclude Include="include\newProjectModal.h" />
     <ClInclude Include="include\utils\fileTypeDetector.h" />
-    <ClInclude Include="include\utils\sceneResource.h" />
     <ClInclude Include="include\utils\yamlParser.h" />
     <ClInclude Include="include\command\command.h" />
     <ClInclude Include="include\command\commandHistory.h" />

@@ -31,6 +31,12 @@
     <Filter Include="Source Files\command">
       <UniqueIdentifier>{783db37f-cb72-4d71-8d30-fccedd63c20a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\demo">
+      <UniqueIdentifier>{277d1e2a-a252-4b13-9071-50eb5114c972}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\demo">
+      <UniqueIdentifier>{3ecebb64-a2fc-4b5e-b8c3-1610deff8c20}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -89,8 +95,14 @@
     <ClInclude Include="include\editorWindows\sceneInspector.h">
       <Filter>Header Files\windows</Filter>
     </ClInclude>
-    <ClInclude Include="include\utils\sceneResource.h">
-      <Filter>Header Files\utils</Filter>
+    <ClInclude Include="include\demo\scene.h">
+      <Filter>Header Files\demo</Filter>
+    </ClInclude>
+    <ClInclude Include="include\demo\sceneResource.h">
+      <Filter>Header Files\demo</Filter>
+    </ClInclude>
+    <ClInclude Include="include\command\sceneCommands.h">
+      <Filter>Header Files\command</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
