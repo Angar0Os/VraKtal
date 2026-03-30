@@ -243,7 +243,6 @@
     <ClCompile Include="..\external\include\imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\external\include\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\external\include\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="include\core\gpu\imguiContext.cpp" />
     <ClCompile Include="include\core\gpu\texture.h" />
     <ClCompile Include="src\core\gpu\vulkan\accelerationStructure_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\buffer_impl.cpp" />

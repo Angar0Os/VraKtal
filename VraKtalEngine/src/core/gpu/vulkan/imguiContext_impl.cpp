@@ -179,7 +179,7 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 	imageInfo.format = gpu_detail::FromVulkan(m_device->GetImpl().swapchainImageFormat);
 	imageInfo.samples = SampleCount::e1;
 	imageInfo.tiling = ImageTiling::Optimal;
-	imageInfo.usage = ImageUsage::ColorAttachment | ImageUsage::Sampled;
+	imageInfo.usage = ImageUsage::ColorAttachment | ImageUsage::Sampled | ImageUsage::TransferDst;
 	imageInfo.memoryProperties = EMemoryProperty::DeviceLocal;
 
 	m_viewport.colorImage = std::make_unique<Image>(m_device, imageInfo);
@@ -225,7 +225,7 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 		cmd.TransitionImageLayout(
 			m_viewport.colorImage.get(),
 			core::ImageLayout::Undefined,
-			core::ImageLayout::ShaderReadOnly,
+			core::ImageLayout::ColorAttachment,
 			false
 		);
 
@@ -233,11 +233,15 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 		cmd.SubmitImmediate(m_device);
 	}
 
-	m_viewport.imguiDescriptorSet = ImGui_ImplVulkan_AddTexture(
-		static_cast<VkSampler>(*m_viewport.sampler),
-		static_cast<VkImageView>(*m_viewport.colorImage->GetImpl().view),
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-	);
+
+	if (m_viewport.imguiDescriptorSet == VK_NULL_HANDLE)
+	{
+		m_viewport.imguiDescriptorSet = ImGui_ImplVulkan_AddTexture(
+			static_cast<VkSampler>(*m_viewport.sampler),
+			static_cast<VkImageView>(*m_viewport.colorImage->GetImpl().view),
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		);
+	}
 
 	m_viewport.readyForUse = true;
 }
@@ -410,9 +414,12 @@ void core::gpu::ImguiContext::Impl::OnResize()
 	);
 
 	if (m_viewport.colorImage)
-	{
 		DestroyViewport();
-	}
+}
+
+core::gpu::Image* core::gpu::ImguiContext::GetViewportImage()
+{
+	return m_impl->m_viewport.colorImage.get();
 }
 
 void core::gpu::ImguiContext::OnResize()

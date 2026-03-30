@@ -43,7 +43,7 @@ namespace core
 
 			void WaitIdle();
 
-			const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
+			core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
 
 			static constexpr uint32_t s_FRAMES_IN_FLIGHT = 2;
 

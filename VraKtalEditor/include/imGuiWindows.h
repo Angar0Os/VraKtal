@@ -23,6 +23,7 @@ public:
     ~ImGuiWindows();
     void PrepareImGuiWindows();
     command::CommandHistory* GetCommandHistory() { return m_commandHistory.get(); }
+    core::gpu::ImguiContext* GetContext();
 
 private:
     void SetMenuBar();

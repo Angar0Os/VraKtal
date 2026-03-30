@@ -14,9 +14,12 @@
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 
+#define VRAKTAL_EDITOR
+
 int main()
 {
     core::Window window(800, 600, "VraKtal Engine");
+
     core::gpu::Device device(window);
     graphics::Renderer renderer(window, device);
     loaders::MeshLoader loader(&device);
@@ -140,9 +143,50 @@ int main()
         light3.enabled = true;
         renderer.PushLight(light3);
 
-        renderer.Render(imageIndex);
-        device.Present(imageIndex, currentFrameIndex);
+#ifndef VRAKTAL_EDITOR
+        renderer.Render(device.GetSwapchainImage(imageIndex), ImageLayout::Present);
+#else
+        imGuiWindows.GetContext()->PrepareForDrawing();
+        auto image = imGuiWindows.GetContext()->GetViewportImage();
+       
+        if (image)
+        {
+            renderer.Render(imGuiWindows.GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
+        }
 
+        auto cmd = renderer.GetCurrentCommandBuffer();
+        auto swapchainImage = device.GetSwapchainImage(imageIndex);
+
+        CommandBuffer::RenderingAttachmentInfo imguiColor{};
+        imguiColor.image = swapchainImage;
+        imguiColor.clear = false;
+
+        CommandBuffer::DepthAttachmentInfo noDepth{};
+        noDepth.image = nullptr;
+
+        cmd->TransitionImageLayout(
+            swapchainImage,
+            ImageLayout::Undefined,
+            ImageLayout::ColorAttachment,
+            false
+        );
+     
+        cmd->BeginRendering(&device, { imguiColor }, noDepth);
+
+        imGuiWindows.GetContext()->PrepareDrawData();
+        imGuiWindows.GetContext()->DrawEditors(cmd);
+        cmd->EndRendering();
+
+        cmd->TransitionImageLayout(
+            swapchainImage,
+            ImageLayout::ColorAttachment,
+            ImageLayout::Present,
+            false
+        );
+#endif
+
+        renderer.Advance();
+        device.Present(imageIndex, currentFrameIndex);
         currentFrameIndex = (currentFrameIndex + 1) % core::gpu::Device::s_FRAMES_IN_FLIGHT;
         frameCounter++;
     }
@@ -152,3 +196,6 @@ int main()
 
     return 0;
 }
+
+
+
