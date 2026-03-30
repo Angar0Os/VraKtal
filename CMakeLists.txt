@@ -48,8 +48,8 @@ add_subdirectory(external/tracy)
 # ---------------------------------------------------------
 # engine Executable
 # ---------------------------------------------------------
-# Note: GLOB_RECURSE est pratique au début mais dangereux si tu ajoutes des fichiers hors IDE.
-# Pense à relancer CMake quand tu ajoutes un fichier .cpp
+# Note: GLOB_RECURSE est pratique au d but mais dangereux si tu ajoutes des fichiers hors IDE.
+# Pense   relancer CMake quand tu ajoutes un fichier .cpp
 file(GLOB_RECURSE ENGINE_SOURCES
     CONFIGURE_DEPENDS
     VraKtalEngine/*.cpp
@@ -92,7 +92,7 @@ target_link_libraries(VraKtalEngine PUBLIC
 
 if(MSVC)
     target_compile_options(VraKtalEngine PRIVATE /W3 /wd4267 /wd4834 /MP)
-    # /wd4267 : conversion size_t -> uint32_t (très fréquent avec Vulkan vs std::vector)
+    # /wd4267 : conversion size_t -> uint32_t (tr s fr quent avec Vulkan vs std::vector)
     # /wd4834 : discard return value (nodiscard)
 endif()
 
@@ -119,6 +119,7 @@ set_target_properties(VraKtalEditor PROPERTIES
 target_link_libraries(VraKtalEditor PUBLIC 
     VraKtalEngine
     imgui
+    bass
 )
 
 

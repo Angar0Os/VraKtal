@@ -9,12 +9,14 @@
 
 #include <core/gpu/imguiContext.h>
 #include "imGuiWindows.h"
+#include "AudioManager.h"
 
 #include <loaders/meshLoader.h>
 
 #include "utils/yamlParser.h"
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
+
 
 int main()
 {
@@ -29,6 +31,11 @@ int main()
 	{
 		 imGuiWindows.PrepareImGuiWindows();
 	});
+
+	/////////////////
+	AudioManager* audio = new AudioManager();
+	audio->LoadChannel();
+	/////////////////
 
 	auto vikingRoomMesh = loader.LoadMesh("assets/models/viking_room.obj");
 	auto planeMesh = loader.CreatePlane(10.0f, 10.0f, 10, 10);

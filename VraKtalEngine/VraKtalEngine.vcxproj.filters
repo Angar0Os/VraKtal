@@ -261,9 +261,6 @@
     <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h">
       <Filter>external\portableFileDialogs</Filter>
     </ClInclude>
-    <ClInclude Include="BassImpl.h">
-      <Filter>Header Files\sound</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -361,9 +358,6 @@
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\imguiContext_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="BassImpl.cpp">
-      <Filter>Source Files\sound</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

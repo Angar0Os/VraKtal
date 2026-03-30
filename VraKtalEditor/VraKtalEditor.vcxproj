@@ -116,6 +116,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)external\lib;$(SolutionDir)lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>bass.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,9 +136,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\AudioManager.cpp" />
     <ClCompile Include="src\contentDrawer.cpp" />
     <ClCompile Include="src\imGuiWindows.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\SyncEngine.cpp" />
+    <ClCompile Include="src\TrackEditor.cpp" />
     <ClCompile Include="src\utils\fileTypeDetector.cpp" />
     <ClCompile Include="src\utils\yamlParser.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)VraKtalEditor\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -148,6 +152,9 @@
     <ClInclude Include="header\imGuiWindows.h" />
     <ClInclude Include="header\utils\fileTypeDetector.h" />
     <ClInclude Include="header\utils\yamlParser.h" />
+    <ClInclude Include="include\AudioManager.h" />
+    <ClInclude Include="include\SyncEngine.h" />
+    <ClInclude Include="include\TrackEditor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
