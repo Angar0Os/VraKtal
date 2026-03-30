@@ -184,7 +184,9 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 	ubo.frameCount = static_cast<uint32_t>(m_frameCounter);
 
 	if (uniformBuffers[frameIndex])
+	{
 		uniformBuffers[frameIndex]->CopyFrom(&ubo, sizeof(UniformBufferObject));
+	}
 }
 
 void Renderer::OnResize()
@@ -275,35 +277,37 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 		lightDepthDesc.clearDepth = 1.0f;
 	}
 
-	m_lightingPass->Draw(*cmd, colorDescs, lightDepthDesc);
+	m_lightingPass->Draw(*cmd, lightColorDescs, lightDepthDesc);
 
-	cmd->TransitionImageLayout(
-		outputImage,
-		ImageLayout::Undefined,
-		ImageLayout::TransferDst,
-		false
-	);
-
-	if (m_lightingPass && !m_lightingPass->GetColorAttachments().empty())
+	if (outputImage)
 	{
-		cmd->BlitImage(
-			m_lightingPass->GetColorAttachments()[0].image.get(),
+		cmd->TransitionImageLayout(
 			outputImage,
-			&m_device
+			ImageLayout::Undefined,
+			ImageLayout::TransferDst,
+			false
+		);
+
+		if (m_lightingPass && !m_lightingPass->GetColorAttachments().empty())
+		{
+			cmd->BlitImage(
+				m_lightingPass->GetColorAttachments()[0].image.get(),
+				outputImage,
+				&m_device
+			);
+		}
+
+		cmd->TransitionImageLayout(
+			outputImage,
+			ImageLayout::TransferDst,
+			outputLayout,
+			false
 		);
 	}
-
-	cmd->TransitionImageLayout(
-		outputImage,
-		ImageLayout::TransferDst,
-		outputLayout,
-		false
-	);
 
 	m_meshInstances.clear();
 	m_lights.clear();
 }
-
 void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)
 {
 	if (!m_gBufferPass) return;

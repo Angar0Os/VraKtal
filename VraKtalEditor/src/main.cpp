@@ -149,11 +149,7 @@ int main()
         imGuiWindows.GetContext()->PrepareForDrawing();
         auto image = imGuiWindows.GetContext()->GetViewportImage();
        
-        if (image)
-        {
-            renderer.Render(imGuiWindows.GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
-        }
-
+        renderer.Render(imGuiWindows.GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
         auto cmd = renderer.GetCurrentCommandBuffer();
         auto swapchainImage = device.GetSwapchainImage(imageIndex);
 
