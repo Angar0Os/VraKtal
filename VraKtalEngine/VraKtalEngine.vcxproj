@@ -208,10 +208,7 @@
     <ClInclude Include="include\graphics\resources\object\material.h" />
     <ClInclude Include="include\graphics\resources\object\mesh.h" />
     <ClInclude Include="include\graphics\resources\object\object.h" />
-    <ClInclude Include="include\graphics\resources\object\staticMesh.h" />
-    <ClInclude Include="include\graphics\resources\project.h" />
     <ClInclude Include="include\graphics\resources\property\transform.h" />
-    <ClInclude Include="include\graphics\resources\scene.h" />
     <ClInclude Include="include\loaders\materialLoader.h" />
     <ClInclude Include="include\loaders\meshLoader.h" />
     <ClInclude Include="include\loaders\shaderLoader.h" />
@@ -260,7 +257,6 @@
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\lightingPass.cpp" />
-    <ClCompile Include="src\graphics\resources\object\scene.cpp" />
     <ClCompile Include="src\loaders\materialLoader.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />
     <ClCompile Include="src\loaders\textureLoader.cpp" />

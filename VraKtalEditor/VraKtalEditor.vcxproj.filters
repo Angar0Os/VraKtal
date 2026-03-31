@@ -31,6 +31,12 @@
     <Filter Include="Source Files\command">
       <UniqueIdentifier>{783db37f-cb72-4d71-8d30-fccedd63c20a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\demo">
+      <UniqueIdentifier>{277d1e2a-a252-4b13-9071-50eb5114c972}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\demo">
+      <UniqueIdentifier>{3ecebb64-a2fc-4b5e-b8c3-1610deff8c20}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -57,6 +63,12 @@
     <ClCompile Include="src\newProjectModal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\editorWindows\sceneInspector.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\yamlSerializer.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -82,6 +94,24 @@
     </ClInclude>
     <ClInclude Include="include\newProjectModal.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\editorWindows\sceneInspector.h">
+      <Filter>Header Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="include\demo\scene.h">
+      <Filter>Header Files\demo</Filter>
+    </ClInclude>
+    <ClInclude Include="include\demo\sceneResource.h">
+      <Filter>Header Files\demo</Filter>
+    </ClInclude>
+    <ClInclude Include="include\command\sceneCommands.h">
+      <Filter>Header Files\command</Filter>
+    </ClInclude>
+    <ClInclude Include="include\demo\sceneManager.h">
+      <Filter>Header Files\demo</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\yamlSerializer.h">
+      <Filter>Header Files\utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

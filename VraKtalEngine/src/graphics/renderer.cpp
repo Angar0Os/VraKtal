@@ -288,7 +288,7 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 			false
 		);
 
-		if (m_lightingPass && !m_lightingPass->GetColorAttachments().empty())
+		if (m_lightingPass && !m_lightingPass->GetColorAttachments().empty() && outputImage != nullptr)
 		{
 			cmd->BlitImage(
 				m_lightingPass->GetColorAttachments()[0].image.get(),
