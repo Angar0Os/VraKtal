@@ -4,11 +4,18 @@
 
 #include <memory>
 #include <optional>
-#include "contentDrawer.h"
+#include <vector>
+
+#include <contentDrawer.h>
+#include <newProjectModal.h>
+
 #include <core/window.h>
-#include "newProjectModal.h"
-#include "command/commandHistory.h"
+#include <core/gpu/device.h>
+
+#include <command/commandHistory.h>
+
 #include <demo/scene.h>
+
 #include <loaders/meshLoader.h>
 
 namespace core::gpu {
@@ -25,7 +32,7 @@ public:
     ImGuiWindows(core::gpu::ImguiContext* _imGuiContext,
         graphics::Renderer* _renderer,
         core::Window* window,
-        demo::Scene* scene,
+        std::vector<demo::Scene>* scenes,
         loaders::MeshLoader* meshLoader);
     ~ImGuiWindows();
 
@@ -33,6 +40,8 @@ public:
 
     command::CommandHistory* GetCommandHistory() { return m_commandHistory.get(); }
     core::gpu::ImguiContext* GetContext();
+
+    demo::Scene* GetActiveScene() const;
 
 private:
     void SetMenuBar();
@@ -47,12 +56,16 @@ private:
     void InspectorCameraProperties(size_t index);
     void InspectorLightProperties(size_t index);
 
-    void LoadProject();
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
 
-    std::optional<size_t>   m_selectedObjectIndex;  
+    std::optional<size_t>   m_selectedObjectIndex;
+    std::optional<size_t>   m_activeSceneIndex;
+    std::optional<size_t>   m_editingSceneIndex;        
+    std::optional<size_t>   m_pendingDeleteSceneIndex;  
 
-    demo::Scene* m_scene;
+    core::gpu::Device* m_device = nullptr;
+
+    std::vector<demo::Scene>* m_scenes;
     loaders::MeshLoader* m_meshLoader;
 
     ContentDrawer           m_contentDrawer;

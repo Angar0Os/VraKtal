@@ -11,6 +11,7 @@
 #include <graphics/resources/object/mesh.h>
 #include <algorithm>
 #include <array>
+#include <cstring>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/type_ptr.inl>
@@ -20,6 +21,8 @@
 #include <imgui/imgui.h>
 
 #include "portable-file-dialogs/portable-file-dialogs.h"
+#include <utils/yamlSerializer.h>
+#include <utils/yamlParser.h>
 
 #include <iostream>
 #include <MDI/IconsMaterialDesignIcons.h>
@@ -27,14 +30,19 @@
 ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext,
     graphics::Renderer* _renderer,
     core::Window* window,
-    demo::Scene* scene,
+    std::vector<demo::Scene>* scenes,
     loaders::MeshLoader* meshLoader)
     : m_imGuiContext(_imGuiContext)
-    , m_scene(scene)
+    , m_scenes(scenes)
     , m_meshLoader(meshLoader)
 {
     m_renderer = _renderer;
     m_window = window;
+
+    if (m_scenes && !m_scenes->empty())
+    {
+        m_activeSceneIndex = 0;
+    }
 
     command::ClearBackupDirectory();
     m_commandHistory = std::make_unique<command::CommandHistory>(100);
@@ -44,6 +52,15 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext,
 ImGuiWindows::~ImGuiWindows()
 {
     command::ClearBackupDirectory();
+}
+
+demo::Scene* ImGuiWindows::GetActiveScene() const
+{
+    if (!m_scenes || m_scenes->empty() || !m_activeSceneIndex.has_value())
+        return nullptr;
+    if (*m_activeSceneIndex >= m_scenes->size())
+        return nullptr;
+    return &(*m_scenes)[*m_activeSceneIndex];
 }
 
 void ImGuiWindows::PrepareImGuiWindows()
@@ -61,6 +78,7 @@ void ImGuiWindows::PrepareImGuiWindows()
     Viewport();
     TestWindow();
     ContentDrawerWindow();
+
     HierarchyWindow();
     InspectorWindow();
 
@@ -98,9 +116,39 @@ void ImGuiWindows::HierarchyWindow()
     if (ImGui::Button(ICON_MDI_PLUS " Add"))
         ImGui::OpenPopup("add_object_popup");
 
+    ImGui::SameLine();
+
+    if (ImGui::Button(ICON_MDI_PLUS_BOX_OUTLINE " Add Scene"))
+    {
+        if (m_scenes)
+        {
+            std::string newName = "Scene_" + std::to_string(m_scenes->size() + 1);
+            m_scenes->emplace_back(newName);
+
+            size_t newIdx = m_scenes->size() - 1;
+            m_activeSceneIndex = newIdx;
+            m_editingSceneIndex = newIdx;
+            m_selectedObjectIndex.reset();
+
+            demo::Scene& newScene = (*m_scenes)[newIdx];
+            auto* defaultCam = new graphics::resources::object::Camera("Camera");
+            defaultCam->fov = 45.0f;
+            defaultCam->aspectRatio = 16.0f / 9.0f;
+            defaultCam->transform.SetPosition(glm::vec3(0.0f, 3.0f, -5.0f));
+            defaultCam->LookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+
+            demo::SceneResource camRes;
+            camRes.objectName = "Camera";
+            camRes.object = defaultCam;
+            camRes.isInTimeline = false;
+            newScene.Add(std::move(camRes));
+        }
+    }
+
     if (ImGui::BeginPopup("add_object_popup"))
     {
-        if (m_scene)
+        demo::Scene* activeScene = GetActiveScene();
+        if (activeScene)
         {
             if (ImGui::MenuItem(ICON_MDI_CAMERA " Camera"))
             {
@@ -111,7 +159,7 @@ void ImGuiWindows::HierarchyWindow()
                 res.isInTimeline = false;
 
                 m_commandHistory->ExecuteCommand(
-                    std::make_unique<command::AddSceneObjectCommand>(m_scene, std::move(res))
+                    std::make_unique<command::AddSceneObjectCommand>(activeScene, std::move(res))
                 );
             }
 
@@ -128,7 +176,7 @@ void ImGuiWindows::HierarchyWindow()
                     res.isInTimeline = false;
 
                     m_commandHistory->ExecuteCommand(
-                        std::make_unique<command::AddSceneObjectCommand>(m_scene, std::move(res))
+                        std::make_unique<command::AddSceneObjectCommand>(activeScene, std::move(res))
                     );
                 }
                 ImGui::EndMenu();
@@ -142,54 +190,232 @@ void ImGuiWindows::HierarchyWindow()
                 res.isInTimeline = false;
 
                 m_commandHistory->ExecuteCommand(
-                    std::make_unique<command::AddSceneObjectCommand>(m_scene, std::move(res))
+                    std::make_unique<command::AddSceneObjectCommand>(activeScene, std::move(res))
                 );
             }
+        }
+        else
+        {
+            ImGui::TextDisabled("No active scene.");
         }
         ImGui::EndPopup();
     }
 
     ImGui::Separator();
 
-    if (m_scene)
+    if (!m_scenes || m_scenes->empty())
     {
-        for (size_t i = 0; i < m_scene->sceneObjects.size(); ++i)
+        ImGui::TextDisabled("No scene. Click \"Add Scene\".");
+        ImGui::End();
+        return;
+    }
+
+    for (size_t i = 0; i < m_scenes->size(); ++i)
+    {
+        demo::Scene& scene = (*m_scenes)[i];
+        bool         isActive = m_activeSceneIndex.has_value() && *m_activeSceneIndex == i;
+
+        if (m_editingSceneIndex.has_value() && *m_editingSceneIndex == i)
         {
-            auto& res = m_scene->sceneObjects[i];
+            char buf[128]{};
+            size_t copyLength = std::min(scene.name.size(), sizeof(buf) - 1);
+            scene.name.copy(buf, copyLength);
 
-            const char* icon = ICON_MDI_CUBE_OUTLINE;
-            std::visit([&](auto* obj)
-                {
-                    using T = std::decay_t<decltype(*obj)>;
-                    if constexpr (std::is_same_v<T, graphics::resources::object::Camera>)
-                        icon = ICON_MDI_CAMERA;
-                    else if constexpr (std::is_same_v<T, graphics::resources::Light>)
-                        icon = ICON_MDI_LIGHTBULB_OUTLINE;
-                }, res.object);
+            ImGui::SetNextItemWidth(160.0f);
+            ImGui::SetKeyboardFocusHere();
 
-            std::string label = std::string(icon) + " " + res.objectName + "##" + std::to_string(i);
-
-            bool selected = (m_selectedObjectIndex.has_value() && *m_selectedObjectIndex == i);
-            if (ImGui::Selectable(label.c_str(), selected))
-                m_selectedObjectIndex = i;
-
-            if (ImGui::BeginPopupContextItem(("ctx##" + std::to_string(i)).c_str()))
+            if (ImGui::InputText(("##rename_scene_" + std::to_string(i)).c_str(),
+                buf, sizeof(buf),
+                ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
             {
-                if (ImGui::MenuItem(ICON_MDI_DELETE " Delete"))
-                {
-                    m_commandHistory->ExecuteCommand(
-                        std::make_unique<command::RemoveSceneObjectCommand>(m_scene, i)
-                    );
-                    if (m_selectedObjectIndex.has_value() && *m_selectedObjectIndex == i)
-                        m_selectedObjectIndex.reset();
-                }
-                ImGui::EndPopup();
+                if (std::strlen(buf) > 0)
+                    scene.name = buf;
+                m_editingSceneIndex.reset();
             }
+
+            if (!ImGui::IsItemActive() && ImGui::IsMouseClicked(0))
+            {
+                if (std::strlen(buf) > 0)
+                    scene.name = buf;
+                m_editingSceneIndex.reset();
+            }
+
+            continue;
+        }
+
+        ImGuiTreeNodeFlags nodeFlags =
+            ImGuiTreeNodeFlags_OpenOnArrow |
+            ImGuiTreeNodeFlags_SpanAvailWidth;
+
+        if (isActive)
+        {
+            nodeFlags |= ImGuiTreeNodeFlags_Selected;
+        }
+
+        if (!isActive)
+        {
+            nodeFlags |= ImGuiTreeNodeFlags_Leaf;
+        }
+
+        if (isActive)
+        {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+        }
+
+        bool opened = ImGui::TreeNodeEx(
+            (void*)(intptr_t)i,
+            nodeFlags,
+            "%s  %s",
+            isActive ? ICON_MDI_MOVIE_OPEN : ICON_MDI_MOVIE,
+            scene.name.c_str()
+        );
+
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+        {
+            m_activeSceneIndex = i;
+            m_selectedObjectIndex.reset();
+        }
+
+        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+        {
+            m_editingSceneIndex = i;
+        }
+
+        if (ImGui::BeginPopupContextItem(("ctx_scene_" + std::to_string(i)).c_str()))
+        {
+            if (ImGui::MenuItem(ICON_MDI_PENCIL " Rename"))
+                m_editingSceneIndex = i;
+
+            ImGui::Separator();
+
+            bool canDelete = m_scenes->size() > 1;
+            if (!canDelete)
+            {
+                ImGui::BeginDisabled();
+            }
+
+            if (ImGui::MenuItem(ICON_MDI_DELETE " Delete Scene"))
+            {
+                m_pendingDeleteSceneIndex = i;
+                ImGui::OpenPopup("confirm_delete_scene");
+            }
+
+            if (!canDelete)
+            {
+                ImGui::EndDisabled();
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                    ImGui::SetTooltip("Cannot delete the last scene.");
+            }
+
+            ImGui::EndPopup();
+        }
+
+        if (opened)
+        {
+            if (isActive)
+            {
+                for (size_t j = 0; j < scene.sceneObjects.size(); ++j)
+                {
+                    auto& res = scene.sceneObjects[j];
+
+                    const char* icon = ICON_MDI_CUBE_OUTLINE;
+                    std::visit([&](auto* obj)
+                        {
+                            using T = std::decay_t<decltype(*obj)>;
+                            if constexpr (std::is_same_v<T, graphics::resources::object::Camera>)
+                                icon = ICON_MDI_CAMERA;
+                            else if constexpr (std::is_same_v<T, graphics::resources::Light>)
+                                icon = ICON_MDI_LIGHTBULB_OUTLINE;
+                        }, res.object);
+
+                    ImGuiTreeNodeFlags objFlags =
+                        ImGuiTreeNodeFlags_Leaf |
+                        ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                        ImGuiTreeNodeFlags_SpanAvailWidth;
+
+                    if (m_selectedObjectIndex.has_value() && *m_selectedObjectIndex == j)
+                        objFlags |= ImGuiTreeNodeFlags_Selected;
+
+                    std::string objLabel = std::string(icon) + " " + res.objectName
+                        + "##obj_" + std::to_string(j);
+
+                    ImGui::TreeNodeEx((void*)(intptr_t)j, objFlags, "%s", objLabel.c_str());
+
+                    if (ImGui::IsItemClicked())
+                    {
+                        m_selectedObjectIndex = j;
+                    }
+
+                    if (ImGui::BeginPopupContextItem(("ctx_obj_" + std::to_string(j)).c_str()))
+                    {
+                        if (ImGui::MenuItem(ICON_MDI_DELETE " Delete"))
+                        {
+                            m_commandHistory->ExecuteCommand(
+                                std::make_unique<command::RemoveSceneObjectCommand>(&scene, j)
+                            );
+                            if (m_selectedObjectIndex.has_value() && *m_selectedObjectIndex == j)
+                                m_selectedObjectIndex.reset();
+                        }
+                        ImGui::EndPopup();
+                    }
+                }
+            }
+            ImGui::TreePop();
         }
     }
-    else
+
+    if (m_pendingDeleteSceneIndex.has_value())
     {
-        ImGui::TextDisabled("No scene loaded.");
+        ImGui::OpenPopup("confirm_delete_scene");
+    }
+
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    if (ImGui::BeginPopupModal("confirm_delete_scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        if (m_pendingDeleteSceneIndex.has_value())
+        {
+            const std::string& sceneName = (*m_scenes)[*m_pendingDeleteSceneIndex].name;
+            ImGui::Text(ICON_MDI_ALERT_OUTLINE "  Delete scene \"%s\" ?", sceneName.c_str());
+            ImGui::Text("This action cannot be undone.");
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            if (ImGui::Button(ICON_MDI_DELETE " Delete", ImVec2(120, 0)))
+            {
+                size_t idx = *m_pendingDeleteSceneIndex;
+
+                m_scenes->erase(m_scenes->begin() + idx);
+
+                if (m_scenes->empty())
+                {
+                    m_activeSceneIndex.reset();
+                }
+                else if (m_activeSceneIndex.has_value())
+                {
+                    if (*m_activeSceneIndex == idx)
+                        m_activeSceneIndex = (idx > 0) ? idx - 1 : 0;
+                    else if (*m_activeSceneIndex > idx)
+                        --(*m_activeSceneIndex);
+                }
+
+                m_selectedObjectIndex.reset();
+                m_editingSceneIndex.reset();
+                m_pendingDeleteSceneIndex.reset();
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Cancel", ImVec2(120, 0)))
+            {
+                m_pendingDeleteSceneIndex.reset();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::EndPopup();
     }
 
     ImGui::End();
@@ -199,7 +425,9 @@ void ImGuiWindows::InspectorWindow()
 {
     ImGui::Begin(ICON_MDI_TUNE " Inspector");
 
-    if (!m_scene || !m_selectedObjectIndex.has_value())
+    demo::Scene* activeScene = GetActiveScene();
+
+    if (!activeScene || !m_selectedObjectIndex.has_value())
     {
         ImGui::TextDisabled("Select an object in the Hierarchy.");
         ImGui::End();
@@ -207,14 +435,14 @@ void ImGuiWindows::InspectorWindow()
     }
 
     size_t idx = *m_selectedObjectIndex;
-    if (idx >= m_scene->sceneObjects.size())
+    if (idx >= activeScene->sceneObjects.size())
     {
         m_selectedObjectIndex.reset();
         ImGui::End();
         return;
     }
 
-    auto& res = m_scene->sceneObjects[idx];
+    auto& res = activeScene->sceneObjects[idx];
 
     if (ImGui::CollapsingHeader(ICON_MDI_TAG_OUTLINE " Identity", ImGuiTreeNodeFlags_DefaultOpen))
     {
@@ -230,7 +458,7 @@ void ImGuiWindows::InspectorWindow()
             if (!newName.empty() && newName != res.objectName)
             {
                 m_commandHistory->ExecuteCommand(
-                    std::make_unique<command::RenameSceneObjectCommand>(m_scene, idx, newName)
+                    std::make_unique<command::RenameSceneObjectCommand>(activeScene, idx, newName)
                 );
             }
         }
@@ -241,7 +469,7 @@ void ImGuiWindows::InspectorWindow()
         if (ImGui::Checkbox("In Timeline", &inTimeline))
         {
             m_commandHistory->ExecuteCommand(
-                std::make_unique<command::SetTimelineCommand>(m_scene, idx, inTimeline)
+                std::make_unique<command::SetTimelineCommand>(activeScene, idx, inTimeline)
             );
         }
     }
@@ -265,7 +493,10 @@ void ImGuiWindows::InspectorTransform(size_t index)
     if (!ImGui::CollapsingHeader(ICON_MDI_AXIS_ARROW " Transform", ImGuiTreeNodeFlags_DefaultOpen))
         return;
 
-    auto& transform = m_scene->sceneObjects[index].objectTransform;
+    demo::Scene* activeScene = GetActiveScene();
+    if (!activeScene) return;
+
+    auto& transform = activeScene->sceneObjects[index].objectTransform;
 
     glm::mat4 mat = transform.GetMatrix();
     glm::vec3 scale, skew, translation;
@@ -299,12 +530,12 @@ void ImGuiWindows::InspectorTransform(size_t index)
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
         {
             m_commandHistory->ExecuteCommand(
-                std::make_unique<command::ModifyTransformCommand>(m_scene, index, newTransform)
+                std::make_unique<command::ModifyTransformCommand>(activeScene, index, newTransform)
             );
         }
         else
         {
-            m_scene->sceneObjects[index].objectTransform = newTransform;
+            activeScene->sceneObjects[index].objectTransform = newTransform;
         }
     }
 }
@@ -314,8 +545,11 @@ void ImGuiWindows::InspectorCameraProperties(size_t index)
     if (!ImGui::CollapsingHeader(ICON_MDI_CAMERA " Camera", ImGuiTreeNodeFlags_DefaultOpen))
         return;
 
+    demo::Scene* activeScene = GetActiveScene();
+    if (!activeScene) return;
+
     auto* cam = std::get<graphics::resources::object::Camera*>(
-        m_scene->sceneObjects[index].object);
+        activeScene->sceneObjects[index].object);
 
     if (!cam) return;
 
@@ -324,11 +558,11 @@ void ImGuiWindows::InspectorCameraProperties(size_t index)
     ImGui::DragFloat("Near Clip", &cam->zNear, 0.001f, 0.001f, 10.0f);
     ImGui::DragFloat("Far Clip", &cam->zFar, 1.0f, 1.0f, 100000.0f);
 
-    bool isActive = (m_scene->GetActiveCamera() == cam);
+    bool isActive = (activeScene->GetActiveCamera() == cam);
     if (ImGui::Checkbox("Active Camera", &isActive))
     {
         if (isActive)
-            m_scene->SetActiveCamera(index);
+            activeScene->SetActiveCamera(index);
     }
 }
 
@@ -337,8 +571,11 @@ void ImGuiWindows::InspectorLightProperties(size_t index)
     if (!ImGui::CollapsingHeader(ICON_MDI_LIGHTBULB_OUTLINE " Light", ImGuiTreeNodeFlags_DefaultOpen))
         return;
 
+    demo::Scene* activeScene = GetActiveScene();
+    if (!activeScene) return;
+
     auto* light = std::get<graphics::resources::Light*>(
-        m_scene->sceneObjects[index].object);
+        activeScene->sceneObjects[index].object);
 
     if (!light) return;
 
@@ -352,7 +589,7 @@ void ImGuiWindows::Viewport()
 {
     ImGui::Begin("Viewport");
 
-    ImVec2 avail = ImGui::GetContentRegionAvail();
+    ImVec2   avail = ImGui::GetContentRegionAvail();
     uint32_t width = std::max(1u, static_cast<uint32_t>(avail.x));
     uint32_t height = std::max(1u, static_cast<uint32_t>(avail.y));
 
@@ -390,9 +627,29 @@ void ImGuiWindows::SetMenuBar()
             m_newProjectModal.ToggleNewProjectModal();
 
         if (ImGui::MenuItem("Open Project"))
-            LoadProject();
+        {
 
-        if (ImGui::MenuItem("Save Project")) {}
+        }
+
+        if (ImGui::MenuItem("Save Project"))
+        {
+            if (m_scenes && !m_scenes->empty())
+            {
+                auto dest = pfd::save_file(
+                    "Save Project", "",
+                    { "YAML Project", "*.yaml" }
+                ).result();
+
+                if (!dest.empty())
+                {
+                    std::filesystem::path outPath(dest);
+                    if (outPath.extension() != ".yaml")
+                        outPath += ".yaml";
+
+                    utils::YamlSerializer::SaveProject(outPath, *m_scenes);
+                }
+            }
+        }
 
         if (ImGui::MenuItem("Quit"))
             if (m_window) m_window->Close();
@@ -440,21 +697,6 @@ void ImGuiWindows::SetMenuBar()
     }
 
     ImGui::EndMenuBar();
-}
-
-void ImGuiWindows::LoadProject()
-{
-    auto selection = pfd::open_file(
-        "Choose a project", "",
-        { "YAML", "*.yaml" }
-    );
-
-    auto files = selection.result();
-    if (files.empty()) return;
-
-    std::filesystem::path projectPath(files[0]);
-    if (!projectPath.parent_path().empty())
-        m_contentDrawer.SetCurrentPath(projectPath.parent_path());
 }
 
 void ImGuiWindows::EditTransformByIndice(const float*, const float*, int) {}

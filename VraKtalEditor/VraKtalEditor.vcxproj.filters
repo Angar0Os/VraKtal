@@ -66,6 +66,9 @@
     <ClCompile Include="src\editorWindows\sceneInspector.cpp">
       <Filter>Source Files\windows</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\yamlSerializer.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -103,6 +106,12 @@
     </ClInclude>
     <ClInclude Include="include\command\sceneCommands.h">
       <Filter>Header Files\command</Filter>
+    </ClInclude>
+    <ClInclude Include="include\demo\sceneManager.h">
+      <Filter>Header Files\demo</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\yamlSerializer.h">
+      <Filter>Header Files\utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

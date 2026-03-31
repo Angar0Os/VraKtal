@@ -146,10 +146,12 @@
     <ClCompile Include="src\utils\yamlParser.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)VraKtalEditor\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="src\utils\yamlSerializer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\command\sceneCommands.h" />
     <ClInclude Include="include\demo\scene.h" />
+    <ClInclude Include="include\demo\sceneManager.h" />
     <ClInclude Include="include\demo\sceneResource.h" />
     <ClInclude Include="include\editorWindows\sceneInspector.h" />
     <ClInclude Include="include\imGuiWindows.h" />
@@ -160,6 +162,7 @@
     <ClInclude Include="include\command\command.h" />
     <ClInclude Include="include\command\commandHistory.h" />
     <ClInclude Include="include\command\fileCommands.h" />
+    <ClInclude Include="include\utils\yamlSerializer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

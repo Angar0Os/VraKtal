@@ -77,7 +77,10 @@ int main()
         glm::vec3(0.0f, 6.0f, 0.0f), glm::vec3(0.2f, 0.4f, 1.0f), 15.0f, "Blue Light");
     light3.radius = 0.1f;
 
-    demo::Scene scene("mainScene");
+    std::vector<demo::Scene> scenes;
+    scenes.emplace_back("mainScene");
+    auto& scene = scenes.back();
+
     scene.Add({ "mainCamera",  mainCamera.get(),     {},               false });
     scene.Add({ "plane",       planeMesh.get(),       planeTransform,   false });
     scene.Add({ "vikingRoom1", vikingRoomMesh.get(),  vikingTransform1, true });
@@ -90,7 +93,7 @@ int main()
         device.GetImGuiContext(),
         &renderer,
         &window,
-        &scene,
+        &scenes,
         &loader
     );
 
@@ -99,9 +102,9 @@ int main()
             imGuiWindows.PrepareImGuiWindows();
         });
 
-    float    time = 0.0f;
+    float       time = 0.0f;
     const float timeStep = (1.0f / 240.0f) / 5.0f;
-    uint32_t currentFrameIndex = 0;
+    uint32_t    currentFrameIndex = 0;
 
     while (!window.ShouldClose())
     {
@@ -133,24 +136,29 @@ int main()
             3.0f,
             3.0f * glm::sin(time + glm::pi<float>()));
 
-        if (auto* cam = scene.GetActiveCamera())
-            renderer.SetCamera(cam->GetViewMatrix(), cam->GetProjectionMatrix());
+        demo::Scene* activeScene = imGuiWindows.GetActiveScene();
 
-        for (const auto& resource : scene.sceneObjects)
+        if (activeScene)
         {
-            std::visit([&](auto* obj)
-                {
-                    using T = std::decay_t<decltype(*obj)>;
-                    if constexpr (std::is_same_v<T, graphics::resources::Mesh>)
+            if (auto* cam = activeScene->GetActiveCamera())
+                renderer.SetCamera(cam->GetViewMatrix(), cam->GetProjectionMatrix());
+
+            for (const auto& resource : activeScene->sceneObjects)
+            {
+                std::visit([&](auto* obj)
                     {
-                        renderer.PushMesh(obj, resource.objectTransform.GetMatrix());
-                    }
-                    else if constexpr (std::is_same_v<T, graphics::resources::Light>)
-                    {
-                        if (obj && obj->enabled)
-                            renderer.PushLight(*obj);
-                    }
-                }, resource.object);
+                        using T = std::decay_t<decltype(*obj)>;
+                        if constexpr (std::is_same_v<T, graphics::resources::Mesh>)
+                        {
+                            renderer.PushMesh(obj, resource.objectTransform.GetMatrix());
+                        }
+                        else if constexpr (std::is_same_v<T, graphics::resources::Light>)
+                        {
+                            if (obj && obj->enabled)
+                                renderer.PushLight(*obj);
+                        }
+                    }, resource.object);
+            }
         }
 
 #ifndef VRAKTAL_EDITOR
