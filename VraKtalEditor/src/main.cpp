@@ -11,19 +11,116 @@
 #include <loaders/materialLoader.h>
 #include "imGuiWindows.h"
 #include "utils/yamlParser.h"
+#include <core/input/input.h>
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
 
 #define VRAKTAL_EDITOR
 
+class App
+{
+public:
+    App(core::Input& _input) {
+        _input.AddAction("CloseApp");
+        _input.BindActionCallback<App, &App::CloseApp>("CloseApp", this, Action::Press);
+        _input.BindActionKey(Keys::Key::ESCAPE, "CloseApp");
+
+        _input.AddComboAction("CloseAppCombo");
+        _input.BindComboAction<App, &App::CloseAppCombo>("CloseAppCombo", { Keys::Key::LEFT_CONTROL, Keys::Key::Q }, this);
+    };
+    ~App() {};
+
+    bool ShouldClose() const { return bSouldCloseApp; }
+    void CloseApp() {
+        bSouldCloseApp = true;
+        std::cout << "Close App Action Triggered" << std::endl;
+    };
+
+    void CloseAppCombo() {
+        bSouldCloseApp = true;
+        std::cout << "Close App Combo Action Triggered with combo" << std::endl;
+    }
+
+private:
+    bool bSouldCloseApp = false;
+};
+
+class Camera
+{
+public:
+    float aspectRatio;
+    glm::mat4 projection;
+    glm::vec3 cameraPosition;
+    glm::vec3 direction;
+
+    Camera(core::Input& _input) : direction(0.0f, 0.0f, -1.0f)
+    {
+        aspectRatio = 800.0f / 600.0f;
+        projection = glm::perspectiveLH_ZO(
+            glm::radians(45.0f),
+            aspectRatio,
+            0.1f,
+            100.0f
+        );
+        projection[1][1] *= -1;
+
+        cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
+
+        _input.BindMouseCallback<Camera, &Camera::Look>(this);
+        _input.AddAxis2DAction("MoveCamera", Keys::Key::D, Keys::Key::A, Keys::Key::W, Keys::Key::S);
+        _input.BindAxis2DCallack<Camera, &Camera::MoveCamera>("MoveCamera", this);
+
+        _input.AddAction("MoveCameraUp");
+        _input.BindActionKey(Keys::Key::SPACE, "MoveCameraUp");
+        _input.BindActionCallback<Camera, &Camera::MoveCameraUp>("MoveCameraUp", this, Action::OnGoing);
+    };
+    ~Camera() {};
+
+    void MoveCamera(glm::vec2 value) {
+        float speed = 0.05;
+        cameraPosition += (value.y * speed) * direction;
+
+        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 cameraRight = glm::normalize(glm::cross(up, direction));
+
+        cameraPosition += (value.x * speed) * cameraRight;
+    }
+
+    void MoveCameraUp() {
+        float speed = 0.05;
+        cameraPosition.y += speed;
+    }
+
+    void Look(glm::vec2 mouseDelta) {
+        float sensitivity = 0.1f;
+        static float yaw = -90.0f;
+        static float pitch = 0.0f;
+        yaw -= mouseDelta.x * sensitivity;
+        pitch += mouseDelta.y * sensitivity;
+
+        // Clamp the pitch to prevent flipping
+        pitch = glm::clamp(pitch, -89.0f, 89.0f);
+        // Calculate the new camera direction
+
+        direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+        direction.y = sin(glm::radians(pitch));
+        direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+        direction = glm::normalize(direction);
+    }
+
+    glm::mat4 GetView() const { return glm::lookAtLH(cameraPosition, cameraPosition + direction, glm::vec3(0.0f, 1.0f, 0.0f)); }
+};
+
 int main()
 {
     core::Window window(800, 600, "VraKtal Engine");
-
+    core::Input input(window);
     core::gpu::Device device(window);
     graphics::Renderer renderer(window, device);
     loaders::MeshLoader loader(&device);
     ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window);
+    App app(input);
+    Camera camera(input);
 
     device.GetImGuiContext()->BindPrepareDrawData([&]()
         {
@@ -80,9 +177,10 @@ int main()
     if (parser.IsValid())
         lights = parser.LoadLights();
 
-    while (!window.ShouldClose())
+    while (!window.ShouldClose() && !app.ShouldClose())
     {
         window.PollEvents();
+        input.Update();
 
         if (device.NeedsResize())
         {
@@ -104,7 +202,7 @@ int main()
 
         time += timeStep;
 
-        renderer.SetCamera(view, projection);
+        renderer.SetCamera(camera.GetView(), camera.projection);
 
         renderer.PushMesh(planeMesh.get(), glm::mat4(1.0f));
 
