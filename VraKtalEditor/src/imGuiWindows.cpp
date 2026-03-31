@@ -587,13 +587,143 @@ void ImGuiWindows::InspectorLightProperties(size_t index)
 
 void ImGuiWindows::Viewport()
 {
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("Viewport");
+    ImGui::PopStyleVar();
 
-    ImVec2   avail = ImGui::GetContentRegionAvail();
+    ImVec2 viewportPos = ImGui::GetWindowPos();
+    ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+    ImVec2 avail = ImGui::GetContentRegionAvail();
+
     uint32_t width = std::max(1u, static_cast<uint32_t>(avail.x));
     uint32_t height = std::max(1u, static_cast<uint32_t>(avail.y));
 
     m_imGuiContext->DrawViewportComponent(width, height);
+
+    const ImVec2 toolbarOrigin = ImVec2(
+        viewportPos.x + contentMin.x + 8.0f,
+        viewportPos.y + contentMin.y + 8.0f);
+
+    const float  btnSize = 28.0f;
+    const float  btnSpacing = 4.0f;
+    const ImVec4 colActive = ImVec4(0.26f, 0.59f, 0.98f, 1.0f);
+    const ImVec4 colNormal = ImVec4(0.20f, 0.20f, 0.20f, 0.80f);
+
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+
+    float pillW = (btnSize + btnSpacing) * 4.0f + btnSpacing;
+    float pillH = btnSize + btnSpacing * 2.0f;
+    dl->AddRectFilled(
+        ImVec2(toolbarOrigin.x - btnSpacing, toolbarOrigin.y - btnSpacing),
+        ImVec2(toolbarOrigin.x - btnSpacing + pillW, toolbarOrigin.y - btnSpacing + pillH),
+        IM_COL32(30, 30, 30, 180), 6.0f);
+
+    ImGui::SetCursorScreenPos(toolbarOrigin);
+
+    auto GizmoBtn = [&](const char* icon, bool active, const char* tooltip) -> bool
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, active ? colActive : colNormal);
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, colActive);
+            bool clicked = ImGui::Button(icon, ImVec2(btnSize, btnSize));
+            ImGui::PopStyleColor(3);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("%s", tooltip);
+            return clicked;
+        };
+
+    if (GizmoBtn(ICON_MDI_AXIS_ARROW, m_gizmoEnabled && m_gizmoOperation == ImGuizmo::TRANSLATE, "Translate (W)"))
+    {
+        m_gizmoEnabled = true;
+        m_gizmoOperation = ImGuizmo::TRANSLATE;
+    }
+    ImGui::SameLine(0, btnSpacing);
+
+    if (GizmoBtn(ICON_MDI_ROTATE_3D, m_gizmoEnabled && m_gizmoOperation == ImGuizmo::ROTATE, "Rotate (E)"))
+    {
+        m_gizmoEnabled = true;
+        m_gizmoOperation = ImGuizmo::ROTATE;
+    }
+    ImGui::SameLine(0, btnSpacing);
+
+    if (GizmoBtn(ICON_MDI_ARROW_EXPAND_ALL, m_gizmoEnabled && m_gizmoOperation == ImGuizmo::SCALE, "Scale (R)"))
+    {
+        m_gizmoEnabled = true;
+        m_gizmoOperation = ImGuizmo::SCALE;
+    }
+    ImGui::SameLine(0, btnSpacing);
+
+    if (GizmoBtn(ICON_MDI_CURSOR_DEFAULT, !m_gizmoEnabled, "Disable gizmo (Q)"))
+        m_gizmoEnabled = false;
+
+    if (ImGui::IsWindowHovered())
+    {
+        if (ImGui::IsKeyPressed(ImGuiKey_W)) { m_gizmoEnabled = true;  m_gizmoOperation = ImGuizmo::TRANSLATE; }
+        if (ImGui::IsKeyPressed(ImGuiKey_E)) { m_gizmoEnabled = true;  m_gizmoOperation = ImGuizmo::ROTATE; }
+        if (ImGui::IsKeyPressed(ImGuiKey_R)) { m_gizmoEnabled = true;  m_gizmoOperation = ImGuizmo::SCALE; }
+        if (ImGui::IsKeyPressed(ImGuiKey_Q)) { m_gizmoEnabled = false; }
+    }
+
+    demo::Scene* activeScene = GetActiveScene();
+
+    if (m_gizmoEnabled && activeScene && m_selectedObjectIndex.has_value())
+    {
+        size_t idx = *m_selectedObjectIndex;
+        if (idx < activeScene->sceneObjects.size())
+        {
+            auto* cam = activeScene->GetActiveCamera();
+            if (cam)
+            {
+                ImGuizmo::SetOrthographic(false);
+                ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+
+                ImGuizmo::SetRect(
+                    viewportPos.x + contentMin.x,
+                    viewportPos.y + contentMin.y,
+                    static_cast<float>(width),
+                    static_cast<float>(height));
+
+                glm::mat4 view = cam->GetViewMatrix();
+                glm::mat4 projection = cam->GetProjectionMatrix();
+
+                projection[1][1] *= -1.0f;
+
+                auto& transform = activeScene->sceneObjects[idx].objectTransform;
+                glm::mat4 matrix = transform.GetMatrix();
+
+                ImGuizmo::Manipulate(
+                    glm::value_ptr(view),
+                    glm::value_ptr(projection),
+                    m_gizmoOperation,
+                    ImGuizmo::LOCAL,
+                    glm::value_ptr(matrix));
+
+                if (ImGuizmo::IsUsing())
+                {
+                    glm::vec3 translation, scale, skew;
+                    glm::quat rotation;
+                    glm::vec4 perspective;
+                    glm::decompose(matrix, scale, rotation, translation, skew, perspective);
+
+                    graphics::resources::property::Transform newTransform;
+                    newTransform.SetPosition(translation);
+                    newTransform.SetRotation(rotation);
+                    newTransform.SetScale(scale);
+
+                    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+                    {
+                        m_commandHistory->ExecuteCommand(
+                            std::make_unique<command::ModifyTransformCommand>(
+                                activeScene, idx, newTransform));
+                    }
+                    else
+                    {
+                        transform = newTransform;
+                    }
+                }
+            }
+        }
+    }
 
     ImGui::End();
 }

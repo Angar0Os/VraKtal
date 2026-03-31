@@ -18,6 +18,8 @@
 
 #include <loaders/meshLoader.h>
 
+#include <imGuizmo/ImGuizmo.h>
+
 namespace core::gpu {
     class ImguiContext;
 }
@@ -61,7 +63,10 @@ private:
     std::optional<size_t>   m_selectedObjectIndex;
     std::optional<size_t>   m_activeSceneIndex;
     std::optional<size_t>   m_editingSceneIndex;        
-    std::optional<size_t>   m_pendingDeleteSceneIndex;  
+    std::optional<size_t>   m_pendingDeleteSceneIndex;
+
+    bool                m_gizmoEnabled = true;
+    ImGuizmo::OPERATION m_gizmoOperation = ImGuizmo::TRANSLATE;
 
     core::gpu::Device* m_device = nullptr;
 
