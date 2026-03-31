@@ -197,6 +197,9 @@
     <ClInclude Include="include\core\gpu\image.h" />
     <ClInclude Include="include\core\gpu\imguiContext.h" />
     <ClInclude Include="include\core\gpu\pipeline.h" />
+    <ClInclude Include="include\core\input\input.h" />
+    <ClInclude Include="include\core\input\inputAxisCallback.h" />
+    <ClInclude Include="include\core\input\InputCallback.h" />
     <ClInclude Include="include\core\window.h" />
     <ClInclude Include="include\graphics\materialInstance.h" />
     <ClInclude Include="include\graphics\pass.h" />
@@ -216,6 +219,7 @@
     <ClInclude Include="include\loaders\meshLoader.h" />
     <ClInclude Include="include\loaders\shaderLoader.h" />
     <ClInclude Include="include\loaders\textureLoader.h" />
+    <ClInclude Include="include\utils\NamedStorageMapped.h" />
     <ClInclude Include="src\core\gpu\vulkan\accelerationStructure_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\commandBuffer_impl.h" />
@@ -261,6 +265,7 @@
     <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\lightingPass.cpp" />
     <ClCompile Include="src\graphics\resources\object\scene.cpp" />
+    <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\loaders\materialLoader.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />
     <ClCompile Include="src\loaders\textureLoader.cpp" />
