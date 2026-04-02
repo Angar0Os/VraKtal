@@ -2,6 +2,11 @@
 
 using namespace graphics::resources;
 
+void Scene::Add(Resource resource)
+{
+	sceneObjects.push_back(std::move(resource));
+}
+
 object::Object* Scene::AddObject(std::shared_ptr<object::Object> obj)
 {
 	objects.push_back(obj);

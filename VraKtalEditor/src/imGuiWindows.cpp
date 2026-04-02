@@ -20,8 +20,8 @@
 #include <iostream>
 #include <MDI/IconsMaterialDesignIcons.h>
 
-ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window)
-    : m_imGuiContext(_imGuiContext)
+ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, std::vector<graphics::resources::Scene>* scenes)
+    : m_imGuiContext(_imGuiContext), m_scenes(scenes)
 {
     m_renderer = _renderer;
     m_window = window;

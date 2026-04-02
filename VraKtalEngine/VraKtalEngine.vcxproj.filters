@@ -270,6 +270,9 @@
     <ClInclude Include="include\loaders\materialLoader.h">
       <Filter>Header Files\loaders</Filter>
     </ClInclude>
+    <ClInclude Include="include\graphics\resources\resource.h">
+      <Filter>Header Files\graphics\resources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">

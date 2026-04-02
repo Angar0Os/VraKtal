@@ -7,6 +7,7 @@
 #include <core/window.h>
 #include "newProjectModal.h"
 #include "command/commandHistory.h"
+#include <graphics/resources/scene.h>
 
 namespace core::gpu {
     class ImguiContext;
@@ -19,7 +20,7 @@ namespace graphics {
 class ImGuiWindows
 {
 public:
-    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window);
+    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, std::vector<graphics::resources::Scene>* scenes);
     ~ImGuiWindows();
     void PrepareImGuiWindows();
     command::CommandHistory* GetCommandHistory() { return m_commandHistory.get(); }
@@ -35,6 +36,7 @@ private:
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
     void LoadProject();
 
+    std::vector<graphics::resources::Scene>* m_scenes;
     ContentDrawer m_contentDrawer;
     core::Window* m_window;
     NewProjectModal m_newProjectModal;

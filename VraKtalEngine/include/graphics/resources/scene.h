@@ -8,6 +8,8 @@
 #include <graphics/resources/object/mesh.h>
 #include <graphics/resources/object/material.h>
 #include <graphics/resources/object/light.h>
+#include <graphics/resources/resource.h>
+
 
 #include <core/gpu/buffer.h>
 
@@ -28,6 +30,10 @@ namespace graphics::resources
 
 		Scene() = default;
 		explicit Scene(const std::string& sceneName) : name(sceneName) {}
+
+		void Add(Resource resource);
+
+		std::vector<Resource> sceneObjects;
 
 		object::Object* AddObject(std::shared_ptr<object::Object> obj);
 

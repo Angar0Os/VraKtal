@@ -570,14 +570,14 @@ void ContentDrawer::ShowRenameDialog()
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-	if (m_renameTargetIndex >= m_cachedFiles.size()) {
-		ImGui::CloseCurrentPopup();
-		ImGui::EndPopup();
-
-		return;
-	}
-
 	if (ImGui::BeginPopupModal("Rename", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		if (m_renameTargetIndex >= m_cachedFiles.size()) {
+			ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
+
+			return;
+		}
+
 		ImGui::Text("Rename: %s", m_cachedFiles[m_renameTargetIndex].filename.c_str());
 		ImGui::Separator();
 

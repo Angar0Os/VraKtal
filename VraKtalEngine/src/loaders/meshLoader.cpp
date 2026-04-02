@@ -209,6 +209,8 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadMesh(const s
 		CreateBLASForMesh(mesh.get());
 	}
 
+	mesh->sourcePath = filepath.c_str();
+
 	return mesh;
 }
 

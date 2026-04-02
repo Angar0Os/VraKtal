@@ -14,12 +14,8 @@ namespace core::gpu
 
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <core/gpu/accelerationStructure.h>
 #include <graphics/materialInstance.h>
 
-#include <vector>
 #include <memory>
 
 namespace core::gpu
@@ -62,6 +58,7 @@ namespace graphics::resources
 		std::vector<Vertex>   vertices;
 		std::vector<uint32_t> indices;
 		std::vector<SubMesh>  subMeshes;
+		std::string sourcePath;
 
 		std::unique_ptr<core::gpu::Buffer> vertexBuffer;
 		std::unique_ptr<core::gpu::Buffer> indexBuffer;

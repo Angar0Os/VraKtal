@@ -211,6 +211,7 @@
     <ClInclude Include="include\graphics\resources\object\staticMesh.h" />
     <ClInclude Include="include\graphics\resources\project.h" />
     <ClInclude Include="include\graphics\resources\property\transform.h" />
+    <ClInclude Include="include\graphics\resources\resource.h" />
     <ClInclude Include="include\graphics\resources\scene.h" />
     <ClInclude Include="include\loaders\materialLoader.h" />
     <ClInclude Include="include\loaders\meshLoader.h" />
