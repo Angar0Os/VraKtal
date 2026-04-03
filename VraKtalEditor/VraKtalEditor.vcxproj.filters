@@ -57,6 +57,12 @@
     <ClCompile Include="src\newProjectModal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\windows\windowInput.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\windows\windowViewport.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -82,6 +88,15 @@
     </ClInclude>
     <ClInclude Include="include\newProjectModal.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\windowInput.h">
+      <Filter>Header Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\ImguiWindowBase.h">
+      <Filter>Header Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\windowViewport.h">
+      <Filter>Header Files\windows</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

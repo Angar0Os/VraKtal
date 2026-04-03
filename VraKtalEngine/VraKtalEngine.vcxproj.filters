@@ -291,6 +291,12 @@
     <ClInclude Include="include\utils\NamedStorageMapped.h">
       <Filter>Header Files\utils</Filter>
     </ClInclude>
+    <ClInclude Include="include\core\input\actions.h">
+      <Filter>Header Files\core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\input\keys.h">
+      <Filter>Header Files\core\input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
