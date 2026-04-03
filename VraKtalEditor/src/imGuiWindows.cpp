@@ -23,7 +23,7 @@ ImGuiWindows::~ImGuiWindows()
 {
 }
 
-void ImGuiWindows::PrepareImGuiWindows()
+void ImGuiWindows::PrepareImGuiWindows(AudioManager* audio)
 {
 	//const float* viewMatrix = glm::value_ptr(m_renderer->GetViewMatrix());
  //   glm::mat4 NdcProj = m_renderer->GetProjectionMatrix();
@@ -41,11 +41,17 @@ void ImGuiWindows::PrepareImGuiWindows()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f,0.0f));
 
-	mainWindow();
 
+	mainWindow();
     testWindow();
 	ContentDrawerWindow();
     HierarchyWindow();
+	TrackEditorWindow(audio);
+}
+
+void ImGuiWindows::TrackEditorWindow(AudioManager* audio)
+{
+	m_trackEditor.getTrackEditorWindow(audio);
 }
 
 void ImGuiWindows::ContentDrawerWindow()

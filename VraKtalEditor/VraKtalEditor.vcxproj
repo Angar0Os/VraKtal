@@ -138,6 +138,7 @@
   <ItemGroup>
     <ClCompile Include="src\AudioManager.cpp" />
     <ClCompile Include="src\contentDrawer.cpp" />
+    <ClCompile Include="src\FileVisualizer.cpp" />
     <ClCompile Include="src\imGuiWindows.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\SyncEngine.cpp" />
@@ -153,6 +154,7 @@
     <ClInclude Include="header\utils\fileTypeDetector.h" />
     <ClInclude Include="header\utils\yamlParser.h" />
     <ClInclude Include="include\AudioManager.h" />
+    <ClInclude Include="include\FileVisualizer.h" />
     <ClInclude Include="include\SyncEngine.h" />
     <ClInclude Include="include\TrackEditor.h" />
   </ItemGroup>

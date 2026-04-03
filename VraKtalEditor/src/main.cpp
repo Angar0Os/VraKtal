@@ -13,6 +13,8 @@
 
 #include <loaders/meshLoader.h>
 
+
+
 #include "utils/yamlParser.h"
 
 #pragma comment(lib, "VraKtalEngine_Debug.lib")
@@ -27,15 +29,18 @@ int main()
 	loaders::MeshLoader loader(&device);
 	ImGuiWindows imGuiWindows = ImGuiWindows(&renderer);
 
+	/////////////////
+	AudioManager* audio = new AudioManager(window.GlfwHandle());
+	audio->LoadMainMusic("assets/sounds/sonic-the-hedgehog-gets-bubble-sound-effect.mp3");
+	//audio->PlayMainMusic();
+	/////////////////
+
 	device.GetImGuiContext()->BindPrepareDrawData([&]()
 	{
-		 imGuiWindows.PrepareImGuiWindows();
+		 imGuiWindows.PrepareImGuiWindows(audio);
 	});
+	
 
-	/////////////////
-	AudioManager* audio = new AudioManager();
-	audio->LoadChannel();
-	/////////////////
 
 	auto vikingRoomMesh = loader.LoadMesh("assets/models/viking_room.obj");
 	auto planeMesh = loader.CreatePlane(10.0f, 10.0f, 10, 10);

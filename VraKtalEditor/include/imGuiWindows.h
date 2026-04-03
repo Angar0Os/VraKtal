@@ -1,6 +1,8 @@
 #pragma once
 
 #include "contentDrawer.h"
+#include "TrackEditor.h"
+#include "AudioManager.h"
 
 namespace graphics {
     class Renderer;
@@ -12,11 +14,12 @@ public:
 	ImGuiWindows(graphics::Renderer* _renderer);
 	~ImGuiWindows();
 
-    void PrepareImGuiWindows();
+    void PrepareImGuiWindows(AudioManager* audio);// en test
 
 private:
 	void SetMenuBar();
 
+    void TrackEditorWindow(AudioManager* audio);
 	void ContentDrawerWindow();
     void HierarchyWindow();
     void mainWindow();
@@ -24,6 +27,7 @@ private:
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
 
 	ContentDrawer m_contentDrawer;
+    TrackEditor m_trackEditor;
 
 private :
     graphics::Renderer* m_renderer;
