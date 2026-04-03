@@ -4,7 +4,6 @@
 
 #include <core/gpu/buffer.h>
 #include <core/gpu/descriptorSet.h>
-#include <core/gpu/imguiContext.h>
 #include <core/gpu/pipeline.h>
 #include <core/enum.h>
 #include <loaders/shaderLoader.h>
@@ -16,8 +15,6 @@
 using namespace core;
 using namespace core::gpu;
 using namespace graphics;
-
-#define VRAKTAL_EDITOR
 
 Renderer::Renderer(Window& window, Device& device)
 	: m_window(window)

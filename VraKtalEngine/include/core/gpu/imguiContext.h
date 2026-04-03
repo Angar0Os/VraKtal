@@ -25,16 +25,19 @@ namespace core
 
 			std::unique_ptr<Impl> m_impl;
             std::function<void()> m_prepareDrawDataFunc;
-			struct SceneViewport
+
+			enum EViewportState;
+
+			struct ViewportState
 			{
 				uint32_t width = 0;
 				uint32_t height = 0;
-				uint32_t desiredWidth = 0;
-				uint32_t desiredHeight = 0;
-				bool firstFrame = true;
-				bool readyForUse = false;
+				bool hovered = false;
+				bool focused = false;
+				bool clicked = false;
 			};
-			std::unique_ptr<SceneViewport> m_SceneViewport;
+
+			ViewportState m_viewport;
 
 		public:
 			explicit ImguiContext(Window& _window, Device& _device);
@@ -44,13 +47,15 @@ namespace core
 			void DrawEditors(void* _vKCommand);
 			void PrepareForDrawing();
 			void BindPrepareDrawData(std::function<void()> func);
-			SceneViewport* GetSceneViewport() { return m_SceneViewport.get(); };
+			ViewportState* GetViewportState();
 			void DrawViewportComponent(uint32_t width, uint32_t height);
 			void RenderSceneToViewport(core::gpu::CommandBuffer* cmd, graphics::Renderer* renderer);
 
 			core::gpu::Image* GetViewportImage();
 			void OnResize();
 			Impl* GetImpl() { return m_impl.get();};
+			
+
 		};
 	}
 }

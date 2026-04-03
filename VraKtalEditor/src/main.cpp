@@ -2,7 +2,6 @@
 #include <core/window.h>
 #include <core/gpu/device.h>
 #include <core/gpu/image.h>
-#include <core/gpu/imguiContext.h>
 #include <graphics/renderer.h>
 #include <graphics/renderPass/gBufferPass.h>
 #include <graphics/resources/object/light.h>
@@ -13,20 +12,21 @@
 #include "utils/yamlParser.h"
 #include <core/input/input.h>
 
-#pragma comment(lib, "VraKtalEngine_Debug.lib")
+#ifdef VRAKTAL_EDITOR
+    #pragma comment(lib, "VraKtalEngine_Debug.lib")
+    #include <core/gpu/imguiContext.h>
+#else
+    #pragma comment(lib, "VraKtalEngine.lib")
+#endif // VRAKTAL_EDITOR
 
-#define VRAKTAL_EDITOR
 
 class App
 {
 public:
     App(core::Input& _input) {
         _input.AddAction("CloseApp");
-        _input.BindActionCallback<App, &App::CloseApp>("CloseApp", this, Action::Press);
-        _input.BindActionKey(Keys::Key::ESCAPE, "CloseApp");
-
-        _input.AddComboAction("CloseAppCombo");
-        _input.BindComboAction<App, &App::CloseAppCombo>("CloseAppCombo", { Keys::Key::LEFT_CONTROL, Keys::Key::Q }, this);
+        _input.BindActionKey({ input::Key::ESCAPE }, "CloseApp");
+        _input.BindActionCallback<App, &App::CloseApp>("CloseApp", this, input::KeyState::Press);
     };
     ~App() {};
 
@@ -35,11 +35,6 @@ public:
         bSouldCloseApp = true;
         std::cout << "Close App Action Triggered" << std::endl;
     };
-
-    void CloseAppCombo() {
-        bSouldCloseApp = true;
-        std::cout << "Close App Combo Action Triggered with combo" << std::endl;
-    }
 
 private:
     bool bSouldCloseApp = false;
@@ -67,12 +62,18 @@ public:
         cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
 
         _input.BindMouseCallback<Camera, &Camera::Look>(this);
-        _input.AddAxis2DAction("MoveCamera", Keys::Key::D, Keys::Key::A, Keys::Key::W, Keys::Key::S);
+        
+        _input.AddAction("CameraLook");
+        _input.BindActionKey({ input::Key::GLFW_MOUSE_BUTTON_RIGHT}, "CameraLook");
+        _input.BindActionCallback<Camera, &Camera::EnableLook>("CameraLook", this, input::KeyState::Press);
+        _input.BindActionCallback<Camera, &Camera::DisableLook>("CameraLook", this, input::KeyState::Release);
+
+        _input.AddAxis2DAction("MoveCamera", input::Key::D, input::Key::A, input::Key::W, input::Key::S);
         _input.BindAxis2DCallack<Camera, &Camera::MoveCamera>("MoveCamera", this);
 
         _input.AddAction("MoveCameraUp");
-        _input.BindActionKey(Keys::Key::SPACE, "MoveCameraUp");
-        _input.BindActionCallback<Camera, &Camera::MoveCameraUp>("MoveCameraUp", this, Action::OnGoing);
+        _input.BindActionKey({ input::Key::SPACE }, "MoveCameraUp");
+        _input.BindActionCallback<Camera, &Camera::MoveCameraUp>("MoveCameraUp", this, input::KeyState::OnGoing);
     };
     ~Camera() {};
 
@@ -92,6 +93,10 @@ public:
     }
 
     void Look(glm::vec2 mouseDelta) {
+        if (!bReceiveInputs)
+        {
+            return;
+        }
         float sensitivity = 0.1f;
         static float yaw = -90.0f;
         static float pitch = 0.0f;
@@ -100,12 +105,20 @@ public:
 
         // Clamp the pitch to prevent flipping
         pitch = glm::clamp(pitch, -89.0f, 89.0f);
-        // Calculate the new camera direction
 
+        // Calculate the new camera direction
         direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
         direction.y = sin(glm::radians(pitch));
         direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
         direction = glm::normalize(direction);
+    }
+    bool bReceiveInputs = false;
+
+    void EnableLook() { 
+        bReceiveInputs = true;
+    }
+    void DisableLook(){ 
+        bReceiveInputs = false; 
     }
 
     glm::mat4 GetView() const { return glm::lookAtLH(cameraPosition, cameraPosition + direction, glm::vec3(0.0f, 1.0f, 0.0f)); }
@@ -114,18 +127,25 @@ public:
 int main()
 {
     core::Window window(800, 600, "VraKtal Engine");
-    core::Input input(window);
     core::gpu::Device device(window);
+    core::Input input(window, &device);
     graphics::Renderer renderer(window, device);
-    loaders::MeshLoader loader(&device);
-    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window);
-    App app(input);
-    Camera camera(input);
-
+#ifdef VRAKTAL_EDITOR
+    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input);
     device.GetImGuiContext()->BindPrepareDrawData([&]()
         {
             imGuiWindows.PrepareImGuiWindows();
         });
+#endif //VRAKTAL_EDITOR
+
+
+
+    loaders::MeshLoader loader(&device);
+
+    App app(input);
+    Camera camera(input);
+
+
 
     auto vikingRoomMesh = loader.LoadMesh("assets/models/viking_room.obj");
     auto planeMesh = loader.CreatePlane(10.0f, 10.0f, 10, 10);
@@ -186,8 +206,11 @@ int main()
         {
             device.RecreateSwapchain();
             renderer.OnResize();
-            device.GetImGuiContext()->OnResize();
             device.ClearResizeFlag();
+#ifdef VRAKTAL_EDITOR
+            device.GetImGuiContext()->OnResize();
+#endif // VRAKTAL_EDITOR
+
             continue;
         }
 
@@ -196,7 +219,9 @@ int main()
         {
             device.RecreateSwapchain();
             renderer.OnResize();
+#ifdef VRAKTAL_EDITOR
             device.GetImGuiContext()->OnResize();
+#endif // VRAKTAL_EDITOR
             continue;
         }
 
@@ -246,7 +271,7 @@ int main()
 #else
         imGuiWindows.GetContext()->PrepareForDrawing();
         auto image = imGuiWindows.GetContext()->GetViewportImage();
-       
+
         renderer.Render(imGuiWindows.GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
         auto cmd = renderer.GetCurrentCommandBuffer();
         auto swapchainImage = device.GetSwapchainImage(imageIndex);
@@ -278,7 +303,6 @@ int main()
             false
         );
 #endif
-
         renderer.Advance();
         device.Present(imageIndex, currentFrameIndex);
         currentFrameIndex = (currentFrameIndex + 1) % core::gpu::Device::s_FRAMES_IN_FLIGHT;

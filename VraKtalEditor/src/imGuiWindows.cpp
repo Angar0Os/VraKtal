@@ -1,10 +1,7 @@
 #define NOMINMAX
 #include "imGuiWindows.h"
 #include <core/gpu/imguiContext.h>
-#include "imgui/imgui.h"
-#include "contentDrawer.h"
 #include "command/fileCommands.h"
-#include <core/gpu/buffer.h>
 #include <graphics/resources/object/camera.h>
 #include <algorithm>
 
@@ -20,7 +17,13 @@
 #include <iostream>
 #include <MDI/IconsMaterialDesignIcons.h>
 
-ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window)
+#include <core/input/input.h>
+
+#include "contentDrawer.h"
+#include "../include/windows/WindowInput.h"
+#include "../include/windows/WindowViewport.h"
+
+ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window , core::Input& _input)
     : m_imGuiContext(_imGuiContext)
 {
     m_renderer = _renderer;
@@ -29,12 +32,21 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
     command::ClearBackupDirectory();
 
     m_commandHistory = std::make_unique<command::CommandHistory>(100);
-    m_contentDrawer.SetCommandHistory(m_commandHistory.get());
+    
+	m_contentDrawer = new ContentDrawer();
+	m_contentDrawer->SetCommandHistory(m_commandHistory.get());
+
+	m_windowInput = new WindowInput(_input);
+	m_windowViewport = new WindowViewport(*this);
+
 }
 
 ImGuiWindows::~ImGuiWindows()
 {
 	command::ClearBackupDirectory();
+	
+	delete m_contentDrawer;
+	delete m_windowInput;
 }
 
 void ImGuiWindows::PrepareImGuiWindows()
@@ -49,10 +61,12 @@ void ImGuiWindows::PrepareImGuiWindows()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f,0.0f));
 
 	mainWindow();
-	Viewport();
     testWindow();
 	ContentDrawerWindow();
     HierarchyWindow();
+
+	m_windowViewport->Draw();
+	m_windowInput->Draw();
 
 	m_newProjectModal.GetNewProjectModalWindow();
 
@@ -60,7 +74,7 @@ void ImGuiWindows::PrepareImGuiWindows()
 		std::filesystem::path lastProjectPath = m_newProjectModal.GetLastCreatedProjectPath();
 
 		if (!lastProjectPath.empty()) {
-			m_contentDrawer.SetCurrentPath(lastProjectPath);
+			m_contentDrawer->SetCurrentPath(lastProjectPath);
 		}
 
 		m_newProjectModal.ResetProjectCreatedFlag();
@@ -74,7 +88,7 @@ core::gpu::ImguiContext* ImGuiWindows::GetContext()
 
 void ImGuiWindows::ContentDrawerWindow()
 {
-	m_contentDrawer.GetContentDrawerWindow();
+	m_contentDrawer->GetContentDrawerWindow();
 }
 
 void ImGuiWindows::HierarchyWindow()
@@ -84,21 +98,7 @@ void ImGuiWindows::HierarchyWindow()
 
 void ImGuiWindows::testWindow()
 {
-
-}
-
-void ImGuiWindows::Viewport()
-{
-	ImGui::Begin("Viewport");
-
-	ImVec2 avail = ImGui::GetContentRegionAvail();
-
-	uint32_t width = std::max(1u, static_cast<uint32_t>(avail.x));
-	uint32_t height = std::max(1u, static_cast<uint32_t>(avail.y));
-
-	m_imGuiContext->DrawViewportComponent(width , height);
-
-	ImGui::End();
+	
 }
 
 void ImGuiWindows::EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice)
@@ -268,7 +268,7 @@ void ImGuiWindows::LoadProject()
 	std::filesystem::path projectPath(files[0]);
 
 	if (!projectPath.parent_path().empty()) {
-		m_contentDrawer.SetCurrentPath(projectPath.parent_path());
+		m_contentDrawer->SetCurrentPath(projectPath.parent_path());
 	}
 
 	// Global shortcuts

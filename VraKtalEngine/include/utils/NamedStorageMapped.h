@@ -81,12 +81,7 @@ public:
         return values[_id];
     }
 
-    const T& Get(ID _id) const
-    {
-        if (!IsValidIndex(_id))
-            throw std::runtime_error("Invalid NamedStorageMap id");
-        return values[_id];
-    }
+    
 
     const std::string& GetName(ID _id) const
     {
@@ -117,6 +112,10 @@ public:
     std::vector<ID>& GetAllIDs()
     {
         return freeIDs;
+    }
+    std::vector<std::string>& GetAllNames()
+    {
+        return names;
     }
 
 private:

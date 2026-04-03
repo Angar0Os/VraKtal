@@ -23,11 +23,13 @@
 
 #include <iostream>
 #include <vulkan/vulkan_handles.hpp>
+#include <GLFW/glfw3.h>
 
 
 core::gpu::ImguiContext::ImguiContext(Window& _window, Device& _device)
-	: m_impl(std::make_unique<Impl>(_window, _device))
 {
+
+	m_impl = std::make_unique<Impl>(_window, _device , &m_viewport);
 }
 
 core::gpu::ImguiContext::~ImguiContext() {}
@@ -63,13 +65,23 @@ void core::gpu::ImguiContext::BindPrepareDrawData(std::function<void()> func)
 	m_prepareDrawDataFunc = func;
 }
 
-core::gpu::ImguiContext::Impl::Impl(Window& _window, Device& _device)
+core::gpu::ImguiContext::ViewportState* core::gpu::ImguiContext::GetViewportState()
+{
+	return &m_viewport;
+}
+
+core::gpu::ImguiContext::Impl::Impl(Window& _window, Device& _device , ViewportState* _viewport)
 {
 	CreateContext(_window, _device);
+
+	m_viewportState = _viewport;
+	m_device = &_device;
+	m_window = &_window;
 }
 
 core::gpu::ImguiContext::Impl::~Impl()
 {
+	m_viewportState = nullptr;
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
@@ -161,15 +173,14 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	ImGuizmo::SetRect(0, 0, (float)_device.GetImpl().swapchainExtent.width, (float)_device.GetImpl().swapchainExtent.height);
 	ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
 
-	m_device = &_device;
 }
 
 void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height)
 {
 	auto& vkDevice = m_device->GetImpl().device;
 
-	m_viewport.width = width;
-	m_viewport.height = height;
+	m_viewportState->width = width;
+	m_viewportState->height = height;
 
 	core::gpu::SImageCreateInfo imageInfo{};
 	imageInfo.width = width;
@@ -182,7 +193,7 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 	imageInfo.usage = ImageUsage::ColorAttachment | ImageUsage::Sampled | ImageUsage::TransferDst;
 	imageInfo.memoryProperties = EMemoryProperty::DeviceLocal;
 
-	m_viewport.colorImage = std::make_unique<Image>(m_device, imageInfo);
+	m_viewportImage.colorImage = std::make_unique<Image>(m_device, imageInfo);
 
 	core::gpu::SImageViewCreateInfo viewInfo{};
 	viewInfo.format = imageInfo.format;
@@ -209,7 +220,7 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 	samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueWhite;
 	samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
-	m_viewport.sampler = vk::raii::Sampler(vkDevice, samplerInfo);
+	m_viewportImage.sampler = vk::raii::Sampler(vkDevice, samplerInfo);
 
 	// Transition si non ca crash
 	{
@@ -223,7 +234,7 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 		cmd.Begin(0);
 
 		cmd.TransitionImageLayout(
-			m_viewport.colorImage.get(),
+			m_viewportImage.colorImage.get(),
 			core::ImageLayout::Undefined,
 			core::ImageLayout::ColorAttachment,
 			false
@@ -234,17 +245,18 @@ void core::gpu::ImguiContext::Impl::InitViewport(uint32_t width, uint32_t height
 	}
 
 
-	if (m_viewport.imguiDescriptorSet == VK_NULL_HANDLE)
+	if (m_viewportImage.imguiDescriptorSet == VK_NULL_HANDLE)
 	{
-		m_viewport.imguiDescriptorSet = ImGui_ImplVulkan_AddTexture(
-			static_cast<VkSampler>(*m_viewport.sampler),
-			static_cast<VkImageView>(*m_viewport.colorImage->GetImpl().view),
+		m_viewportImage.imguiDescriptorSet = ImGui_ImplVulkan_AddTexture(
+			static_cast<VkSampler>(*m_viewportImage.sampler),
+			static_cast<VkImageView>(*m_viewportImage.colorImage->GetImpl().view),
 			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 		);
 	}
 
-	m_viewport.readyForUse = true;
+	m_viewportImage.readyForUse = true;
 }
+
 void core::gpu::ImguiContext::DrawViewportComponent(uint32_t width, uint32_t height)
 {
 	m_impl->DrawViewportComponent(width, height);
@@ -257,16 +269,16 @@ void core::gpu::ImguiContext::RenderSceneToViewport(core::gpu::CommandBuffer* cm
 
 void core::gpu::ImguiContext::Impl::SyncViewportResources()
 {
-	if (m_viewport.desiredWidth == 0 || m_viewport.desiredHeight == 0)
+	if (m_viewportImage.desiredWidth == 0 || m_viewportImage.desiredHeight == 0)
 		return;
 
-	if (!m_viewport.colorImage)
+	if (!m_viewportImage.colorImage)
 	{
-		InitViewport(m_viewport.desiredWidth, m_viewport.desiredHeight);
+		InitViewport(m_viewportImage.desiredWidth, m_viewportImage.desiredHeight);
 	}
-	else if (m_viewport.width != m_viewport.desiredWidth || m_viewport.height != m_viewport.desiredHeight)
+	else if (m_viewportState->width != m_viewportImage.desiredWidth || m_viewportState->height != m_viewportImage.desiredHeight)
 	{
-		ResizeViewport(m_viewport.desiredWidth, m_viewport.desiredHeight);
+		ResizeViewport(m_viewportImage.desiredWidth, m_viewportImage.desiredHeight);
 	}
 }
 
@@ -275,22 +287,32 @@ void core::gpu::ImguiContext::Impl::SetDesiredViewportSize(uint32_t width, uint3
 	if (width >= m_device->GetImpl().physicalDevice.getProperties().limits.maxFramebufferWidth - 10 || height >= m_device->GetImpl().physicalDevice.getProperties().limits.maxFramebufferHeight - 10)
 		return; //Imgui return max si la fenetre a width ou height a 0
 
-	m_viewport.desiredWidth = width;
-	m_viewport.desiredHeight = height;
+	m_viewportImage.desiredWidth = width;
+	m_viewportImage.desiredHeight = height;
 }
 
 void core::gpu::ImguiContext::Impl::DrawViewportComponent(uint32_t width, uint32_t height)
 {
 	SetDesiredViewportSize(width, height);
 
-	if (m_viewport.imguiDescriptorSet != VK_NULL_HANDLE)
+	if (m_viewportImage.imguiDescriptorSet != VK_NULL_HANDLE)
 	{
 		ImGui::Image(
-			(ImTextureID)m_viewport.imguiDescriptorSet,
+			(ImTextureID)m_viewportImage.imguiDescriptorSet,
 			ImVec2((float)width, (float)height),
 			ImVec2(0, 0),
 			ImVec2(1, 1)
 		);
+
+		m_viewportState->hovered = ImGui::IsItemHovered();
+		m_viewportState->clicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+		m_viewportState->focused = ImGui::IsWindowFocused();
+	}
+	else
+	{
+		m_viewportState->hovered = false;
+		m_viewportState->clicked = false;
+		m_viewportState->focused = ImGui::IsWindowFocused();
 	}
 }
 
@@ -299,14 +321,14 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 	if (!cmd || !renderer)
 		return;
 
-	if (!m_viewport.colorImage || !m_viewport.readyForUse)
+	if (!m_viewportImage.colorImage || !m_viewportImage.readyForUse)
 		return;
 
-	if (m_viewport.width <= 1 || m_viewport.height <= 1)
+	if (m_viewportState->width <= 1 || m_viewportState->height <= 1)
 		return;
 
 	//On doit ajuster la camera
-	const float aspectRatio = static_cast<float>(m_viewport.width) / static_cast<float>(m_viewport.height);
+	const float aspectRatio = static_cast<float>(m_viewportState->width) / static_cast<float>(m_viewportState->height);
 
 	glm::mat4 projection = glm::perspectiveLH_ZO(
 		glm::radians(45.0f),
@@ -327,7 +349,7 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 	renderer->SetCamera(view, projection);
 
 	cmd->TransitionImageLayout(
-		m_viewport.colorImage.get(),
+		m_viewportImage.colorImage.get(),
 		core::ImageLayout::ShaderReadOnly,
 		core::ImageLayout::ColorAttachment,
 		false
@@ -335,15 +357,15 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 
 	cmd->BeginRendering(
 		m_device,
-		m_viewport.colorImage.get(),
+		m_viewportImage.colorImage.get(),
 		nullptr
 	);
 
 	cmd->SetViewport(
 		0.0f,
 		0.0f,
-		static_cast<float>(m_viewport.width),
-		static_cast<float>(m_viewport.height),
+		static_cast<float>(m_viewportState->width),
+		static_cast<float>(m_viewportState->height),
 		0.0f,
 		1.0f
 	);
@@ -351,8 +373,8 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 	cmd->SetScissor(
 		0,
 		0,
-		m_viewport.width,
-		m_viewport.height
+		m_viewportState->width,
+		m_viewportState->height
 	);
 
 	renderer->DrawScene(cmd);
@@ -360,7 +382,7 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 	cmd->EndRendering();
 
 	cmd->TransitionImageLayout(
-		m_viewport.colorImage.get(),
+		m_viewportImage.colorImage.get(),
 		core::ImageLayout::ColorAttachment,
 		core::ImageLayout::ShaderReadOnly,
 		false
@@ -376,18 +398,18 @@ void core::gpu::ImguiContext::Impl::ResizeViewport(uint32_t width, uint32_t heig
 
 void core::gpu::ImguiContext::Impl::DestroyViewport()
 {
-	if (m_viewport.imguiDescriptorSet != VK_NULL_HANDLE)
+	if (m_viewportImage.imguiDescriptorSet != VK_NULL_HANDLE)
 	{
-		ImGui_ImplVulkan_RemoveTexture(m_viewport.imguiDescriptorSet);
-		m_viewport.imguiDescriptorSet = VK_NULL_HANDLE;
+		ImGui_ImplVulkan_RemoveTexture(m_viewportImage.imguiDescriptorSet);
+		m_viewportImage.imguiDescriptorSet = VK_NULL_HANDLE;
 	}
 
-	m_viewport.sampler = nullptr;
-	m_viewport.colorImage.reset();
+	m_viewportImage.sampler = nullptr;
+	m_viewportImage.colorImage.reset();
 
-	m_viewport.width = 0;
-	m_viewport.height = 0;
-	m_viewport.readyForUse = false;
+	m_viewportState->width = 0;
+	m_viewportState->height = 0;
+	m_viewportImage.readyForUse = false;
 }
 
 void core::gpu::ImguiContext::Impl::EnsureViewport(uint32_t width, uint32_t height)
@@ -395,11 +417,11 @@ void core::gpu::ImguiContext::Impl::EnsureViewport(uint32_t width, uint32_t heig
 	if (width == 0 || height == 0)
 		return;
 
-	if (!m_viewport.colorImage)
+	if (!m_viewportImage.colorImage)
 	{
 		InitViewport(width, height);
 	}
-	else if (m_viewport.width != width || m_viewport.height != height)
+	else if (m_viewportState->width != width || m_viewportState->height != height)
 	{
 		ResizeViewport(width, height);
 	}
@@ -413,13 +435,13 @@ void core::gpu::ImguiContext::Impl::OnResize()
 		(float)m_device->GetImpl().swapchainExtent.height
 	);
 
-	if (m_viewport.colorImage)
+	if (m_viewportImage.colorImage)
 		DestroyViewport();
 }
 
 core::gpu::Image* core::gpu::ImguiContext::GetViewportImage()
 {
-	return m_impl->m_viewport.colorImage.get();
+	return m_impl->m_viewportImage.colorImage.get();
 }
 
 void core::gpu::ImguiContext::OnResize()
