@@ -30,8 +30,23 @@ int main()
             imGuiWindows.PrepareImGuiWindows();
         });
 
-    auto vikingRoomMesh = loader.LoadMesh("assets/models/viking_room.obj");
-    auto planeMesh = loader.CreatePlane(10.0f, 10.0f, 10, 10);
+    std::shared_ptr<graphics::resources::Mesh> vikingRoomMesh;
+    std::shared_ptr<graphics::resources::Mesh> planeMesh;
+
+    loader.LoadMesh("assets/models/viking_room.obj",
+        [&](std::shared_ptr<graphics::resources::Mesh> mesh)
+        {
+            vikingRoomMesh = mesh;
+        });
+
+    loader.CreatePlane(10.0f, 10.0f, 10, 10,
+        [&](std::shared_ptr<graphics::resources::Mesh> mesh)
+        {
+            planeMesh = mesh;
+        });
+
+    loader.ProcessJobs();
+    loader.PurgeFinishedJobs();
 
     auto* matLayout = renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
 
@@ -148,7 +163,7 @@ int main()
 #else
         imGuiWindows.GetContext()->PrepareForDrawing();
         auto image = imGuiWindows.GetContext()->GetViewportImage();
-       
+
         renderer.Render(imGuiWindows.GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
         auto cmd = renderer.GetCurrentCommandBuffer();
         auto swapchainImage = device.GetSwapchainImage(imageIndex);
@@ -166,7 +181,7 @@ int main()
             ImageLayout::ColorAttachment,
             false
         );
-     
+
         cmd->BeginRendering(&device, { imguiColor }, noDepth);
 
         imGuiWindows.GetContext()->PrepareDrawData();
@@ -192,6 +207,3 @@ int main()
 
     return 0;
 }
-
-
-
