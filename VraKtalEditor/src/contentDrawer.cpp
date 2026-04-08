@@ -555,8 +555,10 @@ void ContentDrawer::RefreshFileList() {
 
 void ContentDrawer::ShowRenameDialog()
 {
-	if (m_showRenameDialog) {
-		if (m_renameTargetIndex >= m_cachedFiles.size()) {
+	if (m_showRenameDialog) 
+	{
+		if (m_renameTargetIndex >= m_cachedFiles.size()) 
+		{
 			m_showRenameDialog = false;
 			std::cerr << "Error: Cannot rename - file no longer exists" << std::endl;
 
@@ -570,14 +572,17 @@ void ContentDrawer::ShowRenameDialog()
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-	if (m_renameTargetIndex >= m_cachedFiles.size()) {
-		ImGui::CloseCurrentPopup();
-		ImGui::EndPopup();
+	if (ImGui::BeginPopupModal("Rename", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		if (m_renameTargetIndex >= m_cachedFiles.size())
+		{
+			ImGui::CloseCurrentPopup();
+			ImGui::EndPopup();
 
-		return;
-	}
+			return;
+		}
 
-	if (ImGui::BeginPopupModal("Rename", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+
 		ImGui::Text("Rename: %s", m_cachedFiles[m_renameTargetIndex].filename.c_str());
 		ImGui::Separator();
 
@@ -585,12 +590,15 @@ void ContentDrawer::ShowRenameDialog()
 
 		ImGui::Separator();
 
-		if (ImGui::Button("OK", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+		if (ImGui::Button("OK", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter))
+		{
 			PerformRename();
 			ImGui::CloseCurrentPopup();
 		}
+
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
 			ImGui::CloseCurrentPopup();
 		}
 
