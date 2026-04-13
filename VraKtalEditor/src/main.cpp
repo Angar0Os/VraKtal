@@ -2,7 +2,6 @@
 #include <core/window.h>
 #include <core/gpu/device.h>
 #include <core/gpu/image.h>
-#include <core/gpu/imguiContext.h>
 #include <graphics/renderer.h>
 #include <graphics/renderPass/gBufferPass.h>
 #include <graphics/resources/object/light.h>
@@ -11,24 +10,142 @@
 #include <loaders/materialLoader.h>
 #include "imGuiWindows.h"
 #include "utils/yamlParser.h"
+#include <core/input/input.h>
 
-#pragma comment(lib, "VraKtalEngine_Debug.lib")
+#ifdef VRAKTAL_EDITOR
+    #pragma comment(lib, "VraKtalEngine_Debug.lib")
+    #include <core/gpu/imguiContext.h>
+#else
+    #pragma comment(lib, "VraKtalEngine.lib")
+#endif // VRAKTAL_EDITOR
 
-#define VRAKTAL_EDITOR
+
+class App
+{
+public:
+    App(core::Input& _input) {
+        _input.AddAction("CloseApp");
+        _input.BindActionKey({ input::Key::ESCAPE }, "CloseApp");
+        _input.BindActionCallback<App, &App::CloseApp>("CloseApp", this, input::KeyState::Press);
+    };
+    ~App() {};
+
+    bool ShouldClose() const { return bSouldCloseApp; }
+    void CloseApp() {
+        bSouldCloseApp = true;
+        std::cout << "Close App Action Triggered" << std::endl;
+    };
+
+private:
+    bool bSouldCloseApp = false;
+};
+
+class Camera
+{
+public:
+    float aspectRatio;
+    glm::mat4 projection;
+    glm::vec3 cameraPosition;
+    glm::vec3 direction;
+
+    Camera(core::Input& _input) : direction(0.0f, 0.0f, -1.0f)
+    {
+        aspectRatio = 800.0f / 600.0f;
+        projection = glm::perspectiveLH_ZO(
+            glm::radians(45.0f),
+            aspectRatio,
+            0.1f,
+            100.0f
+        );
+        projection[1][1] *= -1;
+
+        cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
+
+        _input.BindMouseCallback<Camera, &Camera::Look>(this);
+        
+        _input.AddAction("CameraLook");
+        _input.BindActionKey({ input::Key::GLFW_MOUSE_BUTTON_RIGHT}, "CameraLook");
+        _input.BindActionCallback<Camera, &Camera::EnableLook>("CameraLook", this, input::KeyState::Press);
+        _input.BindActionCallback<Camera, &Camera::DisableLook>("CameraLook", this, input::KeyState::Release);
+
+        _input.AddAxis2DAction("MoveCamera", input::Key::D, input::Key::A, input::Key::W, input::Key::S);
+        _input.BindAxis2DCallack<Camera, &Camera::MoveCamera>("MoveCamera", this);
+
+        _input.AddAction("MoveCameraUp");
+        _input.BindActionKey({ input::Key::SPACE }, "MoveCameraUp");
+        _input.BindActionCallback<Camera, &Camera::MoveCameraUp>("MoveCameraUp", this, input::KeyState::OnGoing);
+    };
+    ~Camera() {};
+
+    void MoveCamera(glm::vec2 value) {
+        float speed = 0.05;
+        cameraPosition += (value.y * speed) * direction;
+
+        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 cameraRight = glm::normalize(glm::cross(up, direction));
+
+        cameraPosition += (value.x * speed) * cameraRight;
+    }
+
+    void MoveCameraUp() {
+        float speed = 0.05;
+        cameraPosition.y += speed;
+    }
+
+    void Look(glm::vec2 mouseDelta) {
+        if (!bReceiveInputs)
+        {
+            return;
+        }
+        float sensitivity = 0.1f;
+        static float yaw = -90.0f;
+        static float pitch = 0.0f;
+        yaw -= mouseDelta.x * sensitivity;
+        pitch += mouseDelta.y * sensitivity;
+
+        // Clamp the pitch to prevent flipping
+        pitch = glm::clamp(pitch, -89.0f, 89.0f);
+
+        // Calculate the new camera direction
+        direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+        direction.y = sin(glm::radians(pitch));
+        direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+        direction = glm::normalize(direction);
+    }
+    bool bReceiveInputs = false;
+
+    void EnableLook() { 
+        bReceiveInputs = true;
+    }
+    void DisableLook(){ 
+        bReceiveInputs = false; 
+    }
+
+    glm::mat4 GetView() const { return glm::lookAtLH(cameraPosition, cameraPosition + direction, glm::vec3(0.0f, 1.0f, 0.0f)); }
+};
 
 int main()
 {
     core::Window window(800, 600, "VraKtal Engine");
-
     core::gpu::Device device(window);
+    core::Input input(window, &device);
     graphics::Renderer renderer(window, device);
-    loaders::MeshLoader loader(&device);
-    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window);
-
+#ifdef VRAKTAL_EDITOR
+    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input);
     device.GetImGuiContext()->BindPrepareDrawData([&]()
         {
             imGuiWindows.PrepareImGuiWindows();
         });
+#endif //VRAKTAL_EDITOR
+
+
+
+    loaders::MeshLoader loader(&device);
+
+    App app(input);
+    Camera camera(input);
+
+
 
     std::shared_ptr<graphics::resources::Mesh> vikingRoomMesh;
     std::shared_ptr<graphics::resources::Mesh> planeMesh;
@@ -95,16 +212,20 @@ int main()
     if (parser.IsValid())
         lights = parser.LoadLights();
 
-    while (!window.ShouldClose())
+    while (!window.ShouldClose() && !app.ShouldClose())
     {
         window.PollEvents();
+        input.Update();
 
         if (device.NeedsResize())
         {
             device.RecreateSwapchain();
             renderer.OnResize();
-            device.GetImGuiContext()->OnResize();
             device.ClearResizeFlag();
+#ifdef VRAKTAL_EDITOR
+            device.GetImGuiContext()->OnResize();
+#endif // VRAKTAL_EDITOR
+
             continue;
         }
 
@@ -113,13 +234,15 @@ int main()
         {
             device.RecreateSwapchain();
             renderer.OnResize();
+#ifdef VRAKTAL_EDITOR
             device.GetImGuiContext()->OnResize();
+#endif // VRAKTAL_EDITOR
             continue;
         }
 
         time += timeStep;
 
-        renderer.SetCamera(view, projection);
+        renderer.SetCamera(camera.GetView(), camera.projection);
 
         renderer.PushMesh(planeMesh.get(), glm::mat4(1.0f));
 
@@ -195,7 +318,6 @@ int main()
             false
         );
 #endif
-
         renderer.Advance();
         device.Present(imageIndex, currentFrameIndex);
         currentFrameIndex = (currentFrameIndex + 1) % core::gpu::Device::s_FRAMES_IN_FLIGHT;

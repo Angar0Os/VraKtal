@@ -5,7 +5,6 @@
 #include "../src/core/gpu/vulkan/accelerationStructure_impl.h"
 #include "../src/core/gpu/vulkan/commandPool_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
-#include "../src/core/gpu/vulkan/imguiContext_impl.h"
 
 #include "../src/core/gpu_detail/converters.h"
 
@@ -18,6 +17,11 @@
 #include <GLFW/glfw3.h>
 
 #include <fstream>
+
+#ifdef VRAKTAL_EDITOR
+#include "../src/core/gpu/vulkan/imguiContext_impl.h"
+#endif // VRAKTAL_EDITOR
+
 
 using namespace core;
 using namespace core::gpu;
@@ -63,16 +67,22 @@ DescriptorPool& ::Device::GetDescriptorPool() const
 	m_impl = std::make_unique<Impl>(window, nullptr);
 	m_impl->parent = this;
 	m_impl->Initialize();
+
+#ifdef VRAKTAL_EDITOR
 	m_imGuiContext = new ImguiContext(window, *this);
+#endif // VRAKTAL_EDITOR
 }
 
 ::Device::~Device()
 {
+#ifdef VRAKTAL_EDITOR
 	if (m_imGuiContext)
 	{
 		delete m_imGuiContext;
 		m_imGuiContext = nullptr;
 	}
+#endif // VRAKTAL_EDITOR
+
 }
 
 ::Device::Impl::Impl(core::Window& _window, const ::Device* _parent)
@@ -843,7 +853,10 @@ void Device::RecreateSwapchain()
 	if (m_impl) m_impl->RecreateSwapchain();
 }
 
+#ifdef VRAKTAL_EDITOR
 ImguiContext* Device::GetImGuiContext()
 {
 	return m_imGuiContext;
 }
+#endif // VRAKTAL_EDITOR
+

@@ -11,17 +11,27 @@
 #include "command/commandHistory.h"
 #include <imgui/imgui.h>
 
-namespace core::gpu {
-    class ImguiContext;
-}
+#pragma region ForwardDeclarations
+class ContentDrawer;
+class WindowInput;
+class WindowViewport;
 
+namespace core {
+    class Input;
+
+    namespace gpu {
+        class ImguiContext;
+    }
+}
 namespace graphics {
     class Renderer;
 }
 
+#pragma endregion
 class ImGuiWindows
 {
 public:
+    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window , core::Input& _input);
     struct WindowState {
         bool isOpen = true;
         bool keepOpen = true;
@@ -32,6 +42,7 @@ public:
     void PrepareImGuiWindows();
     command::CommandHistory* GetCommandHistory() { return m_commandHistory.get(); }
     core::gpu::ImguiContext* GetContext();
+    core::Window* GetWindow() { return m_window; };
 
     bool BeginWindow(const std::string& name, bool defaultStateIfNotExists = true, ImGuiWindowFlags flags = 0);
     void EndWindow(const std::string& name);
@@ -45,7 +56,6 @@ private:
     void HierarchyWindow();
     void mainWindow();
     void testWindow();
-    void Viewport();
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
     void LoadProject();
 
@@ -58,6 +68,14 @@ private:
 
     core::gpu::ImguiContext* m_imGuiContext;
     graphics::Renderer* m_renderer;
+    
+#pragma region windows
+    ContentDrawer*  m_contentDrawer;
+    WindowInput*    m_windowInput;
+    WindowViewport* m_windowViewport;
+#pragma endregion
+
+
 };
 
 #endif //EDITOR_IMGUIWINDOWS_H

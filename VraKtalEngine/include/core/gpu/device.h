@@ -27,6 +27,7 @@ namespace core
 			struct Impl;
 			std::unique_ptr<Impl> m_impl;
 			ImguiContext* m_imGuiContext;
+
 		public:
 			explicit Device(Window& window);
 			~Device();
@@ -47,8 +48,6 @@ namespace core
 
 			static constexpr uint32_t s_FRAMES_IN_FLIGHT = 2;
 
-			ImguiContext* GetImGuiContext();
-
 			void BeginFrame(uint32_t frameIndex);
 			std::pair<uint32_t, uint32_t> GetSwapchainExtent() const;
 			
@@ -57,6 +56,11 @@ namespace core
 			bool NeedsResize() const;
 			void ClearResizeFlag();
 			void RecreateSwapchain();
+
+#ifdef VRAKTAL_EDITOR
+			ImguiContext* GetImGuiContext();
+#endif // VRAKTAL_EDITOR
+
 
 		};
 	}
