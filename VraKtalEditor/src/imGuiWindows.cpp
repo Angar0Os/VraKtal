@@ -1,5 +1,5 @@
 #define NOMINMAX
-#include "imGuiWindows.h"
+#include <imGuiWindows.h>
 #include <core/gpu/imguiContext.h>
 #include "command/fileCommands.h"
 #include <graphics/resources/object/camera.h>
@@ -23,16 +23,16 @@
 #include "../include/windows/WindowInput.h"
 #include "../include/windows/WindowViewport.h"
 
-ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window , core::Input& _input)
-    : m_imGuiContext(_imGuiContext)
+ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input)
+	: m_imGuiContext(_imGuiContext)
 {
-    m_renderer = _renderer;
-    m_window = window;
+	m_renderer = _renderer;
+	m_window = window;
 
-    command::ClearBackupDirectory();
+	command::ClearBackupDirectory();
 
-    m_commandHistory = std::make_unique<command::CommandHistory>(100);
-    
+	m_commandHistory = std::make_unique<command::CommandHistory>(100);
+
 	m_contentDrawer = new ContentDrawer();
 	m_contentDrawer->SetCommandHistory(m_commandHistory.get());
 
@@ -44,9 +44,10 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 ImGuiWindows::~ImGuiWindows()
 {
 	command::ClearBackupDirectory();
-	
+
 	delete m_contentDrawer;
 	delete m_windowInput;
+	delete m_windowViewport; 
 }
 
 void ImGuiWindows::PrepareImGuiWindows()
@@ -58,14 +59,13 @@ void ImGuiWindows::PrepareImGuiWindows()
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f,0.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
-	mainWindow();
-    testWindow();
+	MainWindow();
 	ContentDrawerWindow();
-    HierarchyWindow();
-
-	m_windowViewport->Draw();
+	HierarchyWindow();
+	ViewportWindow();
+	
 	m_windowInput->Draw();
 
 	m_newProjectModal.GetNewProjectModalWindow();
@@ -88,23 +88,20 @@ core::gpu::ImguiContext* ImGuiWindows::GetContext()
 
 void ImGuiWindows::ContentDrawerWindow()
 {
-	m_contentDrawer->GetContentDrawerWindow();
 	if (BeginWindow("Content Drawer", true, ImGuiWindowFlags_MenuBar))
 	{
-		m_contentDrawer.GetContentDrawerWindow();
+		m_contentDrawer->GetContentDrawerWindow();
 	}
 	EndWindow("Content Drawer");
 }
 
 void ImGuiWindows::HierarchyWindow()
 {
+	if (BeginWindow("Hierarchy", true))
+	{
 
-}
-
-void ImGuiWindows::testWindow()
-{
-	
-
+	}
+	EndWindow("Hierarchy");
 }
 
 void ImGuiWindows::AddWindowToManager(const std::string& name, bool windowState)
@@ -160,82 +157,77 @@ void ImGuiWindows::DisplayWindowStateManagerMenu()
 	}
 }
 
-void ImGuiWindows::Viewport()
+void ImGuiWindows::ViewportWindow()
 {
-	if (BeginWindow("Viewport"))
+	if (BeginWindow("Viewport", true))
 	{
-		ImVec2 avail = ImGui::GetContentRegionAvail();
-
-		uint32_t width = std::max(1u, static_cast<uint32_t>(avail.x));
-		uint32_t height = std::max(1u, static_cast<uint32_t>(avail.y));
-
-		m_imGuiContext->DrawViewportComponent(width, height);
+		m_windowViewport->Draw();
 	}
 	EndWindow("Viewport");
 }
 
 void ImGuiWindows::EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice)
 {
-    /*graphics::resources::object::Object* object = m_renderer->GetScene().get()->objects[objIndice].get();
-    float* ObjectMatrix = const_cast<float*>(glm::value_ptr(object->GetTransformMatrix()));
+	/*graphics::resources::object::Object* object = m_renderer->GetScene().get()->objects[objIndice].get();
+	float* ObjectMatrix = const_cast<float*>(glm::value_ptr(object->GetTransformMatrix()));
 
-    static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::ROTATE);
-    static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
-    if (ImGui::IsKeyPressed(ImGuiKey_T))
-        mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E))
-        mCurrentGizmoOperation = ImGuizmo::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R))
-        mCurrentGizmoOperation = ImGuizmo::SCALE;
-    if (ImGui::RadioButton("Translate", mCurrentGizmoOperation == ImGuizmo::TRANSLATE))
-        mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Rotate", mCurrentGizmoOperation == ImGuizmo::ROTATE))
-        mCurrentGizmoOperation = ImGuizmo::ROTATE;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Scale", mCurrentGizmoOperation == ImGuizmo::SCALE))
-        mCurrentGizmoOperation = ImGuizmo::SCALE;
-    float matrixTranslation[3], matrixRotation[3], matrixScale[3];
-    ImGuizmo::DecomposeMatrixToComponents(ObjectMatrix, matrixTranslation, matrixRotation, matrixScale);
-    ImGui::InputFloat3("Tr", matrixTranslation);
-    ImGui::InputFloat3("Rt", matrixRotation);
-    ImGui::InputFloat3("Sc", matrixScale);
-    ImGuizmo::RecomposeMatrixFromComponents(matrixTranslation, matrixRotation, matrixScale, ObjectMatrix);
+	static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::ROTATE);
+	static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
+	if (ImGui::IsKeyPressed(ImGuiKey_T))
+		mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+	if (ImGui::IsKeyPressed(ImGuiKey_E))
+		mCurrentGizmoOperation = ImGuizmo::ROTATE;
+	if (ImGui::IsKeyPressed(ImGuiKey_R))
+		mCurrentGizmoOperation = ImGuizmo::SCALE;
+	if (ImGui::RadioButton("Translate", mCurrentGizmoOperation == ImGuizmo::TRANSLATE))
+		mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Rotate", mCurrentGizmoOperation == ImGuizmo::ROTATE))
+		mCurrentGizmoOperation = ImGuizmo::ROTATE;
+	ImGui::SameLine();
+	if (ImGui::RadioButton("Scale", mCurrentGizmoOperation == ImGuizmo::SCALE))
+		mCurrentGizmoOperation = ImGuizmo::SCALE;
+	float matrixTranslation[3], matrixRotation[3], matrixScale[3];
+	ImGuizmo::DecomposeMatrixToComponents(ObjectMatrix, matrixTranslation, matrixRotation, matrixScale);
+	ImGui::InputFloat3("Tr", matrixTranslation);
+	ImGui::InputFloat3("Rt", matrixRotation);
+	ImGui::InputFloat3("Sc", matrixScale);
+	ImGuizmo::RecomposeMatrixFromComponents(matrixTranslation, matrixRotation, matrixScale, ObjectMatrix);
 
-    if (mCurrentGizmoOperation != ImGuizmo::SCALE)
-    {
-        if (ImGui::RadioButton("Local", mCurrentGizmoMode == ImGuizmo::LOCAL))
-            mCurrentGizmoMode = ImGuizmo::LOCAL;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("World", mCurrentGizmoMode == ImGuizmo::WORLD))
-            mCurrentGizmoMode = ImGuizmo::WORLD;
-    }
-    static bool useSnap(false);
-    if (ImGui::IsKeyPressed(ImGuiKey_S))
-        useSnap = !useSnap;
-    ImGui::Checkbox("##useSnap", &useSnap);
-    ImGui::SameLine();
+	if (mCurrentGizmoOperation != ImGuizmo::SCALE)
+	{
+		if (ImGui::RadioButton("Local", mCurrentGizmoMode == ImGuizmo::LOCAL))
+			mCurrentGizmoMode = ImGuizmo::LOCAL;
+		ImGui::SameLine();
+		if (ImGui::RadioButton("World", mCurrentGizmoMode == ImGuizmo::WORLD))
+			mCurrentGizmoMode = ImGuizmo::WORLD;
+	}
+	static bool useSnap(false);
+	if (ImGui::IsKeyPressed(ImGuiKey_S))
+		useSnap = !useSnap;
+	ImGui::Checkbox("##useSnap", &useSnap);
+	ImGui::SameLine();
 
-    ImGuiIO& io = ImGui::GetIO();
-    ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-    ImGuizmo::Manipulate(cameraView, cameraProjection, mCurrentGizmoOperation, mCurrentGizmoMode, ObjectMatrix, NULL, NULL);
+	ImGuiIO& io = ImGui::GetIO();
+	ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+	ImGuizmo::Manipulate(cameraView, cameraProjection, mCurrentGizmoOperation, mCurrentGizmoMode, ObjectMatrix, NULL, NULL);
 
-    glm::mat4 transformation = glm::make_mat4(ObjectMatrix);
-    glm::vec3 scale;
-    glm::quat rotation;
-    glm::vec3 translation;
-    glm::vec3 skew;
-    glm::vec4 perspective;
+	glm::mat4 transformation = glm::make_mat4(ObjectMatrix);
+	glm::vec3 scale;
+	glm::quat rotation;
+	glm::vec3 translation;
+	glm::vec3 skew;
+	glm::vec4 perspective;
 
-    glm::decompose(transformation, scale, rotation, translation, skew, perspective);
+	glm::decompose(transformation, scale, rotation, translation, skew, perspective);
 
-    object->transform.SetPosition(translation);
-    object->transform.SetRotation(rotation);
-    object->transform.SetScale(scale);*/
+	object->transform.SetPosition(translation);
+	object->transform.SetRotation(rotation);
+	object->transform.SetScale(scale);*/
 }
 
 
-void ImGuiWindows::mainWindow()
+void ImGuiWindows::MainWindow()
 {
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
 	window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
@@ -244,7 +236,7 @@ void ImGuiWindows::mainWindow()
 
 	ImGui::Begin("DockSpace", nullptr, window_flags);
 	ImGui::PopStyleVar(3);
-	
+
 	ImGuiID dockspace_id = ImGui::GetID("DockSpace");
 	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 

@@ -145,8 +145,6 @@ int main()
     App app(input);
     Camera camera(input);
 
-
-
     std::shared_ptr<graphics::resources::Mesh> vikingRoomMesh;
     std::shared_ptr<graphics::resources::Mesh> planeMesh;
 
