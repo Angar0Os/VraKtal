@@ -58,8 +58,6 @@ void ContentDrawer::ClearSelection()
 
 void ContentDrawer::GetContentDrawerWindow()
 {
-	ImGui::Begin("Content Drawer", nullptr, ImGuiWindowFlags_MenuBar);
-
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu(ICON_MDI_PLUS " Add")) {
 			if (ImGui::MenuItem(ICON_MDI_FOLDER " Folder")) {
@@ -281,8 +279,6 @@ void ContentDrawer::GetContentDrawerWindow()
 
 		ImGui::PopID();
 	}
-
-	ImGui::End();
 }
 
 void ContentDrawer::SetCurrentPath(std::filesystem::path newPath)
