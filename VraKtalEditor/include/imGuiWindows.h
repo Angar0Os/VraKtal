@@ -3,9 +3,13 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
+#include <string>
+#include "contentDrawer.h"
 #include <core/window.h>
 #include "newProjectModal.h"
 #include "command/commandHistory.h"
+#include <imgui/imgui.h>
 
 #pragma region ForwardDeclarations
 class ContentDrawer;
@@ -28,12 +32,25 @@ class ImGuiWindows
 {
 public:
     ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window , core::Input& _input);
+    struct WindowState {
+        bool isOpen = true;
+        bool keepOpen = true;
+    };
+
+    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window);
     ~ImGuiWindows();
     void PrepareImGuiWindows();
     command::CommandHistory* GetCommandHistory() { return m_commandHistory.get(); }
     core::gpu::ImguiContext* GetContext();
     core::Window* GetWindow() { return m_window; };
+
+    bool BeginWindow(const std::string& name, bool defaultStateIfNotExists = true, ImGuiWindowFlags flags = 0);
+    void EndWindow(const std::string& name);
+    void DisplayWindowStateManagerMenu();
+
 private:
+    void AddWindowToManager(const std::string& name, bool windowState);
+
     void SetMenuBar();
     void ContentDrawerWindow();
     void HierarchyWindow();
@@ -42,6 +59,9 @@ private:
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
     void LoadProject();
 
+    std::unordered_map<std::string, WindowState> m_windowStatesList;
+
+    ContentDrawer m_contentDrawer;
     core::Window* m_window;
     NewProjectModal m_newProjectModal;
     std::unique_ptr<command::CommandHistory> m_commandHistory;

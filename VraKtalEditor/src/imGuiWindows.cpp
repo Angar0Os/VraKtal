@@ -89,6 +89,11 @@ core::gpu::ImguiContext* ImGuiWindows::GetContext()
 void ImGuiWindows::ContentDrawerWindow()
 {
 	m_contentDrawer->GetContentDrawerWindow();
+	if (BeginWindow("Content Drawer", true, ImGuiWindowFlags_MenuBar))
+	{
+		m_contentDrawer.GetContentDrawerWindow();
+	}
+	EndWindow("Content Drawer");
 }
 
 void ImGuiWindows::HierarchyWindow()
@@ -99,6 +104,74 @@ void ImGuiWindows::HierarchyWindow()
 void ImGuiWindows::testWindow()
 {
 	
+
+}
+
+void ImGuiWindows::AddWindowToManager(const std::string& name, bool windowState)
+{
+	m_windowStatesList[name].isOpen = windowState;
+	m_windowStatesList[name].keepOpen = true;
+}
+
+bool ImGuiWindows::BeginWindow(const std::string& name, bool defaultStateIfNotExists, ImGuiWindowFlags flags)
+{
+	if (!m_windowStatesList.contains(name))
+	{
+		AddWindowToManager(name, defaultStateIfNotExists);
+	}
+
+	if (m_windowStatesList[name].isOpen)
+	{
+		return ImGui::Begin(name.c_str(), &m_windowStatesList[name].keepOpen, flags);
+	}
+
+	return false;
+}
+
+void ImGuiWindows::EndWindow(const std::string& name)
+{
+	if (!m_windowStatesList.contains(name))
+	{
+		return;
+	}
+
+	if (m_windowStatesList[name].isOpen)
+	{
+		ImGui::End();
+	}
+
+	if (!m_windowStatesList[name].keepOpen)
+	{
+		m_windowStatesList[name].isOpen = false;
+	}
+
+	m_windowStatesList[name].keepOpen = true;
+}
+
+void ImGuiWindows::DisplayWindowStateManagerMenu()
+{
+	if (ImGui::BeginMenu("Windows"))
+	{
+		for (auto& [name, status] : m_windowStatesList)
+		{
+			ImGui::MenuItem(name.c_str(), nullptr, &status.isOpen);
+		}
+		ImGui::EndMenu();
+	}
+}
+
+void ImGuiWindows::Viewport()
+{
+	if (BeginWindow("Viewport"))
+	{
+		ImVec2 avail = ImGui::GetContentRegionAvail();
+
+		uint32_t width = std::max(1u, static_cast<uint32_t>(avail.x));
+		uint32_t height = std::max(1u, static_cast<uint32_t>(avail.y));
+
+		m_imGuiContext->DrawViewportComponent(width, height);
+	}
+	EndWindow("Viewport");
 }
 
 void ImGuiWindows::EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice)
@@ -234,6 +307,8 @@ void ImGuiWindows::SetMenuBar() {
 			if (ImGui::MenuItem("Tracy")) {}
 			ImGui::EndMenu();
 		}
+
+		DisplayWindowStateManagerMenu();
 
 		if (ImGui::MenuItem("Build")) {
 			ImGui::OpenPopup("build_popup");
