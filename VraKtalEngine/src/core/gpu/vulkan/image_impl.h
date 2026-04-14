@@ -2,54 +2,39 @@
 #define VRAKTAL_CORE_GPU_VULKAN_IMAGE_H
 #pragma once
 
-#include <variant>
-
 #include <core/gpu/image.h>
 #include <vulkan/vulkan_raii.hpp>
 
 namespace core::gpu
 {
+	struct SPredefinedImageCreateInfo
+	{
+		vk::Image image = nullptr;
+		vk::Extent2D extent = { 0, 0 };
+		vk::ImageAspectFlags aspectFlags = {};
+		vk::Format format = vk::Format::eUndefined;
+	};
+
 	struct Image::Impl
 	{
-		Image& parent;
-		const Device* device;
-
-		std::variant< vk::raii::Image, vk::Image> image;
-		vk::raii::DeviceMemory memory;
-		vk::raii::ImageView view;
-
-		uint32_t width;
-		uint32_t height;
-		uint32_t mipLevels;
-		uint32_t arrayLayers;
+		vk::Image				image = nullptr;
+		vk::raii::Image			raiiImage = nullptr;
+		vk::raii::DeviceMemory	memory = nullptr;
+		vk::raii::ImageView		view = nullptr;
+		vk::ImageLayout			currentLayout = vk::ImageLayout::eUndefined;
+		vk::Extent2D			extent = { 0, 0 };  
 
 		TextureFormat format;
-
 		SampleCount samples;
 
-		bool ownsImage = true;
+		uint32_t FindMemoryType(const core::gpu::Device& device, uint32_t typeFilter, vk::MemoryPropertyFlags properties);
 
-		vk::Image GetVkImage() const
-		{
-			if(ownsImage)
-				return *std::get<vk::raii::Image>(image);
-			else
-				return std::get<vk::Image>(image);
-		}
-
-		uint32_t FindMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties);
-
-        explicit Impl(Image& p, const core::gpu::Device* device,
-			const SImageCreateInfo& info);
-
-		explicit Impl(Image& p, const core::gpu::Device* device,
-					  vk::Image swapchainImage, uint32_t width, uint32_t height,
-					  TextureFormat format);
+		explicit Impl(const core::gpu::Device* device, const SImageCreateInfo& info);
+		explicit Impl(const core::gpu::Device* device, const SPredefinedImageCreateInfo& info);
 
 		~Impl();
 
-		void CreateView(const SImageViewCreateInfo& info);
-
+		/* Dans commamdBuffer ducoup
 		void TransitionLayout(CommandBuffer& commandBuffer, ImageLayout oldLayout,
 			ImageLayout newLayout, uint32_t mipLevels);
 
@@ -58,6 +43,7 @@ namespace core::gpu
 
 		void GenerateMipmaps(CommandBuffer& commandBuffer, uint32_t width,
 			uint32_t height, uint32_t mipLevels);
+		*/
 	};
 }
 

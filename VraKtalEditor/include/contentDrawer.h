@@ -1,9 +1,13 @@
+#ifndef EDITOR_WINDOWS_CONTENTDRAWER_H
+#define EDITOR_WINDOWS_CONTENTDRAWER_H
 #pragma once
 
 #include "utils/fileTypeDetector.h"
+#include "command/commandHistory.h"
 
 #include <filesystem>
 #include <set>
+#include <memory>
 
 struct FileEntry {
 	std::filesystem::path path;
@@ -23,6 +27,7 @@ class ContentDrawer
 {
 private:
 	std::filesystem::path m_currentPath;
+	std::filesystem::path m_baseAssetPath;
 	std::vector<FileEntry> m_cachedFiles;
 	bool m_needsRefresh;
 	std::set<size_t> m_selectedIndices;
@@ -34,6 +39,8 @@ private:
 
 	ClipboardAction m_clipboardAction = ClipboardAction::None;
 	std::vector<std::filesystem::path> m_clipboardPaths;
+
+	command::CommandHistory* m_commandHistory = nullptr;
 
 	const char* GetIconForFileType(FileType type);
 	void RefreshFileList();
@@ -53,6 +60,11 @@ private:
 
 public:
 	ContentDrawer();
+	~ContentDrawer();
 
 	void GetContentDrawerWindow();
+	void SetCurrentPath(std::filesystem::path newPath);
+	void SetCommandHistory(command::CommandHistory* history);
 };
+
+#endif //EDITOR_WINDOWS_CONTENTDRAWER_H

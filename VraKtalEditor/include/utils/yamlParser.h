@@ -1,3 +1,5 @@
+#ifndef EDITOR_UTILS_YAMLPARSER_H
+#define EDITOR_UTILS_YAMLPARSER_H
 #pragma once
 
 #include <graphics/resources/object/light.h>
@@ -30,3 +32,5 @@ namespace utils
 		bool IsValid() const { return m_isValid; }
 	};
 }
+
+#endif //EDITOR_UTILS_YAMLPARSER_H

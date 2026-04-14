@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <tiny_gltf.h>
@@ -17,6 +18,227 @@
 loaders::MeshLoader::MeshLoader(core::gpu::Device* device)
 	: m_device(device)
 {
+}
+
+
+bool loaders::MeshLoader::AreDependenciesDone(const Job& job) const
+{
+	for (JobID depID : job.dependencies)
+	{
+		auto it = std::find_if(m_jobQueue.begin(), m_jobQueue.end(),
+			[depID](const Job& j) { return j.id == depID; });
+
+		if (it == m_jobQueue.end())
+		{
+			continue; 
+		}
+
+		if (it->status.load() != EJobStatus::Done)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+loaders::JobID loaders::MeshLoader::PushJob(
+	std::string name,
+	std::function<void()> task,
+	std::vector<JobID> deps,
+	std::function<void()> onComplete)
+{
+	Job job;
+	job.id = m_nextJobID++;
+	job.name = std::move(name);
+	job.task = std::move(task);
+	job.onComplete = std::move(onComplete);
+	job.dependencies = std::move(deps);
+	job.status = EJobStatus::Pending;
+
+	JobID id = job.id;
+	m_jobQueue.push_back(std::move(job));
+	return id;
+}
+
+void loaders::MeshLoader::ProcessJobs()
+{
+	for (auto& job : m_jobQueue)
+	{
+		if (job.status.load() != EJobStatus::Pending)
+			continue;
+
+		if (!AreDependenciesDone(job))
+			continue;
+
+		job.status = EJobStatus::Running;
+
+		try
+		{
+			job.task();
+			job.status = EJobStatus::Done;
+
+			if (job.onComplete)
+				job.onComplete();
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Job '" << job.name << "' failed: " << e.what() << std::endl;
+			job.status = EJobStatus::Failed;
+		}
+	}
+}
+
+void loaders::MeshLoader::PurgeFinishedJobs()
+{
+	std::vector<Job> remaining;
+	remaining.reserve(m_jobQueue.size());
+
+	for (auto& job : m_jobQueue)
+	{
+		auto s = job.status.load();
+		if (s != EJobStatus::Done && s != EJobStatus::Failed)
+			remaining.push_back(std::move(job));
+	}
+
+	m_jobQueue = std::move(remaining);
+}
+
+loaders::JobID loaders::MeshLoader::LoadMesh(
+	const std::string& filepath,
+	std::function<void(std::shared_ptr<graphics::resources::Mesh>)> onComplete)
+{
+	auto meshHolder = std::make_shared<std::shared_ptr<graphics::resources::Mesh>>();
+
+	JobID parseID = PushJob(
+		"ParseFile:" + filepath,
+		[this, filepath, meshHolder]()
+		{
+			std::string ext = std::filesystem::path(filepath).extension().string();
+			std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+			if (ext == ".gltf" || ext == ".glb")
+				*meshHolder = LoadGLTF(filepath);
+			else if (ext == ".obj")
+				*meshHolder = LoadOBJ(filepath);
+			else
+				throw std::runtime_error("Unsupported mesh format: " + ext);
+		}
+	);
+
+	JobID uploadID = PushJob(
+		"UploadBuffers:" + filepath,
+		[this, meshHolder]()
+		{
+			if (*meshHolder)
+				CreateBuffersForMesh(meshHolder->get());
+		},
+		{ parseID }
+	);
+
+	JobID blasID = PushJob(
+		"BuildBLAS:" + filepath,
+		[this, meshHolder]()
+		{
+			if (*meshHolder)
+				CreateBLASForMesh(meshHolder->get());
+		},
+		{ uploadID },
+		onComplete
+		? std::function<void()>([meshHolder, onComplete]() { onComplete(*meshHolder); })
+		: std::function<void()>{}
+	);
+
+	return blasID;
+}
+
+loaders::JobID loaders::MeshLoader::CreatePlane(
+	float width, float height,
+	int subdivisionsX, int subdivisionsZ,
+	std::function<void(std::shared_ptr<graphics::resources::Mesh>)> onComplete)
+{
+	auto meshHolder = std::make_shared<std::shared_ptr<graphics::resources::Mesh>>();
+
+	JobID generateID = PushJob(
+		"GeneratePlane",
+		[this, meshHolder, width, height, subdivisionsX, subdivisionsZ]()
+		{
+			auto mesh = std::make_shared<graphics::resources::Mesh>();
+
+			int vertCountX = subdivisionsX + 1;
+			int vertCountZ = subdivisionsZ + 1;
+
+			float halfWidth = width * 0.5f;
+			float halfHeight = height * 0.5f;
+
+			float deltaX = width / subdivisionsX;
+			float deltaZ = height / subdivisionsZ;
+			float uvDeltaX = 1.0f / subdivisionsX;
+			float uvDeltaZ = 1.0f / subdivisionsZ;
+
+			for (int z = 0; z < vertCountZ; z++)
+			{
+				for (int x = 0; x < vertCountX; x++)
+				{
+					graphics::resources::Vertex vertex;
+					vertex.position = glm::vec3(
+						-halfWidth + x * deltaX,
+						0.0f,
+						-halfHeight + z * deltaZ
+					);
+					vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f);
+					vertex.uv = glm::vec2(x * uvDeltaX, z * uvDeltaZ);
+					vertex.tangent = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+					mesh->vertices.push_back(vertex);
+				}
+			}
+
+			for (int z = 0; z < subdivisionsZ; z++)
+			{
+				for (int x = 0; x < subdivisionsX; x++)
+				{
+					int topLeft = z * vertCountX + x;
+					int topRight = topLeft + 1;
+					int bottomLeft = (z + 1) * vertCountX + x;
+					int bottomRight = bottomLeft + 1;
+
+					mesh->indices.push_back(topLeft);
+					mesh->indices.push_back(bottomLeft);
+					mesh->indices.push_back(topRight);
+
+					mesh->indices.push_back(topRight);
+					mesh->indices.push_back(bottomLeft);
+					mesh->indices.push_back(bottomRight);
+				}
+			}
+
+			*meshHolder = mesh;
+		}
+	);
+
+	JobID uploadID = PushJob(
+		"UploadBuffers:Plane",
+		[this, meshHolder]()
+		{
+			if (*meshHolder)
+				CreateBuffersForMesh(meshHolder->get());
+		},
+		{ generateID }
+	);
+
+	JobID blasID = PushJob(
+		"BuildBLAS:Plane",
+		[this, meshHolder]()
+		{
+			if (*meshHolder)
+				CreateBLASForMesh(meshHolder->get());
+		},
+		{ uploadID },
+		onComplete
+		? std::function<void()>([meshHolder, onComplete]() { onComplete(*meshHolder); })
+		: std::function<void()>{}
+	);
+
+	return blasID;
 }
 
 void loaders::MeshLoader::CreateBuffersForMesh(graphics::resources::Mesh* mesh)
@@ -35,22 +257,14 @@ void loaders::MeshLoader::CreateBuffersForMesh(graphics::resources::Mesh* mesh)
 		.usage = core::EBufferUsage::TransferSrc,
 		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
 	};
-
-	auto stagingVertexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device,
-		stagingVertexInfo
-	);
+	auto stagingVertexBuffer = std::make_unique<core::gpu::Buffer>(m_device, stagingVertexInfo);
 
 	core::gpu::SBufferCreateInfo stagingIndexInfo{
 		.size = indexBufferSize,
 		.usage = core::EBufferUsage::TransferSrc,
 		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
 	};
-
-	auto stagingIndexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device,
-		stagingIndexInfo
-	);
+	auto stagingIndexBuffer = std::make_unique<core::gpu::Buffer>(m_device, stagingIndexInfo);
 
 	stagingVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
 	stagingIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
@@ -60,49 +274,33 @@ void loaders::MeshLoader::CreateBuffersForMesh(graphics::resources::Mesh* mesh)
 		.usage = core::EBufferUsage::VertexBuffer | core::EBufferUsage::TransferDst,
 		.memoryProperties = core::EMemoryProperty::DeviceLocal
 	};
-
-	mesh->vertexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device,
-		vertexInfo
-	);
+	mesh->vertexBuffer = std::make_unique<core::gpu::Buffer>(m_device, vertexInfo);
 
 	core::gpu::SBufferCreateInfo indexInfo{
 		.size = indexBufferSize,
 		.usage = core::EBufferUsage::IndexBuffer | core::EBufferUsage::TransferDst,
 		.memoryProperties = core::EMemoryProperty::DeviceLocal
 	};
-
-	mesh->indexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device,
-		indexInfo
-	);
+	mesh->indexBuffer = std::make_unique<core::gpu::Buffer>(m_device, indexInfo);
 
 	core::gpu::SBufferCreateInfo rtVertexInfo{
 		.size = vertexBufferSize,
 		.usage = core::EBufferUsage::AccelerationStructureBuildInput |
-				 core::EBufferUsage::ShaderDeviceAddress |
-				 core::EBufferUsage::StorageBuffer,
+							core::EBufferUsage::ShaderDeviceAddress |
+							core::EBufferUsage::StorageBuffer,
 		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
 	};
-
-	mesh->rtVertexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device,
-		rtVertexInfo
-	);
+	mesh->rtVertexBuffer = std::make_unique<core::gpu::Buffer>(m_device, rtVertexInfo);
 	mesh->rtVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
 
 	core::gpu::SBufferCreateInfo rtIndexInfo{
 		.size = indexBufferSize,
 		.usage = core::EBufferUsage::AccelerationStructureBuildInput |
-				 core::EBufferUsage::ShaderDeviceAddress |
-				 core::EBufferUsage::StorageBuffer,
+							core::EBufferUsage::ShaderDeviceAddress |
+							core::EBufferUsage::StorageBuffer,
 		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
 	};
-
-	mesh->rtIndexBuffer = std::make_unique<core::gpu::Buffer>(
-		m_device,
-		rtIndexInfo
-	);
+	mesh->rtIndexBuffer = std::make_unique<core::gpu::Buffer>(m_device, rtIndexInfo);
 	mesh->rtIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
 
 	core::gpu::SCommandBufferCreateInfo cmdInfo{};
@@ -111,26 +309,13 @@ void loaders::MeshLoader::CreateBuffersForMesh(graphics::resources::Mesh* mesh)
 	cmdInfo.count = 1;
 	cmdInfo.singleTime = true;
 
-	auto transferCmd = std::make_unique<core::gpu::CommandBuffer>(
-		m_device,
-		cmdInfo
-	);
+	auto transferCmd = std::make_unique<core::gpu::CommandBuffer>(m_device, cmdInfo);
 
 	transferCmd->Begin(0);
-	transferCmd->CopyBuffer(
-		stagingVertexBuffer.get(),
-		mesh->vertexBuffer.get(),
-		vertexBufferSize
-	);
-
-	transferCmd->CopyBuffer(
-		stagingIndexBuffer.get(),
-		mesh->indexBuffer.get(),
-		indexBufferSize
-	);
+	transferCmd->CopyBuffer(stagingVertexBuffer.get(), mesh->vertexBuffer.get(), vertexBufferSize);
+	transferCmd->CopyBuffer(stagingIndexBuffer.get(), mesh->indexBuffer.get(), indexBufferSize);
 	transferCmd->End(0);
-
-	transferCmd->SubmitAndWait(m_device);
+	transferCmd->SubmitImmediate(m_device);
 
 	mesh->indexCount = static_cast<uint32_t>(mesh->indices.size());
 }
@@ -158,10 +343,7 @@ void loaders::MeshLoader::CreateBLASForMesh(graphics::resources::Mesh* mesh)
 	blasInfo.preferFastTrace = true;
 	blasInfo.allowUpdate = false;
 
-	mesh->blas = std::make_unique<core::gpu::AccelerationStructure>(
-		m_device,
-		blasInfo
-	);
+	mesh->blas = std::make_unique<core::gpu::AccelerationStructure>(m_device, blasInfo);
 
 	core::gpu::SCommandBufferCreateInfo cmdInfo{};
 	cmdInfo.device = m_device;
@@ -169,85 +351,43 @@ void loaders::MeshLoader::CreateBLASForMesh(graphics::resources::Mesh* mesh)
 	cmdInfo.singleTime = true;
 	cmdInfo.level = core::ECommandBufferLevel::Primary;
 
-	core::gpu::CommandBuffer cmdBuffer(
-		m_device,
-		cmdInfo
-	);
+	core::gpu::CommandBuffer cmdBuffer(m_device, cmdInfo);
 
 	cmdBuffer.Begin(0);
 	cmdBuffer.BuildAccelerationStructure(mesh->blas.get());
 	cmdBuffer.End(0);
-	cmdBuffer.SubmitAndWait(m_device);
+	cmdBuffer.SubmitImmediate(m_device);
 
 	std::cout << "BLAS built for mesh during loading" << std::endl;
 }
 
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadMesh(const std::string& filepath)
-{
-	std::string ext = std::filesystem::path(filepath).extension().string();
-	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
-	std::shared_ptr<graphics::resources::Mesh> mesh;
-
-	if (ext == ".gltf" || ext == ".glb")
-	{
-		mesh = LoadGLTF(filepath);
-	}
-	else if (ext == ".obj")
-	{
-		mesh = LoadOBJ(filepath);
-	}
-	else
-	{
-		throw std::runtime_error("Unsupported mesh format : " + ext);
-	}
-
-	if (mesh && m_device)
-	{
-		CreateBuffersForMesh(mesh.get());
-		CreateBLASForMesh(mesh.get());
-	}
-
-	return mesh;
-}
-
 std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const std::string& filepath)
 {
-	tinygltf::Model model;
+	tinygltf::Model    model;
 	tinygltf::TinyGLTF loader;
-	std::string err, warn;
-	bool ret = false;
+	std::string        err, warn;
+	bool               ret = false;
 
 	if (filepath.ends_with(".gltf"))
-	{
 		ret = loader.LoadASCIIFromFile(&model, &err, &warn, filepath);
-	}
 	else if (filepath.ends_with(".glb"))
-	{
 		ret = loader.LoadBinaryFromFile(&model, &err, &warn, filepath);
-	}
 	else
-	{
 		throw std::runtime_error("Unsupported GLTF extension: " + filepath);
-	}
 
 	if (!warn.empty()) std::cerr << "GLTF Warning: " << warn << "\n";
 	if (!err.empty())  std::cerr << "GLTF Error: " << err << "\n";
-	if (!ret) throw std::runtime_error("Failed to load GLTF: " + filepath);
+	if (!ret)          throw std::runtime_error("Failed to load GLTF: " + filepath);
 
 	auto mesh = std::make_shared<graphics::resources::Mesh>();
 	std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
 
 	if (model.meshes.empty())
-	{
 		throw std::runtime_error("GLTF contains no meshes");
-	}
 
 	const tinygltf::Mesh& gltfMesh = model.meshes[0];
 	if (gltfMesh.primitives.empty())
-	{
 		throw std::runtime_error("GLTF mesh contains no primitives");
-	}
 
 	std::cout << "Loading GLTF mesh '" << gltfMesh.name
 		<< "' with " << gltfMesh.primitives.size() << " primitives\n";
@@ -376,12 +516,12 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 
 std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const std::string& filepath)
 {
-	tinyobj::attrib_t attrib;
-	std::vector<tinyobj::shape_t> shapes;
+	tinyobj::attrib_t                attrib;
+	std::vector<tinyobj::shape_t>    shapes;
 	std::vector<tinyobj::material_t> materials;
-	std::string warn, err;
+	std::string                      warn, err;
 
-	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filepath.c_str());
+	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filepath.c_str());
 
 	auto mesh = std::make_shared<graphics::resources::Mesh>();
 	std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
@@ -447,75 +587,11 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
 		submesh.vertexOffset = submeshVertexOffset;
 		submesh.materialIndex = 0;
-		submesh.name = shape.name.empty() ? ("shape_" + std::to_string(shapeIdx)) : shape.name;
+		submesh.name = shape.name.empty()
+			? ("shape_" + std::to_string(shapeIdx))
+			: shape.name;
 
 		mesh->subMeshes.push_back(submesh);
-	}
-
-	return mesh;
-}
-
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::CreatePlane(
-	float width, float height, int subdivisionsX, int subdivisionsZ)
-{
-	auto mesh = std::make_shared<graphics::resources::Mesh>();
-
-	int vertCountX = subdivisionsX + 1;
-	int vertCountZ = subdivisionsZ + 1;
-
-	float halfWidth = width * 0.5f;
-	float halfHeight = height * 0.5f;
-
-	float deltaX = width / subdivisionsX;
-	float deltaZ = height / subdivisionsZ;
-
-	float uvDeltaX = 1.0f / subdivisionsX;
-	float uvDeltaZ = 1.0f / subdivisionsZ;
-
-	for (int z = 0; z < vertCountZ; z++)
-	{
-		for (int x = 0; x < vertCountX; x++)
-		{
-			graphics::resources::Vertex vertex;
-
-			vertex.position = glm::vec3(
-				-halfWidth + x * deltaX,
-				0.0f,
-				-halfHeight + z * deltaZ
-			);
-
-			vertex.normal = glm::vec3(0.0f, 1.0f, 0.0f);
-			vertex.uv = glm::vec2(x * uvDeltaX, z * uvDeltaZ);
-
-			vertex.tangent = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-
-			mesh->vertices.push_back(vertex);
-		}
-	}
-
-	for (int z = 0; z < subdivisionsZ; z++)
-	{
-		for (int x = 0; x < subdivisionsX; x++)
-		{
-			int topLeft = z * vertCountX + x;
-			int topRight = topLeft + 1;
-			int bottomLeft = (z + 1) * vertCountX + x;
-			int bottomRight = bottomLeft + 1;
-
-			mesh->indices.push_back(topLeft);
-			mesh->indices.push_back(bottomLeft);
-			mesh->indices.push_back(topRight);
-
-			mesh->indices.push_back(topRight);
-			mesh->indices.push_back(bottomLeft);
-			mesh->indices.push_back(bottomRight);
-		}
-	}
-
-	if (m_device)
-	{
-		CreateBuffersForMesh(mesh.get());
-		CreateBLASForMesh(mesh.get());
 	}
 
 	return mesh;

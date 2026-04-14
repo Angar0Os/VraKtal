@@ -14,17 +14,25 @@ namespace core
 	{
 	private:
 		GLFWwindow* m_window;
-		uint32_t m_width = 0, m_height = 0;
 		std::string m_title;
+		uint32_t m_width = 0, m_height = 0;
 	public:
+
 		Window(uint32_t _width, uint32_t _height, const char* _title, bool _resizable = true);
 		~Window();
 
 		void PollEvents();
 		bool ShouldClose() const;
+		void Close();
 
 		std::pair<uint32_t, uint32_t> Size() const;
 		const char* Title() const;
+
+		void SetSize(uint32_t _width, uint32_t _height)
+		{
+			m_width = _width;
+			m_height = _height;
+		}
 
 		GLFWwindow* GlfwHandle() const;
 

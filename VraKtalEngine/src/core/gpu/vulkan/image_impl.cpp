@@ -1,16 +1,11 @@
 #include "../src/core/gpu/vulkan/image_impl.h"
-#include "../src/core/gpu/vulkan/commandBuffer_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
-#include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu_detail/converters.h"
 
 #include <stdexcept>
 
-core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _device, const SImageCreateInfo& info)
-	: parent(p), device(_device), image(vk::raii::Image(nullptr)), memory(nullptr), view(nullptr),
-	width(info.width), height(info.height),
-	mipLevels(info.mipLevels), arrayLayers(info.arrayLayers),
-	format(info.format), samples(info.samples)
+core::gpu::Image::Impl::Impl(const core::gpu::Device* device, const SImageCreateInfo& info)
+	: format(info.format), samples(info.samples)
 {
 	if (info.width == 0 || info.height == 0)
 	{
@@ -31,41 +26,63 @@ core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _devi
 	imageInfo.sharingMode = vk::SharingMode::eExclusive;
 	imageInfo.initialLayout = vk::ImageLayout::eUndefined;
 
-	image = vk::raii::Image(device->GetImpl().device, imageInfo);
+	raiiImage = vk::raii::Image(device->GetImpl().device, imageInfo);
 
-	vk::MemoryRequirements memRequirements = std::get<vk::raii::Image>(image).getMemoryRequirements();
+	vk::MemoryRequirements memRequirements = raiiImage.getMemoryRequirements();
 
 	vk::MemoryAllocateInfo allocInfo{};
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = FindMemoryType(
+		*device,
 		memRequirements.memoryTypeBits,
 		core::gpu_detail::ToVulkan(info.memoryProperties)
 	);
 
 	memory = vk::raii::DeviceMemory(device->GetImpl().device, allocInfo);
 
-	std::get<vk::raii::Image>(image).bindMemory(*memory, 0);
+	raiiImage.bindMemory(*memory, 0);
+	image = *raiiImage;
+
+	vk::Extent2D tempExtent = { info.width, info.height };
+	extent = tempExtent;
+
+	vk::ImageViewCreateInfo viewInfo{};
+	viewInfo.image = image;
+	viewInfo.viewType = vk::ImageViewType::e2D;
+	viewInfo.format = core::gpu_detail::ToVulkan(info.format);
+	viewInfo.subresourceRange.aspectMask = core::gpu_detail::ToVulkanAspestMask(info.format);
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
+
+	view = vk::raii::ImageView(device->GetImpl().device, viewInfo);
 }
 
-core::gpu::Image::Impl::Impl(core::gpu::Image& p, const core::gpu::Device* _device,
-							 vk::Image swapchainImage, uint32_t w, uint32_t h, TextureFormat fmt)
-	: parent(p), device(_device),
-	image(swapchainImage),
-	memory(nullptr),
-	view(nullptr),
-	width(w), height(h),
-	mipLevels(1), arrayLayers(1),
-	format(fmt), samples(SampleCount::e1),
-	ownsImage(false)  
+core::gpu::Image::Impl::Impl(const core::gpu::Device* device, const SPredefinedImageCreateInfo& info)
 {
+	image = info.image;
+	extent = info.extent; 
+
+	vk::ImageViewCreateInfo viewInfo{};
+	viewInfo.image = info.image;
+	viewInfo.viewType = vk::ImageViewType::e2D;
+	viewInfo.format = info.format;
+	viewInfo.subresourceRange.aspectMask = info.aspectFlags;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
+
+	view = vk::raii::ImageView(device->GetImpl().device, viewInfo);
 }
 
 core::gpu::Image::Impl::~Impl() = default;
 
-uint32_t core::gpu::Image::Impl::FindMemoryType(uint32_t typeFilter,
+uint32_t core::gpu::Image::Impl::FindMemoryType(const core::gpu::Device& device, uint32_t typeFilter,
 	vk::MemoryPropertyFlags properties)
 {
-	vk::PhysicalDeviceMemoryProperties memProperties = device->GetImpl().physicalDevice.getMemoryProperties();
+	vk::PhysicalDeviceMemoryProperties memProperties = device.GetImpl().physicalDevice.getMemoryProperties();
 
 	for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
 	{
@@ -79,210 +96,172 @@ uint32_t core::gpu::Image::Impl::FindMemoryType(uint32_t typeFilter,
 	throw std::runtime_error("Failed to find suitable memory type for image");
 }
 
-void core::gpu::Image::Impl::CreateView(const SImageViewCreateInfo& info)
-{
-	vk::ImageViewCreateInfo viewInfo{};
-	viewInfo.image = GetVkImage();
-	viewInfo.viewType = vk::ImageViewType::e2D;
-	viewInfo.format = core::gpu_detail::ToVulkan(info.format);
-	viewInfo.subresourceRange.aspectMask = info.isDepth ?
-		vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
-	viewInfo.subresourceRange.baseMipLevel = info.baseMipLevel;
-	viewInfo.subresourceRange.levelCount = info.levelCount;
-	viewInfo.subresourceRange.baseArrayLayer = info.baseArrayLayer;
-	viewInfo.subresourceRange.layerCount = info.layerCount;
-
-	view = vk::raii::ImageView(device->GetImpl().device, viewInfo);
-}
-
-void core::gpu::Image::Impl::TransitionLayout(CommandBuffer& commandBuffer,
-	ImageLayout oldLayout, ImageLayout newLayout, uint32_t mipLevels)
-{
-	vk::ImageMemoryBarrier barrier{};
-	barrier.oldLayout = core::gpu_detail::ToVulkan(oldLayout);
-	barrier.newLayout = core::gpu_detail::ToVulkan(newLayout);
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = GetVkImage();
-	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = mipLevels;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-
-	vk::PipelineStageFlags sourceStage;
-	vk::PipelineStageFlags destinationStage;
-
-	if (oldLayout == ImageLayout::Undefined && newLayout == ImageLayout::TransferDst)
-	{
-		barrier.srcAccessMask = vk::AccessFlagBits::eNone;
-		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
-		destinationStage = vk::PipelineStageFlagBits::eTransfer;
-	}
-	else if (oldLayout == ImageLayout::TransferDst && newLayout == ImageLayout::ShaderReadOnly)
-	{
-		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-		sourceStage = vk::PipelineStageFlagBits::eTransfer;
-		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
-	}
-	else
-	{
-		throw std::invalid_argument("Unsupported layout transition");
-	}
-
-	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
-	cmdBuf.pipelineBarrier(sourceStage, destinationStage, {}, nullptr, nullptr, barrier);
-}
-
-void core::gpu::Image::Impl::CopyFromBuffer(CommandBuffer& commandBuffer,
-	Buffer& buffer, uint32_t width, uint32_t height)
-{
-	vk::BufferImageCopy region{};
-	region.bufferOffset = 0;
-	region.bufferRowLength = 0;
-	region.bufferImageHeight = 0;
-	region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-	region.imageSubresource.mipLevel = 0;
-	region.imageSubresource.baseArrayLayer = 0;
-	region.imageSubresource.layerCount = 1;
-	region.imageOffset = vk::Offset3D{ 0, 0, 0 };
-	region.imageExtent = vk::Extent3D{ width, height, 1 };
-
-	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
-	cmdBuf.copyBufferToImage(*buffer.GetImpl().buffer, GetVkImage(), vk::ImageLayout::eTransferDstOptimal, region);
-}
-
-void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
-	uint32_t width, uint32_t height, uint32_t mipLevels)
-{
-	vk::FormatProperties formatProperties = device->GetImpl().physicalDevice.getFormatProperties(
-		core::gpu_detail::ToVulkan(format));
-
-	if (!(formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear))
-	{
-		throw std::runtime_error("Texture image format does not support linear blitting");
-	}
-
-	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
-
-	vk::ImageMemoryBarrier barrier{};
-	barrier.image = GetVkImage();
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-	barrier.subresourceRange.levelCount = 1;
-
-	int32_t mipWidth = width;
-	int32_t mipHeight = height;
-
-	for (uint32_t i = 1; i < mipLevels; i++)
-	{
-		barrier.subresourceRange.baseMipLevel = i - 1;
-		barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-		barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
-		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-		barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
-
-		cmdBuf.pipelineBarrier(
-			vk::PipelineStageFlagBits::eTransfer,
-			vk::PipelineStageFlagBits::eTransfer,
-			{}, nullptr, nullptr, barrier
-		);
-
-		vk::ImageBlit blit{};
-		blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
-		blit.srcOffsets[1] = vk::Offset3D{ mipWidth, mipHeight, 1 };
-		blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-		blit.srcSubresource.mipLevel = i - 1;
-		blit.srcSubresource.baseArrayLayer = 0;
-		blit.srcSubresource.layerCount = 1;
-		blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
-		blit.dstOffsets[1] = vk::Offset3D{
-			mipWidth > 1 ? mipWidth / 2 : 1,
-			mipHeight > 1 ? mipHeight / 2 : 1,
-			1
-		};
-		blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-		blit.dstSubresource.mipLevel = i;
-		blit.dstSubresource.baseArrayLayer = 0;
-		blit.dstSubresource.layerCount = 1;
-
-		cmdBuf.blitImage(
-			GetVkImage(), vk::ImageLayout::eTransferSrcOptimal,
-			GetVkImage(), vk::ImageLayout::eTransferDstOptimal,
-			blit, vk::Filter::eLinear
-		);
-
-		barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
-		barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
-		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-
-		cmdBuf.pipelineBarrier(
-			vk::PipelineStageFlagBits::eTransfer,
-			vk::PipelineStageFlagBits::eFragmentShader,
-			{}, nullptr, nullptr, barrier
-		);
-
-		if (mipWidth > 1) mipWidth /= 2;
-		if (mipHeight > 1) mipHeight /= 2;
-	}
-
-	barrier.subresourceRange.baseMipLevel = mipLevels - 1;
-	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-
-	cmdBuf.pipelineBarrier(
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::PipelineStageFlagBits::eFragmentShader,
-		{}, nullptr, nullptr, barrier
-	);
-}
+// CommandBuffer
+//void core::gpu::Image::Impl::TransitionLayout(CommandBuffer& commandBuffer,
+//	ImageLayout oldLayout, ImageLayout newLayout, uint32_t mipLevels)
+//{
+//	vk::ImageMemoryBarrier barrier{};
+//	barrier.oldLayout = core::gpu_detail::ToVulkan(oldLayout);
+//	barrier.newLayout = core::gpu_detail::ToVulkan(newLayout);
+//	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//	barrier.image = GetVkImage();
+//	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+//	barrier.subresourceRange.baseMipLevel = 0;
+//	barrier.subresourceRange.levelCount = mipLevels;
+//	barrier.subresourceRange.baseArrayLayer = 0;
+//	barrier.subresourceRange.layerCount = 1;
+//
+//	vk::PipelineStageFlags sourceStage;
+//	vk::PipelineStageFlags destinationStage;
+//
+//	if (oldLayout == ImageLayout::Undefined && newLayout == ImageLayout::TransferDst)
+//	{
+//		barrier.srcAccessMask = vk::AccessFlagBits::eNone;
+//		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+//		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+//		destinationStage = vk::PipelineStageFlagBits::eTransfer;
+//	}
+//	else if (oldLayout == ImageLayout::TransferDst && newLayout == ImageLayout::ShaderReadOnly)
+//	{
+//		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+//		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+//		sourceStage = vk::PipelineStageFlagBits::eTransfer;
+//		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+//	}
+//	else
+//	{
+//		throw std::invalid_argument("Unsupported layout transition");
+//	}
+//
+//	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
+//	cmdBuf.pipelineBarrier(sourceStage, destinationStage, {}, nullptr, nullptr, barrier);
+//}
+//
+//// CommandBuffer
+//void core::gpu::Image::Impl::CopyFromBuffer(CommandBuffer& commandBuffer,
+//	Buffer& buffer, uint32_t width, uint32_t height)
+//{
+//	vk::BufferImageCopy region{};
+//	region.bufferOffset = 0;
+//	region.bufferRowLength = 0;
+//	region.bufferImageHeight = 0;
+//	region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+//	region.imageSubresource.mipLevel = 0;
+//	region.imageSubresource.baseArrayLayer = 0;
+//	region.imageSubresource.layerCount = 1;
+//	region.imageOffset = vk::Offset3D{ 0, 0, 0 };
+//	region.imageExtent = vk::Extent3D{ width, height, 1 };
+//
+//	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
+//	cmdBuf.copyBufferToImage(*buffer.GetImpl().buffer, GetVkImage(), vk::ImageLayout::eTransferDstOptimal, region);
+//}
+//
+//// CommandBuffer
+//void core::gpu::Image::Impl::GenerateMipmaps(CommandBuffer& commandBuffer,
+//	uint32_t width, uint32_t height, uint32_t mipLevels)
+//{
+//	vk::FormatProperties formatProperties = device->GetImpl().physicalDevice.getFormatProperties(
+//		core::gpu_detail::ToVulkan(format));
+//
+//	if (!(formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear))
+//	{
+//		throw std::runtime_error("Texture image format does not support linear blitting");
+//	}
+//
+//	auto& cmdBuf = commandBuffer.GetImpl().GetCommandBuffer();
+//
+//	vk::ImageMemoryBarrier barrier{};
+//	barrier.image = GetVkImage();
+//	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+//	barrier.subresourceRange.baseArrayLayer = 0;
+//	barrier.subresourceRange.layerCount = 1;
+//	barrier.subresourceRange.levelCount = 1;
+//
+//	int32_t mipWidth = width;
+//	int32_t mipHeight = height;
+//
+//	for (uint32_t i = 1; i < mipLevels; i++)
+//	{
+//		barrier.subresourceRange.baseMipLevel = i - 1;
+//		barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+//		barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+//		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+//		barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+//
+//		cmdBuf.pipelineBarrier(
+//			vk::PipelineStageFlagBits::eTransfer,
+//			vk::PipelineStageFlagBits::eTransfer,
+//			{}, nullptr, nullptr, barrier
+//		);
+//
+//		vk::ImageBlit blit{};
+//		blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+//		blit.srcOffsets[1] = vk::Offset3D{ mipWidth, mipHeight, 1 };
+//		blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+//		blit.srcSubresource.mipLevel = i - 1;
+//		blit.srcSubresource.baseArrayLayer = 0;
+//		blit.srcSubresource.layerCount = 1;
+//		blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+//		blit.dstOffsets[1] = vk::Offset3D{
+//			mipWidth > 1 ? mipWidth / 2 : 1,
+//			mipHeight > 1 ? mipHeight / 2 : 1,
+//			1
+//		};
+//		blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+//		blit.dstSubresource.mipLevel = i;
+//		blit.dstSubresource.baseArrayLayer = 0;
+//		blit.dstSubresource.layerCount = 1;
+//
+//		cmdBuf.blitImage(
+//			GetVkImage(), vk::ImageLayout::eTransferSrcOptimal,
+//			GetVkImage(), vk::ImageLayout::eTransferDstOptimal,
+//			blit, vk::Filter::eLinear
+//		);
+//
+//		barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+//		barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+//		barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+//		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+//
+//		cmdBuf.pipelineBarrier(
+//			vk::PipelineStageFlagBits::eTransfer,
+//			vk::PipelineStageFlagBits::eFragmentShader,
+//			{}, nullptr, nullptr, barrier
+//		);
+//
+//		if (mipWidth > 1) mipWidth /= 2;
+//		if (mipHeight > 1) mipHeight /= 2;
+//	}
+//
+//	barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+//	barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+//	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+//	barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+//	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+//
+//	cmdBuf.pipelineBarrier(
+//		vk::PipelineStageFlagBits::eTransfer,
+//		vk::PipelineStageFlagBits::eFragmentShader,
+//		{}, nullptr, nullptr, barrier
+//	);
+//}
 
 core::gpu::Image::Image(const core::gpu::Device* device, const SImageCreateInfo& info)
 {
-	m_impl = std::make_unique<Impl>(*this, device, info);
+	m_impl = std::make_unique<Impl>(device, info);
+}
+
+core::gpu::Image::Image(const core::gpu::Device* device, const SPredefinedImageCreateInfo& info)
+{
+	m_impl = std::make_unique<Impl>(device, info);
 }
 
 core::gpu::Image::~Image() = default;
 
-void core::gpu::Image::CreateView(const SImageViewCreateInfo& info)
-{
-	m_impl->CreateView(info);
-}
-
-void core::gpu::Image::TransitionLayout(CommandBuffer& commandBuffer,
-	ImageLayout oldLayout, ImageLayout newLayout, uint32_t mipLevels)
-{
-	m_impl->TransitionLayout(commandBuffer, oldLayout, newLayout, mipLevels);
-}
-
-void core::gpu::Image::CopyFromBuffer(CommandBuffer& commandBuffer,
-	Buffer& buffer, uint32_t width, uint32_t height)
-{
-	m_impl->CopyFromBuffer(commandBuffer, buffer, width, height);
-}
-
-void core::gpu::Image::GenerateMipmaps(CommandBuffer& commandBuffer,
-	uint32_t width, uint32_t height, uint32_t mipLevels)
-{
-	m_impl->GenerateMipmaps(commandBuffer, width, height, mipLevels);
-}
-
 core::gpu::Image::Impl& core::gpu::Image::GetImpl() const
 {
 	return *m_impl;
-}
-
-core::gpu::Image::Image(const core::gpu::Device* device, void* swapchainImage,
-						uint32_t width, uint32_t height, TextureFormat format)
-{
-	vk::Image vkImage = static_cast<vk::Image>(reinterpret_cast<VkImage>(swapchainImage));
-	m_impl = std::make_unique<Impl>(*this, device, vkImage, width, height, format);
 }

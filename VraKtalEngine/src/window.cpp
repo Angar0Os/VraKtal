@@ -9,6 +9,7 @@ static void	FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
 	auto app = static_cast<core::Window*>(glfwGetWindowUserPointer(window));
 	app->framebufferResized = true;
+	app->SetSize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 }
 
 core::Window::Window(uint32_t _width, uint32_t _height, const char* _title, bool _resizable)
@@ -50,6 +51,13 @@ void core::Window::PollEvents()
 bool core::Window::ShouldClose() const
 {
 	return glfwWindowShouldClose(m_window);
+}
+
+void core::Window::Close()
+{
+	if (m_window) {
+		glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+	}
 }
 
 std::pair<uint32_t, uint32_t> core::Window::Size() const

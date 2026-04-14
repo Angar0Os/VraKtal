@@ -82,6 +82,21 @@
     <Filter Include="external\portableFileDialogs">
       <UniqueIdentifier>{9060703a-032f-4e39-9ead-06e259c1f291}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\graphics\renderPass">
+      <UniqueIdentifier>{53035896-8da1-4e1d-9be4-2aecda31c710}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\graphics\renderPass">
+      <UniqueIdentifier>{0e0c78fb-1f6e-4e66-bfd3-f647c2b57927}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\input">
+      <UniqueIdentifier>{cb3800e5-1697-4921-b0a5-d428adc6bf66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\core\input">
+      <UniqueIdentifier>{da79beb2-ea3f-4ad4-bfef-a8a249bfe15f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\utils">
+      <UniqueIdentifier>{3bf526df-3f99-42b9-9b38-25e6e348616f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -105,13 +120,7 @@
     <ClInclude Include="include\core\gpu\buffer.h">
       <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\gpu\sampler.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\sampler_impl.h">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\core\gpu_detail\converters.h">
@@ -153,13 +162,7 @@
     <ClInclude Include="include\core\gpu\pipeline.h">
       <Filter>Header Files\core\gpu</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\gpu\swapchain.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\gpu\vulkan\pipeline_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\swapchain_impl.h">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="include\graphics\renderer.h">
@@ -255,6 +258,45 @@
     <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h">
       <Filter>external\portableFileDialogs</Filter>
     </ClInclude>
+    <ClInclude Include="include\loaders\textureLoader.h">
+      <Filter>Header Files\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\loaders\shaderLoader.h">
+      <Filter>Header Files\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\pass.h">
+      <Filter>Header Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\renderPass\gBufferPass.h">
+      <Filter>Header Files\graphics\renderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\renderPass\lightingPass.h">
+      <Filter>Header Files\graphics\renderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\materialInstance.h">
+      <Filter>Header Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\loaders\materialLoader.h">
+      <Filter>Header Files\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\input\input.h">
+      <Filter>Header Files\core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\input\inputAxisCallback.h">
+      <Filter>Header Files\core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\input\InputCallback.h">
+      <Filter>Header Files\core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\NamedStorageMapped.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\input\actions.h">
+      <Filter>Header Files\core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\input\keys.h">
+      <Filter>Header Files\core\input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -267,9 +309,6 @@
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\buffer_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\sampler_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu_detail\converters.cpp">
@@ -297,9 +336,6 @@
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\pipeline_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\swapchain_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\renderer.cpp">
@@ -353,16 +389,31 @@
     <ClCompile Include="src\core\gpu\vulkan\imguiContext_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
     </ClCompile>
+    <ClCompile Include="src\loaders\textureLoader.cpp">
+      <Filter>Source Files\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp">
+      <Filter>Source Files\graphics\renderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\renderPass\lightingPass.cpp">
+      <Filter>Source Files\graphics\renderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="src\loaders\materialLoader.cpp">
+      <Filter>Source Files\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\input\input.cpp">
+      <Filter>Source Files\core\input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\bin\assets\shaders\shader.slang">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="..\bin\assets\shaders\frameUniforms.slang">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
     <None Include="..\external\include\imGuizmo\.editorconfig">
       <Filter>External\ImGuizmo</Filter>
+    </None>
+    <None Include="..\bin\assets\shaders\gbuffer.slang">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="..\bin\assets\shaders\lighting.slang">
+      <Filter>Resource Files\shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

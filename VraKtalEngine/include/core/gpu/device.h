@@ -15,48 +15,11 @@ namespace core
 	{
 		class AccelerationStructure;
 		class Buffer;
+		class CommandPool;
+		class DescriptorPool;
 		class Image;
         class Pipeline;
 		class ImguiContext;
-
-		constexpr int MAX_LIGHTS = 10;
-
-		// Note : We will maybe move this, but this is here to make uniform buffers work properly.
-		struct UniformBufferObject
-		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-			alignas(16) glm::mat4 lightSpaceMatrix;
-			alignas(16) glm::vec3 viewPos;
-
-			struct LightData
-			{
-				alignas(16) glm::vec3 position;
-				alignas(16) glm::vec3 color;
-				alignas(4)  float intensity;
-				alignas(4)	int enabled;
-				alignas(4)	int type;
-				alignas(4)  float lightRadius;
-			};
-
-			LightData lights[MAX_LIGHTS];
-			alignas(4) int numLights;
-
-			alignas(16) glm::vec3 albedo;
-			alignas(4)  float metallic;
-			alignas(4)  float roughness;
-			alignas(4)  float ao;
-			alignas(16) glm::vec3 emissive;
-
-			alignas(4) uint32_t useAlbedoMap;
-			alignas(4) uint32_t useNormalMap;
-			alignas(4) uint32_t useMetallicMap;
-			alignas(4) uint32_t useRoughnessMap;
-			alignas(4) uint32_t useAOMap;
-			alignas(4) uint32_t useEmissiveMap;
-
-			alignas(4) uint32_t frameCount;
-		};
 
 		class Device
 		{
@@ -64,35 +27,41 @@ namespace core
 			struct Impl;
 			std::unique_ptr<Impl> m_impl;
 			ImguiContext* m_imGuiContext;
+
 		public:
 			explicit Device(Window& window);
 			~Device();
 
 			Impl& GetImpl() const;
 
-			void BeginFrame(uint32_t frameIndex);
+			CommandPool& GetCommandPool() const;
+			DescriptorPool& GetDescriptorPool() const;
+
 			uint32_t AcquireNextImage(uint32_t frameIndex);
-			void* GetImageAvailableSemaphore(uint32_t frameIndex) const;
-			void* GetRenderFinishedSemaphore(uint32_t imageIndex) const;
-			void* GetInFlightFence(uint32_t frameIndex) const;
-			void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
-			void Present(uint32_t imageIndex);
+
+			void Present(uint32_t imageIndex, uint32_t frameIndex);
 			void Cleanup();
 
-			core::gpu::Buffer* GetUniformBuffer(uint32_t frameIndex);
-			const core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
-			const core::gpu::Image* GetColorImage() const;
-			const core::gpu::Image* GetDepthImage() const;
-
-			const core::gpu::Pipeline* GetGraphicsPipeline() const;
-
-			void UpdateDescriptorWithTLAS(uint32_t frameIndex, const core::gpu::AccelerationStructure* tlasHandle);
-
-			void RecreateSwapchain();
 			void WaitIdle();
+
+			core::gpu::Image* GetSwapchainImage(uint32_t imageIndex) const;
+
 			static constexpr uint32_t s_FRAMES_IN_FLIGHT = 2;
 
+			void BeginFrame(uint32_t frameIndex);
+			std::pair<uint32_t, uint32_t> GetSwapchainExtent() const;
+			
+			void TransitionImageForPresent(uint32_t frameIndex, uint32_t imageIndex);
+			
+			bool NeedsResize() const;
+			void ClearResizeFlag();
+			void RecreateSwapchain();
+
+#ifdef VRAKTAL_EDITOR
 			ImguiContext* GetImGuiContext();
+#endif // VRAKTAL_EDITOR
+
+
 		};
 	}
 }

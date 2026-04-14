@@ -2,15 +2,14 @@
 #include "../src/core/gpu/vulkan/buffer_impl.h"
 #include "../src/core/gpu/vulkan/commandBuffer_impl.h"
 #include "../src/core/gpu/vulkan/commandPool_impl.h"
-#include "../src/core/gpu/vulkan/descriptorSet_impl.h"
 #include "../src/core/gpu/vulkan/device_impl.h"
+#include "../src/core/gpu/vulkan/descriptorSet_impl.h"
 #include "../src/core/gpu/vulkan/image_impl.h"
 #include "../src/core/gpu/vulkan/pipeline_impl.h"
-#include "../src/core/gpu/vulkan/swapchain_impl.h"
-
-#include "imgui/imgui_impl_vulkan.h"
 
 #include <stdexcept>
+
+using namespace core::gpu;
 
 core::gpu::CommandBuffer::Impl::Impl(core::gpu::CommandBuffer& p, const core::gpu::Device* device, const SCommandBufferCreateInfo& info)
 	: parent(p), commandBuffers(nullptr), isSingleTime(info.singleTime), currentIndex(0)
@@ -189,43 +188,6 @@ void core::gpu::CommandBuffer::Impl::End(uint32_t index)
 	commandBuffers[index].end();
 }
 
-void core::gpu::CommandBuffer::Impl::Submit(const core::gpu::Device* device, void* waitSemaphore, void* signalSemaphore, void* fence)
-{
-	if (currentIndex >= commandBuffers.size())
-	{
-		throw std::runtime_error("No command buffer has been begun");
-	}
-
-	vk::CommandBuffer cmdBuf = *commandBuffers[currentIndex];
-
-	vk::SubmitInfo submitInfo{};
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &cmdBuf;
-
-	vk::Semaphore vkWaitSemaphore = VK_NULL_HANDLE;
-	vk::Semaphore vkSignalSemaphore = VK_NULL_HANDLE;
-	vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-
-	if (waitSemaphore)
-	{
-		vkWaitSemaphore = static_cast<VkSemaphore>(waitSemaphore);
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = &vkWaitSemaphore;
-		submitInfo.pWaitDstStageMask = &waitStage;
-	}
-
-	if (signalSemaphore)
-	{
-		vkSignalSemaphore = static_cast<VkSemaphore>(signalSemaphore);
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &vkSignalSemaphore;
-	}
-
-	vk::Fence vkFence = fence ? static_cast<VkFence>(fence) : nullptr;
-
-	device->GetImpl().graphicsQueue.submit(submitInfo, vkFence);
-}
-
 void core::gpu::CommandBuffer::Impl::PushConstants(const core::gpu::Pipeline* pipeline,
 	uint32_t stageFlags,
 	uint32_t offset,
@@ -251,12 +213,6 @@ void core::gpu::CommandBuffer::Impl::PushConstants(const core::gpu::Pipeline* pi
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::SubmitAndWait(const core::gpu::Device* device)
-{
-	Submit(device);
-	device->GetImpl().graphicsQueue.waitIdle();
-}
-
 void core::gpu::CommandBuffer::Impl::BindVertexBuffer(const core::gpu::Buffer* buffer, size_t offset)
 {
 	vk::DeviceSize vkOffset = static_cast<vk::DeviceSize>(offset);
@@ -272,24 +228,21 @@ void core::gpu::CommandBuffer::Impl::BindIndexBuffer(const core::gpu::Buffer* bu
 	);
 }
 
-void core::gpu::CommandBuffer::Impl::BindDescriptorSets(
-	const core::gpu::Device* device,
-	uint32_t frameIndex,
-	uint32_t firstSet)
+void CommandBuffer::BindDescriptorSets(const Pipeline* currentPipeline, const DescriptorSet* descriptorSet, uint32_t frameIndex, uint32_t firstSet)
 {
-	GetCommandBuffer(currentIndex).bindDescriptorSets(
+	m_impl->GetCommandBuffer(m_impl->currentIndex).bindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,
-		device->GetImpl().graphicsPipeline->GetImpl().pipelineLayout,
+		currentPipeline->GetImpl().pipelineLayout,
 		firstSet,
-		**device->GetImpl().descriptorSets[frameIndex],
+		*descriptorSet->GetImpl().descriptorSet,
 		nullptr
 	);
 }
 
 void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth)
 {
-	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t width = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
 
 	vk::Viewport viewport(x, y, static_cast<float>(width), static_cast<float>(height), minDepth, maxDepth);
 	GetCommandBuffer(currentIndex).setViewport(0, viewport);
@@ -297,9 +250,29 @@ void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, const core::g
 
 void core::gpu::CommandBuffer::Impl::SetScissor(int32_t x, int32_t y, const core::gpu::Device* device)
 {
-	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t width = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
 
+	vk::Rect2D scissor({ x, y }, { width, height });
+	GetCommandBuffer(currentIndex).setScissor(0, scissor);
+}
+
+void core::gpu::CommandBuffer::Impl::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
+{
+	vk::Viewport viewport(
+		x,
+		y,
+		width,
+		height,
+		minDepth,
+		maxDepth
+	);
+
+	GetCommandBuffer(currentIndex).setViewport(0, viewport);
+}
+
+void core::gpu::CommandBuffer::Impl::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
+{
 	vk::Rect2D scissor({ x, y }, { width, height });
 	GetCommandBuffer(currentIndex).setScissor(0, scissor);
 }
@@ -323,24 +296,132 @@ void core::gpu::CommandBuffer::Impl::BeginRendering(
 	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
 	colorAttachment.clearValue = vk::ClearColorValue(0.1f, 0.1f, 0.15f, 1.f);
 
-	vk::RenderingAttachmentInfo depthAttachment{};
-	depthAttachment.imageView = depthImage->GetImpl().view;
-	depthAttachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
-	depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
-	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
-	depthAttachment.clearValue = vk::ClearDepthStencilValue(1.f, 0);
-
-	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
-
 	vk::RenderingInfo info{};
+
+	vk::RenderingAttachmentInfo depthAttachment{};
+	if (depthImage)
+	{
+		depthAttachment.imageView = depthImage->GetImpl().view;
+		depthAttachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+		depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+		depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+		depthAttachment.clearValue = vk::ClearDepthStencilValue(1.f, 0);
+		info.pDepthAttachment = &depthAttachment;
+	}
+	else
+	{
+		info.pDepthAttachment = nullptr;
+	}
+
+	uint32_t width = colorImage->GetImpl().extent.width;
+	uint32_t height = colorImage->GetImpl().extent.height;
+
 	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });
 	info.layerCount = 1;
 	info.colorAttachmentCount = 1;
 	info.pColorAttachments = &colorAttachment;
-	info.pDepthAttachment = &depthAttachment;
 
 	GetCommandBuffer(currentIndex).beginRendering(info);
+}
+
+void core::gpu::CommandBuffer::Impl::BeginRendering(
+	const core::gpu::Device* device,
+	const std::vector<CommandBuffer::RenderingAttachmentInfo>& colorAttachments,
+	const CommandBuffer::DepthAttachmentInfo& depthAttachment)
+{
+	std::vector<vk::RenderingAttachmentInfo> vkColorAttachments;
+	vkColorAttachments.reserve(colorAttachments.size());
+
+	for (const auto& ca : colorAttachments)
+	{
+		vk::RenderingAttachmentInfo info{};
+		info.imageView = ca.image->GetImpl().view;
+		info.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		info.loadOp = ca.clear ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
+		info.storeOp = vk::AttachmentStoreOp::eStore;
+		info.clearValue = vk::ClearColorValue(ca.clearR, ca.clearG, ca.clearB, ca.clearA);
+		vkColorAttachments.push_back(info);
+	}
+
+	vk::RenderingAttachmentInfo vkDepth{};
+	if (depthAttachment.image)
+	{
+		vkDepth.imageView = depthAttachment.image->GetImpl().view;
+		vkDepth.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+		vkDepth.loadOp = depthAttachment.clear ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eLoad;
+		vkDepth.storeOp = vk::AttachmentStoreOp::eStore;
+		vkDepth.clearValue = vk::ClearDepthStencilValue(depthAttachment.clearDepth, 0);
+	}
+
+	uint32_t width = colorAttachments.empty() ? device->GetImpl().swapchainExtent.width
+		: colorAttachments[0].image->GetImpl().extent.width;
+	uint32_t height = colorAttachments.empty() ? device->GetImpl().swapchainExtent.height
+		: colorAttachments[0].image->GetImpl().extent.height;
+
+	vk::RenderingInfo info{};
+	info.renderArea = vk::Rect2D({ 0, 0 }, { width, height });
+	info.layerCount = 1;
+	info.colorAttachmentCount = static_cast<uint32_t>(vkColorAttachments.size());
+	info.pColorAttachments = vkColorAttachments.data();
+	info.pDepthAttachment = depthAttachment.image ? &vkDepth : nullptr;
+
+	GetCommandBuffer(currentIndex).beginRendering(info);
+}
+
+void core::gpu::CommandBuffer::Submit(const core::gpu::Device* device, uint32_t frameIndex)
+{
+	if (m_impl->currentIndex >= m_impl->commandBuffers.size())
+	{
+		throw std::runtime_error("No command buffer has been begun");
+	}
+
+	if (frameIndex >= device->GetImpl().frameSyncObjects.size())
+	{
+		throw std::runtime_error("Frame index out of range");
+	}
+
+	vk::CommandBuffer cmdBuf = *m_impl->commandBuffers[m_impl->currentIndex];
+
+	auto& frameSync = device->GetImpl().frameSyncObjects[frameIndex];
+
+	vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+
+	vk::Semaphore waitSemaphore = *frameSync.imageAvailable;
+	vk::Semaphore signalSemaphore = *frameSync.renderFinished;
+
+	vk::SubmitInfo submitInfo{};
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &waitSemaphore;
+	submitInfo.pWaitDstStageMask = &waitStage;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmdBuf;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &signalSemaphore;
+
+	device->GetImpl().graphicsQueue.submit(submitInfo, *frameSync.inFlightFence);
+}
+
+void core::gpu::CommandBuffer::SubmitAndWait(const core::gpu::Device* device, uint32_t frameIndex)
+{
+	Submit(device, frameIndex);
+	device->GetImpl().graphicsQueue.waitIdle();
+}
+
+void core::gpu::CommandBuffer::SubmitImmediate(const core::gpu::Device* device)
+{
+	if (m_impl->currentIndex >= m_impl->commandBuffers.size())
+	{
+		throw std::runtime_error("No command buffer has been begun");
+	}
+
+	vk::CommandBuffer cmdBuf = *m_impl->commandBuffers[m_impl->currentIndex];
+
+	vk::SubmitInfo submitInfo{};
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmdBuf;
+
+	device->GetImpl().graphicsQueue.submit(submitInfo, nullptr);
+	device->GetImpl().graphicsQueue.waitIdle();
 }
 
 void core::gpu::CommandBuffer::Impl::EndRendering()
@@ -383,7 +464,7 @@ void core::gpu::CommandBuffer::Impl::TransitionImageLayout(
 	barrier.newLayout = newLayout;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image->GetImpl().GetVkImage();
+	barrier.image = image->GetImpl().image;
 
 	vk::ImageSubresourceRange subRange{};
 	subRange.aspectMask = isDepth ? vk::ImageAspectFlagBits::eDepth : vk::ImageAspectFlagBits::eColor;
@@ -421,16 +502,49 @@ void core::gpu::CommandBuffer::Impl::ResolveImage(const core::gpu::Image* srcIma
 	vk::Offset3D dstOffset = { 0, 0, 0 };
 	resolveRegion.dstOffset = dstOffset;
 
-	uint32_t width = device->GetImpl().swapchain->GetImpl().extent.width;
-	uint32_t height = device->GetImpl().swapchain->GetImpl().extent.height;
+	uint32_t width = device->GetImpl().swapchainExtent.width;
+	uint32_t height = device->GetImpl().swapchainExtent.height;
 
 	vk::Extent3D ext3D = { width, height, 1 };
 	resolveRegion.extent = ext3D;
 
 	GetCommandBuffer(currentIndex).resolveImage(
-		srcImage->GetImpl().GetVkImage(), vk::ImageLayout::eTransferSrcOptimal,
-		dstImage->GetImpl().GetVkImage(), vk::ImageLayout::eTransferDstOptimal,
+		srcImage->GetImpl().image, vk::ImageLayout::eTransferSrcOptimal,
+		dstImage->GetImpl().image, vk::ImageLayout::eTransferDstOptimal,
 		resolveRegion
+	);
+}
+
+void core::gpu::CommandBuffer::Impl::BlitImage(
+	const core::gpu::Image* srcImage,
+	const core::gpu::Image* dstImage,
+	const core::gpu::Device* device)
+{
+	auto srcWidth = srcImage->GetImpl().extent.width;
+	auto srcHeight = srcImage->GetImpl().extent.height;
+
+	auto dstWidth = dstImage->GetImpl().extent.width;
+	auto dstHeight = dstImage->GetImpl().extent.height;
+
+	vk::ImageSubresourceLayers subRes{};
+	subRes.aspectMask = vk::ImageAspectFlagBits::eColor;
+	subRes.mipLevel = 0;
+	subRes.baseArrayLayer = 0;
+	subRes.layerCount = 1;
+
+	vk::ImageBlit region{};
+	region.srcSubresource = subRes;
+	region.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+	region.srcOffsets[1] = vk::Offset3D{ static_cast<int32_t>(srcWidth), static_cast<int32_t>(srcHeight), 1 };
+	region.dstSubresource = subRes;
+	region.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+	region.dstOffsets[1] = vk::Offset3D{ static_cast<int32_t>(dstWidth), static_cast<int32_t>(dstHeight), 1 };
+
+	GetCommandBuffer(currentIndex).blitImage(
+		srcImage->GetImpl().image, vk::ImageLayout::eTransferSrcOptimal,
+		dstImage->GetImpl().image, vk::ImageLayout::eTransferDstOptimal,
+		region,
+		vk::Filter::eLinear
 	);
 }
 
@@ -442,6 +556,30 @@ void core::gpu::CommandBuffer::Impl::CopyBuffer(const core::gpu::Buffer* srcBuff
 	copyRegion.size = size;
 
 	GetCommandBuffer(currentIndex).copyBuffer(srcBuffer->GetImpl().buffer, dstBuffer->GetImpl().buffer, copyRegion);
+}
+
+void core::gpu::CommandBuffer::Impl::CopyBufferToImage(
+	const core::gpu::Buffer* srcBuffer,
+	const core::gpu::Image* dstImage,
+	uint32_t width, uint32_t height)
+{
+	vk::BufferImageCopy region{};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+	region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	region.imageOffset = vk::Offset3D{ 0, 0, 0 };
+	region.imageExtent = vk::Extent3D{ width, height, 1 };
+
+	GetCommandBuffer(currentIndex).copyBufferToImage(
+		srcBuffer->GetImpl().buffer,
+		dstImage->GetImpl().image,
+		vk::ImageLayout::eTransferDstOptimal,
+		region
+	);
 }
 
 uint32_t core::gpu::CommandBuffer::GetCount() const
@@ -459,16 +597,6 @@ void core::gpu::CommandBuffer::End(uint32_t index)
 	m_impl->End(index);
 }
 
-void core::gpu::CommandBuffer::Submit(const core::gpu::Device* device, void* waitSemaphore, void* signalSemaphore, void* fence)
-{
-	m_impl->Submit(device, waitSemaphore, signalSemaphore, fence);
-}
-
-void core::gpu::CommandBuffer::SubmitAndWait(const core::gpu::Device* device)
-{
-	m_impl->SubmitAndWait(device);
-}
-
 void core::gpu::CommandBuffer::BindPipeline(const core::gpu::Pipeline* pipeline)
 {
 	m_impl->BindPipeline(pipeline);
@@ -484,11 +612,6 @@ void core::gpu::CommandBuffer::BindIndexBuffer(const core::gpu::Buffer* buffer, 
 	m_impl->BindIndexBuffer(buffer, offset);
 }
 
-void core::gpu::CommandBuffer::BindDescriptorSets(const core::gpu::Device* device, uint32_t frameIndex, uint32_t firstSet)
-{
-	m_impl->BindDescriptorSets(device, frameIndex, firstSet);
-}
-
 void core::gpu::CommandBuffer::SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth)
 {
 	m_impl->SetViewport(x, y, device, minDepth, maxDepth);
@@ -499,6 +622,16 @@ void core::gpu::CommandBuffer::SetScissor(int32_t x, int32_t y, const core::gpu:
 	m_impl->SetScissor(x, y, device);
 }
 
+void core::gpu::CommandBuffer::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
+{
+	m_impl->SetViewport(x, y, width, height, minDepth, maxDepth);
+}
+
+void core::gpu::CommandBuffer::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
+{
+	m_impl->SetScissor(x, y, width, height);
+}
+
 void core::gpu::CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 {
 	m_impl->DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
@@ -507,6 +640,14 @@ void core::gpu::CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanc
 void core::gpu::CommandBuffer::BeginRendering(const core::gpu::Device* device, const core::gpu::Image* colorImageView, const core::gpu::Image* depthImageView)
 {
 	m_impl->BeginRendering(device, colorImageView, depthImageView);
+}
+
+void core::gpu::CommandBuffer::BeginRendering(
+	const core::gpu::Device* device,
+	const std::vector<RenderingAttachmentInfo>& colorAttachments,
+	const DepthAttachmentInfo& depthAttachment)
+{
+	m_impl->BeginRendering(device, colorAttachments, depthAttachment);
 }
 
 void core::gpu::CommandBuffer::EndRendering()
@@ -588,6 +729,76 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 		srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
 		dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 	}
+	else if (oldLayout == ImageLayout::ColorAttachment && newLayout == ImageLayout::ShaderReadOnly)
+	{
+		srcAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		dstAccess = vk::AccessFlagBits::eShaderRead;
+		srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+	}
+	else if (oldLayout == ImageLayout::ShaderReadOnly && newLayout == ImageLayout::ColorAttachment)
+	{
+		srcAccess = vk::AccessFlagBits::eShaderRead;
+		dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		srcStage = vk::PipelineStageFlagBits::eFragmentShader;
+		dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
+	else if (oldLayout == ImageLayout::Undefined && newLayout == ImageLayout::ShaderReadOnly)
+	{
+		srcAccess = {};
+		dstAccess = vk::AccessFlagBits::eShaderRead;
+		srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+	}
+	else if (oldLayout == ImageLayout::ShaderReadOnly && newLayout == ImageLayout::TransferSrc)
+	{
+		srcAccess = vk::AccessFlagBits::eShaderRead;
+		dstAccess = vk::AccessFlagBits::eTransferRead;
+		srcStage = vk::PipelineStageFlagBits::eFragmentShader;
+		dstStage = vk::PipelineStageFlagBits::eTransfer;
+	}
+	else if (oldLayout == ImageLayout::DepthStencilAttachment && newLayout == ImageLayout::ShaderReadOnly)
+	{
+		srcAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		dstAccess = vk::AccessFlagBits::eShaderRead;
+		srcStage = vk::PipelineStageFlagBits::eLateFragmentTests;
+		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+	}
+	else if (oldLayout == ImageLayout::TransferDst && newLayout == ImageLayout::ShaderReadOnly)
+	{
+		srcAccess = vk::AccessFlagBits::eTransferWrite;
+		dstAccess = vk::AccessFlagBits::eShaderRead;
+		srcStage = vk::PipelineStageFlagBits::eTransfer;
+		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+	}
+	else if (oldLayout == ImageLayout::TransferDst && newLayout == ImageLayout::ColorAttachment)
+	{
+		srcAccess = vk::AccessFlagBits::eTransferWrite;
+		dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		srcStage = vk::PipelineStageFlagBits::eTransfer;
+		dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
+	else if (oldLayout == ImageLayout::ColorAttachment && newLayout == ImageLayout::Present)
+	{
+		srcAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		dstAccess = vk::AccessFlagBits::eMemoryRead;
+		srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		dstStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+	}
+	else if (oldLayout == ImageLayout::Present && newLayout == ImageLayout::TransferDst)
+	{
+		srcAccess = vk::AccessFlagBits::eMemoryRead;
+		dstAccess = vk::AccessFlagBits::eTransferWrite;
+		srcStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+		dstStage = vk::PipelineStageFlagBits::eTransfer;
+	}
+	else if (oldLayout == ImageLayout::Present && newLayout == ImageLayout::ColorAttachment)
+	{
+		srcAccess = vk::AccessFlagBits::eMemoryRead;
+		dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		srcStage = vk::PipelineStageFlagBits::eBottomOfPipe;
+		dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
 	else
 	{
 		throw std::runtime_error("Unsupported layout transition!");
@@ -601,9 +812,25 @@ void core::gpu::CommandBuffer::ResolveImage(const core::gpu::Image* srcImage, co
 	m_impl->ResolveImage(srcImage, dstImage, device);
 }
 
+void core::gpu::CommandBuffer::BlitImage(
+	const core::gpu::Image* srcImage,
+	const core::gpu::Image* dstImage,
+	const core::gpu::Device* device)
+{
+	m_impl->BlitImage(srcImage, dstImage, device);
+}
+
 void core::gpu::CommandBuffer::CopyBuffer(const core::gpu::Buffer* srcBuffer, const core::gpu::Buffer* dstBuffer, size_t size)
 {
 	m_impl->CopyBuffer(srcBuffer, dstBuffer, size);
+}
+
+void core::gpu::CommandBuffer::CopyBufferToImage(
+	const core::gpu::Buffer* srcBuffer,
+	const core::gpu::Image* dstImage,
+	uint32_t width, uint32_t height)
+{
+	m_impl->CopyBufferToImage(srcBuffer, dstImage, width, height);
 }
 
 void core::gpu::CommandBuffer::PushConstants(const core::gpu::Pipeline* pipeline,
