@@ -211,6 +211,7 @@
     <ClInclude Include="include\core\input\inputAxisCallback.h" />
     <ClInclude Include="include\core\input\InputCallback.h" />
     <ClInclude Include="include\core\input\keys.h" />
+    <ClInclude Include="include\core\manager\ressourceManager.h" />
     <ClInclude Include="include\core\window.h" />
     <ClInclude Include="include\graphics\materialInstance.h" />
     <ClInclude Include="include\graphics\pass.h" />
@@ -227,9 +228,16 @@
     <ClInclude Include="include\graphics\resources\project.h" />
     <ClInclude Include="include\graphics\resources\property\transform.h" />
     <ClInclude Include="include\graphics\resources\scene.h" />
+    <ClInclude Include="include\loaders\loaderBase.h" />
     <ClInclude Include="include\loaders\materialLoader.h" />
     <ClInclude Include="include\loaders\meshLoader.h" />
     <ClInclude Include="include\loaders\shaderLoader.h" />
+    <ClInclude Include="include\loaders\textureLoader.h" />
+    <ClInclude Include="include\scene\scene.h" />
+    <ClInclude Include="include\scene\timeline\entities\mesh.h" />
+    <ClInclude Include="include\scene\timeline\entityBase.h" />
+    <ClInclude Include="include\scene\timeline\keyframe.h" />
+    <ClInclude Include="include\utils\denseStorage.h" />
     <ClInclude Include="include\utils\NamedStorageMapped.h" />
     <ClInclude Include="src\core\gpu\vulkan\accelerationStructure_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h" />
@@ -272,6 +280,7 @@
     <ClCompile Include="src\core\gpu\vulkan\pipeline_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp" />
     <ClCompile Include="src\core\gpu_detail\converters.cpp" />
+    <ClCompile Include="src\core\manager\ressourceManager.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\iblPass.cpp" />
@@ -280,6 +289,7 @@
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\loaders\materialLoader.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />
+    <ClCompile Include="src\scene\scene.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
