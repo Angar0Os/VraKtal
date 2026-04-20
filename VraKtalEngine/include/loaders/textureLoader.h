@@ -4,15 +4,23 @@
 #include <string>
 
 #include <core/gpu/texture.h>
+#include "./loaderBase.h"
+#include <memory>
 
 namespace loaders
 {
     class Device;
 
-    class TextureLoader
+    class TextureLoader : public LoaderBase
     {
     public:
-        static std::unique_ptr<core::gpu::Texture> LoadTexture(const core::gpu::Device& device, const  std::string& filepath);
+        TextureLoader(core::gpu::Device& _device);
+        ~TextureLoader();
+        static core::gpu::Texture* LoadTexture(const core::gpu::Device& device, const  std::string& filepath);
+        std::shared_ptr<void> Load(const std::string& path);
+
+    private:
+        core::gpu::Device& m_device;
     };
 }
 

@@ -7,7 +7,15 @@
 #include <memory>
 #include <stdexcept>
 
-std::unique_ptr<core::gpu::Texture> loaders::TextureLoader::LoadTexture(const core::gpu::Device& device, const std::string& filepath)
+loaders::TextureLoader::TextureLoader(core::gpu::Device& _device) : m_device(_device)
+{
+}
+
+loaders::TextureLoader::~TextureLoader()
+{
+}
+
+core::gpu::Texture* loaders::TextureLoader::LoadTexture(const core::gpu::Device& device, const std::string& filepath)
 {
     int width, height, channels;
 
@@ -37,7 +45,17 @@ std::unique_ptr<core::gpu::Texture> loaders::TextureLoader::LoadTexture(const co
 
     stbi_image_free(pixels);
 
-    auto textureOutput = std::make_unique<core::gpu::Texture>(device, *image);
+    auto textureOutput = new core::gpu::Texture(device, *image);
 
     return textureOutput;
+}
+
+std::shared_ptr<void> loaders::TextureLoader::Load(const std::string& path)
+{
+    core::gpu::Texture* raw = LoadTexture(m_device, path);
+    if (!raw)
+        return nullptr;
+
+    std::shared_ptr<core::gpu::Texture> tex(raw);
+    return tex;
 }

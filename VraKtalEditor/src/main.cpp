@@ -6,11 +6,16 @@
 #include <graphics/renderPass/gBufferPass.h>
 #include <graphics/resources/object/light.h>
 #include <graphics/resources/object/material.h>
-#include <loaders/meshLoader.h>
+#include <core/manager/ressourceManager.h>
+
 #include <loaders/materialLoader.h>
 #include "imGuiWindows.h"
 #include "utils/yamlParser.h"
 #include <core/input/input.h>
+
+
+#include <scene/scene.h>
+#include <scene/timeline/entities/mesh.h>
 
 #ifdef VRAKTAL_EDITOR
     #pragma comment(lib, "VraKtalEngine_Debug.lib")
@@ -130,6 +135,10 @@ int main()
     core::gpu::Device device(window);
     core::Input input(window, &device);
     graphics::Renderer renderer(window, device);
+
+
+
+
 #ifdef VRAKTAL_EDITOR
     ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input);
     device.GetImGuiContext()->BindPrepareDrawData([&]()
@@ -138,33 +147,13 @@ int main()
         });
 #endif //VRAKTAL_EDITOR
 
-
-
-    loaders::MeshLoader loader(&device);
-
+    RessourceManager reManager = RessourceManager(&device);
     App app(input);
     Camera camera(input);
 
-    std::shared_ptr<graphics::resources::Mesh> vikingRoomMesh;
-    std::shared_ptr<graphics::resources::Mesh> planeMesh;
-
-    loader.LoadMesh("assets/models/viking_room.obj",
-        [&](std::shared_ptr<graphics::resources::Mesh> mesh)
-        {
-            vikingRoomMesh = mesh;
-        });
-
-    loader.CreatePlane(10.0f, 10.0f, 10, 10,
-        [&](std::shared_ptr<graphics::resources::Mesh> mesh)
-        {
-            planeMesh = mesh;
-        });
-
-    loader.ProcessJobs();
-    loader.PurgeFinishedJobs();
+    graphics::resources::Mesh* vikingRoomMesh = reManager.LoadRessource<graphics::resources::Mesh>("assets/models/viking_room.obj");
 
     auto* matLayout = renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
-
     {
         graphics::resources::object::Material mat;
         mat.SetTexture("assets/textures/viking_room.png", "albedo");
@@ -174,14 +163,11 @@ int main()
         );
     }
 
-    {
-        graphics::resources::object::Material mat;
-        mat.SetAlbedo(0.9f, 0.0f, 0.2f);
-        mat.SetMetallicRoughness(0.0f, 0.9f);
-        planeMesh->materials.push_back(
-            loaders::MaterialLoader::Load(device, mat, matLayout)
-        );
-    }
+    Scene scene;
+    scene.RegisterComponentStorage<timeline::Mesh>();
+    timeline::Mesh timelineMesh;
+    timelineMesh.mesh = vikingRoomMesh;
+    scene.CreateEntity<timeline::Mesh>(timelineMesh);
 
     const float aspectRatio = 800.0f / 600.0f;
     glm::mat4 projection = glm::perspectiveLH_ZO(
@@ -223,10 +209,8 @@ int main()
 #ifdef VRAKTAL_EDITOR
             device.GetImGuiContext()->OnResize();
 #endif // VRAKTAL_EDITOR
-
             continue;
         }
-
         uint32_t imageIndex = device.AcquireNextImage(currentFrameIndex);
         if (imageIndex == UINT32_MAX)
         {
@@ -242,15 +226,15 @@ int main()
 
         renderer.SetCamera(camera.GetView(), camera.projection);
 
-        renderer.PushMesh(planeMesh.get(), glm::mat4(1.0f));
+        //renderer.PushMesh(planeMesh.get(), glm::mat4(1.0f));
 
         glm::mat4 meshTransform1 = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 0.1f, 0.0f));
         meshTransform1 = glm::rotate(meshTransform1, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        renderer.PushMesh(vikingRoomMesh.get(), meshTransform1);
+        renderer.PushMesh(vikingRoomMesh, meshTransform1);
 
         glm::mat4 meshTransform2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.5f, 0.1f, 0.0f));
         meshTransform2 = glm::rotate(meshTransform2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        renderer.PushMesh(vikingRoomMesh.get(), meshTransform2);
+        renderer.PushMesh(vikingRoomMesh, meshTransform2);
 
         graphics::resources::Light light1;
         light1.name = "Yellow Light 1";

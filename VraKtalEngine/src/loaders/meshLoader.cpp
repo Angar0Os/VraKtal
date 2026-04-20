@@ -103,6 +103,30 @@ void loaders::MeshLoader::PurgeFinishedJobs()
 	m_jobQueue = std::move(remaining);
 }
 
+std::shared_ptr<void> loaders::MeshLoader::Load(const std::string& path)
+{
+
+	std::string ext = std::filesystem::path(path).extension().string();
+	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+	std::shared_ptr<graphics::resources::Mesh> mesh = nullptr;
+	if (ext == ".gltf" || ext == ".glb")
+		mesh = LoadGLTF(path);
+	else if (ext == ".obj")
+		mesh = LoadOBJ(path);
+	else
+		throw std::runtime_error("Unsupported mesh format: " + ext);
+
+	CreateBuffersForMesh(mesh.get());
+	CreateBLASForMesh(mesh.get());
+
+#ifdef VRAKTAL_EDITOR
+	std::cout << "loaded : " << path << std::endl;
+#endif // VRAKTAL_EDITOR
+
+	return mesh;
+}
+
 loaders::JobID loaders::MeshLoader::LoadMesh(
 	const std::string& filepath,
 	std::function<void(std::shared_ptr<graphics::resources::Mesh>)> onComplete)
