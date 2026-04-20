@@ -97,6 +97,30 @@
     <Filter Include="Header Files\utils">
       <UniqueIdentifier>{3bf526df-3f99-42b9-9b38-25e6e348616f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\core\manager">
+      <UniqueIdentifier>{9e22bc7a-deb8-4a28-be87-933f08350ac4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\core\manager">
+      <UniqueIdentifier>{499ea7b5-842e-43db-b67b-6c2e56f71a60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scene">
+      <UniqueIdentifier>{8ed98ff8-9182-4afd-a9a8-fd2b502a0612}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scene\timeline">
+      <UniqueIdentifier>{8f674238-d398-485f-88ec-7e60e34d0fde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scene\timeline\entities">
+      <UniqueIdentifier>{20b101ce-b616-4919-a5cc-bc59e16f8be5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scene">
+      <UniqueIdentifier>{e3011d60-a8a0-42fd-886a-ad2a0085ad9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scene\timeline">
+      <UniqueIdentifier>{d0094302-0653-4db3-a38f-f769b89f6aa6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scene\entities">
+      <UniqueIdentifier>{c39f7fd2-ce7e-4253-bc9d-2b6105fb413b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -297,6 +321,27 @@
     <ClInclude Include="include\core\input\keys.h">
       <Filter>Header Files\core\input</Filter>
     </ClInclude>
+    <ClInclude Include="include\core\manager\ressourceManager.h">
+      <Filter>Header Files\core\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="include\loaders\loaderBase.h">
+      <Filter>Header Files\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\timeline\entities\mesh.h">
+      <Filter>Header Files\scene\timeline\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\timeline\entityBase.h">
+      <Filter>Header Files\scene\timeline</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\timeline\keyframe.h">
+      <Filter>Header Files\scene\timeline</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\denseStorage.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\scene.h">
+      <Filter>Header Files\scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -403,6 +448,12 @@
     </ClCompile>
     <ClCompile Include="src\input\input.cpp">
       <Filter>Source Files\core\input</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\manager\ressourceManager.cpp">
+      <Filter>Source Files\core\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene\scene.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
