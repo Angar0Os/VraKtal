@@ -96,35 +96,6 @@ namespace graphics::resources
 
 		bool HasSubmeshes() const { return !subMeshes.empty(); }
 
-		void Transform(const glm::mat4& matrix)
-		{
-			glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(matrix)));
-			for (auto& vertex : vertices)
-			{
-				vertex.position = glm::vec3(matrix * glm::vec4(vertex.position, 1.0f));
-				vertex.normal = glm::normalize(normalMatrix * vertex.normal);
-			}
-		}
-
-		void Translate(const glm::vec3& offset)
-		{
-			for (auto& vertex : vertices)
-				vertex.position += offset;
-		}
-
-		void Scale(const glm::vec3& scale)
-		{
-			for (auto& vertex : vertices)
-				vertex.position *= scale;
-			RecalculateNormals();
-		}
-
-		void Rotate(float angle, const glm::vec3& axis)
-		{
-			glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, axis);
-			Transform(rotation);
-		}
-
 		void RecalculateNormals()
 		{
 			for (auto& vertex : vertices)
