@@ -159,9 +159,10 @@ public:
     }
     bool bReceiveInputs = false;
 
-    void EnableLook() { 
+    void EnableLook() {
         bReceiveInputs = true;
     }
+
     void DisableLook(){ 
         bReceiveInputs = false; 
     }
@@ -183,11 +184,9 @@ int main()
     ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input , app.m_scene);
     device.GetImGuiContext()->BindPrepareDrawData([&]()
         {
-            imGuiWindows.PrepareImGuiWindows();
+            imGuiWindows.DrawImGui();
         });
 #endif //VRAKTAL_EDITOR
-
-    
 
     SystemManager systemManager;
     systemManager.AddSystem<MeshSystem>(&renderer);

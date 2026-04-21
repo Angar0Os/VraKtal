@@ -37,17 +37,19 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 	m_renderer = _renderer;
 	m_window = window;
 
-	command::ClearBackupDirectory();
+	m_imGuizmoHelper = new ImGuizmoHelper(this , &_input);
 
+	command::ClearBackupDirectory();
 	m_commandHistory = std::make_unique<command::CommandHistory>(100);
 
 	m_contentDrawer = new ContentDrawer();
 	m_contentDrawer->SetCommandHistory(m_commandHistory.get());
 
-	m_windowInput = new WindowInput(_input);
-	m_windowViewport = new WindowViewport(*this);
-    m_windowHierarchy = new WindowHierarchy(*_scene , *_renderer , *this);
-	m_imGuizmoHelper = new ImGuizmoHelper(this , &_input);
+	m_windows.push_back(new WindowInput(_input));
+	m_windows.push_back(new WindowViewport(*this));
+	m_windows.push_back(new WindowHierarchy(*_scene , *_renderer , *this));
+
+
 }
 
 ImGuiWindows::~ImGuiWindows()
@@ -55,13 +57,13 @@ ImGuiWindows::~ImGuiWindows()
 	command::ClearBackupDirectory();
 
 	delete m_contentDrawer;
-	delete m_windowInput;
-	delete m_windowViewport;
-    delete m_windowHierarchy;
+	for (auto* window : m_windows) {
+		delete window;
+    }
 	delete m_imGuizmoHelper;
 }
 
-void ImGuiWindows::PrepareImGuiWindows()
+void ImGuiWindows::DrawImGui()
 {
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -74,23 +76,10 @@ void ImGuiWindows::PrepareImGuiWindows()
 
 	MainWindow();
 	ContentDrawerWindow();
-	ViewportWindow();
-	m_windowInput->Draw();
-    
-	BeginWindow("Hierarchy", true);
-		m_windowHierarchy->Draw();
-    EndWindow("Hierarchy");
 
-	m_newProjectModal.GetNewProjectModalWindow();
-
-	if (m_newProjectModal.HasNewProjectCreated()) {
-		std::filesystem::path lastProjectPath = m_newProjectModal.GetLastCreatedProjectPath();
-
-		if (!lastProjectPath.empty()) {
-			m_contentDrawer->SetCurrentPath(lastProjectPath);
-		}
-
-		m_newProjectModal.ResetProjectCreatedFlag();
+	for (auto& var : m_windows)
+	{
+        var->Draw();
 	}
 }
 
@@ -159,76 +148,6 @@ void ImGuiWindows::DisplayWindowStateManagerMenu()
 		}
 		ImGui::EndMenu();
 	}
-}
-
-void ImGuiWindows::ViewportWindow()
-{
-	if (BeginWindow("Viewport", true))
-	{
-		m_windowViewport->Draw();
-		m_imGuizmoHelper->DrawGuizmo();
-	}
-	EndWindow("Viewport");
-}
-
-void ImGuiWindows::EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice)
-{
-	/*graphics::resources::object::Object* object = m_renderer->GetScene().get()->objects[objIndice].get();
-	float* ObjectMatrix = const_cast<float*>(glm::value_ptr(object->GetTransformMatrix()));
-
-	static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::ROTATE);
-	static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
-	if (ImGui::IsKeyPressed(ImGuiKey_T))
-		mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-	if (ImGui::IsKeyPressed(ImGuiKey_E))
-		mCurrentGizmoOperation = ImGuizmo::ROTATE;
-	if (ImGui::IsKeyPressed(ImGuiKey_R))
-		mCurrentGizmoOperation = ImGuizmo::SCALE;
-	if (ImGui::RadioButton("Translate", mCurrentGizmoOperation == ImGuizmo::TRANSLATE))
-		mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Rotate", mCurrentGizmoOperation == ImGuizmo::ROTATE))
-		mCurrentGizmoOperation = ImGuizmo::ROTATE;
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Scale", mCurrentGizmoOperation == ImGuizmo::SCALE))
-		mCurrentGizmoOperation = ImGuizmo::SCALE;
-	float matrixTranslation[3], matrixRotation[3], matrixScale[3];
-	ImGuizmo::DecomposeMatrixToComponents(ObjectMatrix, matrixTranslation, matrixRotation, matrixScale);
-	ImGui::InputFloat3("Tr", matrixTranslation);
-	ImGui::InputFloat3("Rt", matrixRotation);
-	ImGui::InputFloat3("Sc", matrixScale);
-	ImGuizmo::RecomposeMatrixFromComponents(matrixTranslation, matrixRotation, matrixScale, ObjectMatrix);
-
-	if (mCurrentGizmoOperation != ImGuizmo::SCALE)
-	{
-		if (ImGui::RadioButton("Local", mCurrentGizmoMode == ImGuizmo::LOCAL))
-			mCurrentGizmoMode = ImGuizmo::LOCAL;
-		ImGui::SameLine();
-		if (ImGui::RadioButton("World", mCurrentGizmoMode == ImGuizmo::WORLD))
-			mCurrentGizmoMode = ImGuizmo::WORLD;
-	}
-	static bool useSnap(false);
-	if (ImGui::IsKeyPressed(ImGuiKey_S))
-		useSnap = !useSnap;
-	ImGui::Checkbox("##useSnap", &useSnap);
-	ImGui::SameLine();
-
-	ImGuiIO& io = ImGui::GetIO();
-	ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-	ImGuizmo::Manipulate(cameraView, cameraProjection, mCurrentGizmoOperation, mCurrentGizmoMode, ObjectMatrix, NULL, NULL);
-
-	glm::mat4 transformation = glm::make_mat4(ObjectMatrix);
-	glm::vec3 scale;
-	glm::quat rotation;
-	glm::vec3 translation;
-	glm::vec3 skew;
-	glm::vec4 perspective;
-
-	glm::decompose(transformation, scale, rotation, translation, skew, perspective);
-
-	object->transform.SetPosition(translation);
-	object->transform.SetRotation(rotation);
-	object->transform.SetScale(scale);*/
 }
 
 void ImGuiWindows::MainWindow()

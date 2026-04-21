@@ -1,5 +1,7 @@
 #include "../../include/windows/windowViewport.h"
 #include "../../include/imGuiWindows.h"
+#include "../../include/windows/others/imGuizmoHelper.h"
+
 #include <core/gpu/imguiContext.h>
 
 #include <imgui/imgui.h>
@@ -15,35 +17,39 @@ WindowViewport::~WindowViewport()
 
 void WindowViewport::Draw()
 {
-	ImGui::Begin("Viewport");
-
-	ImVec2 avail = ImGui::GetContentRegionAvail();
-
-	uint32_t width = std::max(1u, static_cast<uint32_t>(avail.x));
-	uint32_t height = std::max(1u, static_cast<uint32_t>(avail.y));
-
-	m_imguiWindows->GetContext()->DrawViewportComponent(width, height);
-
-	if (m_imguiWindows->GetContext()->GetViewportState()->hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+	if (m_imguiWindows->BeginWindow("Viewport", true))
 	{
-		ImVec2 min = ImGui::GetItemRectMin();
-		ImVec2 max = ImGui::GetItemRectMax();
-		float centerX = (min.x + max.x) * 0.5f;
-		float centerY = (min.y + max.y) * 0.5f;
-		glfwSetCursorPos(m_imguiWindows->GetWindow()->GlfwHandle(), centerX, centerY);
+		ImGui::Begin("Viewport");
 
-		glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		ImVec2 avail = ImGui::GetContentRegionAvail();
+		uint32_t width = std::max(1u, static_cast<uint32_t>(avail.x));
+		uint32_t height = std::max(1u, static_cast<uint32_t>(avail.y));
 
-		if (glfwRawMouseMotionSupported())
-			glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+		m_imguiWindows->GetContext()->DrawViewportComponent(width, height);
+
+		if (m_imguiWindows->GetContext()->GetViewportState()->hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+		{
+			ImVec2 min = ImGui::GetItemRectMin();
+			ImVec2 max = ImGui::GetItemRectMax();
+			float centerX = (min.x + max.x) * 0.5f;
+			float centerY = (min.y + max.y) * 0.5f;
+			glfwSetCursorPos(m_imguiWindows->GetWindow()->GlfwHandle(), centerX, centerY);
+
+			glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+			if (glfwRawMouseMotionSupported())
+				glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+		}
+		else if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+		{
+			if (glfwRawMouseMotionSupported())
+				glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+			glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		}
+
+		ImGui::End();
+		m_imguiWindows->GetImGuizmoHelper()->DrawGuizmo();
+
 	}
-	else if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
-	{
-		if (glfwRawMouseMotionSupported())
-			glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
-		glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-	}
-
-
-	ImGui::End();
+	m_imguiWindows->EndWindow("Viewport");
 }

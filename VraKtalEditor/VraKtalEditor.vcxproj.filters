@@ -75,6 +75,9 @@
     <ClCompile Include="src\windows\others\imGuizmoHelper.cpp">
       <Filter>Source Files\windows\others</Filter>
     </ClCompile>
+    <ClCompile Include="src\windows\others\inspector.cpp">
+      <Filter>Source Files\windows\others</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -114,6 +117,9 @@
       <Filter>Header Files\windows</Filter>
     </ClInclude>
     <ClInclude Include="include\windows\others\imGuizmoHelper.h">
+      <Filter>Header Files\windows\others</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\others\inspector.h">
       <Filter>Header Files\windows\others</Filter>
     </ClInclude>
   </ItemGroup>

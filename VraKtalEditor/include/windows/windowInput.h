@@ -12,14 +12,13 @@ struct KeyActions;
 struct Axis2DAction;
 struct ImVec2;
 
-class WindowInput : ImguiWindowBase
+class WindowInput : public ImguiWindowBase
 {
 public:
 	WindowInput(core::Input& _input);
 	~WindowInput();
 
 	void Draw() override;
-
 
 private:
 	core::Input& m_input;
