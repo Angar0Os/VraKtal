@@ -7,7 +7,6 @@
 #include <core/gpu/pipeline.h>
 #include <core/enum.h>
 #include <loaders/shaderLoader.h>
-#include <loaders/textureLoader.h>
 
 #include <memory>
 #include <iostream>

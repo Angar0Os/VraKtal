@@ -85,6 +85,18 @@ float3 BlinnPhong(float3 worldPos, float3 N, float3 albedo, LightData light)
     return ambient + (diffuse + specular) * shadow;
 }
 
+float3 ACESFilm(float3 color, float exposure)
+{
+    float3 x = exp2(exposure) * color;
+
+    float a = 2.51f;
+    float b = 0.03f;
+    float c = 2.43f;
+    float d = 0.59f;
+    float e = 0.14f;
+    return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
+}
+
 [shader("fragment")]
 float4 fragMain(VSOutput input) : SV_Target
 {
@@ -124,5 +136,6 @@ float4 fragMain(VSOutput input) : SV_Target
         color = envMapTex.Sample(float2(U, V)).xyz;
     }
 
-    return float4(color, 1.0);
+    float3 tonemapped = ACESFilm(color, .1);
+    return float4(tonemapped, 1.0);
 }

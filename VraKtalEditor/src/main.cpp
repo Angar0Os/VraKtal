@@ -8,7 +8,6 @@
 #include <graphics/resources/object/material.h>
 #include <loaders/meshLoader.h>
 #include <loaders/materialLoader.h>
-#include <loaders/textureLoader.h>
 #include "imGuiWindows.h"
 #include "utils/yamlParser.h"
 #include <core/input/input.h>
@@ -318,15 +317,9 @@ int main()
 
         renderer.SetCamera(camera.GetView(), camera.projection);
 
-      //  renderer.PushMesh(planeMesh.get(), glm::mat4(1.0f));
-
         glm::mat4 meshTransform1 = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 2.0f, 0.0f));
         meshTransform1 = glm::rotate(meshTransform1, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         renderer.PushMesh(vikingRoomMesh.get(), meshTransform1);
-
-       /* glm::mat4 meshTransform2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.5f, 2.0f, 0.0f));
-        meshTransform2 = glm::rotate(meshTransform2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        renderer.PushMesh(vikingRoomMesh.get(), meshTransform2);*/
 
         graphics::resources::Light light1;
         light1.name = "Yellow Light 1";

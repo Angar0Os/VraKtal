@@ -258,9 +258,6 @@
     <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h">
       <Filter>external\portableFileDialogs</Filter>
     </ClInclude>
-    <ClInclude Include="include\loaders\textureLoader.h">
-      <Filter>Header Files\loaders</Filter>
-    </ClInclude>
     <ClInclude Include="include\loaders\shaderLoader.h">
       <Filter>Header Files\loaders</Filter>
     </ClInclude>
@@ -388,9 +385,6 @@
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\imguiContext_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\loaders\textureLoader.cpp">
-      <Filter>Source Files\loaders</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp">
       <Filter>Source Files\graphics\renderPass</Filter>
