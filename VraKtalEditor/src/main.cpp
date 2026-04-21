@@ -31,8 +31,6 @@ int main()
 
 	/////////////////
 	AudioManager* audio = new AudioManager(window.GlfwHandle());
-	audio->LoadMainMusic("assets/sounds/sonic-the-hedgehog-gets-bubble-sound-effect.mp3");
-	//audio->PlayMainMusic();
 	/////////////////
 
 	device.GetImGuiContext()->BindPrepareDrawData([&]()

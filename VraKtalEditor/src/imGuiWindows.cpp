@@ -51,7 +51,7 @@ void ImGuiWindows::PrepareImGuiWindows(AudioManager* audio)
 
 void ImGuiWindows::TrackEditorWindow(AudioManager* audio)
 {
-	m_trackEditor.getTrackEditorWindow(audio);
+	m_trackEditor.getTimelineEditorWindow(audio);
 }
 
 void ImGuiWindows::ContentDrawerWindow()

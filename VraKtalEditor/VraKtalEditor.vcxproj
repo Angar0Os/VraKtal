@@ -142,7 +142,7 @@
     <ClCompile Include="src\imGuiWindows.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\SyncEngine.cpp" />
-    <ClCompile Include="src\TrackEditor.cpp" />
+    <ClCompile Include="src\TimelineEditor.cpp" />
     <ClCompile Include="src\utils\fileTypeDetector.cpp" />
     <ClCompile Include="src\utils\yamlParser.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)VraKtalEditor\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -156,7 +156,7 @@
     <ClInclude Include="include\AudioManager.h" />
     <ClInclude Include="include\FileVisualizer.h" />
     <ClInclude Include="include\SyncEngine.h" />
-    <ClInclude Include="include\TrackEditor.h" />
+    <ClInclude Include="include\TimelineEditor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "contentDrawer.h"
-#include "TrackEditor.h"
+#include "TimelineEditor.h"
 #include "AudioManager.h"
 
 namespace graphics {
@@ -27,7 +27,7 @@ private:
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
 
 	ContentDrawer m_contentDrawer;
-    TrackEditor m_trackEditor;
+    TimelineEditor m_trackEditor;
 
 private :
     graphics::Renderer* m_renderer;

@@ -43,7 +43,7 @@
     <ClCompile Include="src\SyncEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TrackEditor.cpp">
+    <ClCompile Include="src\TimelineEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\FileVisualizer.cpp">
@@ -69,7 +69,7 @@
     <ClInclude Include="include\SyncEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\TrackEditor.h">
+    <ClInclude Include="include\TimelineEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\FileVisualizer.h">

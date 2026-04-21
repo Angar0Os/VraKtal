@@ -45,29 +45,22 @@ AudioManager::~AudioManager()
 
 void AudioManager::LoadMainMusic(std::string relativeFilePath)
 {
-	mainMusic = BASS_StreamCreateFile(0, relativeFilePath.c_str(), 0, 0, 0);//BASS_SAMPLE_FLOAT
-	PlayChannel(mainMusic);
-}
-
-void AudioManager::PlayMainMusic()
-{
-	PlayChannel(mainMusic);
-}
-
-void AudioManager::PauseMainMusic()
-{
-	PauseChannel(mainMusic);
+	if (!streamChannels.contains(relativeFilePath))
+	{
+		HSTREAM mainMusic = BASS_StreamCreateFile(0, relativeFilePath.c_str(), 0, 0, 0);//BASS_SAMPLE_FLOAT
+		streamChannels.insert(std::pair<std::string, HSTREAM>(relativeFilePath, mainMusic));
+	}
 }
 
 void AudioManager::LoadSample(std::string relativeFilePath)
 {
 	HSAMPLE sample = BASS_SampleLoad(0, relativeFilePath.c_str(), 0, 0, 0, BASS_SAMPLE_3D);
-	sampleChannel.insert(std::pair<std::string, HSAMPLE>(relativeFilePath, sample));
+	sampleChannels.insert(std::pair<std::string, HSAMPLE>(relativeFilePath, sample));
 }
 
 HCHANNEL AudioManager::playAndGetSample(std::string name)
 {
-	HSAMPLE sample = sampleChannel[name];
+	HSAMPLE sample = sampleChannels[name];
 	HCHANNEL channel = BASS_SampleGetChannel(sample, false);
 	this->PlayChannel(channel);
 	return channel;
@@ -78,10 +71,20 @@ void AudioManager::FreeChannel(DWORD handle)
 	BASS_ChannelFree(handle);
 }
 
+void AudioManager::FreeChannel(std::string name)
+{
+	FreeChannel(streamChannels[name]);
+}
+
 void AudioManager::PlayChannel(DWORD handle)
 {
 	BASS_Start();
 	BASS_ChannelPlay(handle, false);
+}
+
+void AudioManager::PlayChannel(std::string name)
+{
+		PlayChannel(streamChannels[name]);	
 }
 
 void AudioManager::PauseChannel(DWORD handle)
@@ -89,7 +92,12 @@ void AudioManager::PauseChannel(DWORD handle)
 	BASS_ChannelPause(handle);
 }
 
-void AudioManager::stopChannel()
+void AudioManager::PauseChannel(std::string name)
+{
+	PauseChannel(streamChannels[name]);
+}
+
+void AudioManager::stopChannel(DWORD handle)
 {
 	//
 }
@@ -106,8 +114,23 @@ void AudioManager::StartAll()
 
 void AudioManager::changeChannelattribute(DWORD handle, ChannelAttribute attribute, float value)
 {
-	DWORD attrib;
+	DWORD attrib = getAttribut(attribute);
 
+	if(attrib != NULL)
+		BASS_ChannelSetAttribute(handle, attrib, value);
+}
+
+void AudioManager::changeChannelattribute(std::string name, ChannelAttribute attribute, float value)
+{
+	DWORD attrib = getAttribut(attribute);
+
+	if (attrib != NULL)
+		BASS_ChannelSetAttribute(streamChannels[name], attrib, value);
+}
+
+DWORD AudioManager::getAttribut(ChannelAttribute attribute)
+{
+	DWORD attrib;
 	switch (attribute) {
 	case BUFFER:
 		attrib = BASS_ATTRIB_BUFFER;
@@ -120,7 +143,7 @@ void AudioManager::changeChannelattribute(DWORD handle, ChannelAttribute attribu
 		break;
 	case GRANULE:
 		attrib = BASS_ATTRIB_GRANULE;
-		break;														
+		break;
 	case MUSIC_AMPLIFY:
 		attrib = BASS_ATTRIB_MUSIC_AMPLIFY;
 		break;
@@ -176,7 +199,5 @@ void AudioManager::changeChannelattribute(DWORD handle, ChannelAttribute attribu
 		attrib = NULL;
 		break;
 	}
-
-	if(attrib != NULL)
-		BASS_ChannelSetAttribute(handle, attrib, value);
+	return attrib;;
 }

@@ -72,31 +72,44 @@ public:
 
 	//main music
 	void LoadMainMusic(std::string relativeFilePath);
-	void getFFT();
-	float getTime();
-	void PlayMainMusic();
-	void PauseMainMusic();
+	//void getFFT();
+	//float getTime();
+
 
 	//sample (for effect and object's sounds)
 	void LoadSample(std::string relativeFilePath);
 	HCHANNEL playAndGetSample(std::string name);
 
 
-	void FreeChannel(DWORD handle);
+
+	// Sound control
 	void PlayChannel(DWORD handle);
+	void PlayChannel(std::string name);
+
 	void PauseChannel(DWORD handle);
-	void stopChannel();
+	void PauseChannel(std::string name);
+
+	void FreeChannel(DWORD handle);
+	void FreeChannel(std::string name);
+
+	void stopChannel(DWORD handle);
+	void stopChannel(std::string name);
 
 	void PauseAll();
 	void StartAll();
 
 	void changeChannelattribute(DWORD handle, ChannelAttribute attribute, float value);
+	void changeChannelattribute(std::string name, ChannelAttribute attribute, float value);
 	
 
 private:
-	HSTREAM mainMusic;
-	std::map<std::string , HSAMPLE> sampleChannel;
+	DWORD getAttribut(ChannelAttribute attribute);
+
+	std::map<std::string, HSTREAM> streamChannels;;
+	std::map<std::string , HSAMPLE> sampleChannels;
 	GLFWwindow* mainWindow;
+
+	
 
 };
 
