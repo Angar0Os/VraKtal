@@ -5,12 +5,15 @@
 #include <core/input/input.h>
 #include <core/input/keys.h>
 #include <core/gpu/imguiContext.h>
-
+#include <scene/scene.h>
 
 #include <imGuizmo/ImGuizmo.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui/imgui.h>
+#include <core/gpu/buffer.h>
 #include <glm/fwd.hpp>
+
+#include <scene/timeline/entities/mesh.h>
 
 
 ImGuizmoHelper::ImGuizmoHelper(ImGuiWindows* _imGuiWindows, core::Input* _input) : m_imGuiWindows(*_imGuiWindows)
@@ -45,13 +48,13 @@ void ImGuizmoHelper::DrawGuizmo()
         glm::mat4 proj = m_imGuiWindows.GetContext()->GetViewportProjection();
         proj[1][1] *= -1.0f;
 
-        for (size_t i = 0; i < m_matrices.size(); i++)
+        if (m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Has(m_imGuiWindows.selectedItem))
         {
             ImGuizmo::Manipulate(glm::value_ptr(m_imGuiWindows.GetView()), glm::value_ptr(proj)
-                , m_settings.currentOperation , m_settings.currentMode, glm::value_ptr(*m_matrices[i]), nullptr , nullptr);
+                , m_settings.currentOperation, m_settings.currentMode,
+                glm::value_ptr(m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Get(m_imGuiWindows.selectedItem).temp_transform), nullptr, nullptr);
         }
     }
-
     m_matrices.clear();
 }
 

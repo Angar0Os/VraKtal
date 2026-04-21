@@ -58,6 +58,7 @@ public:
     command::CommandHistory* GetCommandHistory() { return m_commandHistory.get(); }
     core::gpu::ImguiContext* GetContext();
     core::Window* GetWindow() { return m_window; };
+    Scene* GetScene() { return m_scene; };
 
 
     bool BeginWindow(const std::string& name, bool defaultStateIfNotExists = true, ImGuiWindowFlags flags = 0);
