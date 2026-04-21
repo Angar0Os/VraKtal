@@ -24,6 +24,7 @@
 #include <iostream>
 #include <vulkan/vulkan_handles.hpp>
 #include <GLFW/glfw3.h>
+#include <glm/fwd.hpp>
 
 
 core::gpu::ImguiContext::ImguiContext(Window& _window, Device& _device)
@@ -43,6 +44,15 @@ void core::gpu::ImguiContext::PrepareDrawData()
 
 	ImGui::NewFrame();
 	ImGuizmo::BeginFrame();
+	ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+	ImVec2 contentMax = ImGui::GetWindowContentRegionMax();
+	ImVec2 windowPos = ImGui::GetWindowPos();
+
+	ImVec2 gizmoPos = ImVec2(windowPos.x + contentMin.x, windowPos.y + contentMin.y);
+	ImVec2 gizmoSize = ImVec2(contentMax.x - contentMin.x, contentMax.y - contentMin.y);
+
+	ImGuizmo::SetRect(gizmoPos.x, gizmoPos.y, gizmoSize.x, gizmoSize.y);
+
 
 	m_prepareDrawDataFunc();
 
@@ -170,7 +180,6 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	init_info.PipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 
 	ImGui_ImplVulkan_Init(&init_info);
-	ImGuizmo::SetRect(0, 0, (float)_device.GetImpl().swapchainExtent.width, (float)_device.GetImpl().swapchainExtent.height);
 	ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
 
 }
@@ -327,27 +336,6 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 	if (m_viewportState->width <= 1 || m_viewportState->height <= 1)
 		return;
 
-	//On doit ajuster la camera
-	const float aspectRatio = static_cast<float>(m_viewportState->width) / static_cast<float>(m_viewportState->height);
-
-	glm::mat4 projection = glm::perspectiveLH_ZO(
-		glm::radians(45.0f),
-		aspectRatio,
-		0.1f,
-		100.0f
-	);
-	projection[1][1] *= -1;
-
-	glm::vec3 cameraPosition = glm::vec3(0.0f, 3.0f, -5.0f);
-
-	glm::mat4 view = glm::lookAtLH(
-		cameraPosition,
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f)
-	);
-
-	renderer->SetCamera(view, projection);
-
 	cmd->TransitionImageLayout(
 		m_viewportImage.colorImage.get(),
 		core::ImageLayout::ShaderReadOnly,
@@ -429,11 +417,6 @@ void core::gpu::ImguiContext::Impl::EnsureViewport(uint32_t width, uint32_t heig
 
 void core::gpu::ImguiContext::Impl::OnResize()
 {
-	ImGuizmo::SetRect(
-		0, 0,
-		(float)m_device->GetImpl().swapchainExtent.width,
-		(float)m_device->GetImpl().swapchainExtent.height
-	);
 
 	if (m_viewportImage.colorImage)
 		DestroyViewport();
@@ -447,4 +430,17 @@ core::gpu::Image* core::gpu::ImguiContext::GetViewportImage()
 void core::gpu::ImguiContext::OnResize()
 {
 	m_impl->OnResize();
+}
+
+glm::mat4 core::gpu::ImguiContext::GetViewportProjection()
+{
+	const float aspectRatio = static_cast<float>(GetViewportState()->width) / static_cast<float>(GetViewportState()->height);
+	glm::mat4 projection = glm::perspectiveLH_ZO(
+		glm::radians(45.0f),
+		aspectRatio,
+		0.1f,
+		100.0f
+	);
+	projection[1][1] *= -1;
+    return projection;
 }

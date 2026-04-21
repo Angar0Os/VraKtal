@@ -30,7 +30,7 @@ public:
 	template<typename T> 
 	T* LoadRessource(std::string _path);
 	template<typename T> 
-	T* GetRessource(std::string _path);
+	T& GetRessource(std::string _path);
 
 private:
 	std::unordered_map<std::type_index, LoaderBase*> m_loaders;
@@ -61,10 +61,10 @@ inline T* RessourceManager::LoadRessource(std::string _path)
 }
 
 template<typename T>
-inline T* RessourceManager::GetRessource(std::string _path)
+inline T& RessourceManager::GetRessource(std::string _path)
 {
 	NamedStorageMap<T>& storage = static_cast<Storage<T>*>(m_storages[typeid(T)])->data;
-	return storage.Get(_path);
+	return storage.Get(storage.Find(_path));
 
 }
 

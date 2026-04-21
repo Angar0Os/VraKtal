@@ -8,6 +8,9 @@
 #include <graphics/resources/object/material.h>
 #include <core/manager/ressourceManager.h>
 
+#include <scene/system/systemManager.h>
+#include <scene/system/systems/meshSystem.h>
+
 #include <loaders/materialLoader.h>
 #include "imGuiWindows.h"
 #include "utils/yamlParser.h"
@@ -28,12 +31,37 @@
 class App
 {
 public:
-    App(core::Input& _input) {
+    App(core::Input& _input , core::gpu::Device& _device , graphics::Renderer& _renderer) {
         _input.AddAction("CloseApp");
         _input.BindActionKey({ input::Key::ESCAPE }, "CloseApp");
         _input.BindActionCallback<App, &App::CloseApp>("CloseApp", this, input::KeyState::Press);
+
+        _input.AddAction("SpawnVikingRoom");
+        _input.BindActionKey({ input::Key::F }, "SpawnVikingRoom");
+        _input.BindActionCallback<App, &App::SpawnVikingRoom>("SpawnVikingRoom", this, input::KeyState::Press);
+
+        m_scene = new Scene();
+        m_scene->RegisterComponentStorage<timeline::MeshInstance>();
+        m_reManager = new RessourceManager(&_device);
+
+        m_reManager->LoadRessource<graphics::resources::Mesh>("assets/models/viking_room.obj");
+        auto* matLayout = _renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
+        {
+            graphics::resources::object::Material mat;
+            mat.SetTexture("assets/textures/viking_room.png", "albedo");
+            mat.SetMetallicRoughness(0.0f, 0.8f);
+            m_reManager->GetRessource<graphics::resources::Mesh>("assets/models/viking_room.obj").materials.push_back(
+                loaders::MaterialLoader::Load(_device, mat, matLayout)
+            );
+        }
+        timeline::MeshInstance timelineMesh;
+        timelineMesh.mesh = &m_reManager->GetRessource<graphics::resources::Mesh>("assets/models/viking_room.obj");
+        m_scene->CreateEntity<timeline::MeshInstance>(timelineMesh);
     };
-    ~App() {};
+    ~App() {
+        delete m_scene;
+        delete m_reManager;
+    };
 
     bool ShouldClose() const { return bSouldCloseApp; }
     void CloseApp() {
@@ -41,8 +69,18 @@ public:
         std::cout << "Close App Action Triggered" << std::endl;
     };
 
+    void SpawnVikingRoom() {
+        std::cout << "Spawn Viking Room Action Triggered" << std::endl;
+        timeline::MeshInstance timelineMesh;
+        timelineMesh.mesh = &m_reManager->GetRessource<graphics::resources::Mesh>("assets/models/viking_room.obj");
+        m_scene->CreateEntity<timeline::MeshInstance>(timelineMesh);
+
+    }
+
+    Scene* m_scene;
 private:
     bool bSouldCloseApp = false;
+    RessourceManager* m_reManager;
 };
 
 class Camera
@@ -79,6 +117,8 @@ public:
         _input.AddAction("MoveCameraUp");
         _input.BindActionKey({ input::Key::SPACE }, "MoveCameraUp");
         _input.BindActionCallback<Camera, &Camera::MoveCameraUp>("MoveCameraUp", this, input::KeyState::OnGoing);
+
+
     };
     ~Camera() {};
 
@@ -136,38 +176,21 @@ int main()
     core::Input input(window, &device);
     graphics::Renderer renderer(window, device);
 
-
-
+    App app(input , device , renderer);
+    Camera camera(input);
 
 #ifdef VRAKTAL_EDITOR
-    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input);
+    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input , app.m_scene);
     device.GetImGuiContext()->BindPrepareDrawData([&]()
         {
             imGuiWindows.PrepareImGuiWindows();
         });
 #endif //VRAKTAL_EDITOR
 
-    RessourceManager reManager = RessourceManager(&device);
-    App app(input);
-    Camera camera(input);
+    
 
-    graphics::resources::Mesh* vikingRoomMesh = reManager.LoadRessource<graphics::resources::Mesh>("assets/models/viking_room.obj");
-
-    auto* matLayout = renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
-    {
-        graphics::resources::object::Material mat;
-        mat.SetTexture("assets/textures/viking_room.png", "albedo");
-        mat.SetMetallicRoughness(0.0f, 0.8f);
-        vikingRoomMesh->materials.push_back(
-            loaders::MaterialLoader::Load(device, mat, matLayout)
-        );
-    }
-
-    Scene scene;
-    scene.RegisterComponentStorage<timeline::Mesh>();
-    timeline::Mesh timelineMesh;
-    timelineMesh.mesh = vikingRoomMesh;
-    scene.CreateEntity<timeline::Mesh>(timelineMesh);
+    SystemManager systemManager;
+    systemManager.AddSystem<MeshSystem>(&renderer);
 
     const float aspectRatio = 800.0f / 600.0f;
     glm::mat4 projection = glm::perspectiveLH_ZO(
@@ -224,17 +247,8 @@ int main()
 
         time += timeStep;
 
-        renderer.SetCamera(camera.GetView(), camera.projection);
 
-        //renderer.PushMesh(planeMesh.get(), glm::mat4(1.0f));
-
-        glm::mat4 meshTransform1 = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 0.1f, 0.0f));
-        meshTransform1 = glm::rotate(meshTransform1, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        renderer.PushMesh(vikingRoomMesh, meshTransform1);
-
-        glm::mat4 meshTransform2 = glm::translate(glm::mat4(1.0f), glm::vec3(1.5f, 0.1f, 0.0f));
-        meshTransform2 = glm::rotate(meshTransform2, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        renderer.PushMesh(vikingRoomMesh, meshTransform2);
+        systemManager.Update(*app.m_scene);
 
         graphics::resources::Light light1;
         light1.name = "Yellow Light 1";
@@ -264,10 +278,14 @@ int main()
         renderer.PushLight(light3);
 
 #ifndef VRAKTAL_EDITOR
+        renderer.SetCamera(camera.GetView(), camera.projection);
         renderer.Render(device.GetSwapchainImage(imageIndex), ImageLayout::Present);
 #else
         imGuiWindows.GetContext()->PrepareForDrawing();
         auto image = imGuiWindows.GetContext()->GetViewportImage();
+        //On doit ajuster la camera
+        if (imGuiWindows.GetContext()->GetViewportState()->width > 0 && imGuiWindows.GetContext()->GetViewportState()->height > 0)
+                renderer.SetCamera(camera.GetView(), imGuiWindows.GetContext()->GetViewportProjection());
 
         renderer.Render(imGuiWindows.GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
         auto cmd = renderer.GetCurrentCommandBuffer();

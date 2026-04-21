@@ -1,6 +1,6 @@
 enum EInterpolationType
 {
-	
+	Linear
 };
 
 template<typename T>

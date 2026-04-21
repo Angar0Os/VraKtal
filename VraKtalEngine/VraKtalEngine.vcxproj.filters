@@ -121,6 +121,18 @@
     <Filter Include="Source Files\scene\entities">
       <UniqueIdentifier>{c39f7fd2-ce7e-4253-bc9d-2b6105fb413b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\scene\system">
+      <UniqueIdentifier>{3a2e97a9-606f-4747-b592-950a5586d61b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scene\system\systems">
+      <UniqueIdentifier>{dc83a040-6277-48e6-9321-d6c3a225c090}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scene\system">
+      <UniqueIdentifier>{51a5132f-deb5-4ab3-8c47-5c58098946a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scene\system\systems">
+      <UniqueIdentifier>{88571c59-6a04-46fe-bcac-2f32dcfbbb78}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -191,9 +203,6 @@
     </ClInclude>
     <ClInclude Include="include\graphics\renderer.h">
       <Filter>Header Files\graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\scene.h">
-      <Filter>Header Files\graphics\resources</Filter>
     </ClInclude>
     <ClInclude Include="include\loaders\meshLoader.h">
       <Filter>Header Files\loaders</Filter>
@@ -342,6 +351,15 @@
     <ClInclude Include="include\scene\scene.h">
       <Filter>Header Files\scene</Filter>
     </ClInclude>
+    <ClInclude Include="include\scene\system\systemBase.h">
+      <Filter>Header Files\scene\system</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\system\systemManager.h">
+      <Filter>Header Files\scene\system</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\system\systems\meshSystem.h">
+      <Filter>Header Files\scene\system\systems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -391,9 +409,6 @@
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\accelerationStructure_impl.cpp">
       <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\graphics\resources\object\scene.cpp">
-      <Filter>Source Files\graphics\resources</Filter>
     </ClCompile>
     <ClCompile Include="..\external\include\imGuizmo\GraphEditor.cpp">
       <Filter>External\ImGuizmo</Filter>
@@ -454,6 +469,12 @@
     </ClCompile>
     <ClCompile Include="src\scene\scene.cpp">
       <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene\system\systemManager.cpp">
+      <Filter>Source Files\scene\system</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene\system\systems\meshSystem.cpp">
+      <Filter>Source Files\scene\system\systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

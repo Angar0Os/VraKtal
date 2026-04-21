@@ -2,6 +2,8 @@
 #include <memory>
 #include <iostream>
 #include <functional>
+#include <glm/glm.hpp> 
+
 
 namespace graphics {
 	class Renderer;
@@ -50,6 +52,8 @@ namespace core
 			ViewportState* GetViewportState();
 			void DrawViewportComponent(uint32_t width, uint32_t height);
 			void RenderSceneToViewport(core::gpu::CommandBuffer* cmd, graphics::Renderer* renderer);
+
+            glm::mat4 GetViewportProjection();
 
 			core::gpu::Image* GetViewportImage();
 			void OnResize();

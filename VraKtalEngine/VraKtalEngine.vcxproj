@@ -222,13 +222,15 @@
     <ClInclude Include="include\graphics\resources\object\staticMesh.h" />
     <ClInclude Include="include\graphics\resources\project.h" />
     <ClInclude Include="include\graphics\resources\property\transform.h" />
-    <ClInclude Include="include\graphics\resources\scene.h" />
     <ClInclude Include="include\loaders\loaderBase.h" />
     <ClInclude Include="include\loaders\materialLoader.h" />
     <ClInclude Include="include\loaders\meshLoader.h" />
     <ClInclude Include="include\loaders\shaderLoader.h" />
     <ClInclude Include="include\loaders\textureLoader.h" />
     <ClInclude Include="include\scene\scene.h" />
+    <ClInclude Include="include\scene\system\systemBase.h" />
+    <ClInclude Include="include\scene\system\systemManager.h" />
+    <ClInclude Include="include\scene\system\systems\meshSystem.h" />
     <ClInclude Include="include\scene\timeline\entities\mesh.h" />
     <ClInclude Include="include\scene\timeline\entityBase.h" />
     <ClInclude Include="include\scene\timeline\keyframe.h" />
@@ -279,12 +281,13 @@
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\lightingPass.cpp" />
-    <ClCompile Include="src\graphics\resources\object\scene.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\loaders\materialLoader.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />
     <ClCompile Include="src\loaders\textureLoader.cpp" />
     <ClCompile Include="src\scene\scene.cpp" />
+    <ClCompile Include="src\scene\system\systemManager.cpp" />
+    <ClCompile Include="src\scene\system\systems\meshSystem.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
