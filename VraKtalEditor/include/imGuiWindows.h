@@ -5,15 +5,16 @@
 #include <memory>
 #include <unordered_map>
 #include <string>
-#include "contentDrawer.h"
 #include <core/window.h>
 #include "newProjectModal.h"
 #include "command/commandHistory.h"
 #include <imgui/imgui.h>
 #include <glm/fwd.hpp>
 #include <vector>
+#include <variant>
 
 #include "windows/ImguiWindowBase.h"
+#include <scene/timeline/entityBase.h>
 
 #pragma region ForwardDeclarations
 class ContentDrawer;
@@ -30,6 +31,11 @@ namespace core {
         class ImguiContext;
     }
 }
+
+namespace timeline {
+    struct MeshInstance;
+}
+
 namespace graphics {
     class Renderer;
 }
@@ -38,28 +44,31 @@ namespace graphics {
 class ImGuiWindows
 {
 public:
+    
     ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window , core::Input& _input , Scene* _scene);
-   
+    ~ImGuiWindows();
+
     struct WindowState 
     {
         bool isOpen = true;
         bool keepOpen = true;
     };
 
-    ~ImGuiWindows();
     void DrawImGui();
     command::CommandHistory* GetCommandHistory() { return m_commandHistory.get(); }
     core::gpu::ImguiContext* GetContext();
     core::Window* GetWindow() { return m_window; };
 
+
     bool BeginWindow(const std::string& name, bool defaultStateIfNotExists = true, ImGuiWindowFlags flags = 0);
     void EndWindow(const std::string& name);
     void DisplayWindowStateManagerMenu();
 
+    EntityID selectedItem;
+
     //helper
     glm::mat4 GetView();
     ImGuizmoHelper* GetImGuizmoHelper() { return m_imGuizmoHelper; };
-
 private:
     void AddWindowToManager(const std::string& name, bool windowState);
 
@@ -70,23 +79,20 @@ private:
 
     std::unordered_map<std::string, WindowState> m_windowStatesList;
 
-    core::Window* m_window;
     NewProjectModal m_newProjectModal;
     std::unique_ptr<command::CommandHistory> m_commandHistory;
 
-    core::gpu::ImguiContext* m_imGuiContext;
-    graphics::Renderer* m_renderer;
     Scene* m_scene;
-    
-    std::vector<ImguiWindowBase*> m_windows;
 
 #pragma region windows
     ContentDrawer*  m_contentDrawer;
-    WindowInput*    m_windowInput;
-    WindowViewport* m_windowViewport;
-    WindowHierarchy* m_windowHierarchy;
     ImGuizmoHelper* m_imGuizmoHelper;
+    std::vector<ImguiWindowBase*> m_windows;
 #pragma endregion
+
+    core::Window* m_window;
+    graphics::Renderer* m_renderer;
+    core::gpu::ImguiContext* m_imGuiContext;
 
 
 };
