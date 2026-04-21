@@ -52,6 +52,69 @@ float3 ReconstructPosition(float2 uv, float depth)
     return worldPos.xyz / worldPos.w;
 }
 
+//GGX
+//PBR
+
+float D_GGX(float3 N, float3 H, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+    float denom = NdotH2 * (a2 - 1.0) + 1.0;
+    return a2 / (PI * denom * denom);
+}
+
+float G_SchlickGGX(float NdotV, float roughness)
+{
+    float r = roughness + 1.0;
+    float k = (r * r) / 8.0;
+    return NdotV / (NdotV * (1.0 - k) + k);
+}
+
+float G_Smith(float3 N, float3 V, float3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    return G_SchlickGGX(NdotV, roughness) * G_SchlickGGX(NdotL, roughness);
+}
+
+float3 F_Schlick(float cosTheta, float3 F0)
+{
+    return F0 + (1.0 - F0) * pow(saturate(1.0 - cosTheta), 5.0);
+}
+
+float3 CookTorrance(float3 worldPos, float3 N, float3 albedo,
+                    float metalness, float roughness, LightData light)
+{
+    float3 V = normalize(viewPos.xyz - worldPos);
+    float3 L = normalize(light.position.xyz - worldPos);
+    float3 H = normalize(V + L);
+    float dist = length(light.position.xyz - worldPos);
+
+    float atten = light.intensity / (dist * dist);
+    float3 radiance = light.color.rgb * atten;
+
+    float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metalness);
+
+    float D = D_GGX(N, H, roughness);
+    float G = G_Smith(N, V, L, roughness);
+    float3 F = F_Schlick(max(dot(H, V), 0.0), F0);
+
+    float NdotL = max(dot(N, L), 0.0);
+    float NdotV = max(dot(N, V), 0.0);
+    float3 specular = (D * G * F) / max(4.0 * NdotV * NdotL, 0.0001);
+
+    float3 kS = F;
+    float3 kD = (float3(1.0, 1.0, 1.0) - kS) * (1.0 - metalness);
+    float3 diffuse = kD * albedo / PI;
+
+    bool inShadow = TraceShadow(worldPos + N * 0.005, L, dist);
+    float shadow = inShadow ? 0.0 : 1.0;
+
+    return (diffuse + specular) * radiance * NdotL * shadow;
+}
+
 bool TraceShadow(float3 origin, float3 direction, float maxDist)
 {
     RayDesc ray;
@@ -102,7 +165,7 @@ float4 fragMain(VSOutput input) : SV_Target
 {
     float2 uv = input.uv;
 
-    float3 color    = float3(0.0, 0.0, 0.0);
+    float3 color    = 0.0f.xxx;
     float  depth    = depthTex.Sample(uv).r;
     float3 worldPos = ReconstructPosition(uv, depth);
 
@@ -114,10 +177,12 @@ float4 fragMain(VSOutput input) : SV_Target
         float3 albedo   = albMet.rgb;
         float3 N        = normalize(norRgh.xyz * 2.0 - 1.0);
 
+        color += 0.065f * albedo;
+
         for (int i = 0; i < numLights; i++)
         {
             if (lights[i].enabled == 0) continue;
-            color += BlinnPhong(worldPos, N, albedo, lights[i]);
+            color += CookTorrance(worldPos, N, albedo, albMet.w, norRgh.w, lights[i]);
         }
 
         if (numLights == 0)
@@ -136,6 +201,6 @@ float4 fragMain(VSOutput input) : SV_Target
         color = envMapTex.Sample(float2(U, V)).xyz;
     }
 
-    float3 tonemapped = ACESFilm(color, .1);
+    float3 tonemapped = ACESFilm(color, 1.);
     return float4(tonemapped, 1.0);
 }
