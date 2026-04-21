@@ -62,12 +62,6 @@ public:
         return denseComponents[FreeIndex[id]];
     }
 
-    const T& Get(EntityID id) const
-    {
-        if (!Has(id)) throw std::runtime_error("Get(): component not found for entity");
-        return denseComponents[FreeIndex[id]];
-    }
-
     size_t Size() const override { return denseEntities.size(); }
 
     // Pour itérer efficacement

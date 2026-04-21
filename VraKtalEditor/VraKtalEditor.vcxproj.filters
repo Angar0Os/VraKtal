@@ -63,6 +63,9 @@
     <ClCompile Include="src\windows\windowViewport.cpp">
       <Filter>Source Files\windows</Filter>
     </ClCompile>
+    <ClCompile Include="src\windows\windowHierarchy.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -96,6 +99,9 @@
       <Filter>Header Files\windows</Filter>
     </ClInclude>
     <ClInclude Include="include\windows\windowViewport.h">
+      <Filter>Header Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\windowHierarchy.h">
       <Filter>Header Files\windows</Filter>
     </ClInclude>
   </ItemGroup>

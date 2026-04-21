@@ -15,6 +15,8 @@
 class ContentDrawer;
 class WindowInput;
 class WindowViewport;
+class WindowHierarchy;
+class Scene;
 
 namespace core {
     class Input;
@@ -31,7 +33,7 @@ namespace graphics {
 class ImGuiWindows
 {
 public:
-    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window , core::Input& _input);
+    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window , core::Input& _input , Scene* _scene);
    
     struct WindowState 
     {
@@ -54,7 +56,6 @@ private:
 
     void SetMenuBar();
     void ContentDrawerWindow();
-    void HierarchyWindow();
     void MainWindow();
     void testWindow();
     void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
@@ -69,11 +70,13 @@ private:
 
     core::gpu::ImguiContext* m_imGuiContext;
     graphics::Renderer* m_renderer;
+    Scene* m_scene;
     
 #pragma region windows
     ContentDrawer*  m_contentDrawer;
     WindowInput*    m_windowInput;
     WindowViewport* m_windowViewport;
+    WindowHierarchy* m_windowHierarchy;
 #pragma endregion
 
 

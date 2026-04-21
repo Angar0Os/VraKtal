@@ -3,7 +3,7 @@
 #include <tuple>
 #include <utility>
 #include <type_traits>
-
+#include <typeindex>
 
 #include <utils/denseStorage.h>
 #include "timeline/entityBase.h"
@@ -43,6 +43,8 @@ public:
 	template<typename... Ts, typename Fn>
 	inline void ForEach(Fn&& fn);
 
+	std::vector<EntityID>& GetAliveEntities(){ return aliveEntities; };
+	
 private:
 	inline std::size_t NextComponentTypeId()
 	{

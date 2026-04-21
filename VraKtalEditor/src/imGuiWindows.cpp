@@ -18,13 +18,19 @@
 #include <MDI/IconsMaterialDesignIcons.h>
 
 #include <core/input/input.h>
+#include <scene/scene.h>
 
 #include "contentDrawer.h"
 #include "../include/windows/WindowInput.h"
 #include "../include/windows/WindowViewport.h"
+#include "../include/windows/windowHierarchy.h"
 
-ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input)
-	: m_imGuiContext(_imGuiContext)
+
+#include <core/gpu/buffer.h>
+#include <scene/timeline/entities/mesh.h>
+
+ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene)
+    : m_imGuiContext(_imGuiContext), m_scene(_scene)
 {
 	m_renderer = _renderer;
 	m_window = window;
@@ -38,7 +44,7 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 
 	m_windowInput = new WindowInput(_input);
 	m_windowViewport = new WindowViewport(*this);
-
+    m_windowHierarchy = new WindowHierarchy(*_scene , *_renderer , *_imGuiContext);
 }
 
 ImGuiWindows::~ImGuiWindows()
@@ -47,7 +53,8 @@ ImGuiWindows::~ImGuiWindows()
 
 	delete m_contentDrawer;
 	delete m_windowInput;
-	delete m_windowViewport; 
+	delete m_windowViewport;
+    delete m_windowHierarchy;
 }
 
 void ImGuiWindows::PrepareImGuiWindows()
@@ -63,11 +70,14 @@ void ImGuiWindows::PrepareImGuiWindows()
 
 	MainWindow();
 	ContentDrawerWindow();
-	HierarchyWindow();
 	ViewportWindow();
 	
 	m_windowInput->Draw();
-
+    
+	BeginWindow("Hierarchy", true);
+		m_windowHierarchy->Draw();
+    EndWindow("Hierarchy");
+	
 	m_newProjectModal.GetNewProjectModalWindow();
 
 	if (m_newProjectModal.HasNewProjectCreated()) {
@@ -94,16 +104,6 @@ void ImGuiWindows::ContentDrawerWindow()
 	}
 	EndWindow("Content Drawer");
 }
-
-void ImGuiWindows::HierarchyWindow()
-{
-	if (BeginWindow("Hierarchy", true))
-	{
-
-	}
-	EndWindow("Hierarchy");
-}
-
 void ImGuiWindows::AddWindowToManager(const std::string& name, bool windowState)
 {
 	m_windowStatesList[name].isOpen = windowState;

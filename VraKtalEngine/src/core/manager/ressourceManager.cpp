@@ -11,7 +11,7 @@ RessourceManager::RessourceManager(core::gpu::Device* _device)
 {
 	m_device = _device;
 	RegisterType<loaders::MeshLoader, graphics::resources::Mesh>(new loaders::MeshLoader(_device));
-	// RegisterType<loaders::TextureLoader, core::gpu::Texture>(new loaders::TextureLoader(*_device)); this is not used
+	// RegisterType<loaders::TextureLoader, core::gpu::Texture>(new loaders::TextureLoader(*_device)); not used ; - ;
 
 
 }
