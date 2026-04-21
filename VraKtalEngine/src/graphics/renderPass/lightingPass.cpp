@@ -82,7 +82,7 @@ void graphics::LightingPass::CreateDescriptorSetLayout()
 
 void graphics::LightingPass::CreatePipeline()
 {
-	auto shaderCode = loaders::ReadFile("../bin/assets/shaders/lighting.spv");
+	auto shaderCode = loaders::ReadFile("assets/shaders/lighting.spv");
 
 	PipelineCreateInfo pipelineInfo{};
 	pipelineInfo.shaderStages = {

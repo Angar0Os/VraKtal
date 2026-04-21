@@ -13,7 +13,11 @@
 #include <core/input/input.h>
 
 #ifdef VRAKTAL_EDITOR
-    #pragma comment(lib, "VraKtalEngine_Debug.lib")
+    #ifdef _DEBUG
+        #pragma comment(lib, "VraKtalEngine_Debug.lib") //_Debug
+    #else
+        #pragma comment(lib, "VraKtalEngine.lib")
+    #endif
     #include <core/gpu/imguiContext.h>
 #else
     #pragma comment(lib, "VraKtalEngine.lib")

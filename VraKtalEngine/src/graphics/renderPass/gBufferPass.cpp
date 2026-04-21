@@ -118,7 +118,7 @@ void graphics::GBufferPass::CreateFallbackMaterial()
 
 void graphics::GBufferPass::CreatePipeline()
 {
-	auto shaderCode = loaders::ReadFile("../bin/assets/shaders/gbuffer.spv");
+	auto shaderCode = loaders::ReadFile("assets/shaders/gbuffer.spv");
 
 	SVertexInputBinding vertexBinding{
 		.binding = 0,
