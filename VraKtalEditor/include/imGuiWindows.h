@@ -10,6 +10,7 @@
 #include "newProjectModal.h"
 #include "command/commandHistory.h"
 #include <imgui/imgui.h>
+#include <glm/fwd.hpp>
 
 #pragma region ForwardDeclarations
 class ContentDrawer;
@@ -17,6 +18,7 @@ class WindowInput;
 class WindowViewport;
 class WindowHierarchy;
 class Scene;
+class ImGuizmoHelper;
 
 namespace core {
     class Input;
@@ -51,6 +53,10 @@ public:
     void EndWindow(const std::string& name);
     void DisplayWindowStateManagerMenu();
 
+    //helper
+    glm::mat4 GetView();
+    ImGuizmoHelper* GetImGuizmoHelper() { return m_imGuizmoHelper; };
+
 private:
     void AddWindowToManager(const std::string& name, bool windowState);
 
@@ -77,6 +83,7 @@ private:
     WindowInput*    m_windowInput;
     WindowViewport* m_windowViewport;
     WindowHierarchy* m_windowHierarchy;
+    ImGuizmoHelper* m_imGuizmoHelper;
 #pragma endregion
 
 

@@ -154,6 +154,7 @@
     <ClCompile Include="src\utils\yamlParser.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)VraKtalEditor\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="src\windows\others\imGuizmoHelper.cpp" />
     <ClCompile Include="src\windows\windowHierarchy.cpp" />
     <ClCompile Include="src\windows\windowInput.cpp" />
     <ClCompile Include="src\windows\windowViewport.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="include\command\commandHistory.h" />
     <ClInclude Include="include\command\fileCommands.h" />
     <ClInclude Include="include\windows\ImguiWindowBase.h" />
+    <ClInclude Include="include\windows\others\imGuizmoHelper.h" />
     <ClInclude Include="include\windows\windowHierarchy.h" />
     <ClInclude Include="include\windows\windowInput.h" />
     <ClInclude Include="include\windows\windowViewport.h" />

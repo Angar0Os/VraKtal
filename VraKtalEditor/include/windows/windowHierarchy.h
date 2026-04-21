@@ -5,13 +5,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 
-namespace core
-{
-	namespace gpu
-	{
-		class ImguiContext;
-	}
-}
+class ImGuiWindows;
 class Scene;
 
 namespace timeline {
@@ -26,7 +20,7 @@ namespace graphics
 class WindowHierarchy : ImguiWindowBase
 {
 public:
-	WindowHierarchy(Scene& _scene , graphics::Renderer& _renderer, core::gpu::ImguiContext& _imguiContext);
+	WindowHierarchy(Scene& _scene , graphics::Renderer& _renderer, ImGuiWindows& _imGuiWindows);
 	~WindowHierarchy();
 
 	void Draw() override;
@@ -45,7 +39,7 @@ public:
 private:
 	Scene& m_scene;
     graphics::Renderer& m_renderer;
-    core::gpu::ImguiContext& m_imguiContext;
+	ImGuiWindows& m_imGuiWindows;
 };
 
 glm::mat4 ComposeTransform(const glm::vec3& translation, const glm::vec3& rotationDeg, const glm::vec3& scale);

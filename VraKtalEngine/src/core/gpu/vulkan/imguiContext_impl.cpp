@@ -18,6 +18,8 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "imGuizmo/ImGuizmo.h"
 
+#include <scene/timeline/entities/mesh.h>
+
 
 #include "MDI/IconsMaterialDesignIcons.h"
 
@@ -25,11 +27,12 @@
 #include <vulkan/vulkan_handles.hpp>
 #include <GLFW/glfw3.h>
 #include <glm/fwd.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <graphics/renderer.h>
 
 
 core::gpu::ImguiContext::ImguiContext(Window& _window, Device& _device)
 {
-
 	m_impl = std::make_unique<Impl>(_window, _device , &m_viewport);
 }
 
@@ -43,16 +46,6 @@ void core::gpu::ImguiContext::PrepareDrawData()
 	ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
 
 	ImGui::NewFrame();
-	ImGuizmo::BeginFrame();
-	ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
-	ImVec2 contentMax = ImGui::GetWindowContentRegionMax();
-	ImVec2 windowPos = ImGui::GetWindowPos();
-
-	ImVec2 gizmoPos = ImVec2(windowPos.x + contentMin.x, windowPos.y + contentMin.y);
-	ImVec2 gizmoSize = ImVec2(contentMax.x - contentMin.x, contentMax.y - contentMin.y);
-
-	ImGuizmo::SetRect(gizmoPos.x, gizmoPos.y, gizmoSize.x, gizmoSize.y);
-
 
 	m_prepareDrawDataFunc();
 
@@ -83,10 +76,9 @@ core::gpu::ImguiContext::ViewportState* core::gpu::ImguiContext::GetViewportStat
 core::gpu::ImguiContext::Impl::Impl(Window& _window, Device& _device , ViewportState* _viewport)
 {
 	CreateContext(_window, _device);
-
-	m_viewportState = _viewport;
-	m_device = &_device;
 	m_window = &_window;
+	m_device = &_device;
+	m_viewportState = _viewport;
 }
 
 core::gpu::ImguiContext::Impl::~Impl()
@@ -180,7 +172,7 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	init_info.PipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 
 	ImGui_ImplVulkan_Init(&init_info);
-	ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
+	
 
 }
 
@@ -312,6 +304,10 @@ void core::gpu::ImguiContext::Impl::DrawViewportComponent(uint32_t width, uint32
 			ImVec2(0, 0),
 			ImVec2(1, 1)
 		);
+
+		ImVec2 p = ImGui::GetItemRectMin();
+		m_viewportState->posX = p.x;
+		m_viewportState->posY = p.y;
 
 		m_viewportState->hovered = ImGui::IsItemHovered();
 		m_viewportState->clicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);

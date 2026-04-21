@@ -1,7 +1,7 @@
 #include "./windows/windowHierarchy.h"
-#include <scene/scene.h>
+#include "../../include/imGuiWindows.h"
+#include "../../include/windows/others/imGuizmoHelper.h"
 
-#include <imGuizmo/ImGuizmo.h>
 #include <imgui/imgui.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -10,14 +10,13 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-#include <scene/timeline/entities/mesh.h>
-#include <scene/scene.h>
 
-#include <core/gpu/imguiContext.h>
+#include <scene/scene.h>
+#include <scene/timeline/entities/mesh.h>
 #include <graphics/renderer.h>
 #include <core/gpu/buffer.h>
 
-WindowHierarchy::WindowHierarchy(Scene& _scene, graphics::Renderer& _renderer, ImguiContext& _imguiContext) : m_scene(_scene), m_renderer(_renderer), m_imguiContext(_imguiContext)
+WindowHierarchy::WindowHierarchy(Scene& _scene, graphics::Renderer& _renderer, ImGuiWindows& _imGuiWindows) : m_scene(_scene), m_renderer(_renderer), m_imGuiWindows(_imGuiWindows)
 {
 }
 
@@ -39,7 +38,7 @@ void WindowHierarchy::Draw()
             if (ImGui::TreeNode(label.c_str()))
             {
                 DrawMeshInstanceProperties(*selectedMesh);
-                DrawGuizmo(*selectedMesh, m_renderer.GetViewMatrix(), m_renderer.GetProjectionMatrix());
+                m_imGuiWindows.GetImGuizmoHelper()->AddMatriceToEdit(&selectedMesh->temp_transform);
                 ImGui::TreePop();
 
             }
@@ -199,105 +198,7 @@ void WindowHierarchy::DrawMeshInstanceProperties(timeline::MeshInstance& current
 
 void WindowHierarchy::DrawGuizmo(timeline::MeshInstance& object, const glm::mat4& cameraView, const glm::mat4& cameraProjection)
 {
-    static ImGuizmo::OPERATION currentOperation = ImGuizmo::ROTATE;
-    static ImGuizmo::MODE currentMode = ImGuizmo::WORLD;
-    static bool useSnap = false;
 
-    if (ImGui::IsKeyPressed(ImGuiKey_T))
-        currentOperation = ImGuizmo::TRANSLATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_E))
-        currentOperation = ImGuizmo::ROTATE;
-    if (ImGui::IsKeyPressed(ImGuiKey_R))
-        currentOperation = ImGuizmo::SCALE;
-    if (ImGui::IsKeyPressed(ImGuiKey_S))
-        useSnap = !useSnap;
 
-    if (ImGui::RadioButton("Translate", currentOperation == ImGuizmo::TRANSLATE))
-        currentOperation = ImGuizmo::TRANSLATE;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Rotate", currentOperation == ImGuizmo::ROTATE))
-        currentOperation = ImGuizmo::ROTATE;
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Scale", currentOperation == ImGuizmo::SCALE))
-        currentOperation = ImGuizmo::SCALE;
-
-    float matrixTranslation[3];
-    float matrixRotation[3];
-    float matrixScale[3];
-
-    ImGuizmo::DecomposeMatrixToComponents(
-        glm::value_ptr(object.temp_transform),
-        matrixTranslation,
-        matrixRotation,
-        matrixScale
-    );
-
-    if (ImGui::InputFloat3("Tr", matrixTranslation))
-    {
-        ImGuizmo::RecomposeMatrixFromComponents(
-            matrixTranslation,
-            matrixRotation,
-            matrixScale,
-            glm::value_ptr(object.temp_transform)
-        );
-    }
-
-    if (ImGui::InputFloat3("Rt", matrixRotation))
-    {
-        ImGuizmo::RecomposeMatrixFromComponents(
-            matrixTranslation,
-            matrixRotation,
-            matrixScale,
-            glm::value_ptr(object.temp_transform)
-        );
-    }
-
-    if (ImGui::InputFloat3("Sc", matrixScale))
-    {
-        ImGuizmo::RecomposeMatrixFromComponents(
-            matrixTranslation,
-            matrixRotation,
-            matrixScale,
-            glm::value_ptr(object.temp_transform)
-        );
-    }
-
-    if (currentOperation != ImGuizmo::SCALE)
-    {
-        if (ImGui::RadioButton("Local", currentMode == ImGuizmo::LOCAL))
-            currentMode = ImGuizmo::LOCAL;
-        ImGui::SameLine();
-        if (ImGui::RadioButton("World", currentMode == ImGuizmo::WORLD))
-            currentMode = ImGuizmo::WORLD;
-    }
-
-    ImGui::Checkbox("Snap", &useSnap);
-
-    float snapValues[3] = { 1.0f, 1.0f, 1.0f };
-
-    if (currentOperation == ImGuizmo::ROTATE)
-    {
-        snapValues[0] = 15.0f;
-        snapValues[1] = 15.0f;
-        snapValues[2] = 15.0f;
-    }
-    else if (currentOperation == ImGuizmo::SCALE)
-    {
-        snapValues[0] = 0.1f;
-        snapValues[1] = 0.1f;
-        snapValues[2] = 0.1f;
-    }
-
-    ImGuiIO& io = ImGui::GetIO();
-    ImGuizmo::SetRect(0.0f, 0.0f, io.DisplaySize.x, io.DisplaySize.y);
-
-    ImGuizmo::Manipulate(
-        glm::value_ptr(cameraView),
-        glm::value_ptr(cameraProjection),
-        currentOperation,
-        currentMode,
-        glm::value_ptr(object.temp_transform),
-        nullptr,
-        useSnap ? snapValues : nullptr
-    );
+    
 }
