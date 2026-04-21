@@ -1,35 +1,26 @@
 #define NOMINMAX
 #include <imGuiWindows.h>
-#include <core/gpu/imguiContext.h>
 #include "command/fileCommands.h"
-#include <graphics/resources/object/camera.h>
-#include <algorithm>
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtc/type_ptr.inl>
-#include <glm/gtx/matrix_decompose.inl>
+#include <core/gpu/imguiContext.h>
+#include <core/input/input.h>
+#include <graphics/renderer.h>
+#include <scene/scene.h>
 
-#include <imGuizmo/ImGuizmo.h>
+#include <core/gpu/buffer.h>
+
 #include <imgui/imgui.h>
 
 #include "portable-file-dialogs/portable-file-dialogs.h"
 
-#include <iostream>
 #include <MDI/IconsMaterialDesignIcons.h>
-
-#include <graphics/renderer.h>
-#include <core/input/input.h>
-#include <scene/scene.h>
 
 #include "contentDrawer.h"
 #include "../include/windows/WindowInput.h"
 #include "../include/windows/WindowViewport.h"
 #include "../include/windows/windowHierarchy.h"
+#include "../include/windows/windowInspector.h"
 #include "../include/windows/others/imGuizmoHelper.h"
-
-
-#include <core/gpu/buffer.h>
-#include <scene/timeline/entities/mesh.h>
 
 ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene)
     : m_imGuiContext(_imGuiContext), m_scene(_scene)
@@ -48,8 +39,7 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 	m_windows.push_back(new WindowInput(_input));
 	m_windows.push_back(new WindowViewport(*this));
 	m_windows.push_back(new WindowHierarchy(*_scene , *_renderer , *this));
-
-
+    m_windows.push_back(new WindowInspector(*this));
 }
 
 ImGuiWindows::~ImGuiWindows()

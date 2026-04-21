@@ -78,6 +78,9 @@
     <ClCompile Include="src\windows\others\inspector.cpp">
       <Filter>Source Files\windows\others</Filter>
     </ClCompile>
+    <ClCompile Include="src\windows\windowInspector.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -121,6 +124,9 @@
     </ClInclude>
     <ClInclude Include="include\windows\others\inspector.h">
       <Filter>Header Files\windows\others</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\windowInspector.h">
+      <Filter>Header Files\windows</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

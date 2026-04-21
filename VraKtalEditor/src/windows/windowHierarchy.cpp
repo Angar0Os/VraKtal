@@ -36,12 +36,26 @@ void WindowHierarchy::Draw()
         {
         	selectedMesh = &meshStorage.Get(ID);
             std::string label = "Entity " + std::to_string(ID);
-            if (ImGui::TreeNode(label.c_str()))
-            {
-                DrawMeshInstanceProperties(*selectedMesh);
-                m_imGuiWindows.GetImGuizmoHelper()->AddMatriceToEdit(&selectedMesh->temp_transform);
-                ImGui::TreePop();
+            bool isSelected = (m_imGuiWindows.selectedItem == ID);
 
+            if (isSelected)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 1.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 1.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.3f, 0.9f, 1.0f));
+            }
+
+            if (ImGui::Button(label.c_str()))
+            {
+                if (m_imGuiWindows.selectedItem == ID)
+                    m_imGuiWindows.selectedItem = -1; // ou une valeur invalide
+                else
+                    m_imGuiWindows.selectedItem = ID;
+            }
+
+            if (isSelected)
+            {
+                ImGui::PopStyleColor(3);
             }
         }
     }

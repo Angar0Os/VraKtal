@@ -162,6 +162,7 @@
     <ClCompile Include="src\windows\others\inspector.cpp" />
     <ClCompile Include="src\windows\windowHierarchy.cpp" />
     <ClCompile Include="src\windows\windowInput.cpp" />
+    <ClCompile Include="src\windows\windowInspector.cpp" />
     <ClCompile Include="src\windows\windowViewport.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -178,6 +179,7 @@
     <ClInclude Include="include\windows\others\inspector.h" />
     <ClInclude Include="include\windows\windowHierarchy.h" />
     <ClInclude Include="include\windows\windowInput.h" />
+    <ClInclude Include="include\windows\windowInspector.h" />
     <ClInclude Include="include\windows\windowViewport.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
