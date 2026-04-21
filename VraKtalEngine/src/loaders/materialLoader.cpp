@@ -69,6 +69,61 @@ std::unique_ptr<Image> loaders::MaterialLoader::UploadTexture(
 	return image;
 }
 
+std::unique_ptr<Image> loaders::MaterialLoader::UploadHDRTexture(
+	Device& device,
+	const std::string& filepath)
+{
+	int width, height, channels;
+	float* pixels = stbi_loadf(filepath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+
+	if (!pixels)
+	{
+		std::cerr << "MaterialLoader: failed to load HDR " << filepath << "\n";
+		return nullptr;
+	}
+
+	size_t imageSize = static_cast<size_t>(width) * height * 4 * sizeof(float);
+
+	SBufferCreateInfo stagingInfo{
+		.size = imageSize,
+		.usage = EBufferUsage::TransferSrc,
+		.memoryProperties = EMemoryProperty::HostVisible | EMemoryProperty::HostCoherent
+	};
+	auto staging = std::make_unique<Buffer>(&device, stagingInfo);
+	staging->CopyFrom(pixels, imageSize);
+	stbi_image_free(pixels);
+
+	SImageCreateInfo imageInfo{
+		.width = static_cast<uint32_t>(width),
+		.height = static_cast<uint32_t>(height),
+		.mipLevels = 1,
+		.format = TextureFormat::RGBA32_Float,
+		.tiling = ImageTiling::Optimal,
+		.usage = ImageUsage::TransferDst | ImageUsage::Sampled,
+		.memoryProperties = EMemoryProperty::DeviceLocal,
+		.samples = SampleCount::e1
+	};
+	auto image = std::make_unique<Image>(&device, imageInfo);
+
+	SCommandBufferCreateInfo cmdInfo{
+		.device = &device,
+		.level = ECommandBufferLevel::Primary,
+		.count = 1,
+		.singleTime = true
+	};
+	CommandBuffer cmd(&device, cmdInfo);
+	cmd.Begin(0);
+
+	cmd.TransitionImageLayout(image.get(), ImageLayout::Undefined, ImageLayout::TransferDst, false);
+	cmd.CopyBufferToImage(staging.get(), image.get(), width, height);
+	cmd.TransitionImageLayout(image.get(), ImageLayout::TransferDst, ImageLayout::ShaderReadOnly, false);
+
+	cmd.End(0);
+	cmd.SubmitImmediate(&device);
+
+	return image;
+}
+
 std::unique_ptr<Image> loaders::MaterialLoader::CreateFallback1x1(
 	Device& device,
 	uint8_t r, uint8_t g, uint8_t b, uint8_t a)

@@ -58,8 +58,8 @@ VSOutput vertMain(VSInput input)
     float4 worldPos4 = mul(model, float4(input.position, 1.0));
     o.worldPos = worldPos4.xyz;
     o.position = mul(proj, mul(view, worldPos4));
-    o.normal   = normalize(mul((float3x3) model, input.normal));
-    o.uv       = input.uv;
+    o.normal = normalize(mul((float3x3)model, input.normal));
+    o.uv = input.uv;
     return o;
 }
 
@@ -72,6 +72,9 @@ FSOutput fragMain(VSOutput input)
     float4 roughMetSample = roughMetalTex.Sample(input.uv);
 
     o.albedoMetal = float4(albedoSample.rgb, roughMetSample.g);
+
+    if (albedoSample.a < 0.2f)
+        discard;
 
     float3 Ngeo = normalize(input.normal);
     float3 texNormal = normalTex.Sample(input.uv).xyz * 2.0 - 1.0;

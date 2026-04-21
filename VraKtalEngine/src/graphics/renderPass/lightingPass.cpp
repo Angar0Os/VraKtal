@@ -13,6 +13,8 @@ graphics::LightingPass::LightingPass(Device& device,
 	, m_device(device)
 	, m_uniformBuffers(uniformBuffers)
 {
+	m_envMap.image = loaders::MaterialLoader::UploadHDRTexture(m_device, "assets/textures/skyboxes/citrus_1k.hdr");
+	m_envMap.texture = std::make_unique<Texture>(m_device, *m_envMap.image);
 	Init(device);
 }
 
@@ -71,9 +73,14 @@ void graphics::LightingPass::CreateDescriptorSetLayout()
 		.descriptorType = EDescriptorType::AccelerationStructure,
 		.stageFlags = core::ShaderStage::Fragment
 	};
+	SDescriptorSetLayoutBinding envMapBinding{
+		.binding = 5,
+		.descriptorType = EDescriptorType::CombinedImageSampler,
+		.stageFlags = core::ShaderStage::Fragment
+	};
 
 	SDescriptorSetLayoutCreateInfo layoutInfo{
-		.bindings = { uboBinding, albedoBinding, normalBinding, depthBinding, tlasBinding }
+		.bindings = { uboBinding, albedoBinding, normalBinding, depthBinding, tlasBinding, envMapBinding }
 	};
 
 	m_dsLayouts.clear();
@@ -133,6 +140,7 @@ void graphics::LightingPass::SetGBufferInputs(const std::vector<PassAttachment>&
 		m_descriptorSets[i]->Bind(1, *colorAttachments[0].texture);
 		m_descriptorSets[i]->Bind(2, *colorAttachments[1].texture);
 		m_descriptorSets[i]->Bind(3, *depthAttachment.texture);
+		m_descriptorSets[i]->Bind(5, *m_envMap.texture);
 		m_descriptorSets[i]->Update(m_device);
 	}
 }

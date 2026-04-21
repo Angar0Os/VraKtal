@@ -1,3 +1,5 @@
+static const float PI = 3.14159f;
+
 [[vk::binding(0, 0)]]
 cbuffer UniformBufferObject
 {
@@ -26,6 +28,7 @@ cbuffer UniformBufferObject
 [[vk::binding(2, 0)]] Sampler2D normalRough;
 [[vk::binding(3, 0)]] Sampler2D depthTex;
 [[vk::binding(4, 0)]] RaytracingAccelerationStructure tlas;
+[[vk::binding(5, 0)]] Sampler2D envMapTex;
 
 struct VSOutput
 {
@@ -87,24 +90,39 @@ float4 fragMain(VSOutput input) : SV_Target
 {
     float2 uv = input.uv;
 
-    float  depth  = depthTex.Sample(uv).r;
-    float4 albMet = albedoMetal.Sample(uv);
-    float4 norRgh = normalRough.Sample(uv);
-
-    float3 albedo   = albMet.rgb;
-    float3 N        = normalize(norRgh.xyz * 2.0 - 1.0);
+    float3 color    = float3(0.0, 0.0, 0.0);
+    float  depth    = depthTex.Sample(uv).r;
     float3 worldPos = ReconstructPosition(uv, depth);
 
-    float3 color = float3(0.0, 0.0, 0.0);
-
-    for (int i = 0; i < numLights; i++)
+    if (depth < 1.0f)
     {
-        if (lights[i].enabled == 0) continue;
-        color += BlinnPhong(worldPos, N, albedo, lights[i]);
-    }
+        float4 albMet = albedoMetal.Sample(uv);
+        float4 norRgh = normalRough.Sample(uv);
 
-    if (numLights == 0)
-        color = albedo * 0.1;
+        float3 albedo   = albMet.rgb;
+        float3 N        = normalize(norRgh.xyz * 2.0 - 1.0);
+
+        for (int i = 0; i < numLights; i++)
+        {
+            if (lights[i].enabled == 0) continue;
+            color += BlinnPhong(worldPos, N, albedo, lights[i]);
+        }
+
+        if (numLights == 0)
+            color = albedo * 0.1;
+    }
+    else
+    {
+        float3 dir = normalize(worldPos - viewPos.xyz);
+
+        float theta = acos(dir.y);
+        float phi = atan2(dir.z, dir.x);
+
+        float V = theta / PI;
+        float U = (phi + PI) / (2 * PI);
+
+        color = envMapTex.Sample(float2(U, V)).xyz;
+    }
 
     return float4(color, 1.0);
 }

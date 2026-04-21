@@ -7,6 +7,7 @@
 #include <core/gpu/accelerationStructure.h>
 #include <core/gpu/buffer.h>
 #include <core/gpu/texture.h>
+#include <loaders/materialLoader.h>
 
 #include <vector>
 
@@ -44,6 +45,7 @@ namespace graphics
 		const std::vector<PassAttachment>* m_gbufferColor = nullptr;
 		const PassAttachment* m_gbufferDepth = nullptr;
 		AccelerationStructure* m_tlas = nullptr;
+		PassAttachment m_envMap;
 
 		std::vector<PassAttachment> m_colorAttachments;
 		PassAttachment              m_depthAttachment;

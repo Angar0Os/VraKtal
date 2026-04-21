@@ -156,7 +156,7 @@ loaders::JobID loaders::MeshLoader::CreatePlane(
 	int subdivisionsX, int subdivisionsZ,
 	std::function<void(std::shared_ptr<graphics::resources::Mesh>)> onComplete)
 {
-	auto meshHolder = std::make_shared<std::shared_ptr<graphics::resources::Mesh>>();
+		auto meshHolder = std::make_shared<std::shared_ptr<graphics::resources::Mesh>>();
 
 	JobID generateID = PushJob(
 		"GeneratePlane",
@@ -504,7 +504,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 		graphics::resources::SubMesh submesh;
 		submesh.firstIndex = submeshFirstIndex;
 		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
-		submesh.vertexOffset = submeshVertexOffset;
+		submesh.vertexOffset = 0;
 		submesh.materialIndex = (prim.material >= 0) ? prim.material : 0;
 		submesh.name = "primitive_" + std::to_string(primIdx);
 
@@ -585,8 +585,8 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 		graphics::resources::SubMesh submesh;
 		submesh.firstIndex = submeshFirstIndex;
 		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
-		submesh.vertexOffset = submeshVertexOffset;
-		submesh.materialIndex = 0;
+		submesh.vertexOffset = 0;
+		submesh.materialIndex = static_cast<uint32_t>(shapeIdx);
 		submesh.name = shape.name.empty()
 			? ("shape_" + std::to_string(shapeIdx))
 			: shape.name;
