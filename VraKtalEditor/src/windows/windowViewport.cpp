@@ -49,7 +49,6 @@ void WindowViewport::Draw()
 
 		ImGui::End();
 		m_imguiWindows->GetImGuizmoHelper()->DrawGuizmo();
-
+		m_imguiWindows->EndWindow("Viewport");
 	}
-	m_imguiWindows->EndWindow("Viewport");
 }

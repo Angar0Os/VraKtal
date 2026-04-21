@@ -10,6 +10,7 @@ public:
 	~WindowInspector();
 
     void Draw() override;
+
 private : 
     ImGuiWindows& m_windows;
 };
