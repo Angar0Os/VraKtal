@@ -47,9 +47,21 @@ void AudioManager::LoadMainMusic(std::string relativeFilePath)
 {
 	if (!streamChannels.contains(relativeFilePath))
 	{
-		HSTREAM mainMusic = BASS_StreamCreateFile(0, relativeFilePath.c_str(), 0, 0, 0);//BASS_SAMPLE_FLOAT
+		HSTREAM mainMusic = BASS_StreamCreateFile(0, relativeFilePath.c_str(), 0, 0, BASS_STREAM_PRESCAN);//BASS_SAMPLE_FLOAT
 		streamChannels.insert(std::pair<std::string, HSTREAM>(relativeFilePath, mainMusic));
 	}
+}
+
+float AudioManager::getCurrentTime(std::string name)
+{
+	QWORD pos = BASS_ChannelGetPosition(streamChannels[name], BASS_POS_BYTE);
+	return BASS_ChannelBytes2Seconds(streamChannels[name], pos);
+}
+
+float AudioManager::getMaxTime(std::string name)
+{
+	QWORD len = BASS_ChannelGetLength(streamChannels[name], BASS_POS_BYTE);
+	return BASS_ChannelBytes2Seconds(streamChannels[name], len);
 }
 
 void AudioManager::LoadSample(std::string relativeFilePath)
@@ -84,7 +96,7 @@ void AudioManager::PlayChannel(DWORD handle)
 
 void AudioManager::PlayChannel(std::string name)
 {
-		PlayChannel(streamChannels[name]);	
+	PlayChannel(streamChannels[name]);	
 }
 
 void AudioManager::PauseChannel(DWORD handle)
@@ -97,7 +109,7 @@ void AudioManager::PauseChannel(std::string name)
 	PauseChannel(streamChannels[name]);
 }
 
-void AudioManager::stopChannel(DWORD handle)
+void AudioManager::StopChannel(DWORD handle)
 {
 	//
 }
@@ -110,6 +122,16 @@ void AudioManager::PauseAll()
 void AudioManager::StartAll()
 {
 	BASS_Start();
+}
+
+void AudioManager::ChangeChannelPosition(DWORD handle, float position)
+{
+	BASS_ChannelSetPosition(handle, BASS_ChannelSeconds2Bytes(handle, position), BASS_POS_BYTE);
+}
+
+void AudioManager::ChangeChannelPosition(std::string name, float position)
+{
+	ChangeChannelPosition(streamChannels[name], position);
 }
 
 void AudioManager::changeChannelattribute(DWORD handle, ChannelAttribute attribute, float value)

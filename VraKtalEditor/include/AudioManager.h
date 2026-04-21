@@ -43,9 +43,6 @@ enum ChannelAttribute{
 };
 
 
-
-
-
 inline void Error(const char* es)
 {
 	std::cout << "%s\n(error code: %d)" << es << BASS_ErrorGetCode();//<< std::cend();
@@ -73,7 +70,8 @@ public:
 	//main music
 	void LoadMainMusic(std::string relativeFilePath);
 	//void getFFT();
-	//float getTime();
+	float getCurrentTime(std::string name);
+	float getMaxTime(std::string name);
 
 
 	//sample (for effect and object's sounds)
@@ -92,11 +90,14 @@ public:
 	void FreeChannel(DWORD handle);
 	void FreeChannel(std::string name);
 
-	void stopChannel(DWORD handle);
-	void stopChannel(std::string name);
+	void StopChannel(DWORD handle);
+	void StopChannel(std::string name);
 
 	void PauseAll();
 	void StartAll();
+
+	void ChangeChannelPosition(DWORD handle, float position);
+	void ChangeChannelPosition(std::string name, float position);
 
 	void changeChannelattribute(DWORD handle, ChannelAttribute attribute, float value);
 	void changeChannelattribute(std::string name, ChannelAttribute attribute, float value);
