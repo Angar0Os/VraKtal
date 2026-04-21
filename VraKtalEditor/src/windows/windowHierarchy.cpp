@@ -26,8 +26,9 @@ WindowHierarchy::~WindowHierarchy()
 
 void WindowHierarchy::Draw()
 {
-	ComponentStorage<timeline::MeshInstance>& meshStorage = m_scene.GetComponentStorage<timeline::MeshInstance>();
-	
+    ComponentStorage<timeline::MeshInstance>& meshStorage = m_scene.GetComponentStorage<timeline::MeshInstance>();
+    m_imGuiWindows.BeginWindow("Hierarchy", true);
+
 	timeline::MeshInstance* selectedMesh = nullptr;
 	for (EntityID ID : m_scene.GetAliveEntities())
 	{
@@ -44,6 +45,8 @@ void WindowHierarchy::Draw()
             }
         }
     }
+
+    m_imGuiWindows.EndWindow("Hierarchy");
 }
 
 

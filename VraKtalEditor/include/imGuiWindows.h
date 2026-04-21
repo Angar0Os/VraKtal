@@ -11,6 +11,9 @@
 #include "command/commandHistory.h"
 #include <imgui/imgui.h>
 #include <glm/fwd.hpp>
+#include <vector>
+
+#include "windows/ImguiWindowBase.h"
 
 #pragma region ForwardDeclarations
 class ContentDrawer;
@@ -44,7 +47,7 @@ public:
     };
 
     ~ImGuiWindows();
-    void PrepareImGuiWindows();
+    void DrawImGui();
     command::CommandHistory* GetCommandHistory() { return m_commandHistory.get(); }
     core::gpu::ImguiContext* GetContext();
     core::Window* GetWindow() { return m_window; };
@@ -63,10 +66,7 @@ private:
     void SetMenuBar();
     void ContentDrawerWindow();
     void MainWindow();
-    void testWindow();
-    void EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice);
     void LoadProject();
-    void ViewportWindow();
 
     std::unordered_map<std::string, WindowState> m_windowStatesList;
 
@@ -78,6 +78,8 @@ private:
     graphics::Renderer* m_renderer;
     Scene* m_scene;
     
+    std::vector<ImguiWindowBase*> m_windows;
+
 #pragma region windows
     ContentDrawer*  m_contentDrawer;
     WindowInput*    m_windowInput;

@@ -17,7 +17,7 @@ namespace graphics
     class Renderer;
 }
 
-class WindowHierarchy : ImguiWindowBase
+class WindowHierarchy : public ImguiWindowBase
 {
 public:
 	WindowHierarchy(Scene& _scene , graphics::Renderer& _renderer, ImGuiWindows& _imGuiWindows);
@@ -34,7 +34,6 @@ public:
 	void DrawMeshInstanceProperties(timeline::MeshInstance& currentMesh);
 
 	void DrawGuizmo(timeline::MeshInstance& object, const glm::mat4& cameraView, const glm::mat4& cameraProjection);
-
 
 private:
 	Scene& m_scene;
