@@ -17,6 +17,7 @@
 #include <iostream>
 #include <MDI/IconsMaterialDesignIcons.h>
 
+#include <graphics/renderer.h>
 #include <core/input/input.h>
 #include <scene/scene.h>
 
@@ -24,6 +25,7 @@
 #include "../include/windows/WindowInput.h"
 #include "../include/windows/WindowViewport.h"
 #include "../include/windows/windowHierarchy.h"
+#include "../include/windows/others/imGuizmoHelper.h"
 
 
 #include <core/gpu/buffer.h>
@@ -44,7 +46,8 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 
 	m_windowInput = new WindowInput(_input);
 	m_windowViewport = new WindowViewport(*this);
-    m_windowHierarchy = new WindowHierarchy(*_scene , *_renderer , *_imGuiContext);
+    m_windowHierarchy = new WindowHierarchy(*_scene , *_renderer , *this);
+	m_imGuizmoHelper = new ImGuizmoHelper(this , &_input);
 }
 
 ImGuiWindows::~ImGuiWindows()
@@ -55,6 +58,7 @@ ImGuiWindows::~ImGuiWindows()
 	delete m_windowInput;
 	delete m_windowViewport;
     delete m_windowHierarchy;
+	delete m_imGuizmoHelper;
 }
 
 void ImGuiWindows::PrepareImGuiWindows()
@@ -71,13 +75,12 @@ void ImGuiWindows::PrepareImGuiWindows()
 	MainWindow();
 	ContentDrawerWindow();
 	ViewportWindow();
-	
 	m_windowInput->Draw();
     
 	BeginWindow("Hierarchy", true);
 		m_windowHierarchy->Draw();
     EndWindow("Hierarchy");
-	
+
 	m_newProjectModal.GetNewProjectModalWindow();
 
 	if (m_newProjectModal.HasNewProjectCreated()) {
@@ -104,6 +107,7 @@ void ImGuiWindows::ContentDrawerWindow()
 	}
 	EndWindow("Content Drawer");
 }
+
 void ImGuiWindows::AddWindowToManager(const std::string& name, bool windowState)
 {
 	m_windowStatesList[name].isOpen = windowState;
@@ -162,6 +166,7 @@ void ImGuiWindows::ViewportWindow()
 	if (BeginWindow("Viewport", true))
 	{
 		m_windowViewport->Draw();
+		m_imGuizmoHelper->DrawGuizmo();
 	}
 	EndWindow("Viewport");
 }
@@ -225,7 +230,6 @@ void ImGuiWindows::EditTransformByIndice(const float* cameraView, const float* c
 	object->transform.SetRotation(rotation);
 	object->transform.SetScale(scale);*/
 }
-
 
 void ImGuiWindows::MainWindow()
 {
@@ -349,4 +353,10 @@ void ImGuiWindows::LoadProject()
 			m_commandHistory->Redo();
 		}
 	}
+}
+
+//help
+glm::mat4 ImGuiWindows::GetView()
+{
+	return m_renderer->GetViewMatrix();
 }

@@ -3,8 +3,16 @@
 #include <core/gpu/image.h>
 #include <graphics/renderer.h>
 
+
+
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include <vulkan/vulkan_raii.hpp>
+#include <imGuizmo/ImGuizmo.h>
+#include <glm/fwd.hpp>
+
+namespace graphics {
+	class Renderer;
+}
 
 namespace core::gpu
 {
@@ -24,6 +32,7 @@ namespace core::gpu
 		void SyncViewportResources();
 		void SetDesiredViewportSize(uint32_t width, uint32_t height);
 		void DrawViewportComponent(uint32_t width, uint32_t height);
+
 		void RenderSceneToViewport(core::gpu::CommandBuffer* cmd, graphics::Renderer* renderer);
 
 		struct SceneViewportImpl{
@@ -39,6 +48,8 @@ namespace core::gpu
 		void OnResize();
 		SceneViewportImpl m_viewportImage;
 		ViewportState* m_viewportState;
+
+		glm::mat4 GetCameraView();
 	private:
 		std::vector<VkFramebuffer>				imguiFramebuffers					;
 		VkDescriptorPool						imguiDescriptorPool = VK_NULL_HANDLE;
