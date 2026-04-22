@@ -235,8 +235,10 @@
     <ClInclude Include="include\scene\scene.h" />
     <ClInclude Include="include\scene\system\systemBase.h" />
     <ClInclude Include="include\scene\system\systemManager.h" />
+    <ClInclude Include="include\scene\system\systems\lightSystem.h" />
     <ClInclude Include="include\scene\system\systems\meshSystem.h" />
-    <ClInclude Include="include\scene\timeline\entities\mesh.h" />
+    <ClInclude Include="include\scene\timeline\components\light.h" />
+    <ClInclude Include="include\scene\timeline\components\mesh.h" />
     <ClInclude Include="include\scene\timeline\entityBase.h" />
     <ClInclude Include="include\scene\timeline\keyframe.h" />
     <ClInclude Include="include\utils\denseStorage.h" />
@@ -292,6 +294,7 @@
     <ClCompile Include="src\loaders\meshLoader.cpp" />
     <ClCompile Include="src\scene\scene.cpp" />
     <ClCompile Include="src\scene\system\systemManager.cpp" />
+    <ClCompile Include="src\scene\system\systems\lightSystem.cpp" />
     <ClCompile Include="src\scene\system\systems\meshSystem.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>

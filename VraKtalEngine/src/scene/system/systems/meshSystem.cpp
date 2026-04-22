@@ -1,10 +1,11 @@
 #include <scene/system/systems/meshSystem.h>
-#include <scene/scene.h>
-#include <scene/timeline/entities/mesh.h>
+#include <scene/timeline/components/mesh.h>
 #include <graphics/renderer.h>
-#include <core/gpu/buffer.h>
+#include <core/manager/ressourceManager.h>
+#include <scene/scene.h>
 
-MeshSystem::MeshSystem(graphics::Renderer* _renderer) : m_renderer(_renderer){}
+MeshSystem::MeshSystem(graphics::Renderer* _renderer, RessourceManager* _reManager) : m_ressourceManager(_reManager) , m_renderer(_renderer) {
+}
 
 MeshSystem::~MeshSystem()
 {
@@ -17,9 +18,12 @@ void MeshSystem::Update(Scene& _scene)
     auto& meshInstances = _scene.GetComponentStorage<timeline::MeshInstance>();
     for (auto& meshInstance : meshInstances.Components())
     {
-        if (meshInstance.mesh)
+        if (meshInstance.meshID != -1)
         {
-            m_renderer->PushMesh(meshInstance.mesh, meshInstance.temp_transform);
+            if (meshInstance.keyframes.size() == 0)
+            {
+                m_renderer->PushMesh(&m_ressourceManager->GetRessource<graphics::resources::Mesh>(meshInstance.meshID), meshInstance.temp_properties.transform);
+            }
         }
     }
 }

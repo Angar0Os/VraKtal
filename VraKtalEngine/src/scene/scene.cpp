@@ -1,6 +1,14 @@
 #include <scene/scene.h>
 
-Scene::Scene(){}
+#ifdef VRAKTAL_EDITOR
+#include <string>
+#endif
+
+Scene::Scene(){
+	#ifdef VRAKTAL_EDITOR
+		RegisterComponentStorage<std::string>(); //pour les noms
+	#endif // VRAKTAL_EDITOR
+}
 
 Scene::~Scene() noexcept
 {
@@ -15,8 +23,10 @@ Scene::~Scene() noexcept
 
 EntityID Scene::CreateEntity()
 {
+		
 	if (!EntitiesFreeSlots.empty())
 	{
+
 		aliveEntities.push_back(EntitiesFreeSlots.back());
 		reverseEntityMap[EntitiesFreeSlots.back()] = (uint32_t)aliveEntities.size() - 1;
 		EntitiesFreeSlots.pop_back();
@@ -28,6 +38,8 @@ EntityID Scene::CreateEntity()
 		reverseEntityMap.resize(nextEntityId + 1, INVALID);
 		reverseEntityMap[nextEntityId] = (uint32_t)aliveEntities.size() - 1;
 	}
+	std::string entityName = "entity" + std::to_string(aliveEntities.back());
+	GetComponentStorage<std::string>().Add(aliveEntities.back(),entityName);
 	return aliveEntities.back();
 }
 

@@ -9,12 +9,13 @@
 #include "newProjectModal.h"
 #include "command/commandHistory.h"
 #include <imgui/imgui.h>
-#include <glm/fwd.hpp>
 #include <vector>
 #include <variant>
+#include <glm/glm.hpp>
 
 #include "windows/ImguiWindowBase.h"
 #include <scene/timeline/entityBase.h>
+#include <windows/others/inspector.h>
 
 #pragma region ForwardDeclarations
 class ContentDrawer;
@@ -23,6 +24,7 @@ class WindowViewport;
 class WindowHierarchy;
 class Scene;
 class ImGuizmoHelper;
+class RessourceManager;
 
 namespace core {
     class Input;
@@ -39,13 +41,12 @@ namespace timeline {
 namespace graphics {
     class Renderer;
 }
-
 #pragma endregion
 class ImGuiWindows
 {
 public:
     
-    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window , core::Input& _input , Scene* _scene);
+    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window , core::Input& _input , Scene* _scene , RessourceManager& _manager);
     ~ImGuiWindows();
 
     struct WindowState 
@@ -59,6 +60,7 @@ public:
     core::gpu::ImguiContext* GetContext();
     core::Window* GetWindow() { return m_window; };
     Scene* GetScene() { return m_scene; };
+    Inspect* GetInspect() { return m_inspect;  };
 
 
     bool BeginWindow(const std::string& name, bool defaultStateIfNotExists = true, ImGuiWindowFlags flags = 0);
@@ -94,8 +96,8 @@ private:
     core::Window* m_window;
     graphics::Renderer* m_renderer;
     core::gpu::ImguiContext* m_imGuiContext;
-
-
+    Inspect* m_inspect;
+    core::Input* m_input;
 };
 
 #endif //EDITOR_IMGUIWINDOWS_H

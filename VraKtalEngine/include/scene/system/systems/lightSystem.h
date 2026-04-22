@@ -10,15 +10,14 @@ namespace graphics {
 	class Renderer;
 }
 
-class MeshSystem : public SystemBase
+class LightSystem : public SystemBase
 {
 public:
-	MeshSystem(graphics::Renderer* _renderer , RessourceManager* _reManager);
-	~MeshSystem();
+	LightSystem(graphics::Renderer* _renderer);
+	~LightSystem();
 
     void Update(Scene& _scene) override;
 
 private:
     graphics::Renderer* m_renderer;
-	RessourceManager* m_ressourceManager;
 };

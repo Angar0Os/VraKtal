@@ -7,7 +7,9 @@
 #include <graphics/renderer.h>
 #include <scene/scene.h>
 
+
 #include <core/gpu/buffer.h>
+#include <core/manager/ressourceManager.h>
 
 #include <imgui/imgui.h>
 
@@ -20,15 +22,18 @@
 #include "../include/windows/WindowViewport.h"
 #include "../include/windows/windowHierarchy.h"
 #include "../include/windows/windowInspector.h"
-#include "../include/windows/others/imGuizmoHelper.h"
 
-ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene)
+#include "../include/windows/others/imGuizmoHelper.h"
+#include "../include/windows/others/inspector.h"
+
+ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager )
     : m_imGuiContext(_imGuiContext), m_scene(_scene)
 {
 	m_renderer = _renderer;
 	m_window = window;
-
+	m_inspect = new Inspect(&_manager);
 	m_imGuizmoHelper = new ImGuizmoHelper(this , &_input);
+	m_input = &_input;
 
 	command::ClearBackupDirectory();
 	m_commandHistory = std::make_unique<command::CommandHistory>(100);
@@ -38,7 +43,7 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 
 	m_windows.push_back(new WindowInput(_input));
 	m_windows.push_back(new WindowViewport(*this));
-	m_windows.push_back(new WindowHierarchy(*_scene , *_renderer , *this));
+	m_windows.push_back(new WindowHierarchy(*_scene , *this));
     m_windows.push_back(new WindowInspector(*this));
 }
 

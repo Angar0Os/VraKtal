@@ -18,7 +18,7 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "imGuizmo/ImGuizmo.h"
 
-#include <scene/timeline/entities/mesh.h>
+#include <scene/timeline/components/mesh.h>
 
 
 #include "MDI/IconsMaterialDesignIcons.h"

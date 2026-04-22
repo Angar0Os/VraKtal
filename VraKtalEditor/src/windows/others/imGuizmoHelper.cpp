@@ -13,7 +13,7 @@
 #include <core/gpu/buffer.h>
 #include <glm/fwd.hpp>
 
-#include <scene/timeline/entities/mesh.h>
+#include <scene/timeline/components/mesh.h>
 
 
 ImGuizmoHelper::ImGuizmoHelper(ImGuiWindows* _imGuiWindows, core::Input* _input) : m_imGuiWindows(*_imGuiWindows)
@@ -52,7 +52,30 @@ void ImGuizmoHelper::DrawGuizmo()
         {
             ImGuizmo::Manipulate(glm::value_ptr(m_imGuiWindows.GetView()), glm::value_ptr(proj)
                 , m_settings.currentOperation, m_settings.currentMode,
-                glm::value_ptr(m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Get(m_imGuiWindows.selectedItem).temp_transform), nullptr, nullptr);
+                glm::value_ptr(m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Get(m_imGuiWindows.selectedItem).temp_properties.transform), nullptr, nullptr);
+        }
+
+        if (m_imGuiWindows.GetScene()->GetComponentStorage<timeline::Light>().Has(m_imGuiWindows.selectedItem))
+        {
+            timeline::Light& light =
+                m_imGuiWindows.GetScene()->GetComponentStorage<timeline::Light>().Get(m_imGuiWindows.selectedItem);
+
+            glm::mat4 lightTransform = glm::translate(glm::mat4(1.0f), light.temp_property.position);
+
+            ImGuizmo::Manipulate(
+                glm::value_ptr(m_imGuiWindows.GetView()),
+                glm::value_ptr(proj),
+                m_settings.currentOperation,
+                m_settings.currentMode,
+                glm::value_ptr(lightTransform),
+                nullptr,
+                nullptr
+            );
+
+            if (ImGuizmo::IsUsing())
+            {
+                light.temp_property.position = glm::vec3(lightTransform[3]);
+            }
         }
     }
     m_matrices.clear();
