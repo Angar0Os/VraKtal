@@ -18,7 +18,8 @@
 
 
 #include <scene/scene.h>
-#include <scene/timeline/entities/mesh.h>
+#include <scene/timeline/components/mesh.h>
+#include <scene/timeline/components/light.h>
 
 #ifdef VRAKTAL_EDITOR
     #pragma comment(lib, "VraKtalEngine_Debug.lib")
@@ -26,6 +27,7 @@
 #else
     #pragma comment(lib, "VraKtalEngine.lib")
 #endif // VRAKTAL_EDITOR
+#include <scene/system/systems/lightSystem.h>
 
 
 class App
@@ -42,8 +44,9 @@ public:
 
         m_scene = new Scene();
         m_scene->RegisterComponentStorage<timeline::MeshInstance>();
-        m_reManager = new RessourceManager(&_device);
+        m_scene->RegisterComponentStorage<timeline::Light>();
 
+        m_reManager = new RessourceManager(&_device);
         m_reManager->LoadRessource<graphics::resources::Mesh>("assets/models/viking_room.obj");
         auto* matLayout = _renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
         {
@@ -55,7 +58,7 @@ public:
             );
         }
         timeline::MeshInstance timelineMesh;
-        timelineMesh.mesh = &m_reManager->GetRessource<graphics::resources::Mesh>("assets/models/viking_room.obj");
+        timelineMesh.meshID = m_reManager->GetRessourceID<graphics::resources::Mesh>("assets/models/viking_room.obj");
         m_scene->CreateEntity<timeline::MeshInstance>(timelineMesh);
     };
     ~App() {
@@ -72,15 +75,15 @@ public:
     void SpawnVikingRoom() {
         std::cout << "Spawn Viking Room Action Triggered" << std::endl;
         timeline::MeshInstance timelineMesh;
-        timelineMesh.mesh = &m_reManager->GetRessource<graphics::resources::Mesh>("assets/models/viking_room.obj");
+        timelineMesh.meshID = m_reManager->GetRessourceID<graphics::resources::Mesh>("assets/models/viking_room.obj");
         m_scene->CreateEntity<timeline::MeshInstance>(timelineMesh);
 
     }
 
     Scene* m_scene;
+    RessourceManager* m_reManager;
 private:
     bool bSouldCloseApp = false;
-    RessourceManager* m_reManager;
 };
 
 class Camera
@@ -180,16 +183,19 @@ int main()
     App app(input , device , renderer);
     Camera camera(input);
 
+    SystemManager systemManager;
+    systemManager.AddSystem<MeshSystem>(&renderer, app.m_reManager);
+    systemManager.AddSystem<LightSystem>(&renderer);
+
 #ifdef VRAKTAL_EDITOR
-    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input , app.m_scene);
+    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input , app.m_scene ,*app.m_reManager);
     device.GetImGuiContext()->BindPrepareDrawData([&]()
         {
             imGuiWindows.DrawImGui();
         });
 #endif //VRAKTAL_EDITOR
 
-    SystemManager systemManager;
-    systemManager.AddSystem<MeshSystem>(&renderer);
+
 
     const float aspectRatio = 800.0f / 600.0f;
     glm::mat4 projection = glm::perspectiveLH_ZO(
@@ -217,6 +223,16 @@ int main()
     std::vector<graphics::resources::Light> lights;
     if (parser.IsValid())
         lights = parser.LoadLights();
+
+
+    timeline::Light light1;
+    light1.temp_property.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
+    light1.temp_property.color = glm::vec3(1.0f, 0.9f, 0.2f);
+    light1.temp_property.intensity = 10.0f;
+    light1.temp_property.radius = 0.1f;
+    light1.temp_property.enabled = true;
+    EntityID lightID = app.m_scene->CreateEntity<timeline::Light>(light1);
+    auto& light = app.m_scene->GetEntityComponent<timeline::Light>(lightID);
 
     while (!window.ShouldClose() && !app.ShouldClose())
     {
@@ -246,35 +262,7 @@ int main()
 
         time += timeStep;
 
-
         systemManager.Update(*app.m_scene);
-
-        graphics::resources::Light light1;
-        light1.name = "Yellow Light 1";
-        light1.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
-        light1.color = glm::vec3(1.0f, 0.9f, 0.2f);
-        light1.intensity = 10.0f;
-        light1.radius = 0.1f;
-        light1.enabled = true;
-        renderer.PushLight(light1);
-
-        graphics::resources::Light light2;
-        light2.name = "Yellow Light 2";
-        light2.position = glm::vec3(3.0f * glm::cos(time + glm::pi<float>()), 3.0f, 3.0f * glm::sin(time + glm::pi<float>()));
-        light2.color = glm::vec3(1.0f, 0.85f, 0.1f);
-        light2.intensity = 8.0f;
-        light2.radius = 0.1f;
-        light2.enabled = true;
-        renderer.PushLight(light2);
-
-        graphics::resources::Light light3;
-        light3.name = "Blue Light";
-        light3.position = glm::vec3(0.0f, 6.0f, 0.0f);
-        light3.color = glm::vec3(0.2f, 0.4f, 1.0f);
-        light3.intensity = 15.0f;
-        light3.radius = 0.1f;
-        light3.enabled = true;
-        renderer.PushLight(light3);
 
 #ifndef VRAKTAL_EDITOR
         renderer.SetCamera(camera.GetView(), camera.projection);

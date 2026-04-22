@@ -109,9 +109,6 @@
     <Filter Include="Header Files\scene\timeline">
       <UniqueIdentifier>{8f674238-d398-485f-88ec-7e60e34d0fde}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\scene\timeline\entities">
-      <UniqueIdentifier>{20b101ce-b616-4919-a5cc-bc59e16f8be5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\scene">
       <UniqueIdentifier>{e3011d60-a8a0-42fd-886a-ad2a0085ad9c}</UniqueIdentifier>
     </Filter>
@@ -132,6 +129,9 @@
     </Filter>
     <Filter Include="Source Files\scene\system\systems">
       <UniqueIdentifier>{88571c59-6a04-46fe-bcac-2f32dcfbbb78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scene\timeline\components">
+      <UniqueIdentifier>{20b101ce-b616-4919-a5cc-bc59e16f8be5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -336,9 +336,6 @@
     <ClInclude Include="include\loaders\loaderBase.h">
       <Filter>Header Files\loaders</Filter>
     </ClInclude>
-    <ClInclude Include="include\scene\timeline\entities\mesh.h">
-      <Filter>Header Files\scene\timeline\entities</Filter>
-    </ClInclude>
     <ClInclude Include="include\scene\timeline\entityBase.h">
       <Filter>Header Files\scene\timeline</Filter>
     </ClInclude>
@@ -358,6 +355,15 @@
       <Filter>Header Files\scene\system</Filter>
     </ClInclude>
     <ClInclude Include="include\scene\system\systems\meshSystem.h">
+      <Filter>Header Files\scene\system\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\timeline\components\light.h">
+      <Filter>Header Files\scene\timeline\components</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\timeline\components\mesh.h">
+      <Filter>Header Files\scene\timeline\components</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\system\systems\lightSystem.h">
       <Filter>Header Files\scene\system\systems</Filter>
     </ClInclude>
   </ItemGroup>
@@ -474,6 +480,9 @@
       <Filter>Source Files\scene\system</Filter>
     </ClCompile>
     <ClCompile Include="src\scene\system\systems\meshSystem.cpp">
+      <Filter>Source Files\scene\system\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene\system\systems\lightSystem.cpp">
       <Filter>Source Files\scene\system\systems</Filter>
     </ClCompile>
   </ItemGroup>

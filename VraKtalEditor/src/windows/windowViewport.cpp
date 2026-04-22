@@ -3,11 +3,13 @@
 #include "../../include/windows/others/imGuizmoHelper.h"
 
 #include <core/gpu/imguiContext.h>
+#include <core/gpu/buffer.h>
 
 #include <imgui/imgui.h>
 
 #include <algorithm>
 #include <GLFW/glfw3.h>
+
 
 WindowViewport::WindowViewport(ImGuiWindows& _imguiWindows) : m_imguiWindows(&_imguiWindows){}
 
@@ -39,6 +41,7 @@ void WindowViewport::Draw()
 
 			if (glfwRawMouseMotionSupported())
 				glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
 		}
 		else if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
 		{

@@ -43,6 +43,9 @@ public:
 	template<typename... Ts, typename Fn>
 	inline void ForEach(Fn&& fn);
 
+	template<class T>
+	T& GetEntityComponent(EntityID _id);
+
 	std::vector<EntityID>& GetAliveEntities(){ return aliveEntities; };
 	
 private:
@@ -93,6 +96,16 @@ void Scene::RegisterComponentStorage()
 	{
 		storages[id] = std::make_unique<ComponentStorage<T>>();
 	}
+}
+
+template<class T>
+inline T& Scene::GetEntityComponent(EntityID _id)
+{
+	const auto id = ComponentTypeID<T>();
+	if (id >= storages.size() || !storages[id])
+		throw std::runtime_error("ComponentStorage<T> not declared");
+
+	return static_cast<ComponentStorage<T>*>(storages[id].get())->Get(_id);
 }
 
 namespace ecs::detail

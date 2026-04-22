@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <iostream>
+#include <algorithm>
 
 template <typename T>
 class NamedStorageMap
@@ -82,14 +83,23 @@ public:
         return it->second;
     }
 
+    ID Find(const T& _value) const
+    {
+        for (ID id = 0; id < static_cast<ID>(values.size()); ++id)
+        {
+            if (IsValidIndex(id) && values[id] == _value)
+                return id;
+        }
+
+        return INVALID_ID;
+    }
+
     T& Get(ID _id)
     {
         if (!IsValidIndex(_id))
             throw std::runtime_error("Invalid NamedStorageMap id");
         return values[_id];
     }
-
-    
 
     const std::string& GetName(ID _id) const
     {

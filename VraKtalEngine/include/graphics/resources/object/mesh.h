@@ -14,18 +14,17 @@ namespace core::gpu
 
 #pragma once
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <core/gpu/accelerationStructure.h>
 #include <graphics/materialInstance.h>
+#include <core/gpu/buffer.h>
+
 
 #include <vector>
 #include <memory>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
-namespace core::gpu
-{
-	class Buffer;
-}
+
 
 namespace graphics::resources
 {

@@ -1,13 +1,12 @@
-#include "../../include/windows/ImguiWindowBase.h"
-#include "../../include/windows/others/inspector.h"
-#include "../../include/imGuiWindows.h"
 #include "../../include/windows/windowInspector.h"
+#include "../../include/imGuiWindows.h"
 
-#include <core/gpu/buffer.h>
 #include <scene/scene.h>
 
 #include <imgui/imgui.h>
-#include "../../include/windows/others/inspector.h"
+
+#include <scene/timeline/components/mesh.h>
+#include <scene/timeline/components/light.h>
 
 WindowInspector::WindowInspector(ImGuiWindows& _windows) : m_windows(_windows)
 {
@@ -26,17 +25,14 @@ void WindowInspector::Draw()
 
         if (scene->GetComponentStorage<timeline::MeshInstance>().Has(ID))
         {
-            Scene* scene = m_windows.GetScene();
-            EntityID& ID = m_windows.selectedItem;
-
-            if (scene->GetComponentStorage<timeline::MeshInstance>().Has(ID))
-            {
-                glm::mat4& transform = scene->GetComponentStorage<timeline::MeshInstance>().Get(ID).temp_transform;
-                Inspect::Draw(transform);
-            }
-
-
+            m_windows.GetInspect()->Draw<timeline::MeshInstance>(scene->GetComponentStorage<timeline::MeshInstance>().Get(ID));
         }
+
+        if (scene->GetComponentStorage<timeline::Light>().Has(ID))
+        {
+            m_windows.GetInspect()->Draw<timeline::Light>(scene->GetComponentStorage<timeline::Light>().Get(ID));
+        }
+        
         m_windows.EndWindow("Inspector");
     }
 }
