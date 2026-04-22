@@ -1,5 +1,6 @@
 #include <graphics/renderer.h>
 #include <graphics/renderPass/gBufferPass.h>
+#include <graphics/renderPass/iblPass.h>        
 #include <graphics/renderPass/lightingPass.h>
 
 #include <core/gpu/buffer.h>
@@ -42,13 +43,23 @@ void Renderer::InitPasses()
 	m_gBufferPass = gBufferPass.get();
 	m_passes.push_back(std::move(gBufferPass));
 
+	auto iblPass = std::make_unique<IBLPass>(m_device, uniformBuffers);
+	m_iblPass = iblPass.get();
+	m_passes.push_back(std::move(iblPass));
+
+	m_iblPass->SetGBufferInputs(
+		m_gBufferPass->GetColorAttachments(),
+		*m_gBufferPass->GetDepthAttachment()
+	);
+
 	auto lightingPass = std::make_unique<LightingPass>(m_device, uniformBuffers);
 	m_lightingPass = lightingPass.get();
 	m_passes.push_back(std::move(lightingPass));
 
 	m_lightingPass->SetGBufferInputs(
 		m_gBufferPass->GetColorAttachments(),
-		*m_gBufferPass->GetDepthAttachment()
+		*m_gBufferPass->GetDepthAttachment(),
+		m_iblPass->GetColorAttachments()[0]  
 	);
 }
 
@@ -180,9 +191,7 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 	ubo.frameCount = static_cast<uint32_t>(m_frameCounter);
 
 	if (uniformBuffers[frameIndex])
-	{
 		uniformBuffers[frameIndex]->CopyFrom(&ubo, sizeof(UniformBufferObject));
-	}
 }
 
 void Renderer::OnResize()
@@ -190,6 +199,7 @@ void Renderer::OnResize()
 	m_device.WaitIdle();
 	m_passes.clear();
 	m_gBufferPass = nullptr;
+	m_iblPass = nullptr;   
 	m_lightingPass = nullptr;
 	InitPasses();
 }
@@ -243,17 +253,23 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 
 	m_gBufferPass->Draw(*cmd, colorDescs, depthDesc, m_currentFrame);
 
-	//Lighting Pass
+	if (m_tlasPerFrame[m_currentFrame])
+	{
+		m_iblPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
+	}
+
+	m_iblPass->Draw(*cmd, {}, {}, m_currentFrame);
+
 	if (m_tlasPerFrame[m_currentFrame])
 	{
 		m_lightingPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
 	}
 
 	std::vector<ColorAttachmentDesc> lightColorDescs;
-	for (const auto& colorAttachments : m_lightingPass->GetColorAttachments())
+	for (const auto& ca : m_lightingPass->GetColorAttachments())
 	{
 		ColorAttachmentDesc desc{};
-		desc.image = colorAttachments.image.get();
+		desc.image = ca.image.get();
 		desc.clear = true;
 		lightColorDescs.push_back(desc);
 	}
@@ -267,7 +283,7 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 	}
 
 	m_lightingPass->Draw(*cmd, lightColorDescs, lightDepthDesc, m_currentFrame);
-
+	
 	if (outputImage)
 	{
 		cmd->TransitionImageLayout(
@@ -277,7 +293,7 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 			false
 		);
 
-		if (m_lightingPass && !m_lightingPass->GetColorAttachments().empty())
+		if (!m_lightingPass->GetColorAttachments().empty())
 		{
 			cmd->BlitImage(
 				m_lightingPass->GetColorAttachments()[0].image.get(),
@@ -297,6 +313,7 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 	m_meshInstances.clear();
 	m_lights.clear();
 }
+
 void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)
 {
 	if (!m_gBufferPass) return;
@@ -304,9 +321,7 @@ void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)
 	for (const auto& meshInstance : m_meshInstances)
 	{
 		if (!meshInstance.first->vertexBuffer || !meshInstance.first->indexBuffer)
-		{
 			continue;
-		}
 
 		PushConstants pushConstants;
 		pushConstants.model = meshInstance.second;
@@ -334,6 +349,7 @@ void Renderer::Cleanup()
 
 	m_passes.clear();
 	m_gBufferPass = nullptr;
+	m_iblPass = nullptr;  
 	m_lightingPass = nullptr;
 
 	m_tlasPerFrame.clear();

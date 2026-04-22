@@ -1,5 +1,5 @@
-#ifndef VRAKTAL_GRAPHICS_LIGHTING_PASS_H
-#define VRAKTAL_GRAPHICS_LIGHTING_PASS_H
+#ifndef VRAKTAL_GRAPHICS_IBL_PASS_H
+#define VRAKTAL_GRAPHICS_IBL_PASS_H
 #pragma once
 
 #include <graphics/pass.h>
@@ -10,12 +10,12 @@
 
 namespace graphics
 {
-    class LightingPass final : public Pass
+    class IBLPass final : public Pass
     {
     public:
-        LightingPass(core::gpu::Device& device,
+        IBLPass(core::gpu::Device& device,
             const std::vector<std::unique_ptr<core::gpu::Buffer>>& uniformBuffers);
-        ~LightingPass() override = default;
+        ~IBLPass() override = default;
 
         void Init(core::gpu::Device& device)                    override;
         void UpdateDescriptorSets(uint32_t frameIndex)          override;
@@ -31,8 +31,7 @@ namespace graphics
         const PassAttachment* GetDepthAttachment()  const override;
 
         void SetGBufferInputs(const std::vector<PassAttachment>& colorAttachments,
-            const PassAttachment& depthAttachment,
-            const PassAttachment& iblAttachment);
+            const PassAttachment& depthAttachment);
 
         void SetTLAS(core::gpu::AccelerationStructure* tlas);
 
@@ -42,6 +41,8 @@ namespace graphics
         void CreatePipeline();
         void CreateDescriptorSets();
 
+        void LoadEnvironmentMaps();
+
     private:
         core::gpu::Device& m_device;
         const std::vector<std::unique_ptr<core::gpu::Buffer>>& m_uniformBuffers;
@@ -50,10 +51,12 @@ namespace graphics
         const PassAttachment* m_gbufferDepth = nullptr;
 
         core::gpu::AccelerationStructure* m_tlas = nullptr;
+
         PassAttachment m_envMap;
-        std::vector<PassAttachment> m_colorAttachments;
+        PassAttachment m_irradianceMap;
+
+        std::vector<PassAttachment> m_colorAttachments; 
     };
+} 
 
-}
-
-#endif // VRAKTAL_GRAPHICS_LIGHTING_PASS_H
+#endif // VRAKTAL_GRAPHICS_IBL_PASS_H

@@ -1,6 +1,7 @@
 #ifndef VRAKTAL_GRAPHICS_RENDERER_H
 #define VRAKTAL_GRAPHICS_RENDERER_H
 #pragma once
+
 #include <core/window.h>
 #include <core/gpu/accelerationStructure.h>
 #include <core/gpu/commandBuffer.h>
@@ -19,11 +20,9 @@
 using namespace core;
 using namespace core::gpu;
 using namespace graphics::resources;
-
 namespace graphics
 {
     constexpr int MAX_LIGHTS = 10;
-
     struct UniformBufferObject
     {
         glm::mat4 view;
@@ -45,29 +44,32 @@ namespace graphics
         uint32_t  frameCount;
         alignas(4) uint32_t pad[3];
     };
-
     struct PushConstants
     {
         glm::mat4 model;
     };
-
     class Renderer
     {
     private:
         Window& m_window;
         Device& m_device;
+
         std::vector<std::unique_ptr<CommandBuffer>> m_commandBuffers;
         std::unique_ptr<AccelerationStructure>      m_tlas;
         std::vector<std::pair<resources::Mesh*, glm::mat4>> m_meshInstances;
         std::vector<std::unique_ptr<AccelerationStructure>> m_tlasPerFrame;
         std::vector<Light>                                  m_lights;
         std::vector<std::unique_ptr<Pass>> m_passes;
-        class GBufferPass*  m_gBufferPass  = nullptr;
+
+        class GBufferPass* m_gBufferPass = nullptr;
+        class IBLPass* m_iblPass = nullptr;
         class LightingPass* m_lightingPass = nullptr;
+
         std::vector<std::unique_ptr<Buffer>> uniformBuffers;
         uint32_t  m_currentFrame;
         uint64_t  m_frameCounter;
         bool      m_running;
+
         glm::mat4 m_viewMatrix;
         glm::mat4 m_projMatrix;
         glm::vec3 m_cameraPosition;
@@ -78,7 +80,6 @@ namespace graphics
         void UpdateUniformBuffer(uint32_t frameIndex);
         void CreateUniformBuffers();
         void InitPasses();
-
     public:
         Renderer(core::Window& window, Device& device);
         ~Renderer();
@@ -92,13 +93,16 @@ namespace graphics
         void Cleanup();
 
         CommandBuffer* GetCurrentCommandBuffer();
+
         void Advance();
 
         core::gpu::AccelerationStructure* GetTLAS() const { return m_tlas.get(); }
-        glm::mat4 GetViewMatrix()       { return m_viewMatrix;    }
-        glm::mat4 GetProjectionMatrix() { return m_projMatrix;    }
-        glm::vec3 GetCameraPosition()   { return m_cameraPosition; }
-        uint32_t  GetCurrentFrame()     { return m_currentFrame;  }
+
+        glm::mat4 GetViewMatrix() { return m_viewMatrix; }
+        glm::mat4 GetProjectionMatrix() { return m_projMatrix; }
+        glm::vec3 GetCameraPosition() { return m_cameraPosition; }
+
+        uint32_t  GetCurrentFrame() { return m_currentFrame; }
 
         std::vector<std::pair<resources::Mesh*, glm::mat4>>* GetMeshInstances()
         {

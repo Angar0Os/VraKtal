@@ -214,6 +214,7 @@
     <ClInclude Include="include\graphics\pass.h" />
     <ClInclude Include="include\graphics\renderer.h" />
     <ClInclude Include="include\graphics\renderPass\gBufferPass.h" />
+    <ClInclude Include="include\graphics\renderPass\iblPass.h" />
     <ClInclude Include="include\graphics\renderPass\lightingPass.h" />
     <ClInclude Include="include\graphics\resources\object\camera.h" />
     <ClInclude Include="include\graphics\resources\object\light.h" />
@@ -271,6 +272,7 @@
     <ClCompile Include="src\core\gpu_detail\converters.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp" />
+    <ClCompile Include="src\graphics\renderPass\iblPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\lightingPass.cpp" />
     <ClCompile Include="src\graphics\resources\object\scene.cpp" />
     <ClCompile Include="src\input\input.cpp" />
@@ -280,6 +282,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\shaders\gbuffer.slang" />
+    <None Include="..\bin\assets\shaders\ibl.slang" />
     <None Include="..\bin\assets\shaders\irradiance_convolution.slang" />
     <None Include="..\bin\assets\shaders\lighting.slang" />
     <None Include="..\external\include\imGuizmo\.editorconfig" />

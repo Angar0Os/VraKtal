@@ -294,6 +294,9 @@
     <ClInclude Include="include\core\input\keys.h">
       <Filter>Header Files\core\input</Filter>
     </ClInclude>
+    <ClInclude Include="include\graphics\renderPass\iblPass.h">
+      <Filter>Header Files\graphics\renderPass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -398,6 +401,9 @@
     <ClCompile Include="src\input\input.cpp">
       <Filter>Source Files\core\input</Filter>
     </ClCompile>
+    <ClCompile Include="src\graphics\renderPass\iblPass.cpp">
+      <Filter>Source Files\graphics\renderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\external\include\imGuizmo\.editorconfig">
@@ -410,6 +416,9 @@
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="..\bin\assets\shaders\irradiance_convolution.slang">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="..\bin\assets\shaders\ibl.slang">
       <Filter>Resource Files\shaders</Filter>
     </None>
   </ItemGroup>
