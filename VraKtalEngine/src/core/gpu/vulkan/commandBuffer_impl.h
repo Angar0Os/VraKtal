@@ -15,6 +15,8 @@ namespace core::gpu
 		bool isSingleTime;
 		uint32_t currentIndex;
 
+		vk::PipelineBindPoint lastBoundPipeline;
+
 		explicit Impl(CommandBuffer& p, const core::gpu::Device* device, const SCommandBufferCreateInfo& info);
 		~Impl();
 
@@ -48,6 +50,9 @@ namespace core::gpu
 		void CopyBufferToImage(const core::gpu::Buffer* srcBuffer, const core::gpu::Image* dstImage, uint32_t width, uint32_t height);
 
 		void PushConstants(const core::gpu::Pipeline* pipeline, uint32_t stageFlags, uint32_t offset, uint32_t size, const void* pValues);
+		
+		void BindComputePipeline(const core::gpu::Pipeline* pipeline);
+		void Dispatch(uint32_t x, uint32_t y, uint32_t z);
 
 		void TransitionImageLayout(const core::gpu::Image* image,
 			vk::ImageLayout oldLayout,

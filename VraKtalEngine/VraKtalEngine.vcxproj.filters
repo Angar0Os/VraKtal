@@ -409,6 +409,9 @@
     <None Include="..\bin\assets\shaders\lighting.slang">
       <Filter>Resource Files\shaders</Filter>
     </None>
+    <None Include="..\bin\assets\shaders\irradiance_convolution.slang">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Font Include="..\external\fonts\materialdesignicons-webfont.ttf">

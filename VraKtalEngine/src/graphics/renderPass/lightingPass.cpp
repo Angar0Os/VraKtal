@@ -1,6 +1,7 @@
 #include <graphics/renderPass/lightingPass.h>
 
 #include <core/gpu/descriptorSet.h>
+#include <core/gpu/device.h>
 #include <core/enum.h>
 #include <loaders/shaderLoader.h>
 
@@ -18,11 +19,101 @@ graphics::LightingPass::LightingPass(Device& device,
 	Init(device);
 }
 
+void graphics::LightingPass::CreateIrradianceMap()
+{
+	auto shaderCode = loaders::ReadFile("../bin/assets/shaders/irradiance_convolution.spv");
+
+	SDescriptorSetLayoutBinding envMapBinding{
+		.binding = 0,
+		.descriptorType = EDescriptorType::CombinedImageSampler,
+		.stageFlags = core::ShaderStage::Compute
+	};
+	SDescriptorSetLayoutBinding irradianceOutput{
+		.binding = 1,
+		.descriptorType = EDescriptorType::StorageImage,
+		.stageFlags = core::ShaderStage::Compute
+	};
+
+	SDescriptorSetLayoutCreateInfo layoutInfo{
+		.bindings = { envMapBinding, irradianceOutput }
+	};
+
+	auto dsLayouts = std::make_unique<DescriptorSetLayout>(&m_device, layoutInfo);
+
+
+	PipelineCreateInfo pipelineInfo{
+		.shaderStages = { {ShaderStageFlags::Compute, shaderCode, "cs_main"} },
+		.descriptorSetLayouts = { dsLayouts.get() }
+	};
+
+	auto irradiancePipeline = std::make_unique<Pipeline>(&m_device, pipelineInfo);
+
+	SImageCreateInfo info{
+		.width = 128,
+		.height = 64,
+		.mipLevels = 1,
+		.format = TextureFormat::RGBA32_Float,
+		.tiling = ImageTiling::Optimal,
+		.usage = ImageUsage::Sampled | ImageUsage::Storage,
+		.memoryProperties = EMemoryProperty::DeviceLocal,
+		.samples = SampleCount::e1
+	};
+
+	m_irradianceMap.image = std::make_unique<Image>(&m_device, info);
+
+	auto ds = std::make_unique<DescriptorSet>(&m_device, dsLayouts.get());
+
+	ds->Bind(0, *m_envMap.texture);
+	ds->Bind(1, *m_irradianceMap.image);
+	ds->Update(m_device);
+
+	SCommandBufferCreateInfo cbInfo{
+		.device = &m_device,
+		.level = ECommandBufferLevel::Primary,
+		.count = 1,
+		.singleTime = true
+	};
+
+	CommandBuffer cmd(&m_device, cbInfo);
+	cmd.Begin(0);
+
+	cmd.TransitionImageLayout(
+		m_envMap.image.get(),
+		ImageLayout::Undefined,
+		ImageLayout::ShaderReadOnly,
+		false
+	);
+
+	cmd.TransitionImageLayout(
+		m_irradianceMap.image.get(),
+		ImageLayout::Undefined,
+		ImageLayout::General,
+		false
+	);
+
+	cmd.BindComputePipeline(irradiancePipeline.get());
+	cmd.BindDescriptorSets(irradiancePipeline.get(), ds.get(), 0, 0);
+
+	cmd.Dispatch(128 / 16, 64 / 16, 1);
+
+	cmd.TransitionImageLayout(
+		m_irradianceMap.image.get(),
+		ImageLayout::General,
+		ImageLayout::ShaderReadOnly,
+		false
+	);
+
+	cmd.End(0);
+	cmd.SubmitImmediate(&m_device);
+
+	m_irradianceMap.texture = std::make_unique<Texture>(m_device, *m_irradianceMap.image);
+}
 void graphics::LightingPass::Init(Device& device)
 {
 	CreateAttachments();
 	CreateDescriptorSetLayout();
 	CreatePipeline();
+	CreateIrradianceMap();
 	CreateDescriptorSets();
 }
 
@@ -78,9 +169,15 @@ void graphics::LightingPass::CreateDescriptorSetLayout()
 		.descriptorType = EDescriptorType::CombinedImageSampler,
 		.stageFlags = core::ShaderStage::Fragment
 	};
+	SDescriptorSetLayoutBinding irradianceMapBinding{
+		.binding = 6,
+		.descriptorType = EDescriptorType::CombinedImageSampler,
+		.stageFlags = core::ShaderStage::Fragment
+	};
+
 
 	SDescriptorSetLayoutCreateInfo layoutInfo{
-		.bindings = { uboBinding, albedoBinding, normalBinding, depthBinding, tlasBinding, envMapBinding }
+		.bindings = { uboBinding, albedoBinding, normalBinding, depthBinding, tlasBinding, envMapBinding, irradianceMapBinding }
 	};
 
 	m_dsLayouts.clear();
@@ -141,6 +238,7 @@ void graphics::LightingPass::SetGBufferInputs(const std::vector<PassAttachment>&
 		m_descriptorSets[i]->Bind(2, *colorAttachments[1].texture);
 		m_descriptorSets[i]->Bind(3, *depthAttachment.texture);
 		m_descriptorSets[i]->Bind(5, *m_envMap.texture);
+		m_descriptorSets[i]->Bind(6, *m_irradianceMap.texture);
 		m_descriptorSets[i]->Update(m_device);
 	}
 }
@@ -170,7 +268,7 @@ void graphics::LightingPass::BindDescriptorSets(CommandBuffer& cmd, uint32_t fra
 
 void graphics::LightingPass::Draw(CommandBuffer& cmd,
 	const std::vector<ColorAttachmentDesc>& colorAttachments,
-	const DepthAttachmentDesc& depthAttachment)
+	const DepthAttachmentDesc& depthAttachment, uint32_t currentFrame)
 {
 	cmd.TransitionImageLayout(
 		m_colorAttachments[0].image.get(),
@@ -192,6 +290,11 @@ void graphics::LightingPass::Draw(CommandBuffer& cmd,
 	cmd.BindPipeline(m_pipeline.get());
 	cmd.SetViewport(0.0f, 0.0f, &m_device);
 	cmd.SetScissor(0, 0, &m_device);
+
+
+	UpdateDescriptorSets(currentFrame);
+	BindDescriptorSets(cmd, currentFrame);
+
 
 	cmd.DrawIndexed(3, 1, 0, 0, 0);
 

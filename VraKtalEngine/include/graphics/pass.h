@@ -71,7 +71,8 @@ namespace graphics
 		virtual void Draw(
 			CommandBuffer& cmd,
 			const std::vector<ColorAttachmentDesc>& colorAttachments,
-			const DepthAttachmentDesc& depthAttachment
+			const DepthAttachmentDesc& depthAttachment,
+			uint32_t currentFrame
 		) = 0;
 
 		virtual const std::vector<PassAttachment>& GetColorAttachments() const = 0;
@@ -82,7 +83,7 @@ namespace graphics
 		std::string                                  m_name;
 		bool                                         m_debugEnabled;
 
-		std::unique_ptr<Pipeline>                    m_pipeline;
+		std::unique_ptr<Pipeline>						  m_pipeline;
 		std::vector<std::unique_ptr<DescriptorSetLayout>> m_dsLayouts;
 		std::vector<std::unique_ptr<DescriptorSet>>       m_descriptorSets; 
 	};

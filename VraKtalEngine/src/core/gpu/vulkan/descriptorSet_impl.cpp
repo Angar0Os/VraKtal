@@ -49,6 +49,23 @@ void core::gpu::DescriptorSet::Bind<core::gpu::Texture>(uint32_t binding, const 
 }
 
 template<>
+void core::gpu::DescriptorSet::Bind<core::gpu::Image>(uint32_t binding, const core::gpu::Image& image)
+{
+	size_t infoIndex = m_impl->imageInfos.size();
+	m_impl->imageInfos.emplace_back(
+		vk::Sampler {},
+		*image.GetImpl().view,
+		vk::ImageLayout::eGeneral
+	);
+
+	m_impl->bindingInfos.push_back({
+		binding,
+		vk::DescriptorType::eStorageImage,
+		infoIndex
+	});
+}
+
+template<>
 void core::gpu::DescriptorSet::Bind<core::gpu::Buffer>(uint32_t binding, const core::gpu::Buffer& buffer)
 {
 	size_t infoIndex = m_impl->bufferInfos.size();
@@ -108,9 +125,11 @@ void core::gpu::DescriptorSet::Update(const core::gpu::Device& device)
 		switch (bindingInfo.type)
 		{
 		case vk::DescriptorType::eCombinedImageSampler:
+		case vk::DescriptorType::eStorageImage:
 			write.pImageInfo = &m_impl->imageInfos[bindingInfo.infoIndex];
 			break;
 		case vk::DescriptorType::eUniformBuffer:
+		case vk::DescriptorType::eStorageBuffer:
 			write.pBufferInfo = &m_impl->bufferInfos[bindingInfo.infoIndex];
 			break;
 		case vk::DescriptorType::eAccelerationStructureKHR:

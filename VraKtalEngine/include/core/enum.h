@@ -9,6 +9,7 @@ namespace core
 	enum class ImageLayout
 	{
 		Undefined,
+		General,
 		ShaderReadOnly,
 		ColorAttachment,
 		DepthStencilAttachment,

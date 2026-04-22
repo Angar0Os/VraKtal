@@ -27,7 +27,7 @@ namespace graphics
 
 		void Draw(CommandBuffer& cmd,
 			const std::vector<ColorAttachmentDesc>& colorAttachments,
-			const DepthAttachmentDesc& depthAttachment) override;
+			const DepthAttachmentDesc& depthAttachment, uint32_t currentFrame) override;
 
 		const std::vector<PassAttachment>& GetColorAttachments() const override;
 		const PassAttachment* GetDepthAttachment()  const override;
@@ -46,6 +46,7 @@ namespace graphics
 		const PassAttachment* m_gbufferDepth = nullptr;
 		AccelerationStructure* m_tlas = nullptr;
 		PassAttachment m_envMap;
+		PassAttachment m_irradianceMap;
 
 		std::vector<PassAttachment> m_colorAttachments;
 		PassAttachment              m_depthAttachment;
@@ -54,6 +55,7 @@ namespace graphics
 		void CreateDescriptorSetLayout();
 		void CreatePipeline();
 		void CreateDescriptorSets();
+		void CreateIrradianceMap();
 	};
 
 } 

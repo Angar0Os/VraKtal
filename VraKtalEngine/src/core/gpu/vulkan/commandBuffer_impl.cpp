@@ -149,6 +149,21 @@ void core::gpu::CommandBuffer::Impl::TraceRays(
 	);
 }
 
+void CommandBuffer::Impl::BindComputePipeline(const Pipeline* pipeline)
+{
+	GetCommandBuffer(currentIndex).bindPipeline(
+		vk::PipelineBindPoint::eCompute,
+		vk::Pipeline(pipeline->GetImpl().pipeline)
+	);
+
+	lastBoundPipeline = vk::PipelineBindPoint::eCompute;
+}
+
+void CommandBuffer::Impl::Dispatch(uint32_t x, uint32_t y, uint32_t z)
+{
+	GetCommandBuffer(currentIndex).dispatch(x, y, z);
+}
+
 uint32_t core::gpu::CommandBuffer::Impl::GetCount() const
 {
 	return static_cast<uint32_t>(commandBuffers.size());
@@ -231,7 +246,7 @@ void core::gpu::CommandBuffer::Impl::BindIndexBuffer(const core::gpu::Buffer* bu
 void CommandBuffer::BindDescriptorSets(const Pipeline* currentPipeline, const DescriptorSet* descriptorSet, uint32_t frameIndex, uint32_t firstSet)
 {
 	m_impl->GetCommandBuffer(m_impl->currentIndex).bindDescriptorSets(
-		vk::PipelineBindPoint::eGraphics,
+		m_impl->lastBoundPipeline,
 		currentPipeline->GetImpl().pipelineLayout,
 		firstSet,
 		*descriptorSet->GetImpl().descriptorSet,
@@ -435,6 +450,8 @@ void core::gpu::CommandBuffer::Impl::BindPipeline(const core::gpu::Pipeline* pip
 		vk::PipelineBindPoint::eGraphics,
 		vk::Pipeline(pipeline->GetImpl().pipeline)
 	);
+
+	lastBoundPipeline = vk::PipelineBindPoint::eGraphics;
 }
 
 core::gpu::CommandBuffer::CommandBuffer(const core::gpu::Device* device, const SCommandBufferCreateInfo& info)
@@ -612,6 +629,16 @@ void core::gpu::CommandBuffer::BindIndexBuffer(const core::gpu::Buffer* buffer, 
 	m_impl->BindIndexBuffer(buffer, offset);
 }
 
+void core::gpu::CommandBuffer::BindComputePipeline(const core::gpu::Pipeline* pipeline)
+{
+	m_impl->BindComputePipeline(pipeline);
+}
+
+void core::gpu::CommandBuffer::Dispatch(uint32_t x, uint32_t y, uint32_t z)
+{
+	m_impl->Dispatch(x, y, z);
+}
+
 void core::gpu::CommandBuffer::SetViewport(float x, float y, const core::gpu::Device* device, float minDepth, float maxDepth)
 {
 	m_impl->SetViewport(x, y, device, minDepth, maxDepth);
@@ -687,6 +714,7 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 	case ImageLayout::TransferDst: vkOldLayout = vk::ImageLayout::eTransferDstOptimal; break;
 	case ImageLayout::Present: vkOldLayout = vk::ImageLayout::ePresentSrcKHR; break;
 	case ImageLayout::ShaderReadOnly: vkOldLayout = vk::ImageLayout::eShaderReadOnlyOptimal; break;
+	case ImageLayout::General: vkOldLayout = vk::ImageLayout::eGeneral; break;
 	default: vkOldLayout = vk::ImageLayout::eUndefined;
 	}
 
@@ -698,6 +726,7 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 	case ImageLayout::TransferDst: vkNewLayout = vk::ImageLayout::eTransferDstOptimal; break;
 	case ImageLayout::Present: vkNewLayout = vk::ImageLayout::ePresentSrcKHR; break;
 	case ImageLayout::ShaderReadOnly: vkNewLayout = vk::ImageLayout::eShaderReadOnlyOptimal; break;
+	case ImageLayout::General: vkNewLayout = vk::ImageLayout::eGeneral; break;
 	default: vkNewLayout = vk::ImageLayout::eUndefined;
 	}
 
@@ -798,6 +827,20 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 		dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
 		srcStage = vk::PipelineStageFlagBits::eBottomOfPipe;
 		dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	}
+	else if (oldLayout == ImageLayout::Undefined && newLayout == ImageLayout::General)
+	{
+		srcAccess = {};
+		dstAccess = vk::AccessFlagBits::eShaderWrite;
+		srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		dstStage = vk::PipelineStageFlagBits::eComputeShader;
+	}
+	else if (oldLayout == ImageLayout::General && newLayout == ImageLayout::ShaderReadOnly)
+	{
+		srcAccess = vk::AccessFlagBits::eShaderWrite;
+		dstAccess = vk::AccessFlagBits::eShaderRead;
+		srcStage = vk::PipelineStageFlagBits::eComputeShader;
+		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
 	}
 	else
 	{

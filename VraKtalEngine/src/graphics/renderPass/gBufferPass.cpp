@@ -191,7 +191,7 @@ void graphics::GBufferPass::BindDescriptorSets(CommandBuffer& cmd, uint32_t fram
 
 void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 	const std::vector<ColorAttachmentDesc>& colorAttachments,
-	const DepthAttachmentDesc& depthAttachment)
+	const DepthAttachmentDesc& depthAttachment, uint32_t currentFrame)
 {
 	for (auto& ca : m_colorAttachments)
 		cmd.TransitionImageLayout(ca.image.get(), ImageLayout::Undefined, ImageLayout::ColorAttachment, false);
@@ -217,6 +217,9 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 	cmd.BindPipeline(m_pipeline.get());
 	cmd.SetViewport(0.0f, 0.0f, &m_device);
 	cmd.SetScissor(0, 0, &m_device);
+
+	UpdateDescriptorSets(currentFrame);
+	BindDescriptorSets(cmd, currentFrame);
 
 	if (m_meshInstances)
 	{

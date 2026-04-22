@@ -27,7 +27,7 @@ namespace graphics
 
 		void Draw(CommandBuffer& cmd,
 			const std::vector<ColorAttachmentDesc>& colorAttachments,
-			const DepthAttachmentDesc& depthAttachment) override;
+			const DepthAttachmentDesc& depthAttachment, uint32_t currentFrame) override;
 
 		const std::vector<PassAttachment>& GetColorAttachments() const override;
 		const PassAttachment* GetDepthAttachment()  const override;

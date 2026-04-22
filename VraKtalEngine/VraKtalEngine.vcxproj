@@ -120,6 +120,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)external\include\;$(ProjectDir)include;</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -138,6 +139,7 @@
       <LanguageStandard>stdcpp23</LanguageStandard>
       <LanguageStandard_C>Default</LanguageStandard_C>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)external\include\;$(ProjectDir)include;</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -278,6 +280,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\shaders\gbuffer.slang" />
+    <None Include="..\bin\assets\shaders\irradiance_convolution.slang" />
     <None Include="..\bin\assets\shaders\lighting.slang" />
     <None Include="..\external\include\imGuizmo\.editorconfig" />
   </ItemGroup>

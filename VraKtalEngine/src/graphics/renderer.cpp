@@ -222,11 +222,7 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 	auto& cmd = m_commandBuffers[m_currentFrame];
 	cmd->Begin(0);
 
-
-	//G-Buffer Pass
 	m_gBufferPass->SetMeshInstances(&m_meshInstances);
-	m_gBufferPass->UpdateDescriptorSets(m_currentFrame);
-	m_gBufferPass->BindDescriptorSets(*cmd, m_currentFrame);
 
 	std::vector<ColorAttachmentDesc> colorDescs;
 	for (const auto& ca : m_gBufferPass->GetColorAttachments())
@@ -245,16 +241,13 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 		depthDesc.clearDepth = 1.0f;
 	}
 
-	m_gBufferPass->Draw(*cmd, colorDescs, depthDesc);
+	m_gBufferPass->Draw(*cmd, colorDescs, depthDesc, m_currentFrame);
 
 	//Lighting Pass
 	if (m_tlasPerFrame[m_currentFrame])
 	{
 		m_lightingPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
 	}
-
-	m_lightingPass->UpdateDescriptorSets(m_currentFrame);
-	m_lightingPass->BindDescriptorSets(*cmd, m_currentFrame);
 
 	std::vector<ColorAttachmentDesc> lightColorDescs;
 	for (const auto& colorAttachments : m_lightingPass->GetColorAttachments())
@@ -273,7 +266,7 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 		lightDepthDesc.clearDepth = 1.0f;
 	}
 
-	m_lightingPass->Draw(*cmd, lightColorDescs, lightDepthDesc);
+	m_lightingPass->Draw(*cmd, lightColorDescs, lightDepthDesc, m_currentFrame);
 
 	if (outputImage)
 	{
