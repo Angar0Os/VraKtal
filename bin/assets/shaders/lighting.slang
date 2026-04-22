@@ -171,15 +171,29 @@ float3 hash33(float3 p3)
     return frac((p3.xxy + p3.yxx) * p3.zyx);
 }
 
-float3 IBL_Specular(float3 N, float3 V, float3 F0, float roughness)
+float3 IBL_Specular(float3 N, float3 V, float3 F0, float roughness,
+                    float3 worldPos, uint frameCount)
 {
-    float  NdotV           = max(dot(N, V), 0.0);
-    float3 R               = reflect(-V, N);
-    float  lod             = roughness * MAX_REFLECTION_LOD;
-    float3 prefilteredColor = SampleEquirectangularLod(envMapTex, R, lod).rgb;
-    float3 F               = F_Schlick(NdotV, F0);
-    float2 brdf            = EnvBRDFApprox(roughness, NdotV);
-    return prefilteredColor * (F * brdf.x + brdf.y);
+    float  NdotV = max(dot(N, V), 0.0);
+    float3 R     = reflect(-V, N);
+    float3 F     = F_Schlick(NdotV, F0);
+    float2 brdf  = EnvBRDFApprox(roughness, NdotV);
+
+    float3 color = 0.0f;
+
+    for (int i = 0; i < 4; ++i)
+    {
+        float3 randVec  = hash33(worldPos * 1000.0f + float3(frameCount * 1000 + i) * 0.01f);
+        float  RdotRand = dot(R, randVec);
+        randVec        *= sign(RdotRand);
+        float3 rayDir   = normalize(lerp(R, randVec, roughness));
+
+        float visibility = TraceShadow(worldPos + N * 0.001f, rayDir, 1000.0f) ? 0.0f : 1.0f;
+
+        color += SampleEquirectangular(envMapTex, rayDir).rgb * visibility * 0.25f;
+    }
+
+    return color * (F * brdf.x + brdf.y);
 }
 
 float3 IBL_Diffuse(float3 N, float3 albedo, float metalness,
@@ -190,8 +204,8 @@ float3 IBL_Diffuse(float3 N, float3 albedo, float metalness,
     for (int i = 0; i < 4; ++i)
     {
         float3 randVec = hash33(worldPos * 1000.0f + float3(frameCount * 1000 + i) * 0.01f);
-        float NdotL = dot(N, randVec);
-        randVec *= sign(NdotL);
+        float  NdotL   = dot(N, randVec);
+        randVec       *= sign(NdotL);
 
         float visibility = TraceShadow(worldPos + N * 0.001f, randVec, 1000.0f) ? 0.0f : 1.0f;
 
@@ -226,7 +240,7 @@ float4 fragMain(VSOutput input) : SV_Target
         float3 F0        = lerp(float3(0.04, 0.04, 0.04), albedo, metalness);
 
         color += IBL_Diffuse(N, albedo, metalness, F0, NdotV, roughness, worldPos);
-        //color += IBL_Specular(N, V, F0, roughness);
+        color += IBL_Specular(N, V, F0, roughness, worldPos, frameCount);
 
         for (int i = 0; i < numLights; i++)
         {
@@ -239,7 +253,6 @@ float4 fragMain(VSOutput input) : SV_Target
         float3 dir = normalize(worldPos - viewPos.xyz);
         color = SampleEquirectangular(envMapTex, dir).xyz;
     }
-
 
     return float4(ACESFilm(color, 1.0), 1.0);
 }
