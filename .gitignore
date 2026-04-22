@@ -85,7 +85,6 @@ out/
 # Gradle files
 .gradle/
 build/
-bin/
 
 # Local configuration file (sdk path, etc)
 local.properties
@@ -441,7 +440,6 @@ fabric.properties
 
 ##### Eclipse
 .metadata
-bin/
 tmp/
 *.tmp
 *.bak
@@ -586,8 +584,6 @@ x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
-[Bb]in/
-[Oo]bj/
 [Ll]og/
 [Ll]ogs/
 
