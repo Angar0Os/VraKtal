@@ -34,4 +34,6 @@ private:
 
 	EntityID m_editingEntity;
 	char m_entityRenameBuffer[256] = {};
+	
+    EntityID m_entityRightClicked = INVALID_ENTITY;
 };

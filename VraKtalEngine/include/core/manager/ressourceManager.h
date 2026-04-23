@@ -119,5 +119,4 @@ inline void RessourceManager::RegisterType(LoaderBase* _loader)
 template<typename TRessource>
 inline void RessourceManager::Clear()
 {
-
 }

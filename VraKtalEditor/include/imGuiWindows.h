@@ -62,13 +62,16 @@ public:
     core::Window* GetWindow() { return m_window; };
     Scene* GetScene() { return m_scene; };
     Inspect* GetInspect() { return m_inspect;  };
+    const EntityID& GetSelectedItem() {return m_selectedItem;};
 
+    void ResetSelectedItem() { m_selectedItem = INVALID_ENTITY; };
+    void SetSelectedItem(EntityID id) {m_selectedItem = id;};
 
     bool BeginWindow(const std::string& name, bool defaultStateIfNotExists = true, ImGuiWindowFlags flags = 0);
     void EndWindow(const std::string& name);
     void DisplayWindowStateManagerMenu();
 
-    EntityID selectedItem;
+
 
     //helper
     glm::mat4 GetView();
@@ -104,6 +107,8 @@ private:
     core::gpu::ImguiContext* m_imGuiContext;
     Inspect* m_inspect;
     core::Input* m_input;
+
+    EntityID m_selectedItem = INVALID_ENTITY;
 };
 
 #endif //EDITOR_IMGUIWINDOWS_H

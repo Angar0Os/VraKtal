@@ -69,14 +69,26 @@ void Inspect::Draw(timeline::MeshInstance& _mesh)
 {
     if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        std::string path = m_ressourceManager->GetRessourcePath<graphics::resources::Mesh>(_mesh.meshID);
+        bool bMeshDefined = _mesh.meshID != -1;
+        std::string path = bMeshDefined ? m_ressourceManager->GetRessourcePath<graphics::resources::Mesh>(_mesh.meshID) : "undefined path";
+        
         ImGui::Text("path: %s", path.c_str());
-
-        graphics::resources::Mesh& ressourceMesh = m_ressourceManager->GetRessource<graphics::resources::Mesh>(_mesh.meshID);
-        for (int i = 0; i < ressourceMesh.materials.size(); i++)
+        
+        if (bMeshDefined)
         {
-            ImGui::Text("material[%d]: %s",i , ressourceMesh.materials[i].get()->name.c_str());
+            graphics::resources::Mesh& ressourceMesh = m_ressourceManager->GetRessource<graphics::resources::Mesh>(_mesh.meshID);
+            for (int i = 0; i < ressourceMesh.materials.size(); i++)
+            {
+                ImGui::Text("material[%d]: %s", i, ressourceMesh.materials[i].get()->name.c_str());
+            }
         }
+        else
+        {
+
+        }
+
+
+
         this->Draw<glm::mat4>(_mesh.temp_properties.transform);
     }
 }

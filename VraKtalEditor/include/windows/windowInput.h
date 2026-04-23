@@ -11,11 +11,12 @@ namespace core {
 struct KeyActions;
 struct Axis2DAction;
 struct ImVec2;
+class ImGuiWindows;
 
 class WindowInput : public ImguiWindowBase
 {
 public:
-	WindowInput(core::Input& _input);
+	WindowInput(core::Input& _input , ImGuiWindows* _imGuiWindow);
 	~WindowInput();
 
 	void Draw() override;
@@ -37,4 +38,6 @@ private:
 
 private : //style 
 	bool InputButton(const char* label, const ImVec2& size);
+
+    ImGuiWindows* m_imGuiWindow;
 };
