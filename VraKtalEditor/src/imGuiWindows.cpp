@@ -7,9 +7,9 @@
 #include <graphics/renderer.h>
 #include <scene/scene.h>
 
+#include <utils/yamlSerializer.h>
 
 #include <core/gpu/buffer.h>
-#include <core/manager/ressourceManager.h>
 
 #include <imgui/imgui.h>
 
@@ -75,6 +75,7 @@ static void GLFWDropCallback(GLFWwindow* window, int count, const char** paths)
 ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager , core::gpu::Device* _device)
     : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager ,_device, _renderer)) ,m_popups(new Popups(this))
 {
+	m_manager = &_manager;
 	m_renderer = _renderer;
 	m_window = window;
 	m_input = &_input;
@@ -252,7 +253,9 @@ void ImGuiWindows::SetMenuBar() {
 				ImGuiWindows::LoadProject();
 			}
 
-			if (ImGui::MenuItem("Save Project")) {}
+			if (ImGui::MenuItem((ICON_MDI_CONTENT_SAVE " Save Project"), "Ctrl + S")) {
+				utils::YamlSerializer::SaveProject("main-project.yaml", m_scene, m_manager);
+			}
 
 			if (ImGui::MenuItem("Quit")) {
 				if (m_window) {

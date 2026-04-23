@@ -14,12 +14,8 @@
 #include <loaders/materialLoader.h>
 #include "imGuiWindows.h"
 #include "utils/yamlParser.h"
+#include <utils/yamlSerializer.h>
 #include <core/input/input.h>
-
-#include <core/manager/ressourceManager.h>
-
-#include <scene/system/systemManager.h>
-#include <scene/system/systems/meshSystem.h>
 
 #include <scene/scene.h>
 #include <scene/timeline/components/mesh.h>
@@ -45,6 +41,10 @@ public:
         _input.AddAction("SpawnVikingRoom");
         _input.BindActionKey({ input::Key::F }, "SpawnVikingRoom");
         _input.BindActionCallback<App, &App::SpawnVikingRoom>("SpawnVikingRoom", this, input::KeyState::Press);
+
+        _input.AddAction("SaveProject");
+        _input.BindActionKey({ input::Key::S , input::Key::LEFT_CONTROL}, "SaveProject");
+        _input.BindActionCallback<App, &App::SaveProject>("SaveProject", this, input::KeyState::Press);
 
         _input.AddAction("SpawnCave");
         _input.BindActionKey({ input::Key::F , input::Key::LEFT_CONTROL }, "SpawnCave");
@@ -219,6 +219,11 @@ public:
 
     }
 
+    void SaveProject()
+    {
+        utils::YamlSerializer::SaveProject("main-project.yaml", m_scene, m_reManager);
+    }
+
     Scene* m_scene;
     RessourceManager* m_reManager;
 private:
@@ -368,6 +373,11 @@ int main()
     light1.temp_property.intensity = 10.0f;
     light1.temp_property.radius = 0.1f;
     light1.temp_property.enabled = true;
+
+    // to remove
+    light1.keyframes.push_back(Keyframe<timeline::LightProperty>{ 0.1f, EInterpolationType::Linear, light1.temp_property });
+    light1.keyframes.push_back(Keyframe<timeline::LightProperty>{ 0.2f, EInterpolationType::Linear, light1.temp_property });
+
     EntityID lightID = app.m_scene->CreateEntity<timeline::Light>(light1);
     auto& light = app.m_scene->GetEntityComponent<timeline::Light>(lightID);
 
@@ -411,7 +421,7 @@ int main()
         auto image = imGuiWindows.GetContext()->GetViewportImage();
         //On doit ajuster la camera
         if (imGuiWindows.GetContext()->GetViewportState()->width > 0 && imGuiWindows.GetContext()->GetViewportState()->height > 0)
-                renderer.SetCamera(camera.GetView(), imGuiWindows.GetContext()->GetViewportProjection());
+            renderer.SetCamera(camera.GetView(), imGuiWindows.GetContext()->GetViewportProjection());
 
         renderer.Render(imGuiWindows.GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
         auto cmd = renderer.GetCurrentCommandBuffer();
