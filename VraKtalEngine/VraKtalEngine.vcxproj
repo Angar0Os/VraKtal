@@ -121,6 +121,7 @@
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)external\include\;$(ProjectDir)include;</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdclatest</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,6 +141,7 @@
       <LanguageStandard_C>Default</LanguageStandard_C>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)external\include\;$(ProjectDir)include;</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
