@@ -14,7 +14,6 @@
 #include <imgui/imgui.h>
 
 
-
 struct Inspect
 {
     Inspect(RessourceManager* _ressourceManager) : m_ressourceManager(_ressourceManager) {};

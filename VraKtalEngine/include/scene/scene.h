@@ -7,6 +7,19 @@
 
 #include <utils/denseStorage.h>
 #include "timeline/entityBase.h"
+#include <unordered_map>
+
+struct CallBack
+{
+	void* context = nullptr; // Objet si data
+	void (*callback)(void*) = nullptr; // la fonction
+
+	void Execute() const
+	{
+		if (callback)
+			callback(context);
+	}
+};
 
 class Scene
 {
@@ -23,12 +36,16 @@ private:
 	std::vector<EntityID> aliveEntities;
 	std::vector<EntityID> EntitiesFreeSlots;
 
+	std::unordered_map<std::type_index, std::unique_ptr<BaseComponentStorage>> m_registeredTypesMap;
+
 public:
 	EntityID CreateEntity();
 	void DestroyEntity(EntityID _entity);
 
 	template<class T>
 	EntityID CreateEntity(T _toAdd);
+
+	EntityID CloneEntiy(EntityID _id);
 
 public:
 	template<class T>

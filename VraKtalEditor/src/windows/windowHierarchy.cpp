@@ -1,6 +1,7 @@
 #include "./windows/windowHierarchy.h"
 #include "../../include/imGuiWindows.h"
 #include "../../include/windows/others/imGuizmoHelper.h"
+#include "../../include/windows/others/rightClick.h"
 
 #include <imgui/imgui.h>
 #include <glm/glm.hpp>
@@ -16,7 +17,7 @@
 #include <graphics/renderer.h>
 #include <core/gpu/buffer.h>
 
-WindowHierarchy::WindowHierarchy(Scene& _scene, ImGuiWindows& _imGuiWindows) : m_scene(_scene), m_imGuiWindows(_imGuiWindows)
+WindowHierarchy::WindowHierarchy(Scene& _scene, ImGuiWindows& _imGuiWindows) : m_scene(_scene), m_imGuiWindows(_imGuiWindows) , m_editingEntity(INVALID_ENTITY)
 {
 }
 
@@ -33,7 +34,9 @@ void WindowHierarchy::Draw()
         {
             DrawEntityHierarchyItem(ID);
         }
+        m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy>(this);
         m_imGuiWindows.EndWindow("Hierarchy");
+        m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy>(this);
     }
 }
 
@@ -41,6 +44,8 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID ID)
 {
     if (!m_scene.GetComponentStorage<std::string>().Has(ID))
         return;
+
+ 
 
     std::string& label = m_scene.GetEntityComponent<std::string>(ID);
 
@@ -84,15 +89,21 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID ID)
         if (ImGui::Selectable(label.c_str(), m_imGuiWindows.selectedItem == ID))
         {
             if (m_imGuiWindows.selectedItem != ID)
+            {
                 m_imGuiWindows.selectedItem = ID;
+            }
         }
 
         ImGui::PopStyleColor(3);
 
-        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+        if (ImGui::IsItemHovered())
         {
-            m_editingEntity = ID;
-            strncpy_s(m_entityRenameBuffer, sizeof(m_entityRenameBuffer), label.c_str(), _TRUNCATE);
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            {
+                m_editingEntity = ID;
+                strncpy_s(m_entityRenameBuffer, sizeof(m_entityRenameBuffer), label.c_str(), _TRUNCATE);
+            }
+            m_imGuiWindows.GetRightClick()->Draw<EntityID>(&ID);
         }
     }
 
