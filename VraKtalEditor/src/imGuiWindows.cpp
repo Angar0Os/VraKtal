@@ -46,7 +46,7 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 	m_contentDrawer = new ContentDrawer();
 	m_contentDrawer->SetCommandHistory(m_commandHistory.get());
 
-	m_windows.push_back(new WindowInput(_input));
+	m_windows.push_back(new WindowInput(_input , this));
 	m_windows.push_back(new WindowViewport(*this));
 	m_windows.push_back(new WindowHierarchy(*_scene , *this));
     m_windows.push_back(new WindowInspector(*this));
@@ -130,7 +130,7 @@ void ImGuiWindows::EndWindow(const std::string& name)
 	{
 		ImGui::End();
 	}
-
+	
 	if (!m_windowStatesList[name].keepOpen)
 	{
 		m_windowStatesList[name].isOpen = false;

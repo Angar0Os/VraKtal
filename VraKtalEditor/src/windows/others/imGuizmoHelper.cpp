@@ -48,17 +48,17 @@ void ImGuizmoHelper::DrawGuizmo()
         glm::mat4 proj = m_imGuiWindows.GetContext()->GetViewportProjection();
         proj[1][1] *= -1.0f;
 
-        if (m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Has(m_imGuiWindows.selectedItem))
+        if (m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Has(m_imGuiWindows.GetSelectedItem()))
         {
             ImGuizmo::Manipulate(glm::value_ptr(m_imGuiWindows.GetView()), glm::value_ptr(proj)
                 , m_settings.currentOperation, m_settings.currentMode,
-                glm::value_ptr(m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Get(m_imGuiWindows.selectedItem).temp_properties.transform), nullptr, nullptr);
+                glm::value_ptr(m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Get(m_imGuiWindows.GetSelectedItem()).temp_properties.transform), nullptr, nullptr);
         }
 
-        if (m_imGuiWindows.GetScene()->GetComponentStorage<timeline::Light>().Has(m_imGuiWindows.selectedItem))
+        if (m_imGuiWindows.GetScene()->GetComponentStorage<timeline::Light>().Has(m_imGuiWindows.GetSelectedItem()))
         {
             timeline::Light& light =
-                m_imGuiWindows.GetScene()->GetComponentStorage<timeline::Light>().Get(m_imGuiWindows.selectedItem);
+                m_imGuiWindows.GetScene()->GetComponentStorage<timeline::Light>().Get(m_imGuiWindows.GetSelectedItem());
 
             glm::mat4 lightTransform = glm::translate(glm::mat4(1.0f), light.temp_property.position);
 

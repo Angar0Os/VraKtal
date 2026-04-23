@@ -34,18 +34,28 @@ void WindowHierarchy::Draw()
         {
             DrawEntityHierarchyItem(ID);
         }
-        m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy>(this);
-        m_imGuiWindows.EndWindow("Hierarchy");
-        m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy>(this);
+
+        if (m_entityRightClicked == INVALID_ENTITY)
+        {
+            m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy>(this);
+        }
+        else
+        {
+            if (!m_imGuiWindows.GetRightClick()->Draw<EntityID>(&m_entityRightClicked))
+            {
+                m_entityRightClicked = INVALID_ENTITY;
+            }
+        }
+
+
     }
+    m_imGuiWindows.EndWindow("Hierarchy");
 }
 
 void WindowHierarchy::DrawEntityHierarchyItem(EntityID ID)
 {
     if (!m_scene.GetComponentStorage<std::string>().Has(ID))
         return;
-
- 
 
     std::string& label = m_scene.GetEntityComponent<std::string>(ID);
 
@@ -75,7 +85,7 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID ID)
             label = m_entityRenameBuffer;
             m_editingEntity = -1;
         }
-        else if (m_imGuiWindows.selectedItem != m_editingEntity)
+        else if (m_imGuiWindows.GetSelectedItem() != m_editingEntity)
         {
             m_editingEntity = -1;
         }
@@ -86,11 +96,11 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID ID)
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.5f, 1.0f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.1f, 0.3f, 0.9f, 1.0f));
 
-        if (ImGui::Selectable(label.c_str(), m_imGuiWindows.selectedItem == ID))
+        if (ImGui::Selectable(label.c_str(), m_imGuiWindows.GetSelectedItem() == ID))
         {
-            if (m_imGuiWindows.selectedItem != ID)
+            if (m_imGuiWindows.GetSelectedItem() != ID)
             {
-                m_imGuiWindows.selectedItem = ID;
+                m_imGuiWindows.SetSelectedItem(ID);
             }
         }
 
@@ -98,12 +108,17 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID ID)
 
         if (ImGui::IsItemHovered())
         {
-            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
             {
+                    m_entityRightClicked = ID;
+            }
+            else if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            {
+                m_entityRightClicked = INVALID_ENTITY;
                 m_editingEntity = ID;
                 strncpy_s(m_entityRenameBuffer, sizeof(m_entityRenameBuffer), label.c_str(), _TRUNCATE);
             }
-            m_imGuiWindows.GetRightClick()->Draw<EntityID>(&ID);
+ 
         }
     }
 

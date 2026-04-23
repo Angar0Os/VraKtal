@@ -2,9 +2,11 @@
 #include <imgui/imgui.h>
 #include <typeindex>
 #include <scene/timeline/entityBase.h>
+#include <iostream>
 
 class ImGuiWindows;
 class WindowHierarchy;
+class WindowInspector;
 
 class RightClick
 {
@@ -13,13 +15,14 @@ public:
 	~RightClick();
 
     template<typename T>
-    void Draw(T* object) {
+    bool Draw(T* object) {
         if (!object)
-            return;
+            return false;
 
         if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) &&
             ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-        {
+        { //Set Value correctly and open menu
+            std::cout << "Right click on " << typeid(T).name() << std::endl;
             m_lastType = object;
             bMenuOpen = true;
 
@@ -27,14 +30,16 @@ public:
             ImGui::OpenPopup("RightClickPopup");
         }
 
-        if (m_lastType == object && ImGui::BeginPopup("RightClickPopup"))
+        if (m_lastType == object && ImGui::BeginPopup("RightClickPopup")) //Draw menu
         {
             Content<T>(object);
             ImGui::EndPopup();
+            return true;
         }
         else if (m_lastType == object && bMenuOpen)
         {
             CloseMenu();
+            return false;
         }
     };
 
@@ -55,8 +60,14 @@ private:
     }
 };
 
+#pragma region Hierarchy
 template<>
 void RightClick::Content(WindowHierarchy* _window);
-
 template<>
 void RightClick::Content(EntityID* _ID);
+#pragma endregion
+
+#pragma region Inspector
+template<>
+void RightClick::Content(WindowInspector* _window);
+#pragma endregion

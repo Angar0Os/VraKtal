@@ -21,8 +21,6 @@ void WindowViewport::Draw()
 {
 	if (m_imguiWindows->BeginWindow("Viewport", true))
 	{
-		ImGui::Begin("Viewport");
-
 		ImVec2 avail = ImGui::GetContentRegionAvail();
 		uint32_t width = std::max(1u, static_cast<uint32_t>(avail.x));
 		uint32_t height = std::max(1u, static_cast<uint32_t>(avail.y));
@@ -49,9 +47,7 @@ void WindowViewport::Draw()
 				glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
 			glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
-
-		ImGui::End();
 		m_imguiWindows->GetImGuizmoHelper()->DrawGuizmo();
-		m_imguiWindows->EndWindow("Viewport");
 	}
+	m_imguiWindows->EndWindow("Viewport");
 }
