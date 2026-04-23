@@ -25,6 +25,7 @@
 
 #include "../include/windows/others/imGuizmoHelper.h"
 #include "../include/windows/others/inspector.h"
+#include "../include/windows/others/rightClick.h"
 
 ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager )
     : m_imGuiContext(_imGuiContext), m_scene(_scene)
@@ -32,8 +33,12 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 	m_renderer = _renderer;
 	m_window = window;
 	m_inspect = new Inspect(&_manager);
-	m_imGuizmoHelper = new ImGuizmoHelper(this , &_input);
 	m_input = &_input;
+
+	//others
+	m_imGuizmoHelper = new ImGuizmoHelper(this , &_input);
+	m_rightClick = new RightClick(this);
+
 
 	command::ClearBackupDirectory();
 	m_commandHistory = std::make_unique<command::CommandHistory>(100);
@@ -56,6 +61,7 @@ ImGuiWindows::~ImGuiWindows()
 		delete window;
     }
 	delete m_imGuizmoHelper;
+	delete m_rightClick;
 }
 
 void ImGuiWindows::DrawImGui()

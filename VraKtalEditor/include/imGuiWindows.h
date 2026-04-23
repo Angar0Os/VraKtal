@@ -24,6 +24,7 @@ class WindowViewport;
 class WindowHierarchy;
 class Scene;
 class ImGuizmoHelper;
+class RightClick;
 class RessourceManager;
 
 namespace core {
@@ -72,6 +73,8 @@ public:
     //helper
     glm::mat4 GetView();
     ImGuizmoHelper* GetImGuizmoHelper() { return m_imGuizmoHelper; };
+    RightClick* GetRightClick() { return m_rightClick; };
+
 private:
     void AddWindowToManager(const std::string& name, bool windowState);
 
@@ -89,8 +92,11 @@ private:
 
 #pragma region windows
     ContentDrawer*  m_contentDrawer;
-    ImGuizmoHelper* m_imGuizmoHelper;
     std::vector<ImguiWindowBase*> m_windows;
+
+    //others
+    ImGuizmoHelper* m_imGuizmoHelper;
+    RightClick* m_rightClick;
 #pragma endregion
 
     core::Window* m_window;
