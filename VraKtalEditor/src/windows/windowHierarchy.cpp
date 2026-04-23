@@ -59,69 +59,68 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID ID)
 
     std::string& label = m_scene.GetEntityComponent<std::string>(ID);
 
-    if (m_editingEntity == ID)
-    {
-        ImGui::SetNextItemWidth(-1.0f);
+    EntityID SelectedItemID = m_imGuiWindows.IsSelectedItemType<EntityID>() ? m_imGuiWindows.GetSelectedItem<EntityID>() : INVALID_ENTITY;
+    
+        if (m_editingEntity == ID)
+        {
+            ImGui::SetNextItemWidth(-1.0f);
 
-        const bool enterPressed = ImGui::InputText(
-            "##RenameEntity",
-            m_entityRenameBuffer,
-            sizeof(m_entityRenameBuffer),
-            ImGuiInputTextFlags_EnterReturnsTrue |
-            ImGuiInputTextFlags_AutoSelectAll
-        );
+            const bool enterPressed = ImGui::InputText(
+                "##RenameEntity",
+                m_entityRenameBuffer,
+                sizeof(m_entityRenameBuffer),
+                ImGuiInputTextFlags_EnterReturnsTrue |
+                ImGuiInputTextFlags_AutoSelectAll
+            );
 
-        if (ImGui::IsItemActive() && ImGui::IsKeyPressed(ImGuiKey_Escape))
-        {
-            m_editingEntity = -1;
-        }
-        else if (enterPressed)
-        {
-            label = m_entityRenameBuffer;
-            m_editingEntity = -1;
-        }
-        else if (ImGui::IsItemDeactivatedAfterEdit())
-        {
-            label = m_entityRenameBuffer;
-            m_editingEntity = -1;
-        }
-        else if (m_imGuiWindows.GetSelectedItem() != m_editingEntity)
-        {
-            m_editingEntity = -1;
-        }
-    }
-    else
-    {
-        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.4f, 1.0f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.5f, 1.0f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.1f, 0.3f, 0.9f, 1.0f));
-
-        if (ImGui::Selectable(label.c_str(), m_imGuiWindows.GetSelectedItem() == ID))
-        {
-            if (m_imGuiWindows.GetSelectedItem() != ID)
+            if (ImGui::IsItemActive() && ImGui::IsKeyPressed(ImGuiKey_Escape))
             {
-                m_imGuiWindows.SetSelectedItem(ID);
+                m_editingEntity = -1;
+            }
+            else if (enterPressed)
+            {
+                label = m_entityRenameBuffer;
+                m_editingEntity = -1;
+            }
+            else if (ImGui::IsItemDeactivatedAfterEdit())
+            {
+                label = m_entityRenameBuffer;
+                m_editingEntity = -1;
+            }
+            else if (SelectedItemID != m_editingEntity)
+            {
+                m_editingEntity = -1;
             }
         }
-
-        ImGui::PopStyleColor(3);
-
-        if (ImGui::IsItemHovered())
+        else
         {
-            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.4f, 1.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.5f, 1.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.1f, 0.3f, 0.9f, 1.0f));
+
+            if (ImGui::Selectable(label.c_str(), SelectedItemID == ID))
             {
+                if (SelectedItemID != ID)
+                {
+                    m_imGuiWindows.SetSelectedItem(ID);
+                }
+            }
+
+            ImGui::PopStyleColor(3);
+
+            if (ImGui::IsItemHovered())
+            {
+                if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+                {
                     m_entityRightClicked = ID;
+                }
+                else if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                {
+                    m_entityRightClicked = INVALID_ENTITY;
+                    m_editingEntity = ID;
+                    strncpy_s(m_entityRenameBuffer, sizeof(m_entityRenameBuffer), label.c_str(), _TRUNCATE);
+                }
+
             }
-            else if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-            {
-                m_entityRightClicked = INVALID_ENTITY;
-                m_editingEntity = ID;
-                strncpy_s(m_entityRenameBuffer, sizeof(m_entityRenameBuffer), label.c_str(), _TRUNCATE);
-            }
- 
         }
-    }
-
-
-
 }

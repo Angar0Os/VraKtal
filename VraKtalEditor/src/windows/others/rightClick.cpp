@@ -7,6 +7,8 @@
 #include <imgui/imgui.h>
 #include <scene/timeline/components/mesh.h>
 
+#include <variant>
+
 
 RightClick::RightClick(ImGuiWindows* _windows) : m_windows(_windows) {}
 RightClick::~RightClick(){}
@@ -25,9 +27,16 @@ void RightClick::Content(WindowHierarchy* _window)
 template<>
 void RightClick::Content(EntityID* _ID) 
 {
+    EntityID selectedEntity = m_windows->IsSelectedItemType<EntityID>() ? m_windows->GetSelectedItem<EntityID>() : INVALID_ENTITY;
+
+    if (selectedEntity == INVALID_ENTITY)
+    {
+        return;
+    }
+
     if (ImGui::Button("Destroy Entity"))
     {
-        if (m_windows->GetSelectedItem() == *_ID)
+        if (selectedEntity == *_ID)
         {
             m_windows->ResetSelectedItem();
         }
@@ -43,26 +52,32 @@ void RightClick::Content(EntityID* _ID)
 template<>
 void RightClick::Content(WindowInspector* _window)
 {
+    EntityID selectedEntity = m_windows->IsSelectedItemType<EntityID>() ? m_windows->GetSelectedItem<EntityID>() : INVALID_ENTITY;
+
+    if (selectedEntity == INVALID_ENTITY)
+        return;
+
+
     bool bClickedComp = false;
 
     ImGui::Text("Add Component");
     
-    if (!m_windows->GetScene()->GetComponentStorage<timeline::MeshInstance>().Has(m_windows->GetSelectedItem()))
+    if (!m_windows->GetScene()->GetComponentStorage<timeline::MeshInstance>().Has(selectedEntity))
     {
         if (ImGui::Button("Mesh"))
         {
             timeline::MeshInstance mesh;
-            m_windows->GetScene()->GetComponentStorage<timeline::MeshInstance>().Add(m_windows->GetSelectedItem(), mesh);
+            m_windows->GetScene()->GetComponentStorage<timeline::MeshInstance>().Add(selectedEntity , mesh);
             bClickedComp = true;
         }
     }
 
-    if (!m_windows->GetScene()->GetComponentStorage<timeline::Light>().Has(m_windows->GetSelectedItem()))
+    if (!m_windows->GetScene()->GetComponentStorage<timeline::Light>().Has(selectedEntity))
     {
         if (ImGui::Button("Light"))
         {
             timeline::Light light;
-            m_windows->GetScene()->GetComponentStorage<timeline::Light>().Add(m_windows->GetSelectedItem(), light);
+            m_windows->GetScene()->GetComponentStorage<timeline::Light>().Add(selectedEntity, light);
             bClickedComp = true;
         }
     }

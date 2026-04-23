@@ -23,7 +23,9 @@ void WindowInspector::Draw()
     if (m_windows.BeginWindow("Inspector"))
     {
         Scene* scene = m_windows.GetScene();
-        EntityID ID = m_windows.GetSelectedItem();
+
+        EntityID ID = m_windows.IsSelectedItemType<EntityID>() ? m_windows.GetSelectedItem<EntityID>() : INVALID_ENTITY;
+
         if (ID != INVALID_ENTITY)
         {
             std::string& label = scene->GetEntityComponent<std::string>(ID);

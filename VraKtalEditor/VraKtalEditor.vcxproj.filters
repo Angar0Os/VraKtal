@@ -84,6 +84,9 @@
     <ClCompile Include="src\windows\others\rightClick.cpp">
       <Filter>Source Files\windows\others</Filter>
     </ClCompile>
+    <ClCompile Include="src\windows\others\meshPlot.cpp">
+      <Filter>Source Files\windows\others</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -132,6 +135,9 @@
       <Filter>Header Files\windows</Filter>
     </ClInclude>
     <ClInclude Include="include\windows\others\rightClick.h">
+      <Filter>Header Files\windows\others</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\others\meshPlot.h">
       <Filter>Header Files\windows\others</Filter>
     </ClInclude>
   </ItemGroup>

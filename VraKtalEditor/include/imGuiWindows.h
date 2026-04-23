@@ -16,6 +16,7 @@
 #include "windows/ImguiWindowBase.h"
 #include <scene/timeline/entityBase.h>
 #include <windows/others/inspector.h>
+#include <utility>
 
 #pragma region ForwardDeclarations
 class ContentDrawer;
@@ -40,6 +41,9 @@ namespace timeline {
 }
 
 namespace graphics {
+    namespace resources {
+        class Mesh;
+    }
     class Renderer;
 }
 #pragma endregion
@@ -62,10 +66,29 @@ public:
     core::Window* GetWindow() { return m_window; };
     Scene* GetScene() { return m_scene; };
     Inspect* GetInspect() { return m_inspect;  };
-    const EntityID& GetSelectedItem() {return m_selectedItem;};
 
     void ResetSelectedItem() { m_selectedItem = INVALID_ENTITY; };
-    void SetSelectedItem(EntityID id) {m_selectedItem = id;};
+    
+    template<typename T>
+    void SetSelectedItem(T&& value)
+    {
+        m_selectedItem = std::forward<T>(value);
+    }
+
+    
+    template<typename T>
+    bool IsSelectedItemType() const
+    {
+        return std::holds_alternative<T>(m_selectedItem);
+    }
+
+    template<typename T>
+    T& GetSelectedItem()
+    {
+        if (IsSelectedItemType<T>())
+            return std::get<T>(m_selectedItem);
+        throw std::bad_variant_access();
+    }
 
     bool BeginWindow(const std::string& name, bool defaultStateIfNotExists = true, ImGuiWindowFlags flags = 0);
     void EndWindow(const std::string& name);
@@ -108,7 +131,7 @@ private:
     Inspect* m_inspect;
     core::Input* m_input;
 
-    EntityID m_selectedItem = INVALID_ENTITY;
+    std::variant<std::monostate ,EntityID , graphics::resources::Mesh*> m_selectedItem = std::monostate{};
 };
 
 #endif //EDITOR_IMGUIWINDOWS_H
