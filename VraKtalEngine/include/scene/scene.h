@@ -9,18 +9,6 @@
 #include "timeline/entityBase.h"
 #include <unordered_map>
 
-struct CallBack
-{
-	void* context = nullptr; // Objet si data
-	void (*callback)(void*) = nullptr; // la fonction
-
-	void Execute() const
-	{
-		if (callback)
-			callback(context);
-	}
-};
-
 class Scene
 {
 private:

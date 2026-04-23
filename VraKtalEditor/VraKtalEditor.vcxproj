@@ -156,6 +156,7 @@
     </ClCompile>
     <ClCompile Include="src\windows\others\imGuizmoHelper.cpp" />
     <ClCompile Include="src\windows\others\inspector.cpp" />
+    <ClCompile Include="src\windows\others\meshPlot.cpp" />
     <ClCompile Include="src\windows\others\rightClick.cpp" />
     <ClCompile Include="src\windows\windowHierarchy.cpp" />
     <ClCompile Include="src\windows\windowInput.cpp" />
@@ -174,6 +175,7 @@
     <ClInclude Include="include\windows\ImguiWindowBase.h" />
     <ClInclude Include="include\windows\others\imGuizmoHelper.h" />
     <ClInclude Include="include\windows\others\inspector.h" />
+    <ClInclude Include="include\windows\others\meshPlot.h" />
     <ClInclude Include="include\windows\others\rightClick.h" />
     <ClInclude Include="include\windows\windowHierarchy.h" />
     <ClInclude Include="include\windows\windowInput.h" />

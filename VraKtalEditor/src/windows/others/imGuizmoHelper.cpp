@@ -2,10 +2,12 @@
 
 #include "../../../include/imGuiWindows.h"
 
+#include <scene/timeline/components/mesh.h>
+#include <scene/scene.h>
+
 #include <core/input/input.h>
 #include <core/input/keys.h>
 #include <core/gpu/imguiContext.h>
-#include <scene/scene.h>
 
 #include <imGuizmo/ImGuizmo.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -13,8 +15,7 @@
 #include <core/gpu/buffer.h>
 #include <glm/fwd.hpp>
 
-#include <scene/timeline/components/mesh.h>
-
+#include <variant>
 
 ImGuizmoHelper::ImGuizmoHelper(ImGuiWindows* _imGuiWindows, core::Input* _input) : m_imGuiWindows(*_imGuiWindows)
 {
@@ -38,6 +39,14 @@ ImGuizmoHelper::~ImGuizmoHelper()
 
 void ImGuizmoHelper::DrawGuizmo()
 {
+    EntityID selectedEntity = m_imGuiWindows.IsSelectedItemType<EntityID>() ? m_imGuiWindows.GetSelectedItem<EntityID>() : INVALID_ENTITY;
+
+    if (selectedEntity == INVALID_ENTITY)
+    {
+        return;
+    }
+
+
     auto viewport = m_imGuiWindows.GetContext()->GetViewportState();
     if (! viewport->width <= 0 && !viewport->height <= 0)
     {
@@ -48,17 +57,16 @@ void ImGuizmoHelper::DrawGuizmo()
         glm::mat4 proj = m_imGuiWindows.GetContext()->GetViewportProjection();
         proj[1][1] *= -1.0f;
 
-        if (m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Has(m_imGuiWindows.GetSelectedItem()))
+        if (m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Has(selectedEntity))
         {
             ImGuizmo::Manipulate(glm::value_ptr(m_imGuiWindows.GetView()), glm::value_ptr(proj)
                 , m_settings.currentOperation, m_settings.currentMode,
-                glm::value_ptr(m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Get(m_imGuiWindows.GetSelectedItem()).temp_properties.transform), nullptr, nullptr);
+                glm::value_ptr(m_imGuiWindows.GetScene()->GetComponentStorage<timeline::MeshInstance>().Get(selectedEntity).temp_properties.transform), nullptr, nullptr);
         }
 
-        if (m_imGuiWindows.GetScene()->GetComponentStorage<timeline::Light>().Has(m_imGuiWindows.GetSelectedItem()))
+        if (m_imGuiWindows.GetScene()->GetComponentStorage<timeline::Light>().Has(selectedEntity))
         {
-            timeline::Light& light =
-                m_imGuiWindows.GetScene()->GetComponentStorage<timeline::Light>().Get(m_imGuiWindows.GetSelectedItem());
+            timeline::Light& light = m_imGuiWindows.GetScene()->GetComponentStorage<timeline::Light>().Get(selectedEntity);
 
             glm::mat4 lightTransform = glm::translate(glm::mat4(1.0f), light.temp_property.position);
 
