@@ -26,6 +26,7 @@
 #include "../include/windows/others/imGuizmoHelper.h"
 #include "../include/windows/others/inspector.h"
 #include "../include/windows/others/rightClick.h"
+#include "../include/windows/others/meshPlot.h"
 
 ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager )
     : m_imGuiContext(_imGuiContext), m_scene(_scene)
@@ -38,18 +39,19 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 	//others
 	m_imGuizmoHelper = new ImGuizmoHelper(this , &_input);
 	m_rightClick = new RightClick(this);
+    m_meshPlot = new MeshPlot(this);
 
 
 	command::ClearBackupDirectory();
 	m_commandHistory = std::make_unique<command::CommandHistory>(100);
 
-	m_contentDrawer = new ContentDrawer();
+	m_contentDrawer = new ContentDrawer(this);
 	m_contentDrawer->SetCommandHistory(m_commandHistory.get());
 
 	m_windows.push_back(new WindowInput(_input , this));
 	m_windows.push_back(new WindowViewport(*this));
 	m_windows.push_back(new WindowHierarchy(*_scene , *this));
-    m_windows.push_back(new WindowInspector(*this));
+    m_windows.push_back(new WindowInspector(*this , _manager));
 }
 
 ImGuiWindows::~ImGuiWindows()
@@ -77,16 +79,28 @@ void ImGuiWindows::DrawImGui()
 
 	MainWindow();
 	ContentDrawerWindow();
-
 	for (auto& var : m_windows)
 	{
         var->Draw();
 	}
+
+
+	//TODO : Find a way to reset selected item
+	//if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered())
+	//{
+	//	m_selectedItem = std::monostate{};
+	//}
+
 }
 
 core::gpu::ImguiContext* ImGuiWindows::GetContext()
 {
 	return m_imGuiContext;
+}
+
+void ImGuiWindows::ResetSelectedItem()
+{
+    m_selectedItem = std::monostate{};
 }
 
 void ImGuiWindows::ContentDrawerWindow()

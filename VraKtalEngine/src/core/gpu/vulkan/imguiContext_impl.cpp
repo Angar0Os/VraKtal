@@ -17,6 +17,7 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_vulkan.h"
 #include "imGuizmo/ImGuizmo.h"
+#include <implot3D/implot3d.h>
 
 #include <scene/timeline/components/mesh.h>
 
@@ -87,7 +88,7 @@ core::gpu::ImguiContext::Impl::~Impl()
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-
+	ImPlot3D::DestroyContext;
 	if (imguiDescriptorPool != VK_NULL_HANDLE)
 	{
 		vkDestroyDescriptorPool(*m_device->GetImpl().device, imguiDescriptorPool, nullptr);
@@ -99,6 +100,7 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+    ImPlot3D::CreateContext();
 	ImGui::StyleColorsDark();
 
 	ImGuiIO& io = ImGui::GetIO();

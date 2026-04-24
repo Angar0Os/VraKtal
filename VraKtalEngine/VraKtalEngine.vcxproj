@@ -194,6 +194,8 @@
     <ClInclude Include="..\external\include\imgui\imstb_truetype.h" />
     <ClInclude Include="..\external\include\MDI\IconsMaterialDesignIcons.h" />
     <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h" />
+    <ClInclude Include="external\include\imPlot3D\implot3d.h" />
+    <ClInclude Include="external\include\imPlot3D\implot3d_internal.h" />
     <ClInclude Include="include\core\enum.h" />
     <ClInclude Include="include\core\gpu\accelerationStructure.h" />
     <ClInclude Include="include\core\gpu\buffer.h" />
@@ -270,6 +272,9 @@
     <ClCompile Include="..\external\include\imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\external\include\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\external\include\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="external\include\imPlot3D\implot3d.cpp" />
+    <ClCompile Include="external\include\imPlot3D\implot3d_items.cpp" />
+    <ClCompile Include="external\include\imPlot3D\implot3d_meshes.cpp" />
     <ClCompile Include="include\core\gpu\texture.h" />
     <ClCompile Include="src\core\gpu\vulkan\accelerationStructure_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\buffer_impl.cpp" />
