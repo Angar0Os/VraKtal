@@ -13,6 +13,10 @@
 
 #include <imgui/imgui.h>
 
+namespace graphics::resources
+{
+    class Mesh;
+}
 
 struct Inspect
 {

@@ -15,7 +15,12 @@ struct FileEntry {
 	FileType fileType;
 	bool isDirectory;
 	bool isSelected;
+	
+	std::filesystem::path GetRelativeFileLocation();
 };
+
+class ImGuiWindows;
+
 
 enum class ClipboardAction {
 	None,
@@ -59,12 +64,15 @@ private:
 	void PerformImport();
 
 public:
-	ContentDrawer();
+	ContentDrawer(ImGuiWindows* _windows);
 	~ContentDrawer();
 
 	void GetContentDrawerWindow();
 	void SetCurrentPath(std::filesystem::path newPath);
 	void SetCommandHistory(command::CommandHistory* history);
+
+private:
+    ImGuiWindows* m_windowManager;
 };
 
 #endif //EDITOR_WINDOWS_CONTENTDRAWER_H

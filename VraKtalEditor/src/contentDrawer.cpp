@@ -14,9 +14,12 @@
 #include "MDI/IconsMaterialDesignIcons.h"
 #include <command/fileCommands.h>
 
+#include "./imGuiWindows.h"
+
+
 constexpr const char* baseAssetPath = "assets";
 
-ContentDrawer::ContentDrawer() : m_currentPath(baseAssetPath), m_needsRefresh(true)
+ContentDrawer::ContentDrawer(ImGuiWindows* _windows) : m_currentPath(baseAssetPath), m_needsRefresh(true), m_windowManager(_windows)
 {
 	try {
 		m_currentPath = std::filesystem::absolute(baseAssetPath);
@@ -193,7 +196,7 @@ void ContentDrawer::GetContentDrawerWindow()
 		ImGui::EndPopup();
 	}
 
-	if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered()) {
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && (!ImGui::IsAnyItemHovered() || !ImGui::IsWindowHovered())) {
 		ClearSelection();
 	}
 
@@ -215,12 +218,54 @@ void ContentDrawer::GetContentDrawerWindow()
 				IM_COL32(100, 150, 255, 100),
 				4.0f
 			);
+
+			m_windowManager->SetSelectedItem(&fileEntry);
+
 		}
 
 		ImGui::PushFont(largeIconFont);
 		const char* icon = fileEntry.isDirectory ? ICON_MDI_FOLDER : GetIconForFileType(fileEntry.fileType);
 
 		bool clicked = ImGui::Button(icon, ImVec2(buttonSize, 0));
+
+		constexpr const char* PAYLOAD_FILE_ENTRY = "PAYLOAD_FILE_ENTRY";
+		FileEntry* entry = &fileEntry;
+
+		if (ImGui::BeginDragDropSource())
+		{
+			ImGui::SetDragDropPayload(
+				PAYLOAD_FILE_ENTRY,
+				&entry,
+				sizeof(FileEntry*)
+			);
+
+			ImGui::Text("%s", fileEntry.path.filename().string().c_str());
+
+			ImGui::EndDragDropSource();
+		}
+
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(PAYLOAD_FILE_ENTRY))
+			{
+				IM_ASSERT(payload->DataSize == sizeof(FileEntry*));
+
+				FileEntry* droppedEntry =
+					*static_cast<FileEntry**>(payload->Data);
+
+				if (droppedEntry)
+				{
+					// exemple
+					std::filesystem::path droppedPath = droppedEntry->path;
+					bool isDirectory = droppedEntry->isDirectory;
+				}
+			}
+
+			ImGui::EndDragDropTarget();
+		}
+
+
 		ImGui::PopFont();
 
 		if (clicked) {
@@ -658,4 +703,9 @@ const char* ContentDrawer::GetIconForFileType(FileType type)
 	default:
 		return ICON_MDI_FILE;
 	}
+}
+
+std::filesystem::path FileEntry::GetRelativeFileLocation()
+{
+	return std::filesystem::relative(this->path);
 }

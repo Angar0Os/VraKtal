@@ -58,7 +58,6 @@ void Inspect::Draw(glm::mat4& transform)
         glm::mat4 translationMat = glm::translate(glm::mat4(1.0f), translation);
         glm::mat4 rotationMat = glm::mat4_cast(newRotation);
         glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), scale);
-
         transform = translationMat * rotationMat * scaleMat;
     }
 }

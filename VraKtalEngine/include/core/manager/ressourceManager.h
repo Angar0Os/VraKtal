@@ -62,6 +62,8 @@ private:
 template<typename T>
 inline T* RessourceManager::LoadRessource(std::string _path)
 {
+	std::replace(_path.begin(), _path.end(), '\\', '/');
+
 	LoaderBase* loader = m_loaders[typeid(T)];
 	NamedStorageMap<T>& storage= static_cast<Storage<T>*>(m_storages[typeid(T)])->data;
 
@@ -77,6 +79,8 @@ inline T* RessourceManager::LoadRessource(std::string _path)
 template<typename T>
 inline T& RessourceManager::GetRessource(std::string _path)
 {
+	std::replace(_path.begin(), _path.end(), '\\', '/');
+
 	NamedStorageMap<T>& storage = static_cast<Storage<T>*>(m_storages[typeid(T)])->data;
 	return storage.Get(storage.Find(_path));
 }
@@ -91,6 +95,8 @@ inline T& RessourceManager::GetRessource(uint32_t _ID)
 template<typename T>
 inline uint32_t RessourceManager::GetRessourceID(std::string _path)
 {
+	std::replace(_path.begin(), _path.end(), '\\', '/');
+
 	NamedStorageMap<T>& storage = static_cast<Storage<T>*>(m_storages[typeid(T)])->data;
 	return storage.Find(_path);
 }

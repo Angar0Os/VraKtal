@@ -133,6 +133,9 @@
     <Filter Include="Header Files\scene\timeline\components">
       <UniqueIdentifier>{20b101ce-b616-4919-a5cc-bc59e16f8be5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External\ImPlot3D">
+      <UniqueIdentifier>{da469640-3cb2-4e92-b432-066200183db4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\core\window.h">
@@ -366,6 +369,12 @@
     <ClInclude Include="include\scene\system\systems\lightSystem.h">
       <Filter>Header Files\scene\system\systems</Filter>
     </ClInclude>
+    <ClInclude Include="external\include\imPlot3D\implot3d.h">
+      <Filter>External\ImPlot3D</Filter>
+    </ClInclude>
+    <ClInclude Include="external\include\imPlot3D\implot3d_internal.h">
+      <Filter>External\ImPlot3D</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -484,6 +493,15 @@
     </ClCompile>
     <ClCompile Include="src\scene\system\systems\lightSystem.cpp">
       <Filter>Source Files\scene\system\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="external\include\imPlot3D\implot3d.cpp">
+      <Filter>External\ImPlot3D</Filter>
+    </ClCompile>
+    <ClCompile Include="external\include\imPlot3D\implot3d_items.cpp">
+      <Filter>External\ImPlot3D</Filter>
+    </ClCompile>
+    <ClCompile Include="external\include\imPlot3D\implot3d_meshes.cpp">
+      <Filter>External\ImPlot3D</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

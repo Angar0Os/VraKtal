@@ -23,10 +23,16 @@ class ContentDrawer;
 class WindowInput;
 class WindowViewport;
 class WindowHierarchy;
-class Scene;
+struct FileEntry;
+
+
 class ImGuizmoHelper;
 class RightClick;
+class MeshPlot;
+
 class RessourceManager;
+class Scene;
+
 
 namespace core {
     class Input;
@@ -46,15 +52,16 @@ namespace graphics {
     }
     class Renderer;
 }
+
 #pragma endregion
 class ImGuiWindows
 {
 public:
-    
-    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window , core::Input& _input , Scene* _scene , RessourceManager& _manager);
+
+    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager);
     ~ImGuiWindows();
 
-    struct WindowState 
+    struct WindowState
     {
         bool isOpen = true;
         bool keepOpen = true;
@@ -65,17 +72,17 @@ public:
     core::gpu::ImguiContext* GetContext();
     core::Window* GetWindow() { return m_window; };
     Scene* GetScene() { return m_scene; };
-    Inspect* GetInspect() { return m_inspect;  };
+    Inspect* GetInspect() { return m_inspect; };
 
-    void ResetSelectedItem() { m_selectedItem = INVALID_ENTITY; };
-    
+    void ResetSelectedItem();
+
     template<typename T>
     void SetSelectedItem(T&& value)
     {
         m_selectedItem = std::forward<T>(value);
     }
 
-    
+
     template<typename T>
     bool IsSelectedItemType() const
     {
@@ -100,6 +107,7 @@ public:
     glm::mat4 GetView();
     ImGuizmoHelper* GetImGuizmoHelper() { return m_imGuizmoHelper; };
     RightClick* GetRightClick() { return m_rightClick; };
+    MeshPlot* GetMeshPlot() { return m_meshPlot; };
 
 private:
     void AddWindowToManager(const std::string& name, bool windowState);
@@ -117,12 +125,13 @@ private:
     Scene* m_scene;
 
 #pragma region windows
-    ContentDrawer*  m_contentDrawer;
+    ContentDrawer* m_contentDrawer;
     std::vector<ImguiWindowBase*> m_windows;
 
     //others
     ImGuizmoHelper* m_imGuizmoHelper;
     RightClick* m_rightClick;
+    MeshPlot* m_meshPlot;
 #pragma endregion
 
     core::Window* m_window;
@@ -130,8 +139,7 @@ private:
     core::gpu::ImguiContext* m_imGuiContext;
     Inspect* m_inspect;
     core::Input* m_input;
-
-    std::variant<std::monostate ,EntityID , graphics::resources::Mesh*> m_selectedItem = std::monostate{};
+    std::variant<std::monostate, EntityID, graphics::resources::Mesh*, FileEntry*> m_selectedItem = std::monostate{};
 };
 
 #endif //EDITOR_IMGUIWINDOWS_H
