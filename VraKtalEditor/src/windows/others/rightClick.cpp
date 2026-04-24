@@ -6,6 +6,7 @@
 
 #include <imgui/imgui.h>
 #include <scene/timeline/components/mesh.h>
+#include <scene/timeline/components/light.h>
 
 #include <variant>
 

@@ -2,6 +2,7 @@
 #include "../../include/imGuiWindows.h"
 #include "../../include/windows/others/imGuizmoHelper.h"
 #include "../../include/windows/others/rightClick.h"
+#include "../../include/windows/others/dragNdrop.h"
 
 #include <imgui/imgui.h>
 #include <glm/glm.hpp>
@@ -108,6 +109,9 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID ID)
 
             ImGui::PopStyleColor(3);
 
+
+
+
             if (ImGui::IsItemHovered())
             {
                 if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -122,5 +126,21 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID ID)
                 }
 
             }
+
+            //DragNDrop
+            if (m_scene.GetComponentStorage<timeline::MeshInstance>().Has(ID))
+            {
+                m_imGuiWindows.GetDragNDrop()->Drop<FileEntry, Mesh_ID>(m_scene.GetComponentStorage<timeline::MeshInstance>().Get(ID).meshID);
+            }
+            else
+            {
+                Mesh_ID draggedMeshID = INVALID_ID;
+                m_imGuiWindows.GetDragNDrop()->Drop<FileEntry, Mesh_ID>(draggedMeshID);
+                if (draggedMeshID != INVALID_ID)
+                {
+                    m_scene.GetComponentStorage<timeline::MeshInstance>().Add(ID, timeline::MeshInstance{ .meshID = draggedMeshID });
+                }
+            }
+            
         }
 }

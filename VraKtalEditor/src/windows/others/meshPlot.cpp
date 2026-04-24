@@ -1,10 +1,11 @@
 #include "../../../include/windows/others/meshPlot.h"
 #include "../../../include/imGuiWindows.h"
 
+#include <graphics/resources/object/mesh.h>
+
 #ifndef IMPLOT_DISABLE_OBSOLETE_FUNCTIONS
 #define IMPLOT_DISABLE_OBSOLETE_FUNCTIONS
 #endif
-
 
 #include <imPlot3D/implot3d.h>
 #include <imPlot3D/implot3d_internal.h>

@@ -28,6 +28,11 @@ enum class ClipboardAction {
 	Cut
 };
 
+struct FileHelper
+{
+	static const char* GetFileTypeIcon(FileType type);
+};
+
 class ContentDrawer
 {
 private:
@@ -47,7 +52,6 @@ private:
 
 	command::CommandHistory* m_commandHistory = nullptr;
 
-	const char* GetIconForFileType(FileType type);
 	void RefreshFileList();
 	void ClearSelection();
 	void HandleFileActions();
@@ -62,6 +66,7 @@ private:
 	void ShowRenameDialog();
 
 	void PerformImport();
+	const char* GetIconForFileType(FileType type);
 
 public:
 	ContentDrawer(ImGuiWindows* _windows);

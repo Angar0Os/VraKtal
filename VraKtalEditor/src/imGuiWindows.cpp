@@ -27,20 +27,32 @@
 #include "../include/windows/others/inspector.h"
 #include "../include/windows/others/rightClick.h"
 #include "../include/windows/others/meshPlot.h"
+#include "../include/windows/others/dragNdrop.h"
+
+struct ImguiOthers {
+	ImguiOthers(ImGuiWindows* _windows, core::Input* _input , RessourceManager* _reManager) 
+		: imGuizmoHelper(new ImGuizmoHelper(_windows, _input)), rightClick(new RightClick(_windows)), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , *_reManager)) {};
+	~ImguiOthers() {
+		delete imGuizmoHelper;
+		delete rightClick;
+		delete meshPlot;
+		delete dragNdrop;
+	}
+
+	ImGuizmoHelper* imGuizmoHelper;
+	RightClick* rightClick;
+	MeshPlot* meshPlot;
+	DragNDrop* dragNdrop;
+};
+
 
 ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager )
-    : m_imGuiContext(_imGuiContext), m_scene(_scene)
+    : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager))
 {
 	m_renderer = _renderer;
 	m_window = window;
 	m_inspect = new Inspect(&_manager);
 	m_input = &_input;
-
-	//others
-	m_imGuizmoHelper = new ImGuizmoHelper(this , &_input);
-	m_rightClick = new RightClick(this);
-    m_meshPlot = new MeshPlot(this);
-
 
 	command::ClearBackupDirectory();
 	m_commandHistory = std::make_unique<command::CommandHistory>(100);
@@ -57,14 +69,18 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 ImGuiWindows::~ImGuiWindows()
 {
 	command::ClearBackupDirectory();
-
 	delete m_contentDrawer;
 	for (auto* window : m_windows) {
 		delete window;
     }
-	delete m_imGuizmoHelper;
-	delete m_rightClick;
+    delete m_others;
 }
+
+ImGuizmoHelper* ImGuiWindows::GetImGuizmoHelper()	{ return m_others->imGuizmoHelper; };
+RightClick* ImGuiWindows::GetRightClick()			{ return m_others->rightClick; };
+MeshPlot* ImGuiWindows::GetMeshPlot()				{ return m_others->meshPlot; };
+DragNDrop* ImGuiWindows::GetDragNDrop()				{ return m_others->dragNdrop; };
+
 
 void ImGuiWindows::DrawImGui()
 {

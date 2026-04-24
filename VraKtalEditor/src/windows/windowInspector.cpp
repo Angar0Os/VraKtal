@@ -4,6 +4,8 @@
 
 #include "../../include/windows/others/rightClick.h"
 #include "../../include/windows/others/meshPlot.h"
+#include "../../include/windows/others/inspector.h"
+#include "../../include/windows/others/dragNdrop.h"
 
 #include "../../include/utils/fileTypeDetector.h"
 
