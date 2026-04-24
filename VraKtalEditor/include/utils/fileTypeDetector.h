@@ -6,6 +6,7 @@
 
 enum class FileType {
 	Unknown,
+	Folder,
 	ImagePNG,
 	ImageJPEG,
 	AudioMP3,
@@ -18,15 +19,16 @@ enum class FileType {
 inline std::ostream& operator<<(std::ostream& os, FileType type)
 {
 	switch (type) {
-		case FileType::Unknown:        return os << "Unknown";
-		case FileType::ImagePNG:       return os << "ImagePNG";
-		case FileType::ImageJPEG:      return os << "ImageJPEG";
-		case FileType::AudioMP3:       return os << "AudioMP3";
-		case FileType::AudioWAV:       return os << "AudioWAV";
-		case FileType::MeshGLB:        return os << "MeshGLB";
-		case FileType::MeshGLTF:       return os << "MeshGLTF";
-		case FileType::MeshOBJ:        return os << "MeshOBJ";
-		default:                       return os << "Unknown(" << static_cast<int>(type) << ")";
+		case FileType::Unknown:			return os << "Unknown";
+		case FileType::Folder:			return os << "Folder";
+		case FileType::ImagePNG:		return os << "ImagePNG";
+		case FileType::ImageJPEG:		return os << "ImageJPEG";
+		case FileType::AudioMP3:		return os << "AudioMP3";
+		case FileType::AudioWAV:		return os << "AudioWAV";
+		case FileType::MeshGLB:			return os << "MeshGLB";
+		case FileType::MeshGLTF:		return os << "MeshGLTF";
+		case FileType::MeshOBJ:			return os << "MeshOBJ";
+		default:						return os << "Unknown(" << static_cast<int>(type) << ")";
 	}
 }
 
