@@ -31,6 +31,7 @@ namespace graphics
 
 		const std::vector<PassAttachment>& GetColorAttachments() const override;
 		const PassAttachment* GetDepthAttachment()  const override;
+		const PassAttachment* GetVelocityAttachment() const { return &m_colorAttachments[2]; }
 
 		void SetMeshInstances(
 			const std::vector<std::pair<resources::Mesh*, glm::mat4>>* instances);

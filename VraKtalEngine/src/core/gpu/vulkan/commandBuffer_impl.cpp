@@ -842,6 +842,20 @@ void core::gpu::CommandBuffer::TransitionImageLayout(const core::gpu::Image* ima
 		srcStage = vk::PipelineStageFlagBits::eComputeShader;
 		dstStage = vk::PipelineStageFlagBits::eFragmentShader;
 	}
+	else if (oldLayout == ImageLayout::ShaderReadOnly && newLayout == ImageLayout::TransferDst)
+	{
+		srcAccess = vk::AccessFlagBits::eShaderRead;
+		dstAccess = vk::AccessFlagBits::eTransferWrite;
+		srcStage = vk::PipelineStageFlagBits::eFragmentShader;
+		dstStage = vk::PipelineStageFlagBits::eTransfer;
+		}
+	else if (oldLayout == ImageLayout::ColorAttachment && newLayout == ImageLayout::TransferDst)
+	{
+		srcAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+		dstAccess = vk::AccessFlagBits::eTransferWrite;
+		srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+		dstStage = vk::PipelineStageFlagBits::eTransfer;
+		}
 	else
 	{
 		throw std::runtime_error("Unsupported layout transition!");

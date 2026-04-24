@@ -5,6 +5,8 @@ cbuffer UniformBufferObject
     float4x4 proj;
     float4x4 lightSpaceMatrix;
     float4x4 viewProjInverse;
+    float4x4 prevViewProj;
+    float4x4 prevModel;
     float4   viewPos;
     struct LightData
     {
@@ -39,25 +41,33 @@ struct VSInput
 
 struct VSOutput
 {
-    float4 position : SV_Position;
-    float3 worldPos : TEXCOORD0;
-    float3 normal   : TEXCOORD1;
-    float2 uv       : TEXCOORD2;
+    float4 position     : SV_Position;
+    float3 worldPos     : TEXCOORD0;
+    float3 normal       : TEXCOORD1;
+    float2 uv           : TEXCOORD2;
+    float4 clipPos      : TEXCOORD3;
+    float4 prevClipPos  : TEXCOORD4;
 };
 
 struct FSOutput
 {
-    [[vk::location(0)]] float4 albedoMetal : SV_Target0;
-    [[vk::location(1)]] float4 normalRough : SV_Target1;
+    [[vk::location(0)]] float4 albedoMetal  : SV_Target0;
+    [[vk::location(1)]] float4 normalRough  : SV_Target1;
+    [[vk::location(2)]] float2 velocity     : SV_Target2;
 };
 
 [shader("vertex")]
 VSOutput vertMain(VSInput input)
 {
     VSOutput o;
+    
     float4 worldPos4 = mul(model, float4(input.position, 1.0));
+    float4 prevWorldPos4 = mul(prevModel, float4(input.position, 1.0));
+
+    o.clipPos = mul(proj, mul(view, worldPos4));
+    o.prevClipPos = mul(prevViewProj, prevWorldPos4);
+    o.position = o.clipPos;
     o.worldPos = worldPos4.xyz;
-    o.position = mul(proj, mul(view, worldPos4));
     o.normal = normalize(mul((float3x3)model, input.normal));
     o.uv = input.uv;
     return o;
@@ -79,6 +89,10 @@ FSOutput fragMain(VSOutput input)
     float3 Ngeo = normalize(input.normal);
     float3 texNormal = normalTex.Sample(input.uv).xyz * 2.0 - 1.0;
     float3 Nworld;
+
+    float2 ndcCur = input.clipPos.xy / input.clipPos.w;
+    float2 ndcPrev = input.prevClipPos.xy / input.prevClipPos.w;
+    o.velocity = (ndcCur - ndcPrev) * float2(0.5, -0.5);
 
     if (abs(texNormal.x) < 0.01 && abs(texNormal.y) < 0.01)
     {

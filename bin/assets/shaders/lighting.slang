@@ -7,21 +7,21 @@ cbuffer UniformBufferObject
     float4x4 proj;
     float4x4 lightSpaceMatrix;
     float4x4 viewProjInverse;
-    float4   viewPos;
-
+    float4x4 prevViewProj;
+    float4x4 prevModel;
+    float4 viewPos;
     struct LightData
     {
         float4 position;
         float4 color;
-        float  intensity;
-        int    enabled;
-        int    type;
-        float  lightRadius;
+        float intensity;
+        int enabled;
+        int type;
+        float lightRadius;
     };
-
     LightData lights[10];
-    int      numLights;
-    uint     frameCount;
+    int numLights;
+    uint frameCount;
 };
 
 [[vk::binding(1, 0)]] Sampler2D albedoMetal;

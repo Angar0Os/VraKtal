@@ -20,8 +20,14 @@
 using namespace core;
 using namespace core::gpu;
 using namespace graphics::resources;
-namespace graphics
+
+namespace graphics 
 {
+    class GBufferPass;
+    class IBLPass;
+    class LightingPass;
+    class TAAPass;
+
     constexpr int MAX_LIGHTS = 10;
     struct UniformBufferObject
     {
@@ -29,6 +35,8 @@ namespace graphics
         glm::mat4 proj;
         glm::mat4 lightSpaceMatrix;
         glm::mat4 viewProjInverse;
+        glm::mat4 prevViewProj;
+        glm::mat4 prevModel;
         glm::vec4 viewPos;
         struct LightData
         {
@@ -61,15 +69,17 @@ namespace graphics
         std::vector<Light>                                  m_lights;
         std::vector<std::unique_ptr<Pass>> m_passes;
 
-        class GBufferPass* m_gBufferPass = nullptr;
-        class IBLPass* m_iblPass = nullptr;
-        class LightingPass* m_lightingPass = nullptr;
+        GBufferPass*    m_gBufferPass = nullptr;
+        IBLPass*        m_iblPass = nullptr;
+        LightingPass*   m_lightingPass = nullptr;
+        TAAPass*        m_taaPass = nullptr;
 
         std::vector<std::unique_ptr<Buffer>> uniformBuffers;
         uint32_t  m_currentFrame;
         uint64_t  m_frameCounter;
         bool      m_running;
 
+        glm::mat4 m_prevViewProj = glm::mat4(1.0f);
         glm::mat4 m_viewMatrix;
         glm::mat4 m_projMatrix;
         glm::vec3 m_cameraPosition;

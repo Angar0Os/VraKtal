@@ -37,12 +37,13 @@ void graphics::GBufferPass::CreateAttachments()
 	const TextureFormat colorFormats[] = {
 		TextureFormat::RGBA8_SRGB,
 		TextureFormat::RGBA16_Float,
+		TextureFormat::RG16_Float
 	};
 
 	m_colorAttachments.clear();
-	m_colorAttachments.resize(2);
+	m_colorAttachments.resize(3);
 
-	for (int i = 0; i < 2; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
 		SImageCreateInfo info{
 			.width = width,
@@ -156,7 +157,7 @@ void graphics::GBufferPass::CreatePipeline()
 	pipelineInfo.depthCompareOp = CompareOp::Less;
 	pipelineInfo.blendEnable = false;
 	pipelineInfo.samples = SampleCount::e1;
-	pipelineInfo.colorAttachmentFormats = { TextureFormat::RGBA8_SRGB, TextureFormat::RGBA16_Float };
+	pipelineInfo.colorAttachmentFormats = { TextureFormat::RGBA8_SRGB, TextureFormat::RGBA16_Float, TextureFormat::RG16_Float };
 	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
 	pipelineInfo.descriptorSetLayouts = { m_dsLayouts[0].get(), m_materialLayout.get() };
 	pipelineInfo.pushConstantRanges = pushConstants;

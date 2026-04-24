@@ -1,27 +1,23 @@
-#include <graphics/renderPass/lightingPass.h>
+#include <graphics/renderPass/taaPass.h>
 
 #include <core/gpu/descriptorSet.h>
-#include <core/gpu/device.h>
 #include <core/enum.h>
+
 #include <loaders/shaderLoader.h>
-#include <loaders/materialLoader.h>
 
 using namespace core;
 using namespace core::gpu;
 
-graphics::LightingPass::LightingPass(Device& device,
+graphics::TAAPass::TAAPass(Device& device,
 	const std::vector<std::unique_ptr<Buffer>>& uniformBuffers)
-	: Pass("Lighting")
+	: Pass("TAA")
 	, m_device(device)
 	, m_uniformBuffers(uniformBuffers)
 {
-	m_envMap.image = loaders::MaterialLoader::UploadHDRTexture(m_device, "assets/textures/skyboxes/citrus_1k.hdr");
-	m_envMap.texture = std::make_unique<Texture>(m_device, *m_envMap.image);
-
 	Init(device);
 }
 
-void graphics::LightingPass::Init(Device& device)
+void graphics::TAAPass::Init(Device& device)
 {
 	CreateAttachments();
 	CreateDescriptorSetLayout();
@@ -29,7 +25,7 @@ void graphics::LightingPass::Init(Device& device)
 	CreateDescriptorSets();
 }
 
-void graphics::LightingPass::CreateAttachments()
+void graphics::TAAPass::CreateAttachments()
 {
 	auto [width, height] = m_device.GetSwapchainExtent();
 
@@ -37,68 +33,60 @@ void graphics::LightingPass::CreateAttachments()
 		.width = width,
 		.height = height,
 		.mipLevels = 1,
-		.format = TextureFormat::RGBA8_SRGB,
+		.format = TextureFormat::RGBA16_Float, 
 		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc | ImageUsage::Sampled,
+		.usage = ImageUsage::ColorAttachment | ImageUsage::Sampled | ImageUsage::TransferDst,
 		.memoryProperties = EMemoryProperty::DeviceLocal,
 		.samples = SampleCount::e1
 	};
 
+	for (int i = 0; i < 2; ++i)
+	{
+		m_historyAttachments[i].image = std::make_unique<Image>(&m_device, info);
+		m_historyAttachments[i].texture = std::make_unique<Texture>(m_device, *m_historyAttachments[i].image);
+	}
+
+	SImageCreateInfo outInfo = info;
+	outInfo.usage = ImageUsage::ColorAttachment | ImageUsage::Sampled | ImageUsage::TransferSrc;
+
 	m_colorAttachments.resize(1);
-	m_colorAttachments[0].image = std::make_unique<Image>(&m_device, info);
+	m_colorAttachments[0].image = std::make_unique<Image>(&m_device, outInfo);
 	m_colorAttachments[0].texture = std::make_unique<Texture>(m_device, *m_colorAttachments[0].image);
 }
 
-void graphics::LightingPass::CreateDescriptorSetLayout()
+void graphics::TAAPass::CreateDescriptorSetLayout()
 {
 	SDescriptorSetLayoutBinding uboBinding{
 		.binding = 0,
 		.descriptorType = EDescriptorType::UniformBuffer,
 		.stageFlags = core::ShaderStage::Fragment
 	};
-	SDescriptorSetLayoutBinding albedoBinding{
+	SDescriptorSetLayoutBinding currentBinding{
 		.binding = 1,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
 		.stageFlags = core::ShaderStage::Fragment
 	};
-	SDescriptorSetLayoutBinding normalBinding{
+	SDescriptorSetLayoutBinding historyBinding{
 		.binding = 2,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
 		.stageFlags = core::ShaderStage::Fragment
 	};
-	SDescriptorSetLayoutBinding depthBinding{
+	SDescriptorSetLayoutBinding velocityBinding{
 		.binding = 3,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
 		.stageFlags = core::ShaderStage::Fragment
 	};
-	SDescriptorSetLayoutBinding tlasBinding{
-		.binding = 4,
-		.descriptorType = EDescriptorType::AccelerationStructure,
-		.stageFlags = core::ShaderStage::Fragment
-	};
-	SDescriptorSetLayoutBinding envMapBinding{  
-		.binding = 5,
-		.descriptorType = EDescriptorType::CombinedImageSampler,
-		.stageFlags = core::ShaderStage::Fragment
-	};
-	SDescriptorSetLayoutBinding iblBinding{     
-		.binding = 6,
-		.descriptorType = EDescriptorType::CombinedImageSampler,
-		.stageFlags = core::ShaderStage::Fragment
-	};
-
-	SDescriptorSetLayoutCreateInfo layoutInfo{
-		.bindings = { uboBinding, albedoBinding, normalBinding,
-					  depthBinding, tlasBinding, envMapBinding, iblBinding }
-	};
 
 	m_dsLayouts.clear();
-	m_dsLayouts.push_back(std::make_unique<DescriptorSetLayout>(&m_device, layoutInfo));
+	m_dsLayouts.push_back(std::make_unique<DescriptorSetLayout>(
+		&m_device,
+		SDescriptorSetLayoutCreateInfo{ .bindings = { uboBinding, currentBinding, historyBinding, velocityBinding } }
+	));
 }
 
-void graphics::LightingPass::CreatePipeline()
+void graphics::TAAPass::CreatePipeline()
 {
-	auto shaderCode = loaders::ReadFile("../bin/assets/shaders/lighting.spv");
+	auto shaderCode = loaders::ReadFile("../bin/assets/shaders/taa.spv");
 
 	PipelineCreateInfo pipelineInfo{};
 	pipelineInfo.shaderStages = {
@@ -116,7 +104,7 @@ void graphics::LightingPass::CreatePipeline()
 	pipelineInfo.depthCompareOp = CompareOp::Always;
 	pipelineInfo.blendEnable = false;
 	pipelineInfo.samples = SampleCount::e1;
-	pipelineInfo.colorAttachmentFormats = { TextureFormat::RGBA8_SRGB };
+	pipelineInfo.colorAttachmentFormats = { TextureFormat::RGBA16_Float };
 	pipelineInfo.depthAttachmentFormat = TextureFormat::Undefined;
 	pipelineInfo.descriptorSetLayouts = { m_dsLayouts[0].get() };
 	pipelineInfo.pushConstantRanges = {};
@@ -125,7 +113,7 @@ void graphics::LightingPass::CreatePipeline()
 	m_pipeline = std::make_unique<Pipeline>(&m_device, pipelineInfo);
 }
 
-void graphics::LightingPass::CreateDescriptorSets()
+void graphics::TAAPass::CreateDescriptorSets()
 {
 	m_descriptorSets.clear();
 	m_descriptorSets.reserve(Device::s_FRAMES_IN_FLIGHT);
@@ -138,52 +126,46 @@ void graphics::LightingPass::CreateDescriptorSets()
 	}
 }
 
-void graphics::LightingPass::SetGBufferInputs(
-	const std::vector<PassAttachment>& colorAttachments,
-	const PassAttachment& depthAttachment,
-	const PassAttachment& iblAttachment)
+void graphics::TAAPass::SetInputs(const PassAttachment& currentColor,
+	const PassAttachment& velocityTex)
 {
-	m_gbufferColor = &colorAttachments;
-	m_gbufferDepth = &depthAttachment;
+	m_currentColor = &currentColor;
+	m_velocityTex = &velocityTex;
 
 	for (uint32_t i = 0; i < Device::s_FRAMES_IN_FLIGHT; ++i)
 	{
-		m_descriptorSets[i]->Bind(1, *colorAttachments[0].texture); 
-		m_descriptorSets[i]->Bind(2, *colorAttachments[1].texture); 
-		m_descriptorSets[i]->Bind(3, *depthAttachment.texture);
-		m_descriptorSets[i]->Bind(5, *m_envMap.texture);            
-		m_descriptorSets[i]->Bind(6, *iblAttachment.texture);       
+		m_descriptorSets[i]->Bind(1, *m_currentColor->texture);
+		m_descriptorSets[i]->Bind(3, *m_velocityTex->texture);
 		m_descriptorSets[i]->Update(m_device);
 	}
 }
 
-void graphics::LightingPass::SetTLAS(AccelerationStructure* tlas)
+void graphics::TAAPass::UpdateDescriptorSets(uint32_t frameIndex)
 {
-	m_tlas = tlas;
-}
+	uint32_t historyReadIdx = (frameIndex + 1) % 2;
 
-void graphics::LightingPass::UpdateDescriptorSets(uint32_t frameIndex)
-{
-	if (!m_tlas) return;
-
-	m_descriptorSets[frameIndex]->Bind(4, *m_tlas);
+	m_descriptorSets[frameIndex]->Bind(2, *m_historyAttachments[historyReadIdx].texture);
 	m_descriptorSets[frameIndex]->Update(m_device);
 }
 
-void graphics::LightingPass::BindDescriptorSets(CommandBuffer& cmd, uint32_t frameIndex)
+void graphics::TAAPass::BindDescriptorSets(CommandBuffer& cmd, uint32_t frameIndex)
 {
-	cmd.BindDescriptorSets(
-		m_pipeline.get(),
-		m_descriptorSets[frameIndex].get(),
-		frameIndex,
-		0
-	);
+	cmd.BindDescriptorSets(m_pipeline.get(), m_descriptorSets[frameIndex].get(), frameIndex, 0);
 }
 
-void graphics::LightingPass::Draw(CommandBuffer& cmd,
-	const std::vector<ColorAttachmentDesc>& colorAttachments,
-	const DepthAttachmentDesc& depthAttachment, uint32_t currentFrame)
+void graphics::TAAPass::Draw(CommandBuffer& cmd,
+	const std::vector<ColorAttachmentDesc>&,
+	const DepthAttachmentDesc&,
+	uint32_t currentFrame)
 {
+	uint32_t historyWriteIdx = currentFrame % 2;
+
+	cmd.TransitionImageLayout(
+		m_historyAttachments[historyWriteIdx].image.get(),
+		ImageLayout::Undefined,
+		ImageLayout::ColorAttachment,
+		false
+	);
 	cmd.TransitionImageLayout(
 		m_colorAttachments[0].image.get(),
 		ImageLayout::Undefined,
@@ -193,14 +175,9 @@ void graphics::LightingPass::Draw(CommandBuffer& cmd,
 
 	CommandBuffer::RenderingAttachmentInfo colorInfo{};
 	colorInfo.image = m_colorAttachments[0].image.get();
-	colorInfo.clear = true;
-	colorInfo.clearR = 0.0f;
-	colorInfo.clearG = 0.0f;
-	colorInfo.clearB = 0.0f;
-	colorInfo.clearA = 1.0f;
+	colorInfo.clear = false;
 
 	cmd.BeginRendering(&m_device, { colorInfo }, {});
-
 	cmd.BindPipeline(m_pipeline.get());
 	cmd.SetViewport(0.0f, 0.0f, &m_device);
 	cmd.SetScissor(0, 0, &m_device);
@@ -208,24 +185,42 @@ void graphics::LightingPass::Draw(CommandBuffer& cmd,
 	UpdateDescriptorSets(currentFrame);
 	BindDescriptorSets(cmd, currentFrame);
 
-	cmd.DrawIndexed(3, 1, 0, 0, 0);
-
+	cmd.DrawIndexed(3, 1, 0, 0, 0); 
 	cmd.EndRendering();
 
 	cmd.TransitionImageLayout(
 		m_colorAttachments[0].image.get(),
 		ImageLayout::ColorAttachment,
+		ImageLayout::TransferSrc,
+		false
+	);
+	cmd.TransitionImageLayout(
+		m_historyAttachments[historyWriteIdx].image.get(),
+		ImageLayout::ColorAttachment,
+		ImageLayout::TransferDst,
+		false
+	);
+
+	cmd.BlitImage(
+		m_colorAttachments[0].image.get(),
+		m_historyAttachments[historyWriteIdx].image.get(),
+		&m_device
+	);
+
+	cmd.TransitionImageLayout(
+		m_historyAttachments[historyWriteIdx].image.get(),
+		ImageLayout::TransferDst,
 		ImageLayout::ShaderReadOnly,
 		false
 	);
 }
 
-const std::vector<graphics::PassAttachment>& graphics::LightingPass::GetColorAttachments() const
+const std::vector<graphics::PassAttachment>& graphics::TAAPass::GetColorAttachments() const
 {
 	return m_colorAttachments;
 }
 
-const graphics::PassAttachment* graphics::LightingPass::GetDepthAttachment() const
+const graphics::PassAttachment* graphics::TAAPass::GetDepthAttachment() const
 {
 	return nullptr;
 }
