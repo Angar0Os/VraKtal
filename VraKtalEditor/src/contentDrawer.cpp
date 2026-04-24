@@ -15,6 +15,7 @@
 #include <command/fileCommands.h>
 
 #include "./imGuiWindows.h"
+#include "./windows/others/dragNdrop.h"
 
 
 constexpr const char* baseAssetPath = "assets";
@@ -224,49 +225,20 @@ void ContentDrawer::GetContentDrawerWindow()
 		}
 
 		ImGui::PushFont(largeIconFont);
-		const char* icon = fileEntry.isDirectory ? ICON_MDI_FOLDER : GetIconForFileType(fileEntry.fileType);
+
+		const char* icon = fileEntry.isDirectory
+			? ICON_MDI_FOLDER
+			: GetIconForFileType(fileEntry.fileType);
 
 		bool clicked = ImGui::Button(icon, ImVec2(buttonSize, 0));
-
-		constexpr const char* PAYLOAD_FILE_ENTRY = "PAYLOAD_FILE_ENTRY";
-		FileEntry* entry = &fileEntry;
-
-		if (ImGui::BeginDragDropSource())
-		{
-			ImGui::SetDragDropPayload(
-				PAYLOAD_FILE_ENTRY,
-				&entry,
-				sizeof(FileEntry*)
-			);
-
-			ImGui::Text("%s", fileEntry.path.filename().string().c_str());
-
-			ImGui::EndDragDropSource();
-		}
-
-
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(PAYLOAD_FILE_ENTRY))
-			{
-				IM_ASSERT(payload->DataSize == sizeof(FileEntry*));
-
-				FileEntry* droppedEntry =
-					*static_cast<FileEntry**>(payload->Data);
-
-				if (droppedEntry)
-				{
-					// exemple
-					std::filesystem::path droppedPath = droppedEntry->path;
-					bool isDirectory = droppedEntry->isDirectory;
-				}
-			}
-
-			ImGui::EndDragDropTarget();
-		}
-
-
+		
+		m_windowManager->GetDragNDrop()->Drag<FileEntry>(fileEntry);
 		ImGui::PopFont();
+		if (FileEntry* dropped = m_windowManager->GetDragNDrop()->Drop<FileEntry , FileEntry>(fileEntry))
+		{
+			std::cout << "Dropped: " << dropped->path << "\n";
+			std::cout << "Target: " << fileEntry.path << "\n";
+		}
 
 		if (clicked) {
 			if (ImGui::GetIO().KeyCtrl) {
@@ -708,4 +680,29 @@ const char* ContentDrawer::GetIconForFileType(FileType type)
 std::filesystem::path FileEntry::GetRelativeFileLocation()
 {
 	return std::filesystem::relative(this->path);
+}
+
+const char* FileHelper::GetFileTypeIcon(FileType type)
+{
+	switch (type) {
+	case FileType::Folder:
+        return ICON_MDI_FOLDER;
+
+	case FileType::ImagePNG:
+	case FileType::ImageJPEG:
+		return ICON_MDI_FILE_IMAGE;
+
+	case FileType::AudioMP3:
+	case FileType::AudioWAV:
+		return ICON_MDI_FILE_MUSIC;
+
+	case FileType::MeshOBJ:
+	case FileType::MeshGLTF:
+	case FileType::MeshGLB:
+		return ICON_MDI_CUBE_OUTLINE;
+
+	case FileType::Unknown:
+	default:
+		return ICON_MDI_FILE;
+	}
 }

@@ -9,6 +9,8 @@
 #include <core/input/keys.h>
 #include <core/gpu/imguiContext.h>
 
+#include <scene/timeline/components/light.h>
+
 #include <imGuizmo/ImGuizmo.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui/imgui.h>

@@ -3,15 +3,30 @@
 #include <vector>
 #include <string>
 
-FileType FileTypeDetector::DetectFileType(const std::filesystem::path& path) {
-	std::ifstream file(path, std::ios::binary);
-	if (!file.is_open()) {
+FileType FileTypeDetector::DetectFileType(const std::filesystem::path& path) 
+{
+	
+	std::error_code ec;
+
+	if (std::filesystem::is_directory(path, ec))
+	{
+		return FileType::Folder; // à ajouter dans ton enum
+	}
+
+	if (ec)
+	{
 		return FileType::Unknown;
 	}
 
+	std::ifstream file(path, std::ios::binary);
 	std::vector<unsigned char> buffer(12, 0);
 	file.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
 	size_t bytesRead = file.gcount();
+
+	if (!file.is_open())
+	{
+		return FileType::Unknown;
+	}
 
 	if (bytesRead < 2) {
 		return FileType::Unknown;

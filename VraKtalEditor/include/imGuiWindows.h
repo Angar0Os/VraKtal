@@ -15,7 +15,6 @@
 
 #include "windows/ImguiWindowBase.h"
 #include <scene/timeline/entityBase.h>
-#include <windows/others/inspector.h>
 #include <utility>
 
 #pragma region ForwardDeclarations
@@ -29,6 +28,8 @@ struct FileEntry;
 class ImGuizmoHelper;
 class RightClick;
 class MeshPlot;
+struct DragNDrop;
+struct Inspect;
 
 class RessourceManager;
 class Scene;
@@ -52,6 +53,8 @@ namespace graphics {
     }
     class Renderer;
 }
+
+struct ImguiOthers;
 
 #pragma endregion
 class ImGuiWindows
@@ -105,9 +108,10 @@ public:
 
     //helper
     glm::mat4 GetView();
-    ImGuizmoHelper* GetImGuizmoHelper() { return m_imGuizmoHelper; };
-    RightClick* GetRightClick() { return m_rightClick; };
-    MeshPlot* GetMeshPlot() { return m_meshPlot; };
+    ImGuizmoHelper* GetImGuizmoHelper();
+    RightClick* GetRightClick();
+    MeshPlot* GetMeshPlot();
+    DragNDrop* GetDragNDrop();
 
 private:
     void AddWindowToManager(const std::string& name, bool windowState);
@@ -128,10 +132,7 @@ private:
     ContentDrawer* m_contentDrawer;
     std::vector<ImguiWindowBase*> m_windows;
 
-    //others
-    ImGuizmoHelper* m_imGuizmoHelper;
-    RightClick* m_rightClick;
-    MeshPlot* m_meshPlot;
+    ImguiOthers* m_others;
 #pragma endregion
 
     core::Window* m_window;

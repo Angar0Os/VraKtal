@@ -87,6 +87,9 @@
     <ClCompile Include="src\windows\others\meshPlot.cpp">
       <Filter>Source Files\windows\others</Filter>
     </ClCompile>
+    <ClCompile Include="src\windows\others\dragNdrop.cpp">
+      <Filter>Source Files\windows\others</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -138,6 +141,9 @@
       <Filter>Header Files\windows\others</Filter>
     </ClInclude>
     <ClInclude Include="include\windows\others\meshPlot.h">
+      <Filter>Header Files\windows\others</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\others\dragNdrop.h">
       <Filter>Header Files\windows\others</Filter>
     </ClInclude>
   </ItemGroup>
