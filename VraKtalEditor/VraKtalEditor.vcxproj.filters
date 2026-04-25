@@ -37,6 +37,12 @@
     <Filter Include="Source Files\windows\others">
       <UniqueIdentifier>{87076f1a-ffca-4a6b-8cf8-cc2e2c7da6ca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\windows\popup">
+      <UniqueIdentifier>{f4343e73-4ba7-4e0b-8063-79bb0233300c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\windows\popup">
+      <UniqueIdentifier>{f4434cd5-a9cf-4d74-9a03-b355aacd5145}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -60,9 +66,6 @@
     <ClCompile Include="src\command\fileCommands.cpp">
       <Filter>Source Files\command</Filter>
     </ClCompile>
-    <ClCompile Include="src\newProjectModal.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\windows\windowInput.cpp">
       <Filter>Source Files\windows</Filter>
     </ClCompile>
@@ -81,14 +84,17 @@
     <ClCompile Include="src\windows\windowInspector.cpp">
       <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="src\windows\others\rightClick.cpp">
-      <Filter>Source Files\windows\others</Filter>
-    </ClCompile>
     <ClCompile Include="src\windows\others\meshPlot.cpp">
       <Filter>Source Files\windows\others</Filter>
     </ClCompile>
     <ClCompile Include="src\windows\others\dragNdrop.cpp">
       <Filter>Source Files\windows\others</Filter>
+    </ClCompile>
+    <ClCompile Include="src\windows\popup\projectModal.cpp">
+      <Filter>Source Files\windows\popup</Filter>
+    </ClCompile>
+    <ClCompile Include="src\windows\popup\rightClick.cpp">
+      <Filter>Source Files\windows\popup</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -113,9 +119,6 @@
     <ClInclude Include="include\command\fileCommands.h">
       <Filter>Header Files\command</Filter>
     </ClInclude>
-    <ClInclude Include="include\newProjectModal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\windows\windowInput.h">
       <Filter>Header Files\windows</Filter>
     </ClInclude>
@@ -137,14 +140,17 @@
     <ClInclude Include="include\windows\windowInspector.h">
       <Filter>Header Files\windows</Filter>
     </ClInclude>
-    <ClInclude Include="include\windows\others\rightClick.h">
-      <Filter>Header Files\windows\others</Filter>
-    </ClInclude>
     <ClInclude Include="include\windows\others\meshPlot.h">
       <Filter>Header Files\windows\others</Filter>
     </ClInclude>
     <ClInclude Include="include\windows\others\dragNdrop.h">
       <Filter>Header Files\windows\others</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\popup\projectModal.h">
+      <Filter>Header Files\windows\popup</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\popup\rightClick.h">
+      <Filter>Header Files\windows\popup</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

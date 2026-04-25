@@ -2,10 +2,10 @@
 #include "../../include/imGuiWindows.h"
 #include "../../include/contentDrawer.h"
 
-#include "../../include/windows/others/rightClick.h"
 #include "../../include/windows/others/meshPlot.h"
 #include "../../include/windows/others/inspector.h"
 #include "../../include/windows/others/dragNdrop.h"
+#include "../../include/windows/popup/rightClick.h"
 
 #include "../../include/utils/fileTypeDetector.h"
 

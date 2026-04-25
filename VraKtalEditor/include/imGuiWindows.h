@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <string>
 #include <core/window.h>
-#include "newProjectModal.h"
 #include "command/commandHistory.h"
 #include <imgui/imgui.h>
 #include <vector>
@@ -18,19 +17,31 @@
 #include <utility>
 
 #pragma region ForwardDeclarations
+//Windows
 class ContentDrawer;
 class WindowInput;
 class WindowViewport;
 class WindowHierarchy;
-struct FileEntry;
+class ProjectModal;
+
+//Others
+class   ImGuizmoHelper;
+class   MeshPlot;
+struct  DragNDrop;
+struct  Inspect;
+struct  FileEntry;
+
+struct ImguiOthers;
+
+//Popups
+class   RightClick;
+class   ProjectModal;
+
+struct Popups;
 
 
-class ImGuizmoHelper;
-class RightClick;
-class MeshPlot;
-struct DragNDrop;
-struct Inspect;
 
+//Engine
 class RessourceManager;
 class Scene;
 
@@ -54,7 +65,7 @@ namespace graphics {
     class Renderer;
 }
 
-struct ImguiOthers;
+
 
 #pragma endregion
 class ImGuiWindows
@@ -75,7 +86,6 @@ public:
     core::gpu::ImguiContext* GetContext();
     core::Window* GetWindow() { return m_window; };
     Scene* GetScene() { return m_scene; };
-    Inspect* GetInspect() { return m_inspect; };
 
     void ResetSelectedItem();
 
@@ -108,10 +118,16 @@ public:
 
     //helper
     glm::mat4 GetView();
+
+    //Get Others
     ImGuizmoHelper* GetImGuizmoHelper();
-    RightClick* GetRightClick();
     MeshPlot* GetMeshPlot();
     DragNDrop* GetDragNDrop();
+    Inspect* GetInspect();
+    
+    //Get popups
+    RightClick* GetRightClick();
+    ProjectModal* GetProjectModal();
 
 private:
     void AddWindowToManager(const std::string& name, bool windowState);
@@ -123,22 +139,20 @@ private:
 
     std::unordered_map<std::string, WindowState> m_windowStatesList;
 
-    NewProjectModal m_newProjectModal;
     std::unique_ptr<command::CommandHistory> m_commandHistory;
-
-    Scene* m_scene;
 
 #pragma region windows
     ContentDrawer* m_contentDrawer;
     std::vector<ImguiWindowBase*> m_windows;
+#pragma endregion
 
     ImguiOthers* m_others;
-#pragma endregion
+    Popups* m_popups;
 
     core::Window* m_window;
     graphics::Renderer* m_renderer;
     core::gpu::ImguiContext* m_imGuiContext;
-    Inspect* m_inspect;
+    Scene* m_scene;
     core::Input* m_input;
     std::variant<std::monostate, EntityID, graphics::resources::Mesh*, FileEntry*> m_selectedItem = std::monostate{};
 };
