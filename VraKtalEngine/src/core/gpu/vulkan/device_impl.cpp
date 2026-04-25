@@ -364,15 +364,12 @@ void ::Device::Impl::CreateLogicalDevice()
 	bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
 	bufferDeviceAddressFeatures.pNext = &accelFeatures;
 
-	vk::StructureChain
-		<vk::PhysicalDeviceFeatures2,
-		vk::PhysicalDeviceVulkan11Features,
-		vk::PhysicalDeviceVulkan13Features,
-		vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT> featureChain = {
-	   {.features = {.samplerAnisotropy = true} },
-	   {.shaderDrawParameters = true},
-	   {.synchronization2 = true, .dynamicRendering = true},
-	   {.extendedDynamicState = true}
+	vk::StructureChain featureChain = {
+		vk::PhysicalDeviceFeatures2 {.features = {.samplerAnisotropy = true} },
+		vk::PhysicalDeviceVulkan11Features {.shaderDrawParameters = true},
+		vk::PhysicalDeviceVulkan13Features {.synchronization2 = true, .dynamicRendering = true},
+		vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT {.extendedDynamicState = true},
+		vk::PhysicalDeviceComputeShaderDerivativesFeaturesKHR { .computeDerivativeGroupQuads = true }
 	};
 
 	featureChain.get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().pNext = &bufferDeviceAddressFeatures;

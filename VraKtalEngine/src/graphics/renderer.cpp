@@ -292,7 +292,7 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 		lightDepthDesc.clearDepth = 1.0f;
 	}
 
-	m_lightingPass->Draw(*cmd, lightColorDescs, lightDepthDesc, m_currentFrame);
+	//m_lightingPass->Draw(*cmd, lightColorDescs, lightDepthDesc, m_currentFrame);
 
 	m_taaPass->Draw(*cmd, {}, {}, m_currentFrame);
 
@@ -302,6 +302,13 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 			outputImage,
 			ImageLayout::Undefined,
 			ImageLayout::TransferDst,
+			false
+		);
+		
+		cmd->TransitionImageLayout(
+			m_taaPass->GetColorAttachments()[0].image.get(),
+			ImageLayout::ShaderReadOnly,
+			ImageLayout::TransferSrc,
 			false
 		);
 
