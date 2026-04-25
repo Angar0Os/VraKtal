@@ -183,7 +183,6 @@ void ContentDrawer::GetContentDrawerWindow()
 	ImFont* largeIconFont = ImGui::GetIO().Fonts->Fonts[1];
 
 	HandleFileActions();
-
 	ShowRenameDialog();
 	ShowDeleteDialog();
 
@@ -295,12 +294,6 @@ void ContentDrawer::GetContentDrawerWindow()
 		ImGui::SameLine();
 		ImGui::PopID();
 	}
-
-	bool canClearSelection = !m_showRenameDialog && !m_showDeleteDialog;
-	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && (!ImGui::IsAnyItemHovered() || !ImGui::IsWindowHovered()) && canClearSelection) 
-	{
-		ClearSelection();
-	}
 }
 
 void ContentDrawer::SetCurrentPath(std::filesystem::path newPath)
@@ -379,6 +372,15 @@ void ContentDrawer::HandleFileActions()
 		}
 
 		ImGui::EndPopup();
+	}
+	else
+	{
+		bool canClearSelection = !m_showDeleteDialog && !m_showRenameDialog;
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().KeyCtrl  && !ImGui::GetIO().KeyShift && (ImGui::IsAnyItemHovered() || ImGui::IsWindowHovered) && canClearSelection)
+		{
+			ClearSelection();
+			std::cout << "cleared selections" << std::endl;
+		}
 	}
 }
 
@@ -584,7 +586,6 @@ void ContentDrawer::ShowRenameDialog()
 		}
 
 		ImGui::OpenPopup("Rename");
-		m_showRenameDialog = false;
 	}
 
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -596,10 +597,9 @@ void ContentDrawer::ShowRenameDialog()
 		{
 			ImGui::CloseCurrentPopup();
 			ImGui::EndPopup();
-
+			m_showRenameDialog = false;
 			return;
 		}
-
 
 		ImGui::Text("Rename: %s", m_cachedFiles[m_renameTargetIndex].filename.c_str());
 		ImGui::Separator();
@@ -612,12 +612,14 @@ void ContentDrawer::ShowRenameDialog()
 		{
 			PerformRename();
 			ImGui::CloseCurrentPopup();
+			m_showRenameDialog = false;
 		}
 
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0)))
 		{
 			ImGui::CloseCurrentPopup();
+			m_showRenameDialog = false;
 		}
 
 		ImGui::EndPopup();
@@ -628,7 +630,6 @@ void ContentDrawer::ShowDeleteDialog()
 {
 	if (m_showDeleteDialog) {
 		ImGui::OpenPopup("Delete Confirmation");
-		m_showDeleteDialog = false;
 	}
 
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -650,10 +651,12 @@ void ContentDrawer::ShowDeleteDialog()
 		if (ImGui::Button("Delete", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
 			PerformDelete();
 			ImGui::CloseCurrentPopup();
+			m_showDeleteDialog = false;
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0))) {
 			ImGui::CloseCurrentPopup();
+			m_showDeleteDialog = false;
 		}
 
 		ImGui::EndPopup();
