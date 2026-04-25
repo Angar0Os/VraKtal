@@ -4,7 +4,6 @@
 
 #include <graphics/resources/object/mesh.h>
 #include <loaders/meshLoader.h>
-#include <loaders/textureLoader.h>
 #include <core/gpu/texture.h>
 
 RessourceManager::RessourceManager(core::gpu::Device* _device)

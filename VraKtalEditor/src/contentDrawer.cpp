@@ -296,7 +296,7 @@ void ContentDrawer::GetContentDrawerWindow()
 		ImGui::PopID();
 	}
 
-	bool canClearSelection = !m_showRenameDialog && m_showDeleteDialog;
+	bool canClearSelection = !m_showRenameDialog && !m_showDeleteDialog;
 	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && (!ImGui::IsAnyItemHovered() || !ImGui::IsWindowHovered()) && canClearSelection) 
 	{
 		ClearSelection();
