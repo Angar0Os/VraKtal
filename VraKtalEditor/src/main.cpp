@@ -130,8 +130,9 @@ int main()
     core::gpu::Device device(window);
     core::Input input(window, &device);
     graphics::Renderer renderer(window, device);
+
 #ifdef VRAKTAL_EDITOR
-    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input);
+    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, &input);
     device.GetImGuiContext()->BindPrepareDrawData([&]()
         {
             imGuiWindows.PrepareImGuiWindows();
