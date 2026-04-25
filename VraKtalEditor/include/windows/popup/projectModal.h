@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <string>
 
-class NewProjectModal
+class ProjectModal
 {
 private:
 	char m_nameBuffer[256] = "";
@@ -17,14 +17,14 @@ private:
 	void CreateProject();
 
 public:
-	NewProjectModal();
+	ProjectModal();
 
 	std::filesystem::path GetLastCreatedProjectPath() const { return m_lastCreateProjectPath; }
 	bool HasNewProjectCreated() const { return m_projectCreated; }
 	void ResetProjectCreatedFlag() { m_projectCreated = false; }
 
 	void ToggleNewProjectModal();
-	void GetNewProjectModalWindow();
+	void Draw();
 };
 
 #endif //EDITOR_WINDOWS_NEWPROJECTMODAL_H

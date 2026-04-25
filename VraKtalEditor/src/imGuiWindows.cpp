@@ -23,35 +23,47 @@
 #include "../include/windows/windowHierarchy.h"
 #include "../include/windows/windowInspector.h"
 
+#include "../include/windows/popup/projectModal.h"
+#include "../include/windows/popup/rightClick.h"
+
 #include "../include/windows/others/imGuizmoHelper.h"
 #include "../include/windows/others/inspector.h"
-#include "../include/windows/others/rightClick.h"
 #include "../include/windows/others/meshPlot.h"
 #include "../include/windows/others/dragNdrop.h"
 
 struct ImguiOthers {
 	ImguiOthers(ImGuiWindows* _windows, core::Input* _input , RessourceManager* _reManager) 
-		: imGuizmoHelper(new ImGuizmoHelper(_windows, _input)), rightClick(new RightClick(_windows)), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , *_reManager)) {};
+		: imGuizmoHelper(new ImGuizmoHelper(_windows, _input)), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , *_reManager)) , m_inspect(new Inspect(_reManager)) {};
 	~ImguiOthers() {
 		delete imGuizmoHelper;
-		delete rightClick;
 		delete meshPlot;
 		delete dragNdrop;
 	}
 
 	ImGuizmoHelper* imGuizmoHelper;
-	RightClick* rightClick;
 	MeshPlot* meshPlot;
 	DragNDrop* dragNdrop;
+	Inspect* m_inspect;
+};
+
+struct Popups
+{
+	Popups(ImGuiWindows* _windows) : rightClick(new RightClick(_windows)) , projectModal(new ProjectModal()){};
+	~Popups() {
+		delete rightClick;
+		delete projectModal;
+	};
+
+	RightClick* rightClick;
+	ProjectModal* projectModal;
 };
 
 
 ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager )
-    : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager))
+    : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager)) ,m_popups(new Popups(this))
 {
 	m_renderer = _renderer;
 	m_window = window;
-	m_inspect = new Inspect(&_manager);
 	m_input = &_input;
 
 	command::ClearBackupDirectory();
@@ -76,11 +88,15 @@ ImGuiWindows::~ImGuiWindows()
     delete m_others;
 }
 
-ImGuizmoHelper* ImGuiWindows::GetImGuizmoHelper()	{ return m_others->imGuizmoHelper; };
-RightClick* ImGuiWindows::GetRightClick()			{ return m_others->rightClick; };
-MeshPlot* ImGuiWindows::GetMeshPlot()				{ return m_others->meshPlot; };
-DragNDrop* ImGuiWindows::GetDragNDrop()				{ return m_others->dragNdrop; };
+//Getter Others
+ImGuizmoHelper* ImGuiWindows::GetImGuizmoHelper()	{ return m_others->imGuizmoHelper;	}
+MeshPlot* ImGuiWindows::GetMeshPlot()				{ return m_others->meshPlot;		}
+DragNDrop* ImGuiWindows::GetDragNDrop()				{ return m_others->dragNdrop;		}
+Inspect* ImGuiWindows::GetInspect()					{ return m_others->m_inspect;		}
 
+//Getter popups
+RightClick* ImGuiWindows::GetRightClick()			{ return m_popups->rightClick;		}
+ProjectModal* ImGuiWindows::GetProjectModal()	{ return m_popups->projectModal;	}
 
 void ImGuiWindows::DrawImGui()
 {
@@ -94,19 +110,19 @@ void ImGuiWindows::DrawImGui()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
 	MainWindow();
+	GetProjectModal()->Draw();
+	
 	ContentDrawerWindow();
+
+
 	for (auto& var : m_windows)
 	{
         var->Draw();
 	}
 
-
-	//TODO : Find a way to reset selected item
-	//if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered())
-	//{
-	//	m_selectedItem = std::monostate{};
-	//}
-
+	if (GetProjectModal()->HasNewProjectCreated()) {
+		GetProjectModal()->ResetProjectCreatedFlag();
+	}
 }
 
 core::gpu::ImguiContext* ImGuiWindows::GetContext()
@@ -202,7 +218,7 @@ void ImGuiWindows::SetMenuBar() {
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("New Project")) {
-				m_newProjectModal.ToggleNewProjectModal();
+				GetProjectModal()->ToggleNewProjectModal();
 			}
 
 			if (ImGui::MenuItem("Open Project")) {

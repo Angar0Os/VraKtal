@@ -15,7 +15,8 @@
 #include <command/fileCommands.h>
 
 #include "./imGuiWindows.h"
-#include "./windows/others/dragNdrop.h"
+#include "../include/windows/others/dragNdrop.h"
+#include "../include/windows/popup/projectModal.h"
 
 
 constexpr const char* baseAssetPath = "assets";
@@ -34,10 +35,7 @@ ContentDrawer::ContentDrawer(ImGuiWindows* _windows) : m_currentPath(baseAssetPa
 	}
 }
 
-ContentDrawer::~ContentDrawer()
-{
-
-}
+ContentDrawer::~ContentDrawer() {}
 
 void ContentDrawer::SetCommandHistory(command::CommandHistory* history)
 {
@@ -62,6 +60,11 @@ void ContentDrawer::ClearSelection()
 
 void ContentDrawer::GetContentDrawerWindow()
 {
+	if (!m_windowManager->GetProjectModal()->GetLastCreatedProjectPath().empty() && m_windowManager->GetProjectModal()->HasNewProjectCreated()) //Check if new project have been loaded or created 
+	{
+		SetCurrentPath(m_windowManager->GetProjectModal()->GetLastCreatedProjectPath());
+	}
+
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu(ICON_MDI_PLUS " Add")) {
 			if (ImGui::MenuItem(ICON_MDI_FOLDER " Folder")) {

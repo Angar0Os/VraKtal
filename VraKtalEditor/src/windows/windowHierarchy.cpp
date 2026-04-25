@@ -1,8 +1,10 @@
 #include "./windows/windowHierarchy.h"
 #include "../../include/imGuiWindows.h"
+
 #include "../../include/windows/others/imGuizmoHelper.h"
-#include "../../include/windows/others/rightClick.h"
 #include "../../include/windows/others/dragNdrop.h"
+
+#include "../../include/windows/popup/rightClick.h"
 
 #include <imgui/imgui.h>
 #include <glm/glm.hpp>
