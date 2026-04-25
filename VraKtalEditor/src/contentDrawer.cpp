@@ -200,10 +200,6 @@ void ContentDrawer::GetContentDrawerWindow()
 		ImGui::EndPopup();
 	}
 
-	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && (!ImGui::IsAnyItemHovered() || !ImGui::IsWindowHovered())) {
-		ClearSelection();
-	}
-
 	for (size_t i = 0; i < m_cachedFiles.size(); ++i)
 	{
 		auto& fileEntry = m_cachedFiles[i];
@@ -236,6 +232,7 @@ void ContentDrawer::GetContentDrawerWindow()
 		bool clicked = ImGui::Button(icon, ImVec2(buttonSize, 0));
 		
 		m_windowManager->GetDragNDrop()->Drag<FileEntry>(fileEntry);
+
 		ImGui::PopFont();
 		if (FileEntry* dropped = m_windowManager->GetDragNDrop()->Drop<FileEntry , FileEntry>(fileEntry))
 		{
@@ -296,8 +293,13 @@ void ContentDrawer::GetContentDrawerWindow()
 
 		ImGui::EndGroup();
 		ImGui::SameLine();
-
 		ImGui::PopID();
+	}
+
+	bool canClearSelection = !m_showRenameDialog && m_showDeleteDialog;
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && (!ImGui::IsAnyItemHovered() || !ImGui::IsWindowHovered()) && canClearSelection) 
+	{
+		ClearSelection();
 	}
 }
 
