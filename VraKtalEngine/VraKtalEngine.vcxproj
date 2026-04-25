@@ -194,6 +194,8 @@
     <ClInclude Include="..\external\include\imgui\imstb_truetype.h" />
     <ClInclude Include="..\external\include\MDI\IconsMaterialDesignIcons.h" />
     <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h" />
+    <ClInclude Include="external\include\imPlot3D\implot3d.h" />
+    <ClInclude Include="external\include\imPlot3D\implot3d_internal.h" />
     <ClInclude Include="include\core\enum.h" />
     <ClInclude Include="include\core\gpu\accelerationStructure.h" />
     <ClInclude Include="include\core\gpu\buffer.h" />
@@ -211,6 +213,7 @@
     <ClInclude Include="include\core\input\inputAxisCallback.h" />
     <ClInclude Include="include\core\input\InputCallback.h" />
     <ClInclude Include="include\core\input\keys.h" />
+    <ClInclude Include="include\core\manager\ressourceManager.h" />
     <ClInclude Include="include\core\window.h" />
     <ClInclude Include="include\graphics\materialInstance.h" />
     <ClInclude Include="include\graphics\pass.h" />
@@ -226,10 +229,21 @@
     <ClInclude Include="include\graphics\resources\object\staticMesh.h" />
     <ClInclude Include="include\graphics\resources\project.h" />
     <ClInclude Include="include\graphics\resources\property\transform.h" />
-    <ClInclude Include="include\graphics\resources\scene.h" />
+    <ClInclude Include="include\loaders\loaderBase.h" />
     <ClInclude Include="include\loaders\materialLoader.h" />
     <ClInclude Include="include\loaders\meshLoader.h" />
     <ClInclude Include="include\loaders\shaderLoader.h" />
+    <ClInclude Include="include\loaders\textureLoader.h" />
+    <ClInclude Include="include\scene\scene.h" />
+    <ClInclude Include="include\scene\system\systemBase.h" />
+    <ClInclude Include="include\scene\system\systemManager.h" />
+    <ClInclude Include="include\scene\system\systems\lightSystem.h" />
+    <ClInclude Include="include\scene\system\systems\meshSystem.h" />
+    <ClInclude Include="include\scene\timeline\components\light.h" />
+    <ClInclude Include="include\scene\timeline\components\mesh.h" />
+    <ClInclude Include="include\scene\timeline\entityBase.h" />
+    <ClInclude Include="include\scene\timeline\keyframe.h" />
+    <ClInclude Include="include\utils\denseStorage.h" />
     <ClInclude Include="include\utils\NamedStorageMapped.h" />
     <ClInclude Include="src\core\gpu\vulkan\accelerationStructure_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h" />
@@ -258,6 +272,9 @@
     <ClCompile Include="..\external\include\imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\external\include\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\external\include\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="external\include\imPlot3D\implot3d.cpp" />
+    <ClCompile Include="external\include\imPlot3D\implot3d_items.cpp" />
+    <ClCompile Include="external\include\imPlot3D\implot3d_meshes.cpp" />
     <ClCompile Include="include\core\gpu\texture.h" />
     <ClCompile Include="src\core\gpu\vulkan\accelerationStructure_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\buffer_impl.cpp" />
@@ -272,14 +289,18 @@
     <ClCompile Include="src\core\gpu\vulkan\pipeline_impl.cpp" />
     <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp" />
     <ClCompile Include="src\core\gpu_detail\converters.cpp" />
+    <ClCompile Include="src\core\manager\ressourceManager.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\iblPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\lightingPass.cpp" />
-    <ClCompile Include="src\graphics\resources\object\scene.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\loaders\materialLoader.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />
+    <ClCompile Include="src\scene\scene.cpp" />
+    <ClCompile Include="src\scene\system\systemManager.cpp" />
+    <ClCompile Include="src\scene\system\systems\lightSystem.cpp" />
+    <ClCompile Include="src\scene\system\systems\meshSystem.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>

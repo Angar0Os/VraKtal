@@ -6,11 +6,24 @@
 #include <graphics/renderPass/gBufferPass.h>
 #include <graphics/resources/object/light.h>
 #include <graphics/resources/object/material.h>
-#include <loaders/meshLoader.h>
+#include <core/manager/ressourceManager.h>
+
+#include <scene/system/systemManager.h>
+#include <scene/system/systems/meshSystem.h>
+
 #include <loaders/materialLoader.h>
 #include "imGuiWindows.h"
 #include "utils/yamlParser.h"
 #include <core/input/input.h>
+
+#include <core/manager/ressourceManager.h>
+
+#include <scene/system/systemManager.h>
+#include <scene/system/systems/meshSystem.h>
+
+#include <scene/scene.h>
+#include <scene/timeline/components/mesh.h>
+#include <scene/timeline/components/light.h>
 
 #ifdef VRAKTAL_EDITOR
     #pragma comment(lib, "VraKtalEngine_Debug.lib")
@@ -18,17 +31,34 @@
 #else
     #pragma comment(lib, "VraKtalEngine.lib")
 #endif // VRAKTAL_EDITOR
+#include <scene/system/systems/lightSystem.h>
 
 
 class App
 {
 public:
-    App(core::Input& _input) {
+    App(core::Input& _input , core::gpu::Device& _device , graphics::Renderer& _renderer) {
         _input.AddAction("CloseApp");
         _input.BindActionKey({ input::Key::ESCAPE }, "CloseApp");
         _input.BindActionCallback<App, &App::CloseApp>("CloseApp", this, input::KeyState::Press);
+
+        _input.AddAction("SpawnVikingRoom");
+        _input.BindActionKey({ input::Key::F }, "SpawnVikingRoom");
+        _input.BindActionCallback<App, &App::SpawnVikingRoom>("SpawnVikingRoom", this, input::KeyState::Press);
+
+        m_scene = new Scene();
+        m_scene->RegisterComponentStorage<timeline::MeshInstance>();
+        m_scene->RegisterComponentStorage<timeline::Light>();
+
+        m_reManager = new RessourceManager(&_device);
+
+        LoadAssetsDebug(_renderer, _device);
+        SpawnVikingRoom();
+    }
+    ~App() {
+        delete m_scene;
+        delete m_reManager;
     };
-    ~App() {};
 
     bool ShouldClose() const { return bSouldCloseApp; }
     void CloseApp() {
@@ -36,6 +66,122 @@ public:
         std::cout << "Close App Action Triggered" << std::endl;
     };
 
+    void SpawnVikingRoom() {
+        std::cout << "Spawn Viking Room Action Triggered" << std::endl;
+        timeline::MeshInstance timelineMesh;
+        timelineMesh.meshID = m_reManager->GetRessourceID<graphics::resources::Mesh>("assets/models/viking_room.obj");
+        m_scene->CreateEntity<timeline::MeshInstance>(timelineMesh);
+
+    }
+
+    void LoadAssetsDebug(graphics::Renderer& _renderer , core::gpu::Device& _device)
+    {
+        m_reManager->LoadRessource<graphics::resources::Mesh>("assets/models/viking_room.obj");
+        auto* matLayout = _renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
+        {
+            graphics::resources::object::Material mat;
+            mat.SetTexture("assets/textures/viking_room.png", "albedo");
+            mat.SetMetallicRoughness(0.0f, 0.8f);
+            m_reManager->GetRessource<graphics::resources::Mesh>("assets/models/viking_room.obj").materials.push_back(
+                loaders::MaterialLoader::Load(_device, mat, matLayout)
+            );
+        }
+
+        auto* mesh = m_reManager->LoadRessource<graphics::resources::Mesh>("assets/models/cave.obj");
+        {
+            graphics::resources::object::Material mat0;
+            mat0.SetTexture("assets/textures/extracted_textures/diffuse_sand.jpg.png", "albedo");
+            mat0.SetTexture("assets/textures/extracted_textures/normal_sand.png.png", "normal");
+            mat0.SetMetallicRoughness(0.0, 0.75);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat0, matLayout));
+
+            graphics::resources::object::Material mat1;
+            mat1.SetTexture("assets/textures/extracted_textures/diffus_rocktill_02.jpg.png", "albedo");
+            mat1.SetTexture("assets/textures/extracted_textures/normal_rocktill_02.png.png", "normal");
+            mat1.SetMetallicRoughness(0.0, 0.85);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat1, matLayout));
+
+            graphics::resources::object::Material mat2;
+            mat2.SetTexture("assets/textures/extracted_textures/diffus_plane_watreplant.tga.png", "albedo");
+            mat2.SetTexture("assets/textures/extracted_textures/normal_plane_watreplant.png.png", "normal");
+            mat2.SetMetallicRoughness(0.0, 0.65);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat2, matLayout));
+
+            graphics::resources::object::Material mat3;
+            mat3.SetTexture("assets/textures/extracted_textures/diffus_foliage_03_copy.tga.png", "albedo");
+            mat3.SetTexture("assets/textures/extracted_textures/normal_foliage_03.png.png", "normal");
+            mat3.SetMetallicRoughness(0.0, 0.78);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat3, matLayout));
+            graphics::resources::object::Material mat4;
+            mat4.SetTexture("assets/textures/extracted_textures/diffus_foliage_03_copy.tga.png", "albedo");
+            mat4.SetTexture("assets/textures/extracted_textures/normal_foliage_03.png.png", "normal");
+            mat4.SetMetallicRoughness(0.0, 0.78);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat4, matLayout));
+            graphics::resources::object::Material mat5;
+            mat5.SetTexture("assets/textures/extracted_textures/diffuse_cave_foliage.tga.png", "albedo");
+            mat5.SetTexture("assets/textures/extracted_textures/normal_cave_foliage.png.png", "normal");
+            mat5.SetMetallicRoughness(0.0, 0.60);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat5, matLayout));
+            graphics::resources::object::Material mat6;
+            mat6.SetTexture("assets/textures/extracted_textures/diffuse_cave.jpg.png", "albedo");
+            mat6.SetTexture("assets/textures/extracted_textures/normal_cave.png.png", "normal");
+            mat6.SetMetallicRoughness(0.0, 0.72);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat6, matLayout));
+            graphics::resources::object::Material mat7;
+            mat7.SetTexture("assets/textures/extracted_textures/diffuse_grass.jpg.png", "albedo");
+            mat7.SetTexture("assets/textures/extracted_textures/normal_grass.png.png", "normal");
+            mat7.SetMetallicRoughness(0.0, 0.88);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat7, matLayout));
+            graphics::resources::object::Material mat8;
+            mat8.SetTexture("assets/textures/extracted_textures/diffuse_cave_indoor.jpg.png", "albedo");
+            mat8.SetTexture("assets/textures/extracted_textures/normal_cave_indoor.png.png", "normal");
+            mat8.SetMetallicRoughness(0.0, 0.82);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat8, matLayout));
+            graphics::resources::object::Material mat9;
+            mat9.SetTexture("assets/textures/extracted_textures/diffuse_cave_bole.jpg.png", "albedo");
+            mat9.SetTexture("assets/textures/extracted_textures/normal_cave_bole.png.png", "normal");
+            mat9.SetMetallicRoughness(0.0, 0.90);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat9, matLayout));
+            graphics::resources::object::Material mat10;
+            mat10.SetTexture("assets/textures/extracted_textures/diffuse_cave_foliage.tga.png", "albedo");
+            mat10.SetTexture("assets/textures/extracted_textures/normal_cave_foliage.png.png", "normal");
+            mat10.SetMetallicRoughness(0.0, 0.60);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat10, matLayout));
+            graphics::resources::object::Material mat11;
+            mat11.SetTexture("assets/textures/extracted_textures/diffus_rocktill_02.jpg.png", "albedo");
+            mat11.SetTexture("assets/textures/extracted_textures/normal_rocktill_02.png.png", "normal");
+            mat11.SetMetallicRoughness(0.0, 0.80);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat11, matLayout));
+            graphics::resources::object::Material mat12;
+            mat12.SetTexture("assets/textures/extracted_textures/diffus_rocks.jpg.png", "albedo");
+            mat12.SetTexture("assets/textures/extracted_textures/normal_rocks.png.png", "normal");
+            mat12.SetMetallicRoughness(0.0, 0.78);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat12, matLayout));
+            graphics::resources::object::Material mat13;
+            mat13.SetTexture("assets/textures/extracted_textures/diffuse_cave_stones.jpg.png", "albedo");
+            mat13.SetTexture("assets/textures/extracted_textures/normal_cave_stones.png.png", "normal");
+            mat13.SetMetallicRoughness(0.0, 0.70);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat13, matLayout));
+            graphics::resources::object::Material mat14;
+            mat14.SetTexture("assets/textures/extracted_textures/diffuse_skeleton.jpg.png", "albedo");
+            mat14.SetTexture("assets/textures/extracted_textures/normal_skeleton.png.png", "normal");
+            mat14.SetMetallicRoughness(0.0, 0.85);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat14, matLayout));
+            graphics::resources::object::Material mat15;
+            mat15.SetTexture("assets/textures/extracted_textures/diffus_fetich.jpg.png", "albedo");
+            mat15.SetTexture("assets/textures/extracted_textures/normal_fetich.png.png", "normal");
+            mat15.SetMetallicRoughness(0.0, 0.68);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat15, matLayout));
+            graphics::resources::object::Material mat16;
+            mat16.SetTexture("assets/textures/extracted_textures/diffus_grass-transition_clairiere.jpg.png", "albedo");
+            mat16.SetMetallicRoughness(0.0, 0.86);
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, mat16, matLayout));
+        }
+
+    }
+
+    Scene* m_scene;
+    RessourceManager* m_reManager;
 private:
     bool bSouldCloseApp = false;
 };
@@ -74,6 +220,8 @@ public:
         _input.AddAction("MoveCameraUp");
         _input.BindActionKey({ input::Key::SPACE }, "MoveCameraUp");
         _input.BindActionCallback<Camera, &Camera::MoveCameraUp>("MoveCameraUp", this, input::KeyState::OnGoing);
+
+
     };
     ~Camera() {};
 
@@ -114,9 +262,10 @@ public:
     }
     bool bReceiveInputs = false;
 
-    void EnableLook() { 
+    void EnableLook() {
         bReceiveInputs = true;
     }
+
     void DisableLook(){ 
         bReceiveInputs = false; 
     }
@@ -130,133 +279,21 @@ int main()
     core::gpu::Device device(window);
     core::Input input(window, &device);
     graphics::Renderer renderer(window, device);
+
+    App app(input , device , renderer);
+    Camera camera(input);
+
+    SystemManager systemManager;
+    systemManager.AddSystem<MeshSystem>(&renderer, app.m_reManager);
+    systemManager.AddSystem<LightSystem>(&renderer);
+
 #ifdef VRAKTAL_EDITOR
-    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input);
+    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input , app.m_scene ,*app.m_reManager);
     device.GetImGuiContext()->BindPrepareDrawData([&]()
         {
-            imGuiWindows.PrepareImGuiWindows();
+            imGuiWindows.DrawImGui();
         });
 #endif //VRAKTAL_EDITOR
-
-    loaders::MeshLoader loader(&device);
-
-    App app(input);
-    Camera camera(input);
-   
-
-    std::shared_ptr<graphics::resources::Mesh> vikingRoomMesh;
-
-    auto* matLayout = renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
-
-    loader.LoadMesh("assets/models/cave.obj",
-        [&](std::shared_ptr<graphics::resources::Mesh> mesh)
-        {
-            graphics::resources::object::Material mat0;
-            mat0.SetTexture("assets/textures/extracted_textures/diffuse_sand.jpg.png", "albedo");
-            mat0.SetTexture("assets/textures/extracted_textures/normal_sand.png.png", "normal");
-            mat0.SetMetallicRoughness(0.0, 0.75);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat0, matLayout));
-            
-            graphics::resources::object::Material mat1;
-            mat1.SetTexture("assets/textures/extracted_textures/diffus_rocktill_02.jpg.png", "albedo");
-            mat1.SetTexture("assets/textures/extracted_textures/normal_rocktill_02.png.png", "normal");
-            mat1.SetMetallicRoughness(0.0, 0.85);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat1, matLayout));
-            
-            graphics::resources::object::Material mat2;
-            mat2.SetTexture("assets/textures/extracted_textures/diffus_plane_watreplant.tga.png", "albedo");
-            mat2.SetTexture("assets/textures/extracted_textures/normal_plane_watreplant.png.png", "normal");
-            mat2.SetMetallicRoughness(0.0, 0.65);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat2, matLayout));
-
-            graphics::resources::object::Material mat3;
-            mat3.SetTexture("assets/textures/extracted_textures/diffus_foliage_03_copy.tga.png", "albedo");
-            mat3.SetTexture("assets/textures/extracted_textures/normal_foliage_03.png.png", "normal");
-            mat3.SetMetallicRoughness(0.0, 0.78);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat3, matLayout));
-            
-            graphics::resources::object::Material mat4;
-            mat4.SetTexture("assets/textures/extracted_textures/diffus_foliage_03_copy.tga.png", "albedo");
-            mat4.SetTexture("assets/textures/extracted_textures/normal_foliage_03.png.png", "normal");
-            mat4.SetMetallicRoughness(0.0, 0.78);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat4, matLayout));            
-           
-            graphics::resources::object::Material mat5;
-            mat5.SetTexture("assets/textures/extracted_textures/diffuse_cave_foliage.tga.png", "albedo");
-            mat5.SetTexture("assets/textures/extracted_textures/normal_cave_foliage.png.png", "normal");
-            mat5.SetMetallicRoughness(0.0, 0.60);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat5, matLayout));            
-            
-            graphics::resources::object::Material mat6; 
-            mat6.SetTexture("assets/textures/extracted_textures/diffuse_cave.jpg.png", "albedo");
-            mat6.SetTexture("assets/textures/extracted_textures/normal_cave.png.png", "normal");
-            mat6.SetMetallicRoughness(0.0, 0.72);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat6, matLayout));
-
-            graphics::resources::object::Material mat7;
-            mat7.SetTexture("assets/textures/extracted_textures/diffuse_grass.jpg.png", "albedo");
-            mat7.SetTexture("assets/textures/extracted_textures/normal_grass.png.png", "normal");
-            mat7.SetMetallicRoughness(0.0, 0.88);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat7, matLayout));
-            
-            graphics::resources::object::Material mat8;
-            mat8.SetTexture("assets/textures/extracted_textures/diffuse_cave_indoor.jpg.png", "albedo");
-            mat8.SetTexture("assets/textures/extracted_textures/normal_cave_indoor.png.png", "normal");
-            mat8.SetMetallicRoughness(0.0, 0.82);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat8, matLayout));
-            
-            graphics::resources::object::Material mat9;
-            mat9.SetTexture("assets/textures/extracted_textures/diffuse_cave_bole.jpg.png", "albedo");
-            mat9.SetTexture("assets/textures/extracted_textures/normal_cave_bole.png.png", "normal");
-            mat9.SetMetallicRoughness(0.0, 0.90);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat9, matLayout));
-            
-            graphics::resources::object::Material mat10;
-            mat10.SetTexture("assets/textures/extracted_textures/diffuse_cave_foliage.tga.png", "albedo");
-            mat10.SetTexture("assets/textures/extracted_textures/normal_cave_foliage.png.png", "normal");
-            mat10.SetMetallicRoughness(0.0, 0.60);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat10, matLayout));
-            
-            graphics::resources::object::Material mat11;
-            mat11.SetTexture("assets/textures/extracted_textures/diffus_rocktill_02.jpg.png", "albedo");
-            mat11.SetTexture("assets/textures/extracted_textures/normal_rocktill_02.png.png", "normal");
-            mat11.SetMetallicRoughness(0.0, 0.80);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat11, matLayout));
-            
-            graphics::resources::object::Material mat12;
-            mat12.SetTexture("assets/textures/extracted_textures/diffus_rocks.jpg.png", "albedo");
-            mat12.SetTexture("assets/textures/extracted_textures/normal_rocks.png.png", "normal");
-            mat12.SetMetallicRoughness(0.0, 0.78);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat12, matLayout));
-            
-            graphics::resources::object::Material mat13;
-            mat13.SetTexture("assets/textures/extracted_textures/diffuse_cave_stones.jpg.png", "albedo");
-            mat13.SetTexture("assets/textures/extracted_textures/normal_cave_stones.png.png", "normal");
-            mat13.SetMetallicRoughness(0.0, 0.70);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat13, matLayout));
-            
-            graphics::resources::object::Material mat14;
-            mat14.SetTexture("assets/textures/extracted_textures/diffuse_skeleton.jpg.png", "albedo");
-            mat14.SetTexture("assets/textures/extracted_textures/normal_skeleton.png.png", "normal");
-            mat14.SetMetallicRoughness(0.0, 0.85);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat14, matLayout));
-            
-            graphics::resources::object::Material mat15;
-            mat15.SetTexture("assets/textures/extracted_textures/diffus_fetich.jpg.png", "albedo");
-            mat15.SetTexture("assets/textures/extracted_textures/normal_fetich.png.png", "normal");
-            mat15.SetMetallicRoughness(0.0, 0.68);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat15, matLayout));
-            
-            graphics::resources::object::Material mat16;
-            mat16.SetTexture("assets/textures/extracted_textures/diffus_grass-transition_clairiere.jpg.png", "albedo");
-            mat16.SetMetallicRoughness(0.0, 0.86);
-            mesh->materials.push_back(loaders::MaterialLoader::Load(device, mat16, matLayout));
-
-            vikingRoomMesh = mesh;
-        });
-
-    loader.ProcessJobs();
-    loader.PurgeFinishedJobs();
 
     const float aspectRatio = 800.0f / 600.0f;
     glm::mat4 projection = glm::perspectiveLH_ZO(
@@ -285,6 +322,15 @@ int main()
     if (parser.IsValid())
         lights = parser.LoadLights();
 
+    timeline::Light light1;
+    light1.temp_property.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
+    light1.temp_property.color = glm::vec3(1.0f, 0.9f, 0.2f);
+    light1.temp_property.intensity = 10.0f;
+    light1.temp_property.radius = 0.1f;
+    light1.temp_property.enabled = true;
+    EntityID lightID = app.m_scene->CreateEntity<timeline::Light>(light1);
+    auto& light = app.m_scene->GetEntityComponent<timeline::Light>(lightID);
+
     while (!window.ShouldClose() && !app.ShouldClose())
     {
         window.PollEvents();
@@ -298,10 +344,8 @@ int main()
 #ifdef VRAKTAL_EDITOR
             device.GetImGuiContext()->OnResize();
 #endif // VRAKTAL_EDITOR
-
             continue;
         }
-
         uint32_t imageIndex = device.AcquireNextImage(currentFrameIndex);
         if (imageIndex == UINT32_MAX)
         {
@@ -315,44 +359,22 @@ int main()
 
         time += timeStep;
 
+        systemManager.Update(*app.m_scene);
         renderer.SetCamera(camera.GetView(), camera.projection);
 
-        glm::mat4 meshTransform1 = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 2.0f, 0.0f));
-        meshTransform1 = glm::rotate(meshTransform1, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        renderer.PushMesh(vikingRoomMesh.get(), meshTransform1);
-
-        graphics::resources::Light light1;
-        light1.name = "Yellow Light 1";
-        light1.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
-        light1.color = glm::vec3(1.0f, 0.9f, 0.2f);
-        light1.intensity = 10.0f;
-        light1.radius = 0.1f;
-        light1.enabled = true;
-        renderer.PushLight(light1);
-
-        graphics::resources::Light light2;
-        light2.name = "Yellow Light 2";
-        light2.position = glm::vec3(3.0f * glm::cos(time + glm::pi<float>()), 3.0f, 3.0f * glm::sin(time + glm::pi<float>()));
-        light2.color = glm::vec3(1.0f, 0.85f, 0.1f);
-        light2.intensity = 8.0f;
-        light2.radius = 0.1f;
-        light2.enabled = true;
-        renderer.PushLight(light2);
-
-        graphics::resources::Light light3;
-        light3.name = "Blue Light";
-        light3.position = glm::vec3(0.0f, 2.0f, 0.0f);
-        light3.color = glm::vec3(0.2f, 0.4f, 1.0f);
-        light3.intensity = 15.0f; 
-        light3.radius = 0.1f;
-        light3.enabled = true;
-        renderer.PushLight(light3);
 
 #ifndef VRAKTAL_EDITOR
         renderer.Render(device.GetSwapchainImage(imageIndex), ImageLayout::Present);
 #else
         imGuiWindows.GetContext()->PrepareForDrawing();
         auto image = imGuiWindows.GetContext()->GetViewportImage();
+        //On doit ajuster la camera
+        if (imGuiWindows.GetContext()->GetViewportState()->width > 0 && imGuiWindows.GetContext()->GetViewportState()->height > 0)
+                renderer.SetCamera(camera.GetView(), imGuiWindows.GetContext()->GetViewportProjection());
+
+        //On doit ajuster la camera
+        if (imGuiWindows.GetContext()->GetViewportState()->width > 0 && imGuiWindows.GetContext()->GetViewportState()->height > 0)
+            renderer.SetCamera(camera.GetView(), imGuiWindows.GetContext()->GetViewportProjection());
 
         renderer.Render(imGuiWindows.GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
         auto cmd = renderer.GetCurrentCommandBuffer();

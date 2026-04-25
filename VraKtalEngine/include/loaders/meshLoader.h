@@ -11,6 +11,8 @@
 #include <graphics/resources/object/mesh.h>
 #include <core/gpu/buffer.h>
 
+#include "./loaderBase.h"
+
 namespace loaders
 {
     using JobID = uint64_t;
@@ -61,7 +63,7 @@ namespace loaders
         }
     };
 
-    class MeshLoader
+    class MeshLoader :public LoaderBase
     {
     private:
         core::gpu::Device* m_device;
@@ -89,6 +91,8 @@ namespace loaders
 
         void ProcessJobs();
         void PurgeFinishedJobs();
+
+        std::shared_ptr<void> Load(const std::string& path);
     };
 }
 

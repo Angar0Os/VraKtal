@@ -1,56 +1,104 @@
 #define NOMINMAX
 #include <imGuiWindows.h>
-#include <core/gpu/imguiContext.h>
 #include "command/fileCommands.h"
-#include <graphics/resources/object/camera.h>
-#include <algorithm>
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtc/type_ptr.inl>
-#include <glm/gtx/matrix_decompose.inl>
+#include <core/gpu/imguiContext.h>
+#include <core/input/input.h>
+#include <graphics/renderer.h>
+#include <scene/scene.h>
 
-#include <imGuizmo/ImGuizmo.h>
+
+#include <core/gpu/buffer.h>
+#include <core/manager/ressourceManager.h>
+
 #include <imgui/imgui.h>
 
 #include "portable-file-dialogs/portable-file-dialogs.h"
 
-#include <iostream>
 #include <MDI/IconsMaterialDesignIcons.h>
-
-#include <core/input/input.h>
 
 #include "contentDrawer.h"
 #include "../include/windows/WindowInput.h"
 #include "../include/windows/WindowViewport.h"
+#include "../include/windows/windowHierarchy.h"
+#include "../include/windows/windowInspector.h"
 
-ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input)
-	: m_imGuiContext(_imGuiContext)
+#include "../include/windows/popup/projectModal.h"
+#include "../include/windows/popup/rightClick.h"
+
+#include "../include/windows/others/imGuizmoHelper.h"
+#include "../include/windows/others/inspector.h"
+#include "../include/windows/others/meshPlot.h"
+#include "../include/windows/others/dragNdrop.h"
+
+struct ImguiOthers {
+	ImguiOthers(ImGuiWindows* _windows, core::Input* _input , RessourceManager* _reManager) 
+		: imGuizmoHelper(new ImGuizmoHelper(_windows, _input)), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , *_reManager)) , m_inspect(new Inspect(_reManager)) {};
+	~ImguiOthers() {
+		delete imGuizmoHelper;
+		delete meshPlot;
+		delete dragNdrop;
+	}
+
+	ImGuizmoHelper* imGuizmoHelper;
+	MeshPlot* meshPlot;
+	DragNDrop* dragNdrop;
+	Inspect* m_inspect;
+};
+
+struct Popups
+{
+	Popups(ImGuiWindows* _windows) : rightClick(new RightClick(_windows)) , projectModal(new ProjectModal()){};
+	~Popups() {
+		delete rightClick;
+		delete projectModal;
+	};
+
+	RightClick* rightClick;
+	ProjectModal* projectModal;
+};
+
+
+ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager )
+    : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager)) ,m_popups(new Popups(this))
 {
 	m_renderer = _renderer;
 	m_window = window;
+	m_input = &_input;
 
 	command::ClearBackupDirectory();
-
 	m_commandHistory = std::make_unique<command::CommandHistory>(100);
 
-	m_contentDrawer = new ContentDrawer();
+	m_contentDrawer = new ContentDrawer(this);
 	m_contentDrawer->SetCommandHistory(m_commandHistory.get());
 
-	m_windowInput = new WindowInput(_input);
-	m_windowViewport = new WindowViewport(*this);
-
+	m_windows.push_back(new WindowInput(_input , this));
+	m_windows.push_back(new WindowViewport(*this));
+	m_windows.push_back(new WindowHierarchy(*_scene , *this));
+    m_windows.push_back(new WindowInspector(*this , _manager));
 }
 
 ImGuiWindows::~ImGuiWindows()
 {
 	command::ClearBackupDirectory();
-
 	delete m_contentDrawer;
-	delete m_windowInput;
-	delete m_windowViewport; 
+	for (auto* window : m_windows) {
+		delete window;
+    }
+    delete m_others;
 }
 
-void ImGuiWindows::PrepareImGuiWindows()
+//Getter Others
+ImGuizmoHelper* ImGuiWindows::GetImGuizmoHelper()	{ return m_others->imGuizmoHelper;	}
+MeshPlot* ImGuiWindows::GetMeshPlot()				{ return m_others->meshPlot;		}
+DragNDrop* ImGuiWindows::GetDragNDrop()				{ return m_others->dragNdrop;		}
+Inspect* ImGuiWindows::GetInspect()					{ return m_others->m_inspect;		}
+
+//Getter popups
+RightClick* ImGuiWindows::GetRightClick()			{ return m_popups->rightClick;		}
+ProjectModal* ImGuiWindows::GetProjectModal()	{ return m_popups->projectModal;	}
+
+void ImGuiWindows::DrawImGui()
 {
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -62,28 +110,29 @@ void ImGuiWindows::PrepareImGuiWindows()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
 	MainWindow();
-	ContentDrawerWindow();
-	HierarchyWindow();
-	ViewportWindow();
+	GetProjectModal()->Draw();
 	
-	m_windowInput->Draw();
+	ContentDrawerWindow();
 
-	m_newProjectModal.GetNewProjectModalWindow();
 
-	if (m_newProjectModal.HasNewProjectCreated()) {
-		std::filesystem::path lastProjectPath = m_newProjectModal.GetLastCreatedProjectPath();
+	for (auto& var : m_windows)
+	{
+        var->Draw();
+	}
 
-		if (!lastProjectPath.empty()) {
-			m_contentDrawer->SetCurrentPath(lastProjectPath);
-		}
-
-		m_newProjectModal.ResetProjectCreatedFlag();
+	if (GetProjectModal()->HasNewProjectCreated()) {
+		GetProjectModal()->ResetProjectCreatedFlag();
 	}
 }
 
 core::gpu::ImguiContext* ImGuiWindows::GetContext()
 {
 	return m_imGuiContext;
+}
+
+void ImGuiWindows::ResetSelectedItem()
+{
+    m_selectedItem = std::monostate{};
 }
 
 void ImGuiWindows::ContentDrawerWindow()
@@ -93,15 +142,6 @@ void ImGuiWindows::ContentDrawerWindow()
 		m_contentDrawer->GetContentDrawerWindow();
 	}
 	EndWindow("Content Drawer");
-}
-
-void ImGuiWindows::HierarchyWindow()
-{
-	if (BeginWindow("Hierarchy", true))
-	{
-
-	}
-	EndWindow("Hierarchy");
 }
 
 void ImGuiWindows::AddWindowToManager(const std::string& name, bool windowState)
@@ -136,7 +176,7 @@ void ImGuiWindows::EndWindow(const std::string& name)
 	{
 		ImGui::End();
 	}
-
+	
 	if (!m_windowStatesList[name].keepOpen)
 	{
 		m_windowStatesList[name].isOpen = false;
@@ -156,76 +196,6 @@ void ImGuiWindows::DisplayWindowStateManagerMenu()
 		ImGui::EndMenu();
 	}
 }
-
-void ImGuiWindows::ViewportWindow()
-{
-	if (BeginWindow("Viewport", true))
-	{
-		m_windowViewport->Draw();
-	}
-	EndWindow("Viewport");
-}
-
-void ImGuiWindows::EditTransformByIndice(const float* cameraView, const float* cameraProjection, int objIndice)
-{
-	/*graphics::resources::object::Object* object = m_renderer->GetScene().get()->objects[objIndice].get();
-	float* ObjectMatrix = const_cast<float*>(glm::value_ptr(object->GetTransformMatrix()));
-
-	static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::ROTATE);
-	static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
-	if (ImGui::IsKeyPressed(ImGuiKey_T))
-		mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-	if (ImGui::IsKeyPressed(ImGuiKey_E))
-		mCurrentGizmoOperation = ImGuizmo::ROTATE;
-	if (ImGui::IsKeyPressed(ImGuiKey_R))
-		mCurrentGizmoOperation = ImGuizmo::SCALE;
-	if (ImGui::RadioButton("Translate", mCurrentGizmoOperation == ImGuizmo::TRANSLATE))
-		mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Rotate", mCurrentGizmoOperation == ImGuizmo::ROTATE))
-		mCurrentGizmoOperation = ImGuizmo::ROTATE;
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Scale", mCurrentGizmoOperation == ImGuizmo::SCALE))
-		mCurrentGizmoOperation = ImGuizmo::SCALE;
-	float matrixTranslation[3], matrixRotation[3], matrixScale[3];
-	ImGuizmo::DecomposeMatrixToComponents(ObjectMatrix, matrixTranslation, matrixRotation, matrixScale);
-	ImGui::InputFloat3("Tr", matrixTranslation);
-	ImGui::InputFloat3("Rt", matrixRotation);
-	ImGui::InputFloat3("Sc", matrixScale);
-	ImGuizmo::RecomposeMatrixFromComponents(matrixTranslation, matrixRotation, matrixScale, ObjectMatrix);
-
-	if (mCurrentGizmoOperation != ImGuizmo::SCALE)
-	{
-		if (ImGui::RadioButton("Local", mCurrentGizmoMode == ImGuizmo::LOCAL))
-			mCurrentGizmoMode = ImGuizmo::LOCAL;
-		ImGui::SameLine();
-		if (ImGui::RadioButton("World", mCurrentGizmoMode == ImGuizmo::WORLD))
-			mCurrentGizmoMode = ImGuizmo::WORLD;
-	}
-	static bool useSnap(false);
-	if (ImGui::IsKeyPressed(ImGuiKey_S))
-		useSnap = !useSnap;
-	ImGui::Checkbox("##useSnap", &useSnap);
-	ImGui::SameLine();
-
-	ImGuiIO& io = ImGui::GetIO();
-	ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-	ImGuizmo::Manipulate(cameraView, cameraProjection, mCurrentGizmoOperation, mCurrentGizmoMode, ObjectMatrix, NULL, NULL);
-
-	glm::mat4 transformation = glm::make_mat4(ObjectMatrix);
-	glm::vec3 scale;
-	glm::quat rotation;
-	glm::vec3 translation;
-	glm::vec3 skew;
-	glm::vec4 perspective;
-
-	glm::decompose(transformation, scale, rotation, translation, skew, perspective);
-
-	object->transform.SetPosition(translation);
-	object->transform.SetRotation(rotation);
-	object->transform.SetScale(scale);*/
-}
-
 
 void ImGuiWindows::MainWindow()
 {
@@ -248,7 +218,7 @@ void ImGuiWindows::SetMenuBar() {
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("New Project")) {
-				m_newProjectModal.ToggleNewProjectModal();
+				GetProjectModal()->ToggleNewProjectModal();
 			}
 
 			if (ImGui::MenuItem("Open Project")) {
@@ -349,4 +319,10 @@ void ImGuiWindows::LoadProject()
 			m_commandHistory->Redo();
 		}
 	}
+}
+
+//help
+glm::mat4 ImGuiWindows::GetView()
+{
+	return m_renderer->GetViewMatrix();
 }

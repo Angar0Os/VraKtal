@@ -23,7 +23,7 @@ std::unique_ptr<Image> loaders::MaterialLoader::UploadTexture(
 
 	if (!pixels)
 	{
-		std::cerr << "MaterialLoader: failed to load " << filepath << ", using fallback\n";
+		std::cerr << "MaterialLoader: failed to load texture " << filepath << ", using fallback\n";
 		return nullptr;
 	}
 
@@ -36,7 +36,7 @@ std::unique_ptr<Image> loaders::MaterialLoader::UploadTexture(
 	};
 	auto staging = std::make_unique<Buffer>(&device, stagingInfo);
 	staging->CopyFrom(pixels, imageSize);
-	stbi_image_free(pixels);
+	stbi_image_free(pixels); // relase data
 
 	SImageCreateInfo imageInfo{
 		.width = static_cast<uint32_t>(width),

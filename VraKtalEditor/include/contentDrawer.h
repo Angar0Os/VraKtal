@@ -15,12 +15,22 @@ struct FileEntry {
 	FileType fileType;
 	bool isDirectory;
 	bool isSelected;
+	
+	std::filesystem::path GetRelativeFileLocation();
 };
+
+class ImGuiWindows;
+
 
 enum class ClipboardAction {
 	None,
 	Copy,
 	Cut
+};
+
+struct FileHelper
+{
+	static const char* GetFileTypeIcon(FileType type);
 };
 
 class ContentDrawer
@@ -42,7 +52,6 @@ private:
 
 	command::CommandHistory* m_commandHistory = nullptr;
 
-	const char* GetIconForFileType(FileType type);
 	void RefreshFileList();
 	void ClearSelection();
 	void HandleFileActions();
@@ -57,14 +66,18 @@ private:
 	void ShowRenameDialog();
 
 	void PerformImport();
+	const char* GetIconForFileType(FileType type);
 
 public:
-	ContentDrawer();
+	ContentDrawer(ImGuiWindows* _windows);
 	~ContentDrawer();
 
 	void GetContentDrawerWindow();
 	void SetCurrentPath(std::filesystem::path newPath);
 	void SetCommandHistory(command::CommandHistory* history);
+
+private:
+    ImGuiWindows* m_windowManager;
 };
 
 #endif //EDITOR_WINDOWS_CONTENTDRAWER_H

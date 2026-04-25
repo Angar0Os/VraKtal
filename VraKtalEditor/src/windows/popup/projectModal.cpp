@@ -1,13 +1,13 @@
-#include "newProjectModal.h"
+#include "../../../include/windows/popup/projectModal.h"
 #include "imgui/imgui.h"
 
 #include "portable-file-dialogs/portable-file-dialogs.h"
 
 #include <fstream>
 
-NewProjectModal::NewProjectModal() {}
+ProjectModal::ProjectModal() {}
 
-void NewProjectModal::GetNewProjectModalWindow()
+void ProjectModal::Draw()
 {
 	if (m_showDialog) {
 		ImGui::OpenPopup("New Project");
@@ -39,7 +39,7 @@ void NewProjectModal::GetNewProjectModalWindow()
 		ImGui::Separator();
 
 		if ((ImGui::Button("Create", ImVec2(150, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter)) && (!m_selectionPath.empty() && m_nameBuffer[0] != '\0')) {
-			NewProjectModal::CreateProject();
+			ProjectModal::CreateProject();
 
 			ImGui::CloseCurrentPopup();
 		}
@@ -52,12 +52,12 @@ void NewProjectModal::GetNewProjectModalWindow()
 	}
 }
 
-void NewProjectModal::ToggleNewProjectModal()
+void ProjectModal::ToggleNewProjectModal()
 {
 	m_showDialog = !m_showDialog;
 }
 
-void NewProjectModal::CreateProject()
+void ProjectModal::CreateProject()
 {
 	try {
 		std::filesystem::path newFolderPath = std::filesystem::path(m_selectionPath) / m_nameBuffer;
@@ -98,3 +98,5 @@ void NewProjectModal::CreateProject()
 		std::cerr << "Project creation failed: " << e.what() << std::endl;
 	}
 }
+
+
