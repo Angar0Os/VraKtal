@@ -6,11 +6,20 @@
 #include <graphics/renderPass/gBufferPass.h>
 #include <graphics/resources/object/light.h>
 #include <graphics/resources/object/material.h>
-#include <loaders/meshLoader.h>
+#include <core/manager/ressourceManager.h>
+
+#include <scene/system/systemManager.h>
+#include <scene/system/systems/meshSystem.h>
+
 #include <loaders/materialLoader.h>
 #include "imGuiWindows.h"
 #include "utils/yamlParser.h"
 #include <core/input/input.h>
+
+
+#include <scene/scene.h>
+#include <scene/timeline/components/mesh.h>
+#include <scene/timeline/components/light.h>
 
 #ifdef VRAKTAL_EDITOR
     #pragma comment(lib, "VraKtalEngine_Debug.lib")
@@ -18,17 +27,44 @@
 #else
     #pragma comment(lib, "VraKtalEngine.lib")
 #endif // VRAKTAL_EDITOR
+#include <scene/system/systems/lightSystem.h>
 
 
 class App
 {
 public:
-    App(core::Input& _input) {
+    App(core::Input& _input , core::gpu::Device& _device , graphics::Renderer& _renderer) {
         _input.AddAction("CloseApp");
         _input.BindActionKey({ input::Key::ESCAPE }, "CloseApp");
         _input.BindActionCallback<App, &App::CloseApp>("CloseApp", this, input::KeyState::Press);
+
+        _input.AddAction("SpawnVikingRoom");
+        _input.BindActionKey({ input::Key::F }, "SpawnVikingRoom");
+        _input.BindActionCallback<App, &App::SpawnVikingRoom>("SpawnVikingRoom", this, input::KeyState::Press);
+
+        m_scene = new Scene();
+        m_scene->RegisterComponentStorage<timeline::MeshInstance>();
+        m_scene->RegisterComponentStorage<timeline::Light>();
+
+        m_reManager = new RessourceManager(&_device);
+        m_reManager->LoadRessource<graphics::resources::Mesh>("assets/models/viking_room.obj");
+        auto* matLayout = _renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
+        {
+            graphics::resources::object::Material mat;
+            mat.SetTexture("assets/textures/viking_room.png", "albedo");
+            mat.SetMetallicRoughness(0.0f, 0.8f);
+            m_reManager->GetRessource<graphics::resources::Mesh>("assets/models/viking_room.obj").materials.push_back(
+                loaders::MaterialLoader::Load(_device, mat, matLayout)
+            );
+        }
+        timeline::MeshInstance timelineMesh;
+        timelineMesh.meshID = m_reManager->GetRessourceID<graphics::resources::Mesh>("assets/models/viking_room.obj");
+        m_scene->CreateEntity<timeline::MeshInstance>(timelineMesh);
     };
-    ~App() {};
+    ~App() {
+        delete m_scene;
+        delete m_reManager;
+    };
 
     bool ShouldClose() const { return bSouldCloseApp; }
     void CloseApp() {
@@ -36,6 +72,16 @@ public:
         std::cout << "Close App Action Triggered" << std::endl;
     };
 
+    void SpawnVikingRoom() {
+        std::cout << "Spawn Viking Room Action Triggered" << std::endl;
+        timeline::MeshInstance timelineMesh;
+        timelineMesh.meshID = m_reManager->GetRessourceID<graphics::resources::Mesh>("assets/models/viking_room.obj");
+        m_scene->CreateEntity<timeline::MeshInstance>(timelineMesh);
+
+    }
+
+    Scene* m_scene;
+    RessourceManager* m_reManager;
 private:
     bool bSouldCloseApp = false;
 };
@@ -74,6 +120,8 @@ public:
         _input.AddAction("MoveCameraUp");
         _input.BindActionKey({ input::Key::SPACE }, "MoveCameraUp");
         _input.BindActionCallback<Camera, &Camera::MoveCameraUp>("MoveCameraUp", this, input::KeyState::OnGoing);
+
+
     };
     ~Camera() {};
 
@@ -114,9 +162,10 @@ public:
     }
     bool bReceiveInputs = false;
 
-    void EnableLook() { 
+    void EnableLook() {
         bReceiveInputs = true;
     }
+
     void DisableLook(){ 
         bReceiveInputs = false; 
     }
@@ -131,11 +180,18 @@ int main()
     core::Input input(window, &device);
     graphics::Renderer renderer(window, device);
 
+    App app(input , device , renderer);
+    Camera camera(input);
+
+    SystemManager systemManager;
+    systemManager.AddSystem<MeshSystem>(&renderer, app.m_reManager);
+    systemManager.AddSystem<LightSystem>(&renderer);
+
 #ifdef VRAKTAL_EDITOR
-    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, &input);
+    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input , app.m_scene ,*app.m_reManager);
     device.GetImGuiContext()->BindPrepareDrawData([&]()
         {
-            imGuiWindows.PrepareImGuiWindows();
+            imGuiWindows.DrawImGui();
         });
 #endif //VRAKTAL_EDITOR
 
@@ -286,6 +342,16 @@ int main()
     if (parser.IsValid())
         lights = parser.LoadLights();
 
+
+    timeline::Light light1;
+    light1.temp_property.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
+    light1.temp_property.color = glm::vec3(1.0f, 0.9f, 0.2f);
+    light1.temp_property.intensity = 10.0f;
+    light1.temp_property.radius = 0.1f;
+    light1.temp_property.enabled = true;
+    EntityID lightID = app.m_scene->CreateEntity<timeline::Light>(light1);
+    auto& light = app.m_scene->GetEntityComponent<timeline::Light>(lightID);
+
     while (!window.ShouldClose() && !app.ShouldClose())
     {
         window.PollEvents();
@@ -299,10 +365,8 @@ int main()
 #ifdef VRAKTAL_EDITOR
             device.GetImGuiContext()->OnResize();
 #endif // VRAKTAL_EDITOR
-
             continue;
         }
-
         uint32_t imageIndex = device.AcquireNextImage(currentFrameIndex);
         if (imageIndex == UINT32_MAX)
         {
@@ -316,44 +380,17 @@ int main()
 
         time += timeStep;
 
-        renderer.SetCamera(camera.GetView(), camera.projection);
-
-        glm::mat4 meshTransform1 = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 2.0f, 0.0f));
-        meshTransform1 = glm::rotate(meshTransform1, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        renderer.PushMesh(vikingRoomMesh.get(), meshTransform1);
-
-        graphics::resources::Light light1;
-        light1.name = "Yellow Light 1";
-        light1.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
-        light1.color = glm::vec3(1.0f, 0.9f, 0.2f);
-        light1.intensity = 10.0f;
-        light1.radius = 0.1f;
-        light1.enabled = true;
-        renderer.PushLight(light1);
-
-        graphics::resources::Light light2;
-        light2.name = "Yellow Light 2";
-        light2.position = glm::vec3(3.0f * glm::cos(time + glm::pi<float>()), 3.0f, 3.0f * glm::sin(time + glm::pi<float>()));
-        light2.color = glm::vec3(1.0f, 0.85f, 0.1f);
-        light2.intensity = 8.0f;
-        light2.radius = 0.1f;
-        light2.enabled = true;
-        renderer.PushLight(light2);
-
-        graphics::resources::Light light3;
-        light3.name = "Blue Light";
-        light3.position = glm::vec3(0.0f, 2.0f, 0.0f);
-        light3.color = glm::vec3(0.2f, 0.4f, 1.0f);
-        light3.intensity = 15.0f; 
-        light3.radius = 0.1f;
-        light3.enabled = true;
-        renderer.PushLight(light3);
+        systemManager.Update(*app.m_scene);
 
 #ifndef VRAKTAL_EDITOR
+        renderer.SetCamera(camera.GetView(), camera.projection);
         renderer.Render(device.GetSwapchainImage(imageIndex), ImageLayout::Present);
 #else
         imGuiWindows.GetContext()->PrepareForDrawing();
         auto image = imGuiWindows.GetContext()->GetViewportImage();
+        //On doit ajuster la camera
+        if (imGuiWindows.GetContext()->GetViewportState()->width > 0 && imGuiWindows.GetContext()->GetViewportState()->height > 0)
+                renderer.SetCamera(camera.GetView(), imGuiWindows.GetContext()->GetViewportProjection());
 
         renderer.Render(imGuiWindows.GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
         auto cmd = renderer.GetCurrentCommandBuffer();
