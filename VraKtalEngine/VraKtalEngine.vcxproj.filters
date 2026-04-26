@@ -1,426 +1,513 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="Source Files\core">
-      <UniqueIdentifier>{6e804a6a-8495-4c7b-99d8-40cdf15e981a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\core">
-      <UniqueIdentifier>{ab565f96-7e4c-4553-9aff-cc99e9a7dd78}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\core\gpu">
-      <UniqueIdentifier>{dba3852a-a25c-4f25-b604-68d3d3b1383d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\core\gpu">
-      <UniqueIdentifier>{112fb698-09f9-4c6a-9076-dd305f0491c3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\core\gpu\vulkan">
-      <UniqueIdentifier>{ffc1c797-0dcd-4aef-8f9f-bb4d9de3c139}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\core\gpu\gpu_detail">
-      <UniqueIdentifier>{ca948e10-1622-4fe6-b81d-cef25a9a37e7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resource Files\shaders">
-      <UniqueIdentifier>{669e76bf-29ac-4540-be2a-e98d1e1b01ce}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\graphics">
-      <UniqueIdentifier>{f0f8d6f7-313d-45f3-9bea-b03ff55fa51a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\graphics">
-      <UniqueIdentifier>{260b59cd-219e-41fc-ad43-41e58fe1d403}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\graphics\resources">
-      <UniqueIdentifier>{8e3f5a15-7bd5-4935-902c-76e50fea865c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\loaders">
-      <UniqueIdentifier>{426604fe-bce5-4add-af24-79f158bf1ff9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\loaders">
-      <UniqueIdentifier>{05673a73-e4b1-4dde-8aa6-dda25ddb6918}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\graphics\resources\object">
-      <UniqueIdentifier>{8bfa7b30-46ed-4edc-8cd8-3ddd1882b352}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\graphics\resources\property">
-      <UniqueIdentifier>{3737e3eb-bce0-4260-9680-a11a37364864}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\graphics\resources">
-      <UniqueIdentifier>{b4a0c190-bc26-44b7-8c28-2f484b846e7b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\graphics\resources\object">
-      <UniqueIdentifier>{d56ec7a4-a8cf-444c-9ed0-19a13584f0f0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\graphics\resources\property">
-      <UniqueIdentifier>{2eab3814-ab48-462b-a881-0f5a08f2d551}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External">
-      <UniqueIdentifier>{46c6671c-d437-48a1-a861-096c331d62d6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External\ImGui">
-      <UniqueIdentifier>{3b75a217-ceae-4fda-b3ef-fdd405fc0d7a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="External\ImGuizmo">
-      <UniqueIdentifier>{c2ebceed-88ee-4fdd-b70a-dd7f67326125}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="external\MDI">
-      <UniqueIdentifier>{12838fcd-973e-4485-97c5-f924ada4441c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="external\fonts">
-      <UniqueIdentifier>{bd25967c-d4f9-474d-a3ee-94157b94d36a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="external\portableFileDialogs">
-      <UniqueIdentifier>{9060703a-032f-4e39-9ead-06e259c1f291}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\graphics\renderPass">
-      <UniqueIdentifier>{53035896-8da1-4e1d-9be4-2aecda31c710}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\graphics\renderPass">
-      <UniqueIdentifier>{0e0c78fb-1f6e-4e66-bfd3-f647c2b57927}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\core\input">
-      <UniqueIdentifier>{cb3800e5-1697-4921-b0a5-d428adc6bf66}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\core\input">
-      <UniqueIdentifier>{da79beb2-ea3f-4ad4-bfef-a8a249bfe15f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\utils">
-      <UniqueIdentifier>{3bf526df-3f99-42b9-9b38-25e6e348616f}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\core\window.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\device.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\device_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\descriptorSet.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\descriptorSet_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\enum.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\buffer.h">
-      <Filter>Header Files\core\gpu</Filter>
+    <ClInclude Include="src\core\gpu\vulkan\accelerationStructure_impl.h">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu_detail\converters.h">
-      <Filter>Source Files\core\gpu\gpu_detail</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\image.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\image_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\commandBuffer.h">
-      <Filter>Header Files\core\gpu</Filter>
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\core\gpu\vulkan\commandBuffer_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\texture_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\descriptorPool.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\descriptorSetLayout.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\descriptorSetLayout_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\descriptorPool_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\commandPool.h">
-      <Filter>Header Files\core\gpu</Filter>
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\core\gpu\vulkan\commandPool_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\gpu\pipeline.h">
-      <Filter>Header Files\core\gpu</Filter>
+    <ClInclude Include="src\core\gpu\vulkan\descriptorPool_impl.h">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\pipeline_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
+    <ClInclude Include="src\core\gpu\vulkan\descriptorSetLayout_impl.h">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\renderer.h">
-      <Filter>Header Files\graphics</Filter>
+    <ClInclude Include="src\core\gpu\vulkan\descriptorSet_impl.h">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\resources\scene.h">
-      <Filter>Header Files\graphics\resources</Filter>
+    <ClInclude Include="src\core\gpu\vulkan\device_impl.h">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="include\loaders\meshLoader.h">
-      <Filter>Header Files\loaders</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\gpu\vulkan\accelerationStructure_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\accelerationStructure.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\camera.h">
-      <Filter>Header Files\graphics\resources\object</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\property\transform.h">
-      <Filter>Header Files\graphics\resources\property</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\object.h">
-      <Filter>Header Files\graphics\resources\object</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\light.h">
-      <Filter>Header Files\graphics\resources\object</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\material.h">
-      <Filter>Header Files\graphics\resources\object</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\mesh.h">
-      <Filter>Header Files\graphics\resources\object</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\project.h">
-      <Filter>Header Files\graphics\resources</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\staticMesh.h">
-      <Filter>Header Files\graphics\resources\object</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imGuizmo\GraphEditor.h">
-      <Filter>External\ImGuizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imGuizmo\ImCurveEdit.h">
-      <Filter>External\ImGuizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imGuizmo\ImGradient.h">
-      <Filter>External\ImGuizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imGuizmo\ImGuizmo.h">
-      <Filter>External\ImGuizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imGuizmo\ImSequencer.h">
-      <Filter>External\ImGuizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imGuizmo\ImZoomSlider.h">
-      <Filter>External\ImGuizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imgui\imconfig.h">
-      <Filter>External\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imgui\imgui.h">
-      <Filter>External\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imgui\imgui_impl_glfw.h">
-      <Filter>External\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imgui\imgui_impl_vulkan.h">
-      <Filter>External\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imgui\imgui_internal.h">
-      <Filter>External\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imgui\imstb_rectpack.h">
-      <Filter>External\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imgui\imstb_textedit.h">
-      <Filter>External\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\include\imgui\imstb_truetype.h">
-      <Filter>External\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="include\core\gpu\imguiContext.h">
-      <Filter>Header Files\core\gpu</Filter>
+    <ClInclude Include="src\core\gpu\vulkan\image_impl.h">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
     <ClInclude Include="src\core\gpu\vulkan\imguiContext_impl.h">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\external\include\MDI\IconsMaterialDesignIcons.h">
-      <Filter>external\MDI</Filter>
+    <ClInclude Include="src\core\gpu\vulkan\pipeline_impl.h">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h">
-      <Filter>external\portableFileDialogs</Filter>
+    <ClInclude Include="src\core\gpu\vulkan\texture_impl.h">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="include\loaders\shaderLoader.h">
-      <Filter>Header Files\loaders</Filter>
+    <ClInclude Include="src\core\gpu_detail\converters.h">
+      <Filter>src\core\gpu_detail</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\pass.h">
-      <Filter>Header Files\graphics</Filter>
+    <ClInclude Include="external\include\imPlot3D\implot3d.h">
+      <Filter>external\include\imPlot3D</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\renderPass\gBufferPass.h">
-      <Filter>Header Files\graphics\renderPass</Filter>
+    <ClInclude Include="external\include\imPlot3D\implot3d_internal.h">
+      <Filter>external\include\imPlot3D</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\renderPass\lightingPass.h">
-      <Filter>Header Files\graphics\renderPass</Filter>
+    <ClInclude Include="include\core\manager\ressourceManager.h">
+      <Filter>include\core\manager</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\materialInstance.h">
-      <Filter>Header Files\graphics</Filter>
+    <ClInclude Include="include\loaders\loaderBase.h">
+      <Filter>include\loaders</Filter>
     </ClInclude>
-    <ClInclude Include="include\loaders\materialLoader.h">
-      <Filter>Header Files\loaders</Filter>
+    <ClInclude Include="include\scene\scene.h">
+      <Filter>include\scene</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\input\input.h">
-      <Filter>Header Files\core\input</Filter>
+    <ClInclude Include="include\scene\system\systemBase.h">
+      <Filter>include\scene\system</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\input\inputAxisCallback.h">
-      <Filter>Header Files\core\input</Filter>
+    <ClInclude Include="include\scene\system\systemManager.h">
+      <Filter>include\scene\system</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\input\InputCallback.h">
-      <Filter>Header Files\core\input</Filter>
+    <ClInclude Include="include\scene\system\systems\lightSystem.h">
+      <Filter>include\scene\system\systems</Filter>
     </ClInclude>
-    <ClInclude Include="include\utils\NamedStorageMapped.h">
-      <Filter>Header Files\utils</Filter>
+    <ClInclude Include="include\scene\system\systems\meshSystem.h">
+      <Filter>include\scene\system\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\timeline\components\light.h">
+      <Filter>include\scene\timeline\components</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\timeline\components\mesh.h">
+      <Filter>include\scene\timeline\components</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\timeline\entityBase.h">
+      <Filter>include\scene\timeline</Filter>
+    </ClInclude>
+    <ClInclude Include="include\scene\timeline\keyframe.h">
+      <Filter>include\scene\timeline</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\denseStorage.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\enum.h">
+      <Filter>include\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\window.h">
+      <Filter>include\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\accelerationStructure.h">
+      <Filter>include\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\buffer.h">
+      <Filter>include\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\commandBuffer.h">
+      <Filter>include\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\commandPool.h">
+      <Filter>include\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\descriptorPool.h">
+      <Filter>include\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\descriptorSet.h">
+      <Filter>include\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\descriptorSetLayout.h">
+      <Filter>include\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\device.h">
+      <Filter>include\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\image.h">
+      <Filter>include\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\imguiContext.h">
+      <Filter>include\core\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\gpu\pipeline.h">
+      <Filter>include\core\gpu</Filter>
     </ClInclude>
     <ClInclude Include="include\core\input\actions.h">
-      <Filter>Header Files\core\input</Filter>
+      <Filter>include\core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\input\input.h">
+      <Filter>include\core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\input\inputAxisCallback.h">
+      <Filter>include\core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\input\InputCallback.h">
+      <Filter>include\core\input</Filter>
     </ClInclude>
     <ClInclude Include="include\core\input\keys.h">
-      <Filter>Header Files\core\input</Filter>
+      <Filter>include\core\input</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\materialInstance.h">
+      <Filter>include\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\pass.h">
+      <Filter>include\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\renderer.h">
+      <Filter>include\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\project.h">
+      <Filter>include\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\camera.h">
+      <Filter>include\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\light.h">
+      <Filter>include\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\material.h">
+      <Filter>include\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\mesh.h">
+      <Filter>include\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\object.h">
+      <Filter>include\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\object\staticMesh.h">
+      <Filter>include\graphics\resources\object</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\property\transform.h">
+      <Filter>include\graphics\resources\property</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\renderPass\gBufferPass.h">
+      <Filter>include\graphics\renderPass</Filter>
     </ClInclude>
     <ClInclude Include="include\graphics\renderPass\iblPass.h">
-      <Filter>Header Files\graphics\renderPass</Filter>
+      <Filter>include\graphics\renderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\renderPass\lightingPass.h">
+      <Filter>include\graphics\renderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="include\loaders\materialLoader.h">
+      <Filter>include\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\loaders\meshLoader.h">
+      <Filter>include\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\loaders\shaderLoader.h">
+      <Filter>include\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\NamedStorageMapped.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imconfig.h">
+      <Filter>external\include\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imgui.h">
+      <Filter>external\include\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imgui_impl_glfw.h">
+      <Filter>external\include\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imgui_impl_vulkan.h">
+      <Filter>external\include\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imgui_internal.h">
+      <Filter>external\include\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imstb_rectpack.h">
+      <Filter>external\include\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imstb_textedit.h">
+      <Filter>external\include\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imgui\imstb_truetype.h">
+      <Filter>external\include\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\GraphEditor.h">
+      <Filter>external\include\imGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\ImCurveEdit.h">
+      <Filter>external\include\imGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\ImGradient.h">
+      <Filter>external\include\imGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\ImGuizmo.h">
+      <Filter>external\include\imGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\ImSequencer.h">
+      <Filter>external\include\imGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\imGuizmo\ImZoomSlider.h">
+      <Filter>external\include\imGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\MDI\IconsMaterialDesignIcons.h">
+      <Filter>external\include\MDI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\include\portable-file-dialogs\portable-file-dialogs.h">
+      <Filter>external\include\portable-file-dialogs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="external\include\imPlot3D\implot3d.cpp">
+      <Filter>external\include\imPlot3D</Filter>
+    </ClCompile>
+    <ClCompile Include="external\include\imPlot3D\implot3d_items.cpp">
+      <Filter>external\include\imPlot3D</Filter>
+    </ClCompile>
+    <ClCompile Include="external\include\imPlot3D\implot3d_meshes.cpp">
+      <Filter>external\include\imPlot3D</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\manager\ressourceManager.cpp">
+      <Filter>src\core\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene\scene.cpp">
+      <Filter>src\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene\system\systemManager.cpp">
+      <Filter>src\scene\system</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene\system\systems\lightSystem.cpp">
+      <Filter>src\scene\system\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene\system\systems\meshSystem.cpp">
+      <Filter>src\scene\system\systems</Filter>
+    </ClCompile>
     <ClCompile Include="src\window.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\device_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\descriptorSet_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\buffer_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu_detail\converters.cpp">
-      <Filter>Source Files\core\gpu\gpu_detail</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\image_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\commandBuffer_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="include\core\gpu\texture.h">
-      <Filter>Header Files\core\gpu</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\descriptorSetLayout_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\descriptorPool_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\commandPool_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\gpu\vulkan\pipeline_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="src\graphics\renderer.cpp">
-      <Filter>Source Files\graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="src\loaders\meshLoader.cpp">
-      <Filter>Source Files\loaders</Filter>
+      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\accelerationStructure_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\resources\object\scene.cpp">
-      <Filter>Source Files\graphics\resources</Filter>
+    <ClCompile Include="src\core\gpu\vulkan\buffer_impl.cpp">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\external\include\imGuizmo\GraphEditor.cpp">
-      <Filter>External\ImGuizmo</Filter>
+    <ClCompile Include="src\core\gpu\vulkan\commandBuffer_impl.cpp">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\external\include\imGuizmo\ImCurveEdit.cpp">
-      <Filter>External\ImGuizmo</Filter>
+    <ClCompile Include="src\core\gpu\vulkan\commandPool_impl.cpp">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\external\include\imGuizmo\ImGradient.cpp">
-      <Filter>External\ImGuizmo</Filter>
+    <ClCompile Include="src\core\gpu\vulkan\descriptorPool_impl.cpp">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\external\include\imGuizmo\ImGuizmo.cpp">
-      <Filter>External\ImGuizmo</Filter>
+    <ClCompile Include="src\core\gpu\vulkan\descriptorSetLayout_impl.cpp">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\external\include\imGuizmo\ImSequencer.cpp">
-      <Filter>External\ImGuizmo</Filter>
+    <ClCompile Include="src\core\gpu\vulkan\descriptorSet_impl.cpp">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\external\include\imgui\imgui.cpp">
-      <Filter>External\ImGui</Filter>
+    <ClCompile Include="src\core\gpu\vulkan\device_impl.cpp">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\external\include\imgui\imgui_demo.cpp">
-      <Filter>External\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\include\imgui\imgui_draw.cpp">
-      <Filter>External\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\include\imgui\imgui_impl_glfw.cpp">
-      <Filter>External\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\include\imgui\imgui_impl_vulkan.cpp">
-      <Filter>External\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\include\imgui\imgui_tables.cpp">
-      <Filter>External\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\include\imgui\imgui_widgets.cpp">
-      <Filter>External\ImGui</Filter>
+    <ClCompile Include="src\core\gpu\vulkan\image_impl.cpp">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\imguiContext_impl.cpp">
-      <Filter>Source Files\core\gpu\vulkan</Filter>
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp">
-      <Filter>Source Files\graphics\renderPass</Filter>
+    <ClCompile Include="src\core\gpu\vulkan\pipeline_impl.cpp">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\renderPass\lightingPass.cpp">
-      <Filter>Source Files\graphics\renderPass</Filter>
+    <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp">
+      <Filter>src\core\gpu\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="src\loaders\materialLoader.cpp">
-      <Filter>Source Files\loaders</Filter>
+    <ClCompile Include="src\core\gpu_detail\converters.cpp">
+      <Filter>src\core\gpu_detail</Filter>
     </ClCompile>
     <ClCompile Include="src\input\input.cpp">
-      <Filter>Source Files\core\input</Filter>
+      <Filter>src\input</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\renderer.cpp">
+      <Filter>src\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\renderPass\gBufferPass.cpp">
+      <Filter>src\graphics\renderPass</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\renderPass\iblPass.cpp">
-      <Filter>Source Files\graphics\renderPass</Filter>
+      <Filter>src\graphics\renderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\renderPass\lightingPass.cpp">
+      <Filter>src\graphics\renderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="src\loaders\materialLoader.cpp">
+      <Filter>src\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\loaders\meshLoader.cpp">
+      <Filter>src\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="include\core\gpu\texture.h">
+      <Filter>include\core\gpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui.cpp">
+      <Filter>external\include\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_demo.cpp">
+      <Filter>external\include\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_draw.cpp">
+      <Filter>external\include\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_impl_glfw.cpp">
+      <Filter>external\include\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_impl_vulkan.cpp">
+      <Filter>external\include\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_tables.cpp">
+      <Filter>external\include\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imgui\imgui_widgets.cpp">
+      <Filter>external\include\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imGuizmo\GraphEditor.cpp">
+      <Filter>external\include\imGuizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imGuizmo\ImCurveEdit.cpp">
+      <Filter>external\include\imGuizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imGuizmo\ImGradient.cpp">
+      <Filter>external\include\imGuizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imGuizmo\ImGuizmo.cpp">
+      <Filter>external\include\imGuizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\include\imGuizmo\ImSequencer.cpp">
+      <Filter>external\include\imGuizmo</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\external\include\imGuizmo\.editorconfig">
-      <Filter>External\ImGuizmo</Filter>
-    </None>
     <None Include="..\bin\assets\shaders\gbuffer.slang">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="..\bin\assets\shaders\lighting.slang">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="..\bin\assets\shaders\irradiance_convolution.slang">
-      <Filter>Resource Files\shaders</Filter>
+      <Filter>bin\assets\shaders</Filter>
     </None>
     <None Include="..\bin\assets\shaders\ibl.slang">
-      <Filter>Resource Files\shaders</Filter>
+      <Filter>bin\assets\shaders</Filter>
     </None>
+    <None Include="..\bin\assets\shaders\irradiance_convolution.slang">
+      <Filter>bin\assets\shaders</Filter>
+    </None>
+    <None Include="..\bin\assets\shaders\lighting.slang">
+      <Filter>bin\assets\shaders</Filter>
+    </None>
+    <None Include="..\external\include\imGuizmo\.editorconfig">
+      <Filter>external\include\imGuizmo</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="bin">
+      <UniqueIdentifier>{a64a6284-7b2b-4640-8595-0ddff463ab0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bin\assets">
+      <UniqueIdentifier>{3bff5f21-3a1f-410f-84b6-20659fe75a5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bin\assets\shaders">
+      <UniqueIdentifier>{0d6e820f-d54e-494f-af57-f8bba8420300}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external">
+      <UniqueIdentifier>{9b10ae25-d8dd-462d-b2a9-5426be85b048}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\include">
+      <UniqueIdentifier>{70572454-ed2c-4917-8cc9-1f05928f2859}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\include\imgui">
+      <UniqueIdentifier>{102b1137-50ed-45ae-9748-29d78bf9d127}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\include\imGuizmo">
+      <UniqueIdentifier>{a1fe13e8-3f4c-4bb3-9c3f-f9ca9b74420a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\include\MDI">
+      <UniqueIdentifier>{ea8e7423-a8af-4eff-9701-b1851c351c7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\fonts">
+      <UniqueIdentifier>{e6f71a17-326c-4071-9517-c87a7e3b98ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\include\portable-file-dialogs">
+      <UniqueIdentifier>{1f6ebdb9-df67-4acd-bbcd-2496e7f6c67c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\include\imPlot3D">
+      <UniqueIdentifier>{d34ac33f-cf37-47c9-bb46-6a8e186afe7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{28cba1ad-0b3d-4c3c-9c7e-c86575e56e95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\core">
+      <UniqueIdentifier>{40c5225d-a4c6-479d-85ba-a501e89c02fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\core\manager">
+      <UniqueIdentifier>{cee08d38-4713-4ed2-a3a9-718feb80747b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\core\gpu">
+      <UniqueIdentifier>{fef05787-2ac3-455e-8f8e-3f0998db42c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\core\input">
+      <UniqueIdentifier>{ba94f270-c739-4b7e-acfd-8c56120c63d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\loaders">
+      <UniqueIdentifier>{2328fcd8-53b1-48d4-a58c-6e4ed6bfe463}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\scene">
+      <UniqueIdentifier>{0d580cf9-11e6-481b-8e82-b8eafbf3af7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\scene\system">
+      <UniqueIdentifier>{05dd9535-29be-44e3-b799-6b51b7274fd0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\scene\system\systems">
+      <UniqueIdentifier>{ca46d86f-7b6e-4007-9d21-abe9b54746b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\scene\timeline">
+      <UniqueIdentifier>{af670edf-8c59-4cf7-8efc-2aa8d9b61232}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\scene\timeline\components">
+      <UniqueIdentifier>{06a11122-d6f2-4b7c-b78b-3dafd10bbc38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\utils">
+      <UniqueIdentifier>{039fb9a0-00aa-4a8c-97f7-37f606da4197}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\graphics">
+      <UniqueIdentifier>{817bae89-4149-4563-afa2-88229c260248}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\graphics\resources">
+      <UniqueIdentifier>{df6dcba0-2c18-405d-9c14-bed8bbda21e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\graphics\resources\object">
+      <UniqueIdentifier>{7540484f-137d-404e-9371-14b5804f034a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\graphics\resources\property">
+      <UniqueIdentifier>{fa001e50-0922-42f0-a2de-4e4853654a2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\graphics\renderPass">
+      <UniqueIdentifier>{15c3b779-1ee6-4288-8eb6-d11d3b58e5d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{3f7fcc1c-8ba9-49a5-9402-2de005ad2042}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{6d895c9a-11e5-47b5-b561-f1f48af96105}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\manager">
+      <UniqueIdentifier>{a0eaae9d-02f7-4f6c-8993-4b5ad67cc3a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\gpu">
+      <UniqueIdentifier>{7ee1f985-0c48-4201-8740-42bfb0b5ec71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\gpu\vulkan">
+      <UniqueIdentifier>{6bc8c733-52a1-4422-acb8-ab8a1630cfc4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\gpu_detail">
+      <UniqueIdentifier>{78b6e0b4-dbfa-4aca-9739-e8028efb7fe1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\scene">
+      <UniqueIdentifier>{c8851861-345a-4b85-a36b-aee414ef19b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\scene\system">
+      <UniqueIdentifier>{77fb7fab-4317-46b7-8aa3-8782b387a807}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\scene\system\systems">
+      <UniqueIdentifier>{8ab3c1a0-1173-4a62-b5b4-a8ca991f36af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\input">
+      <UniqueIdentifier>{1d00dcf5-dc92-4ca2-be80-cd5be0bd912e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\graphics">
+      <UniqueIdentifier>{b6993855-795d-43be-aded-ac33ae8efc7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\graphics\renderPass">
+      <UniqueIdentifier>{2bf7fdbf-72db-4b06-b9e9-0d9a330b350d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\loaders">
+      <UniqueIdentifier>{fe9e2d92-21cb-4cbb-ace3-75edf7424251}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Font Include="..\external\fonts\materialdesignicons-webfont.ttf">

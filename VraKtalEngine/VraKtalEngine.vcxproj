@@ -233,7 +233,6 @@
     <ClInclude Include="include\loaders\materialLoader.h" />
     <ClInclude Include="include\loaders\meshLoader.h" />
     <ClInclude Include="include\loaders\shaderLoader.h" />
-    <ClInclude Include="include\loaders\textureLoader.h" />
     <ClInclude Include="include\scene\scene.h" />
     <ClInclude Include="include\scene\system\systemBase.h" />
     <ClInclude Include="include\scene\system\systemManager.h" />
