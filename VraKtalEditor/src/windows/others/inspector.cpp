@@ -1,7 +1,16 @@
 #include "../../../include/windows/others/inspector.h"
+#include "../../../include/windows/others/dragNdrop.h"
+#include "../../../include/imGuiWindows.h"
 #include <graphics/resources/object/mesh.h>
 #include <scene/timeline/components/light.h>
 #include <scene/timeline/components/mesh.h>
+
+#include <filesystem>
+
+#include <graphics/materialInstance.h>
+
+#include <memory>
+#include <utility>
 
 #pragma region glm
 template<>
@@ -63,32 +72,60 @@ void Inspect::Draw(glm::mat4& transform)
 }
 #pragma endregion
 
+using MaterialIndex = uint32_t;
+
 template<>
 void Inspect::Draw(timeline::MeshInstance& _mesh)
 {
-    if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
+    bool bMeshDefined = _mesh.meshID != -1;
+    std::string path = bMeshDefined ? m_ressourceManager->GetRessourcePath<graphics::resources::Mesh>(_mesh.meshID) : "undefined path";
+
+    std::string displayName = "Mesh";
+
+    if (bMeshDefined)
     {
-        bool bMeshDefined = _mesh.meshID != -1;
-        std::string path = bMeshDefined ? m_ressourceManager->GetRessourcePath<graphics::resources::Mesh>(_mesh.meshID) : "undefined path";
-        
-        ImGui::Text("path: %s", path.c_str());
-        
-        if (bMeshDefined)
+        std::string fileName = std::filesystem::path(path).filename().string();
+        displayName += " - " + fileName;
+        if (ImGui::CollapsingHeader(displayName.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
         {
-            graphics::resources::Mesh& ressourceMesh = m_ressourceManager->GetRessource<graphics::resources::Mesh>(_mesh.meshID);
-            for (int i = 0; i < ressourceMesh.materials.size(); i++)
+            if (ImGui::CollapsingHeader("Materials"))
             {
-                ImGui::Text("material[%d]: %s", i, ressourceMesh.materials[i].get()->name.c_str());
+                graphics::resources::Mesh& ressourceMesh = m_ressourceManager->GetRessource<graphics::resources::Mesh>(_mesh.meshID);
+                for (int i = 0; i < ressourceMesh.materials.size(); i++)
+                {
+                    ImGui::PushID(i);
+
+                    MaterialIndex materialIndex = static_cast<MaterialIndex>(i);
+
+                    std::string label =
+                        "Material[" + std::to_string(i) + "] " +
+                        ressourceMesh.materials[i]->name;
+
+                    ImGui::Selectable(label.c_str(), false);
+
+                    m_windowManager->GetDragNDrop()->Drag<MaterialIndex>(materialIndex);
+
+                    MaterialIndex dropped = INVALID_ID;
+                    m_windowManager->GetDragNDrop()->DropItem<MaterialIndex, MaterialIndex>(dropped);
+
+                    if (dropped != INVALID_ID && dropped != static_cast<MaterialIndex>(i))
+                    {
+                        std::swap(
+                            ressourceMesh.materials[i],
+                            ressourceMesh.materials[dropped]
+                        );
+                    }
+
+                    ImGui::PopID();
+                }
             }
+            this->Draw<glm::mat4>(_mesh.temp_properties.transform);
         }
-        else
-        {
-
-        }
-
-
-
-        this->Draw<glm::mat4>(_mesh.temp_properties.transform);
+    }
+    else
+    {
+        displayName += " - undefined";
+        ImGui::Text(displayName.c_str());
     }
 }
 
@@ -126,3 +163,6 @@ void Inspect::Draw(timeline::Light& _light)
         }
     }
 }
+
+Inspect::Inspect(ImGuiWindows* _windowManager, RessourceManager* _ressourceManager)
+    : m_ressourceManager(_ressourceManager), m_windowManager(_windowManager){};

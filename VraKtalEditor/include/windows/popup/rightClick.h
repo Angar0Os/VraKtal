@@ -41,6 +41,8 @@ public:
             CloseMenu();
             return false;
         }
+
+        return false;
     };
 
     template<typename T>

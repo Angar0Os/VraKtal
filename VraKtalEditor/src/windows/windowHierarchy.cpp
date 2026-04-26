@@ -132,12 +132,12 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID ID)
             //DragNDrop
             if (m_scene.GetComponentStorage<timeline::MeshInstance>().Has(ID))
             {
-                m_imGuiWindows.GetDragNDrop()->Drop<FileEntry, Mesh_ID>(m_scene.GetComponentStorage<timeline::MeshInstance>().Get(ID).meshID);
+                m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(m_scene.GetComponentStorage<timeline::MeshInstance>().Get(ID).meshID);
             }
             else
             {
                 Mesh_ID draggedMeshID = INVALID_ID;
-                m_imGuiWindows.GetDragNDrop()->Drop<FileEntry, Mesh_ID>(draggedMeshID);
+                m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(draggedMeshID);
                 if (draggedMeshID != INVALID_ID)
                 {
                     m_scene.GetComponentStorage<timeline::MeshInstance>().Add(ID, timeline::MeshInstance{ .meshID = draggedMeshID });

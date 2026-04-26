@@ -37,11 +37,17 @@ void WindowInspector::Draw()
         else if (m_windows.IsSelectedItemType<EntityID>())
         {
             Scene* scene = m_windows.GetScene();
-
             EntityID ID = m_windows.GetSelectedItem<EntityID>();
 
             if (ID != INVALID_ENTITY)
             {
+                Mesh_ID draggedMeshID = INVALID_ID;
+                m_windows.GetDragNDrop()->DropWindow<FileEntry, Mesh_ID>(draggedMeshID);
+                if (draggedMeshID != INVALID_ID)
+                {
+                    scene->GetComponentStorage<timeline::MeshInstance>().Get(ID).meshID = draggedMeshID;
+                }
+
                 std::string& label = scene->GetEntityComponent<std::string>(ID);
                 ImGui::Text("%s", label.c_str());
 

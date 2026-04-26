@@ -25,7 +25,7 @@ namespace loaders
 			const core::gpu::DescriptorSetLayout* dsLayout);
 
 		static std::unique_ptr<core::gpu::Image> UploadHDRTexture(core::gpu::Device&, const std::string&);
-	private:
+
 		static std::unique_ptr<core::gpu::Image> UploadTexture(
 			core::gpu::Device& device,
 			const std::string& filepath,
