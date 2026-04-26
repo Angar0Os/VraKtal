@@ -2,6 +2,7 @@
 #include <core/manager/ressourceManager.h>
 
 #include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
 
 namespace graphics::resources
 {
@@ -33,22 +34,62 @@ struct DragNDrop
     };
     
     template<typename DraggedType , typename DroppedReceived>
-    DraggedType* Drop(DroppedReceived& object) {
-        ImGui::BeginPopup("DropAvailability");
-        ImGui::Text("No DropAvailable");
-        ImGui::EndPopup();
+    DraggedType* DropWindow(DroppedReceived& object) {
+
+        DraggedType* toReturn = nullptr;
+		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+		{
+			ImVec2 var = ImGui::GetWindowPos();
+			var.x = ImGui::GetWindowSize().x + var.x;
+			var.y = ImGui::GetWindowSize().y + var.y;
+
+			ImRect rect(ImGui::GetWindowPos(), var);
+
+            if (ImGui::BeginDragDropTargetCustom(rect, ImGui::GetCurrentWindow()->ID))
+			{
+                toReturn = Content<DraggedType , DroppedReceived>(object);
+                ImGui::EndDragDropTarget();
+			}
+		}
+		return toReturn;
+    }
+
+    template<typename DraggedType, typename DroppedReceived>
+    DraggedType* DropItem(DroppedReceived& object) {
+        DraggedType* droppedEntry = nullptr;
+        if (ImGui::BeginDragDropTarget())
+        {
+            droppedEntry = Content<DraggedType, DroppedReceived>(object);
+            ImGui::EndDragDropTarget();
+        }
+        return droppedEntry;
     }
 
 private:
     ImGuiWindows& m_windowManager;
     RessourceManager& m_reManager;
+
+    template<typename DraggedType, typename DroppedReceived>
+    DraggedType* Content(DroppedReceived& object) {
+        ImGui::BeginPopup("DropAvailability");
+        ImGui::Text("No DropAvailable");
+        ImGui::EndPopup();
+        return nullptr;
+    }
+
 };
 
 template<>
 void DragNDrop::Drag(FileEntry& _fileEntry);
 
 template<>
-FileEntry* DragNDrop::Drop(FileEntry& _fileEntry);
+FileEntry* DragNDrop::Content(FileEntry& _fileEntry);
 
 template<>
-FileEntry* DragNDrop::Drop(Mesh_ID& _meshID);
+FileEntry* DragNDrop::Content(Mesh_ID& _meshID);
+
+using MaterialIndex = uint32_t;
+template<>
+void DragNDrop::Drag(MaterialIndex& _materialIndex);
+template<>
+MaterialIndex* DragNDrop::Content(MaterialIndex& _meshID);
