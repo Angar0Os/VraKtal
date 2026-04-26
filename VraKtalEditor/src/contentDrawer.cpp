@@ -264,6 +264,7 @@ void ContentDrawer::GetContentDrawerWindow()
 					m_currentPath = fileEntry.path;
 					m_needsRefresh = true;
 					ClearSelection();
+					m_windowManager->ResetSelectedItem();
 				}
 				else {
 					ClearSelection();
