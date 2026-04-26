@@ -69,12 +69,20 @@ void WindowInspector::Draw()
             FileEntry* file = m_windows.GetSelectedItem<FileEntry*>();
             if (file->fileType == FileType::MeshGLTF || file->fileType == FileType::MeshOBJ)
             {
-                ImGui::Text("Mesh Preview: %s" , file->path);
                 uint32_t ressourceID = m_ressourceManager->GetRessourceID<graphics::resources::Mesh>(file->GetRelativeFileLocation().string());
-                if (ressourceID != 0xFFFFFFFFu)
+                if (ressourceID != INVALID_ID)
                 {
+                    ImGui::Text("Mesh Preview: %s" , file->path.string().c_str());
                     graphics::resources::Mesh& _mesh = m_ressourceManager->GetRessource<graphics::resources::Mesh>(ressourceID);
                     m_windows.GetMeshPlot()->Draw(&_mesh);
+                }
+                else
+                {
+                    ImGui::Text("Mesh isn't loaded");
+                    if (ImGui::Button(("Load Mesh" + file->filename).c_str()))
+                    {
+                        m_ressourceManager->LoadRessource<graphics::resources::Mesh>(file->GetRelativeFileLocation().string());
+                    }
                 }
             }
             else
