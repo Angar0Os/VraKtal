@@ -12,15 +12,27 @@
 #include <limits>
 
 #include <imgui/imgui.h>
+#include <memory>
+#include <utility>
 
-namespace graphics::resources
+namespace graphics
 {
-    class Mesh;
+    namespace ressources {
+        class Mesh;
+    }
+    class Renderer;
 }
+
+namespace core::gpu {
+    class Device;
+    class Texture;
+}
+
+class ImGuiWindows;
 
 struct Inspect
 {
-    Inspect(RessourceManager* _ressourceManager) : m_ressourceManager(_ressourceManager) {};
+    Inspect(ImGuiWindows* _windowManager, RessourceManager* _ressourceManager);
 
     template<typename T>
     void Draw(T& object) {
@@ -29,6 +41,7 @@ struct Inspect
 
 private:
     RessourceManager* m_ressourceManager;
+    ImGuiWindows* m_windowManager;
 };
 
 template<>

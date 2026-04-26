@@ -65,6 +65,9 @@ namespace graphics {
     class Renderer;
 }
 
+namespace core::gpu {
+    class Device;
+}
 
 
 #pragma endregion
@@ -72,7 +75,7 @@ class ImGuiWindows
 {
 public:
 
-    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager);
+    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager, core::gpu::Device* _device);
     ~ImGuiWindows();
 
     struct WindowState

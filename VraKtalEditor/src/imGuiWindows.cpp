@@ -32,8 +32,8 @@
 #include "../include/windows/others/dragNdrop.h"
 
 struct ImguiOthers {
-	ImguiOthers(ImGuiWindows* _windows, core::Input* _input , RessourceManager* _reManager) 
-		: imGuizmoHelper(new ImGuizmoHelper(_windows, _input)), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , *_reManager)) , m_inspect(new Inspect(_reManager)) {};
+	ImguiOthers(ImGuiWindows* _windows, core::Input* _input , RessourceManager* _reManager , core::gpu::Device* _device , graphics::Renderer* _renderer)
+		: imGuizmoHelper(new ImGuizmoHelper(_windows, _input)), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , *_reManager)) , m_inspect(new Inspect(_windows,_reManager)) {};
 	~ImguiOthers() {
 		delete imGuizmoHelper;
 		delete meshPlot;
@@ -59,8 +59,8 @@ struct Popups
 };
 
 
-ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager )
-    : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager)) ,m_popups(new Popups(this))
+ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager , core::gpu::Device* _device)
+    : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager ,_device, _renderer)) ,m_popups(new Popups(this))
 {
 	m_renderer = _renderer;
 	m_window = window;

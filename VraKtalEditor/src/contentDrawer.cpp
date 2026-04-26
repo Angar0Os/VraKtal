@@ -190,6 +190,10 @@ void ContentDrawer::GetContentDrawerWindow()
 		if (!m_clipboardPaths.empty()) {
 			ImGui::OpenPopup("EmptySpaceMenu");
 		}
+		else
+		{
+			ClearSelection();
+		}
 	}
 
 	if (ImGui::BeginPopup("EmptySpaceMenu")) {
@@ -233,11 +237,6 @@ void ContentDrawer::GetContentDrawerWindow()
 		m_windowManager->GetDragNDrop()->Drag<FileEntry>(fileEntry);
 
 		ImGui::PopFont();
-		if (FileEntry* dropped = m_windowManager->GetDragNDrop()->Drop<FileEntry , FileEntry>(fileEntry))
-		{
-			std::cout << "Dropped: " << dropped->path << "\n";
-			std::cout << "Target: " << fileEntry.path << "\n";
-		}
 
 		if (clicked) {
 			if (ImGui::GetIO().KeyCtrl) {
@@ -337,17 +336,13 @@ void ContentDrawer::HandleFileActions()
 				
 				m_showRenameDialog = true;
 			}
-
 			// Windows specific
 			strncpy_s(m_renameBuffer, m_cachedFiles[m_renameTargetIndex].filename.c_str(), sizeof(m_renameBuffer) - 1);
-
 			m_showRenameDialog = true;
 		}
-
 		if (ImGui::MenuItem(ICON_MDI_DELETE " Delete", "Del")) {
 			m_showDeleteDialog = true;
 		}
-
 		if (ImGui::MenuItem(ICON_MDI_FOLDER_OPEN " Show in Explorer")) {
 			for (size_t idx : m_selectedIndices) {
 				if (idx < m_cachedFiles.size()) {
@@ -362,21 +357,18 @@ void ContentDrawer::HandleFileActions()
 		if (ImGui::MenuItem(ICON_MDI_CONTENT_COPY " Copy", "Ctrl+C")) {
 			PerformCopy();
 		}
-
 		if (ImGui::MenuItem(ICON_MDI_CONTENT_CUT " Cut", "Ctrl+X")) {
 			PerformCut();
 		}
-
 		if (ImGui::MenuItem(ICON_MDI_CONTENT_PASTE " Paste", "Ctrl+V", false, !m_clipboardPaths.empty())) {
 			PerformPaste();
 		}
-
 		ImGui::EndPopup();
 	}
 	else
 	{
 		bool canClearSelection = !m_showDeleteDialog && !m_showRenameDialog;
-		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().KeyCtrl  && !ImGui::GetIO().KeyShift && (ImGui::IsAnyItemHovered() || ImGui::IsWindowHovered) && canClearSelection)
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().KeyCtrl  && !ImGui::GetIO().KeyShift && canClearSelection)
 		{
 			ClearSelection();
 			std::cout << "cleared selections" << std::endl;
