@@ -30,6 +30,7 @@
 #include "../include/windows/others/inspector.h"
 #include "../include/windows/others/meshPlot.h"
 #include "../include/windows/others/dragNdrop.h"
+#include <utils/yamlParser.h>
 
 struct ImguiOthers {
 	ImguiOthers(ImGuiWindows* _windows, core::Input* _input , RessourceManager* _reManager , core::gpu::Device* _device , graphics::Renderer* _renderer)
@@ -335,6 +336,7 @@ void ImGuiWindows::LoadProject()
 	std::filesystem::path projectPath(files[0]);
 
 	if (!projectPath.parent_path().empty()) {
+        utils::YamlParser::LoadProject(projectPath.string(), m_scene, m_manager);
 		m_contentDrawer->SetCurrentPath(projectPath.parent_path());
 	}
 
