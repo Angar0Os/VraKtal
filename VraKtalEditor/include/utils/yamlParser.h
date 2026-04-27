@@ -1,36 +1,39 @@
-#ifndef EDITOR_UTILS_YAMLPARSER_H
-#define EDITOR_UTILS_YAMLPARSER_H
+#ifndef VRAKTAL_EDITOR_UTILS_YAMLPARSER_H
+#define VRAKTAL_EDITOR_UTILS_YAMLPARSER_H
 #pragma once
 
-#include <graphics/resources/object/light.h>
+#include <core/manager/ressourceManager.h>
+#include <scene/timeline/components/light.h>
+#include <scene/timeline/components/mesh.h>
+#include <scene/scene.h>
+
+#include <glm/glm.hpp>
 #include <fkYAML/node.hpp>
+
 #include <string>
-#include <vector>
-#include <optional>
+#include <sstream>
 
 namespace utils
 {
-	class YamlParser
+	namespace YamlParser
 	{
-	private:
-		std::string m_filePath;
-		bool m_isValid;
-		std::optional<fkyaml::node> m_root;
+		extern RessourceManager* _resManager;
 
-		void LoadFile();
+        bool LoadProject(
+			const std::filesystem::path& filePath,
+			Scene* scene,
+			RessourceManager* resManager);
 
-		graphics::resources::Light ParseLight(const fkyaml::node& node);
+		glm::mat4 ParseMat4(const fkyaml::node& node);
+		glm::vec3 ParseVec3(const fkyaml::node& node);
 
-	public:
-		YamlParser(const std::string& filePath);
-		~YamlParser();
+		void ParseEntity(Scene* scene, const fkyaml::node& entityNode);
+		void ParseLightComponent(Scene* scene, const fkyaml::node& compNode);
+		void ParseMeshComponent(Scene* scene, const fkyaml::node& compNode);
 
-		std::vector<fkyaml::node> GetObjectsByType(const std::string& type);
-
-		std::vector < graphics::resources::Light> LoadLights();
-
-		bool IsValid() const { return m_isValid; }
+		template<typename KeyframeContainer, typename PropertyReader>
+		void ParseKeyframes(const fkyaml::node& keyframesNode, KeyframeContainer& container, PropertyReader&& readPropFn);
 	};
 }
 
-#endif //EDITOR_UTILS_YAMLPARSER_H
+#endif //VRAKTAL_EDITOR_UTILS_YAMLPARSER_H

@@ -222,7 +222,7 @@ bool utils::YamlSerializer::SaveProject(
     std::ofstream file(outputPath);
     if (!file.is_open())
     {
-        std::cerr << "[YamlSerializer] Cannot open file for writing: " << "\n";
+        std::cerr << "[YamlSerializer] Cannot open file for writing: " << "\n"; // add path ref
         return false;
     }
 

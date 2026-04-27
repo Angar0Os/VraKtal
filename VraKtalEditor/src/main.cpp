@@ -50,6 +50,10 @@ public:
         _input.BindActionKey({ input::Key::F , input::Key::LEFT_CONTROL }, "SpawnCave");
         _input.BindActionCallback<App, &App::SpawnCave>("SpawnCave", this, input::KeyState::Press);
 
+        _input.AddAction("LoadProject");
+        _input.BindActionKey({ input::Key::L , input::Key::LEFT_CONTROL }, "LoadProject");
+        _input.BindActionCallback<App, &App::LoadProject>("LoadProject", this, input::KeyState::Press);
+
         m_scene = new Scene();
         m_scene->RegisterComponentStorage<timeline::MeshInstance>();
         m_scene->RegisterComponentStorage<timeline::Light>();
@@ -224,6 +228,11 @@ public:
         utils::YamlSerializer::SaveProject("main-project.yaml", m_scene, m_reManager);
     }
 
+    void LoadProject()
+    {
+        utils::YamlParser::LoadProject("main-project.yaml", m_scene, m_reManager);
+    }
+
     Scene* m_scene;
     RessourceManager* m_reManager;
 private:
@@ -362,24 +371,15 @@ int main()
     uint32_t currentFrameIndex = 0;
     uint32_t frameCounter = 0;
 
-    utils::YamlParser parser("project.yaml");
-    std::vector<graphics::resources::Light> lights;
-    if (parser.IsValid())
-        lights = parser.LoadLights();
+    //timeline::Light light1;
+    //light1.temp_property.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
+    //light1.temp_property.color = glm::vec3(1.0f, 0.9f, 0.2f);
+    //light1.temp_property.intensity = 10.0f;
+    //light1.temp_property.radius = 0.1f;
+    //light1.temp_property.enabled = true;
 
-    timeline::Light light1;
-    light1.temp_property.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
-    light1.temp_property.color = glm::vec3(1.0f, 0.9f, 0.2f);
-    light1.temp_property.intensity = 10.0f;
-    light1.temp_property.radius = 0.1f;
-    light1.temp_property.enabled = true;
-
-    // to remove
-    light1.keyframes.push_back(Keyframe<timeline::LightProperty>{ 0.1f, EInterpolationType::Linear, light1.temp_property });
-    light1.keyframes.push_back(Keyframe<timeline::LightProperty>{ 0.2f, EInterpolationType::Linear, light1.temp_property });
-
-    EntityID lightID = app.m_scene->CreateEntity<timeline::Light>(light1);
-    auto& light = app.m_scene->GetEntityComponent<timeline::Light>(lightID);
+    //EntityID lightID = app.m_scene->CreateEntity<timeline::Light>(light1);
+    //auto& light = app.m_scene->GetEntityComponent<timeline::Light>(lightID);
 
     while (!window.ShouldClose() && !app.ShouldClose())
     {
