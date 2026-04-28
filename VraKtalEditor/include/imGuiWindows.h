@@ -93,9 +93,9 @@ public:
     void ResetSelectedItem();
 
     template<typename T>
-    void SetSelectedItem(T&& value)
+    void SetSelectedItem(T value)
     {
-        m_selectedItem = std::forward<T>(value);
+        m_selectedItem = value;
     }
 
 

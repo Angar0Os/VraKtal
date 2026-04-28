@@ -221,9 +221,7 @@ void ContentDrawer::GetContentDrawerWindow()
 				IM_COL32(100, 150, 255, 100),
 				4.0f
 			);
-
-			m_windowManager->SetSelectedItem(&fileEntry);
-
+			m_windowManager->SetSelectedItem<FileEntry*>(&fileEntry);
 		}
 
 		ImGui::PushFont(largeIconFont);
@@ -328,6 +326,7 @@ void ContentDrawer::HandleFileActions()
 	}
 
 	if (ImGui::BeginPopupContextWindow("FileActionsPopup")) {
+
 		if (ImGui::MenuItem(ICON_MDI_PENCIL " Rename", "", false, m_selectedIndices.size() == 1)) {
 			m_renameTargetIndex = *m_selectedIndices.begin();
 
@@ -364,6 +363,7 @@ void ContentDrawer::HandleFileActions()
 		if (ImGui::MenuItem(ICON_MDI_CONTENT_PASTE " Paste", "Ctrl+V", false, !m_clipboardPaths.empty())) {
 			PerformPaste();
 		}
+
 		ImGui::EndPopup();
 	}
 	else

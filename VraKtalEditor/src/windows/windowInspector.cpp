@@ -41,6 +41,7 @@ void WindowInspector::Draw()
 
             if (ID != INVALID_ENTITY)
             {
+                //Handle Drop
                 Mesh_ID draggedMeshID = INVALID_ID;
                 m_windows.GetDragNDrop()->DropWindow<FileEntry, Mesh_ID>(draggedMeshID);
                 if (draggedMeshID != INVALID_ID)
@@ -48,8 +49,17 @@ void WindowInspector::Draw()
                     scene->GetComponentStorage<timeline::MeshInstance>().Get(ID).meshID = draggedMeshID;
                 }
 
-                std::string& label = scene->GetEntityComponent<std::string>(ID);
-                ImGui::Text("%s", label.c_str());
+                if (scene->GetComponentStorage<std::string>().Has(ID))
+                {
+                    std::string& label = scene->GetEntityComponent<std::string>(ID);
+                    ImGui::Text("%s", label.c_str());
+                    ImGui::SameLine();
+                    ImGui::Text("#%d", ID);
+                }
+                else
+                {
+                    ImGui::Text("This Entity Have no name this is not normal behaviour");
+                }
 
                 if (scene->GetComponentStorage<timeline::MeshInstance>().Has(ID))
                 {

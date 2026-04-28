@@ -3,6 +3,8 @@
 #include <typeindex>
 #include <scene/timeline/entityBase.h>
 #include <iostream>
+#include <vector>
+#include <unordered_map>
 
 class ImGuiWindows;
 class WindowHierarchy;
@@ -23,23 +25,16 @@ public:
             ImGui::IsMouseClicked(ImGuiMouseButton_Right))
         { //Set Value correctly and open menu
             std::cout << "Right click on " << typeid(T).name() << std::endl;
-            m_lastType = object;
-            bMenuOpen = true;
 
             ImGui::SetNextWindowPos(ImGui::GetMousePos());
             ImGui::OpenPopup("RightClickPopup");
         }
 
-        if (m_lastType == object && ImGui::BeginPopup("RightClickPopup")) //Draw menu
+        if (ImGui::BeginPopup("RightClickPopup")) //Draw menu
         {
             Content<T>(object);
             ImGui::EndPopup();
             return true;
-        }
-        else if (m_lastType == object && bMenuOpen)
-        {
-            CloseMenu();
-            return false;
         }
 
         return false;
@@ -65,8 +60,12 @@ private:
 #pragma region Hierarchy
 template<>
 void RightClick::Content(WindowHierarchy* _window);
+
 template<>
 void RightClick::Content(EntityID* _ID);
+
+template<>
+void RightClick::Content(std::vector<EntityID>* _IdMap);
 #pragma endregion
 
 #pragma region Inspector

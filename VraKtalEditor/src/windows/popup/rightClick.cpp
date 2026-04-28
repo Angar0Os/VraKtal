@@ -9,6 +9,7 @@
 #include <scene/timeline/components/light.h>
 
 #include <variant>
+#include <unordered_map>
 
 
 RightClick::RightClick(ImGuiWindows* _windows) : m_windows(_windows) {}
@@ -18,7 +19,7 @@ RightClick::~RightClick(){}
 template<>
 void RightClick::Content(WindowHierarchy* _window)
 {
-    if (ImGui::Button("Add Entity"))
+    if (ImGui::Selectable("Add Entity"))
     {
         m_windows->GetScene()->CreateEntity();
         CloseMenu();
@@ -28,20 +29,27 @@ void RightClick::Content(WindowHierarchy* _window)
 template<>
 void RightClick::Content(EntityID* _ID) 
 {
-    EntityID selectedEntity = m_windows->IsSelectedItemType<EntityID>() ? m_windows->GetSelectedItem<EntityID>() : INVALID_ENTITY;
-
-    if (selectedEntity == INVALID_ENTITY)
+    if (*_ID == INVALID_ENTITY)
     {
         return;
     }
 
-    if (ImGui::Button("Destroy Entity"))
+    if (ImGui::Selectable("Destroy Entity"))
     {
-        if (selectedEntity == *_ID)
-        {
-            m_windows->ResetSelectedItem();
-        }
         m_windows->GetScene()->DestroyEntity(*_ID);
+        CloseMenu();
+    }
+}
+
+template<>
+void RightClick::Content(std::vector<EntityID>* _IdMap)
+{
+    if (ImGui::Selectable("Destroy Entity"))
+    {
+        for (auto var : *_IdMap)
+        {
+            m_windows->GetScene()->DestroyEntity(var);
+        }
         CloseMenu();
     }
 }
