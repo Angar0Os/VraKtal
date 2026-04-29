@@ -255,6 +255,4 @@ float4 fragMain(VSOutput input) : SV_Target
     }
 
     return float4(color, 1.0);
-
-    //return float4(ACESFilm(color, 1.0), 1.0);
 }

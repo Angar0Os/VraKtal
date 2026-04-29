@@ -3,6 +3,7 @@
 #include <graphics/renderPass/iblPass.h>        
 #include <graphics/renderPass/lightingPass.h>
 #include <graphics/renderPass/taaPass.h>	
+#include <graphics/renderPass/toneMappingPass.h>
 
 #include <core/gpu/buffer.h>
 #include <core/gpu/descriptorSet.h>
@@ -68,11 +69,17 @@ void Renderer::InitPasses()
 	m_passes.push_back(std::move(taaPass));
 
 	m_taaPass->SetInputs(
-		m_lightingPass->GetColorAttachments()[0], 
-		m_gBufferPass->GetColorAttachments()[2],  
+		m_lightingPass->GetColorAttachments()[0],
+		m_gBufferPass->GetColorAttachments()[2],
 		*m_gBufferPass->GetDepthAttachment(),
 		*m_gBufferPass->GetDepthAttachment()
 	);
+
+	auto toneMappingPass = std::make_unique<ToneMappingPass>(m_device);
+	m_toneMappingPass = toneMappingPass.get();
+	m_passes.push_back(std::move(toneMappingPass));
+
+	m_toneMappingPass->SetInput(m_taaPass->GetColorAttachments()[0]);
 }
 
 void Renderer::SetCamera(const glm::mat4& view, const glm::mat4& projection)
@@ -218,6 +225,7 @@ void Renderer::OnResize()
 	m_iblPass = nullptr;
 	m_lightingPass = nullptr;
 	m_taaPass = nullptr;
+	m_toneMappingPass = nullptr;
 	InitPasses();
 }
 
@@ -272,7 +280,6 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 
 	if (m_tlasPerFrame[m_currentFrame])
 		m_iblPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
-
 	m_iblPass->Draw(*cmd, {}, {}, m_currentFrame);
 
 	if (m_tlasPerFrame[m_currentFrame])
@@ -299,6 +306,8 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 
 	m_taaPass->Draw(*cmd, {}, {}, m_currentFrame);
 
+	m_toneMappingPass->Draw(*cmd, {}, {}, m_currentFrame);
+
 	if (outputImage)
 	{
 		cmd->TransitionImageLayout(
@@ -309,20 +318,17 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 		);
 
 		cmd->TransitionImageLayout(
-			m_taaPass->GetColorAttachments()[0].image.get(),
+			m_toneMappingPass->GetColorAttachments()[0].image.get(),
 			ImageLayout::ShaderReadOnly,
 			ImageLayout::TransferSrc,
 			false
 		);
 
-		if (!m_taaPass->GetColorAttachments().empty())
-		{
-			cmd->BlitImage(
-				m_taaPass->GetColorAttachments()[0].image.get(),
-				outputImage,
-				&m_device
-			);
-		}
+		cmd->BlitImage(
+			m_toneMappingPass->GetColorAttachments()[0].image.get(),
+			outputImage,
+			&m_device
+		);
 
 		cmd->TransitionImageLayout(
 			outputImage,
@@ -374,6 +380,7 @@ void Renderer::Cleanup()
 	m_iblPass = nullptr;
 	m_lightingPass = nullptr;
 	m_taaPass = nullptr;
+	m_toneMappingPass = nullptr;
 
 	m_tlasPerFrame.clear();
 	m_commandBuffers.clear();

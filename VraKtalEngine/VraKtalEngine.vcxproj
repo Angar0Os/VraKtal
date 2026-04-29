@@ -219,6 +219,7 @@
     <ClInclude Include="include\graphics\renderPass\iblPass.h" />
     <ClInclude Include="include\graphics\renderPass\lightingPass.h" />
     <ClInclude Include="include\graphics\renderPass\taaPass.h" />
+    <ClInclude Include="include\graphics\renderPass\toneMappingPass.h" />
     <ClInclude Include="include\graphics\resources\object\camera.h" />
     <ClInclude Include="include\graphics\resources\object\light.h" />
     <ClInclude Include="include\graphics\resources\object\material.h" />
@@ -278,6 +279,7 @@
     <ClCompile Include="src\graphics\renderPass\iblPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\lightingPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\taaPass.cpp" />
+    <ClCompile Include="src\graphics\renderPass\toneMappingPass.cpp" />
     <ClCompile Include="src\graphics\resources\object\scene.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\loaders\materialLoader.cpp" />
@@ -290,6 +292,7 @@
     <None Include="..\bin\assets\shaders\irradiance_convolution.slang" />
     <None Include="..\bin\assets\shaders\lighting.slang" />
     <None Include="..\bin\assets\shaders\taa.slang" />
+    <None Include="..\bin\assets\shaders\toneMapping.slang" />
     <None Include="..\external\include\imGuizmo\.editorconfig" />
   </ItemGroup>
   <ItemGroup>

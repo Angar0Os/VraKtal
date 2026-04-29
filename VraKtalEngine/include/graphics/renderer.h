@@ -27,6 +27,7 @@ namespace graphics
     class IBLPass;
     class LightingPass;
     class TAAPass;
+    class ToneMappingPass;
 
     constexpr int MAX_LIGHTS = 10;
     struct UniformBufferObject
@@ -73,6 +74,7 @@ namespace graphics
         IBLPass* m_iblPass = nullptr;
         LightingPass* m_lightingPass = nullptr;
         TAAPass* m_taaPass = nullptr;
+        ToneMappingPass* m_toneMappingPass = nullptr;
 
         std::vector<std::unique_ptr<Buffer>> uniformBuffers;
         uint32_t  m_currentFrame;

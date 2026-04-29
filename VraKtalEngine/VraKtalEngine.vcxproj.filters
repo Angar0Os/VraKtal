@@ -300,6 +300,9 @@
     <ClInclude Include="include\graphics\renderPass\taaPass.h">
       <Filter>Header Files\graphics\renderPass</Filter>
     </ClInclude>
+    <ClInclude Include="include\graphics\renderPass\toneMappingPass.h">
+      <Filter>Header Files\graphics\renderPass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\window.cpp">
@@ -410,6 +413,9 @@
     <ClCompile Include="src\graphics\renderPass\taaPass.cpp">
       <Filter>Source Files\graphics\renderPass</Filter>
     </ClCompile>
+    <ClCompile Include="src\graphics\renderPass\toneMappingPass.cpp">
+      <Filter>Source Files\graphics\renderPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\external\include\imGuizmo\.editorconfig">
@@ -428,6 +434,9 @@
       <Filter>Resource Files\shaders</Filter>
     </None>
     <None Include="..\bin\assets\shaders\taa.slang">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="..\bin\assets\shaders\toneMapping.slang">
       <Filter>Resource Files\shaders</Filter>
     </None>
   </ItemGroup>
