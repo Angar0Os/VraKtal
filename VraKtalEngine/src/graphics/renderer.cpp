@@ -2,6 +2,8 @@
 #include <graphics/renderPass/gBufferPass.h>
 #include <graphics/renderPass/iblPass.h>        
 #include <graphics/renderPass/lightingPass.h>
+#include <graphics/renderPass/taaPass.h>	
+#include <graphics/renderPass/toneMappingPass.h>
 
 #include <core/gpu/buffer.h>
 #include <core/gpu/descriptorSet.h>
@@ -59,8 +61,25 @@ void Renderer::InitPasses()
 	m_lightingPass->SetGBufferInputs(
 		m_gBufferPass->GetColorAttachments(),
 		*m_gBufferPass->GetDepthAttachment(),
-		m_iblPass->GetColorAttachments()[0]  
+		m_iblPass->GetColorAttachments()[0]
 	);
+
+	auto taaPass = std::make_unique<TAAPass>(m_device, uniformBuffers);
+	m_taaPass = taaPass.get();
+	m_passes.push_back(std::move(taaPass));
+
+	m_taaPass->SetInputs(
+		m_lightingPass->GetColorAttachments()[0],
+		m_gBufferPass->GetColorAttachments()[2],
+		*m_gBufferPass->GetDepthAttachment(),
+		*m_gBufferPass->GetDepthAttachment()
+	);
+
+	auto toneMappingPass = std::make_unique<ToneMappingPass>(m_device);
+	m_toneMappingPass = toneMappingPass.get();
+	m_passes.push_back(std::move(toneMappingPass));
+
+	m_toneMappingPass->SetInput(m_taaPass->GetColorAttachments()[0]);
 }
 
 void Renderer::SetCamera(const glm::mat4& view, const glm::mat4& projection)
@@ -173,6 +192,8 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 
 	ubo.view = m_viewMatrix;
 	ubo.proj = m_projMatrix;
+	ubo.prevViewProj = m_prevViewProj;
+	ubo.prevViewProjInverse = glm::inverse(m_prevViewProj);
 	ubo.viewPos = glm::vec4(m_cameraPosition, 1.0f);
 	ubo.viewProjInverse = glm::inverse(m_projMatrix * m_viewMatrix);
 
@@ -190,6 +211,8 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 
 	ubo.frameCount = static_cast<uint32_t>(m_frameCounter);
 
+	m_prevViewProj = m_projMatrix * m_viewMatrix;
+
 	if (uniformBuffers[frameIndex])
 		uniformBuffers[frameIndex]->CopyFrom(&ubo, sizeof(UniformBufferObject));
 }
@@ -199,8 +222,10 @@ void Renderer::OnResize()
 	m_device.WaitIdle();
 	m_passes.clear();
 	m_gBufferPass = nullptr;
-	m_iblPass = nullptr;   
+	m_iblPass = nullptr;
 	m_lightingPass = nullptr;
+	m_taaPass = nullptr;
+	m_toneMappingPass = nullptr;
 	InitPasses();
 }
 
@@ -254,16 +279,11 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 	m_gBufferPass->Draw(*cmd, colorDescs, depthDesc, m_currentFrame);
 
 	if (m_tlasPerFrame[m_currentFrame])
-	{
 		m_iblPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
-	}
-
 	m_iblPass->Draw(*cmd, {}, {}, m_currentFrame);
 
 	if (m_tlasPerFrame[m_currentFrame])
-	{
 		m_lightingPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
-	}
 
 	std::vector<ColorAttachmentDesc> lightColorDescs;
 	for (const auto& ca : m_lightingPass->GetColorAttachments())
@@ -283,7 +303,11 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 	}
 
 	m_lightingPass->Draw(*cmd, lightColorDescs, lightDepthDesc, m_currentFrame);
-	
+
+	m_taaPass->Draw(*cmd, {}, {}, m_currentFrame);
+
+	m_toneMappingPass->Draw(*cmd, {}, {}, m_currentFrame);
+
 	if (outputImage)
 	{
 		cmd->TransitionImageLayout(
@@ -293,14 +317,18 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 			false
 		);
 
-		if (!m_lightingPass->GetColorAttachments().empty())
-		{
-			cmd->BlitImage(
-				m_lightingPass->GetColorAttachments()[0].image.get(),
-				outputImage,
-				&m_device
-			);
-		}
+		cmd->TransitionImageLayout(
+			m_toneMappingPass->GetColorAttachments()[0].image.get(),
+			ImageLayout::ShaderReadOnly,
+			ImageLayout::TransferSrc,
+			false
+		);
+
+		cmd->BlitImage(
+			m_toneMappingPass->GetColorAttachments()[0].image.get(),
+			outputImage,
+			&m_device
+		);
 
 		cmd->TransitionImageLayout(
 			outputImage,
@@ -349,8 +377,10 @@ void Renderer::Cleanup()
 
 	m_passes.clear();
 	m_gBufferPass = nullptr;
-	m_iblPass = nullptr;  
+	m_iblPass = nullptr;
 	m_lightingPass = nullptr;
+	m_taaPass = nullptr;
+	m_toneMappingPass = nullptr;
 
 	m_tlasPerFrame.clear();
 	m_commandBuffers.clear();

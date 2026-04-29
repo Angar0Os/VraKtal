@@ -97,6 +97,7 @@ namespace core::gpu
 			vk::KHRSpirv14ExtensionName,
 			vk::KHRSynchronization2ExtensionName,
 			vk::KHRCreateRenderpass2ExtensionName,
+			vk::KHRComputeShaderDerivativesExtensionName,
 
 			VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
 			VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,

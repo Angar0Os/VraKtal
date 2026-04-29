@@ -48,7 +48,7 @@ void cs_main(uint3 threadId: SV_DispatchThreadID)
         float v2 = theta2 / PI;
         float u2 = (phi2 + PI) / (2 * PI);
 
-        float3 color = envMap.Sample(float2(u2, v2)).xyz;
+        float3 color = envMap.SampleLevel(float2(u2, v2), 0).xyz;
 
         result += color * abs(NdotL) / float(samples);
     }
