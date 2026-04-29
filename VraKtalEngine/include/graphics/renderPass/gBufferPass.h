@@ -9,10 +9,16 @@
 #include <graphics/resources/object/mesh.h>
 
 #include <glm/glm.hpp>
+#include <unordered_map>
 #include <vector>
 
 namespace graphics
 {
+	struct GBufferPushConstants {
+		glm::mat4 model;
+		glm::mat4 prevModel;
+	};
+
 	class GBufferPass final : public Pass
 	{
 	public:
@@ -47,9 +53,11 @@ namespace graphics
 
 		std::vector<PassAttachment> m_colorAttachments;
 		PassAttachment              m_depthAttachment;
+		std::unordered_map<resources::Mesh*, glm::mat4> m_prevTransforms;
 
 		std::unique_ptr<DescriptorSetLayout>         m_materialLayout;
 		std::unique_ptr<resources::MaterialInstance> m_fallbackMaterial;
+		std::unordered_map<resources::Mesh*, glm::mat4>	m_prevModelTransforms[Device::s_FRAMES_IN_FLIGHT];
 
 		void CreateAttachments();
 		void CreateDescriptorSetLayout();

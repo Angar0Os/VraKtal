@@ -8,7 +8,7 @@ cbuffer UniformBufferObject
     float4x4 lightSpaceMatrix;
     float4x4 viewProjInverse;
     float4x4 prevViewProj;
-    float4x4 prevModel;
+    float4x4 prevViewProjInverse;
     float4 viewPos;
     struct LightData
     {

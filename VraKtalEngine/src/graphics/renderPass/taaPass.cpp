@@ -9,20 +9,22 @@ using namespace core;
 using namespace core::gpu;
 
 graphics::TAAPass::TAAPass(Device& device,
-	const std::vector<std::unique_ptr<Buffer>>& uniformBuffers)
-	: Pass("TAA")
-	, m_device(device)
-	, m_uniformBuffers(uniformBuffers)
+    const std::vector<std::unique_ptr<Buffer>>& uniformBuffers)
+    : Pass("TAA")
+    , m_device(device)
+    , m_uniformBuffers(uniformBuffers)
+    , m_firstFrame(true)         
+    , m_depthHistory(nullptr)    
 {
-	Init(device);
+    Init(device);
 }
 
 void graphics::TAAPass::Init(Device& device)
 {
-	CreateAttachments();
-	CreateDescriptorSetLayout();
-	CreatePipeline();
-	CreateDescriptorSets();
+    CreateAttachments();
+    CreateDescriptorSetLayout();
+    CreatePipeline();
+    CreateDescriptorSets();
 }
 
 void graphics::TAAPass::CreateAttachments()
@@ -61,9 +63,12 @@ void graphics::TAAPass::CreateDescriptorSetLayout()
     SDescriptorSetLayoutCreateInfo layoutInfo{
         .bindings = {
             {.binding = 0, .descriptorType = EDescriptorType::UniformBuffer,        .stageFlags = comp },
-            {.binding = 1, .descriptorType = EDescriptorType::CombinedImageSampler, .stageFlags = comp }, 
-            {.binding = 2, .descriptorType = EDescriptorType::CombinedImageSampler, .stageFlags = comp }, 
-            {.binding = 3, .descriptorType = EDescriptorType::StorageImage,         .stageFlags = comp }, 
+            {.binding = 1, .descriptorType = EDescriptorType::CombinedImageSampler, .stageFlags = comp },
+            {.binding = 2, .descriptorType = EDescriptorType::CombinedImageSampler, .stageFlags = comp },
+            {.binding = 3, .descriptorType = EDescriptorType::CombinedImageSampler, .stageFlags = comp },
+            {.binding = 4, .descriptorType = EDescriptorType::StorageImage,         .stageFlags = comp },
+            {.binding = 5, .descriptorType = EDescriptorType::CombinedImageSampler, .stageFlags = comp },
+            {.binding = 6, .descriptorType = EDescriptorType::CombinedImageSampler, .stageFlags = comp },
         }
     };
 
@@ -97,16 +102,22 @@ void graphics::TAAPass::CreateDescriptorSets()
 }
 
 void graphics::TAAPass::SetInputs(const PassAttachment& currentColor,
-    const PassAttachment& velocityTex)
+    const PassAttachment& velocityTex,
+    const PassAttachment& depthCurrent,
+    const PassAttachment& depthHistory)  
 {
     m_currentColor = &currentColor;
     m_velocityTex = &velocityTex;
+    m_depthCurrent = &depthCurrent;
+    m_depthHistory = &depthHistory;      
 
     for (uint32_t i = 0; i < Device::s_FRAMES_IN_FLIGHT; ++i)
     {
         m_descriptorSets[i]->Bind(1, *m_currentColor->texture);
-        m_descriptorSets[i]->Bind(2, *m_velocityTex->texture);
-        m_descriptorSets[i]->Bind(3, *m_colorAttachments[0].image);
+        m_descriptorSets[i]->Bind(3, *m_velocityTex->texture);
+        m_descriptorSets[i]->Bind(4, *m_colorAttachments[0].image);
+        m_descriptorSets[i]->Bind(5, *m_depthCurrent->texture);
+        m_descriptorSets[i]->Bind(6, *m_depthHistory->texture);  
         m_descriptorSets[i]->Update(m_device);
     }
 }
@@ -125,41 +136,82 @@ void graphics::TAAPass::Draw(CommandBuffer& cmd,
     uint32_t currentFrame)
 {
     auto [width, height] = m_device.GetSwapchainExtent();
+    uint32_t historyReadIdx = (currentFrame + 1) % 2;
     uint32_t historyWriteIdx = currentFrame % 2;
+
+    if (m_firstFrame)
+    {
+        cmd.TransitionImageLayout(
+            m_historyAttachments[0].image.get(),
+            ImageLayout::Undefined, ImageLayout::ShaderReadOnly, false
+        );
+        cmd.TransitionImageLayout(
+            m_historyAttachments[1].image.get(),
+            ImageLayout::Undefined, ImageLayout::ShaderReadOnly, false
+        );
+    }
 
     cmd.TransitionImageLayout(
         m_colorAttachments[0].image.get(),
         ImageLayout::Undefined,
-        ImageLayout::ColorAttachment,
+        ImageLayout::General,
         false
     );
 
     UpdateDescriptorSets(currentFrame);
-
     cmd.BindComputePipeline(m_pipeline.get());
     cmd.BindDescriptorSets(m_pipeline.get(), m_descriptorSets[currentFrame].get(), currentFrame, 0);
     cmd.Dispatch((width + 15) / 16, (height + 15) / 16, 1);
 
     cmd.TransitionImageLayout(
         m_colorAttachments[0].image.get(),
-        ImageLayout::ColorAttachment,
+        ImageLayout::General,
+        ImageLayout::TransferSrc,
+        false
+    );
+
+    ImageLayout histWriteSrcLayout = m_firstFrame ? ImageLayout::Undefined : ImageLayout::ShaderReadOnly;
+    cmd.TransitionImageLayout(
+        m_historyAttachments[historyWriteIdx].image.get(),
+        histWriteSrcLayout,
+        ImageLayout::TransferDst,
+        false
+    );
+
+    cmd.BlitImage(
+        m_colorAttachments[0].image.get(),
+        m_historyAttachments[historyWriteIdx].image.get(),
+        &m_device
+    );
+
+    cmd.TransitionImageLayout(
+        m_historyAttachments[historyWriteIdx].image.get(),
+        ImageLayout::TransferDst,
         ImageLayout::ShaderReadOnly,
         false
     );
+
+    cmd.TransitionImageLayout(
+        m_colorAttachments[0].image.get(),
+        ImageLayout::TransferSrc,
+        ImageLayout::ShaderReadOnly,
+        false
+    );
+
+    m_firstFrame = false;
 }
 
 void graphics::TAAPass::BindDescriptorSets(CommandBuffer& cmd, uint32_t frameIndex)
 {
-	cmd.BindDescriptorSets(m_pipeline.get(), m_descriptorSets[frameIndex].get(), frameIndex, 0);
+    cmd.BindDescriptorSets(m_pipeline.get(), m_descriptorSets[frameIndex].get(), frameIndex, 0);
 }
-
 
 const std::vector<graphics::PassAttachment>& graphics::TAAPass::GetColorAttachments() const
 {
-	return m_colorAttachments;
+    return m_colorAttachments;
 }
 
 const graphics::PassAttachment* graphics::TAAPass::GetDepthAttachment() const
 {
-	return nullptr;
+    return nullptr;
 }

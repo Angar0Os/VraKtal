@@ -8,7 +8,7 @@ cbuffer UniformBufferObject
     float4x4 lightSpaceMatrix;
     float4x4 viewProjInverse;
     float4x4 prevViewProj;
-    float4x4 prevModel;
+    float4x4 prevViewProjInverse;
     float4 viewPos;
     struct LightData
     {
@@ -211,7 +211,7 @@ float3 IBL_Diffuse(float3 N, float3 albedo, float metalness,
 
         float3 F  = F_Schlick(NdotV, F0);
         float3 kD = (1.0 - F) * (1.0 - metalness);
-        color += kD * albedo * SampleEquirectangular(irradianceMapTex, N).rgb * visibility * 0.25f;
+        color += kD * albedo * SampleEquirectangular(irradianceMapTex, randVec).rgb * visibility * 0.25f;
     }
 
     return color;
@@ -254,5 +254,7 @@ float4 fragMain(VSOutput input) : SV_Target
         color = SampleEquirectangular(envMapTex, dir).xyz;
     }
 
-    return float4(ACESFilm(color, 1.0), 1.0);
+    return float4(color, 1.0);
+
+    //return float4(ACESFilm(color, 1.0), 1.0);
 }

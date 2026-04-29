@@ -37,7 +37,7 @@ void graphics::GBufferPass::CreateAttachments()
 	const TextureFormat colorFormats[] = {
 		TextureFormat::RGBA8_SRGB,
 		TextureFormat::RGBA16_Float,
-		TextureFormat::RG16_Float
+		TextureFormat::RG32_Float
 	};
 
 	m_colorAttachments.clear();
@@ -137,7 +137,7 @@ void graphics::GBufferPass::CreatePipeline()
 		{
 			.stageFlags = static_cast<uint32_t>(ShaderStageFlags::Vertex),
 			.offset = 0,
-			.size = sizeof(glm::mat4)
+			.size = sizeof(GBufferPushConstants) 
 		}
 	};
 
@@ -157,7 +157,7 @@ void graphics::GBufferPass::CreatePipeline()
 	pipelineInfo.depthCompareOp = CompareOp::Less;
 	pipelineInfo.blendEnable = false;
 	pipelineInfo.samples = SampleCount::e1;
-	pipelineInfo.colorAttachmentFormats = { TextureFormat::RGBA8_SRGB, TextureFormat::RGBA16_Float, TextureFormat::RG16_Float };
+	pipelineInfo.colorAttachmentFormats = { TextureFormat::RGBA8_SRGB, TextureFormat::RGBA16_Float, TextureFormat::RG32_Float };
 	pipelineInfo.depthAttachmentFormat = TextureFormat::Depth32F;
 	pipelineInfo.descriptorSetLayouts = { m_dsLayouts[0].get(), m_materialLayout.get() };
 	pipelineInfo.pushConstantRanges = pushConstants;
@@ -224,6 +224,8 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 
 	if (m_meshInstances)
 	{
+		uint32_t prevFrame = (currentFrame + Device::s_FRAMES_IN_FLIGHT - 1) % Device::s_FRAMES_IN_FLIGHT;
+
 		for (const auto& [mesh, transform] : *m_meshInstances)
 		{
 			if (!mesh->vertexBuffer || !mesh->indexBuffer)
@@ -232,11 +234,28 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 			cmd.BindVertexBuffer(mesh->vertexBuffer.get());
 			cmd.BindIndexBuffer(mesh->indexBuffer.get());
 
-			glm::mat4 model = transform;
+			struct PushConstants {
+				glm::mat4 model;
+				glm::mat4 prevModel;
+			};
+
+			PushConstants pc{};
+			pc.model = transform;
+
+			auto it = m_prevModelTransforms[prevFrame].find(mesh);
+			if (it != m_prevModelTransforms[prevFrame].end())
+			{
+				pc.prevModel = it->second;
+			}
+			else
+			{
+				pc.prevModel = transform;
+			}
+
 			cmd.PushConstants(
 				m_pipeline.get(),
 				static_cast<uint32_t>(core::ShaderStageFlags::Vertex),
-				0, sizeof(glm::mat4), &model
+				0, sizeof(PushConstants), &pc
 			);
 
 			for (const auto& submesh : mesh->GetSubmeshes())
@@ -249,6 +268,8 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 
 				cmd.DrawIndexed(submesh.indexCount, 1, submesh.firstIndex, submesh.vertexOffset, 0);
 			}
+
+			m_prevModelTransforms[currentFrame][mesh] = transform;
 		}
 	}
 

@@ -60,7 +60,7 @@ void Renderer::InitPasses()
 	m_lightingPass->SetGBufferInputs(
 		m_gBufferPass->GetColorAttachments(),
 		*m_gBufferPass->GetDepthAttachment(),
-		m_iblPass->GetColorAttachments()[0]  
+		m_iblPass->GetColorAttachments()[0]
 	);
 
 	auto taaPass = std::make_unique<TAAPass>(m_device, uniformBuffers);
@@ -68,8 +68,10 @@ void Renderer::InitPasses()
 	m_passes.push_back(std::move(taaPass));
 
 	m_taaPass->SetInputs(
-		m_iblPass->GetColorAttachments()[0], 
-		m_gBufferPass->GetColorAttachments()[2]
+		m_lightingPass->GetColorAttachments()[0], 
+		m_gBufferPass->GetColorAttachments()[2],  
+		*m_gBufferPass->GetDepthAttachment(),
+		*m_gBufferPass->GetDepthAttachment()
 	);
 }
 
@@ -184,6 +186,7 @@ void Renderer::UpdateUniformBuffer(uint32_t frameIndex)
 	ubo.view = m_viewMatrix;
 	ubo.proj = m_projMatrix;
 	ubo.prevViewProj = m_prevViewProj;
+	ubo.prevViewProjInverse = glm::inverse(m_prevViewProj);
 	ubo.viewPos = glm::vec4(m_cameraPosition, 1.0f);
 	ubo.viewProjInverse = glm::inverse(m_projMatrix * m_viewMatrix);
 
@@ -292,7 +295,7 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 		lightDepthDesc.clearDepth = 1.0f;
 	}
 
-	//m_lightingPass->Draw(*cmd, lightColorDescs, lightDepthDesc, m_currentFrame);
+	m_lightingPass->Draw(*cmd, lightColorDescs, lightDepthDesc, m_currentFrame);
 
 	m_taaPass->Draw(*cmd, {}, {}, m_currentFrame);
 
@@ -304,7 +307,7 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 			ImageLayout::TransferDst,
 			false
 		);
-		
+
 		cmd->TransitionImageLayout(
 			m_taaPass->GetColorAttachments()[0].image.get(),
 			ImageLayout::ShaderReadOnly,

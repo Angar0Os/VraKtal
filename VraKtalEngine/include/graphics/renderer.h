@@ -21,7 +21,7 @@ using namespace core;
 using namespace core::gpu;
 using namespace graphics::resources;
 
-namespace graphics 
+namespace graphics
 {
     class GBufferPass;
     class IBLPass;
@@ -36,7 +36,7 @@ namespace graphics
         glm::mat4 lightSpaceMatrix;
         glm::mat4 viewProjInverse;
         glm::mat4 prevViewProj;
-        glm::mat4 prevModel;
+        glm::mat4 prevViewProjInverse;
         glm::vec4 viewPos;
         struct LightData
         {
@@ -69,10 +69,10 @@ namespace graphics
         std::vector<Light>                                  m_lights;
         std::vector<std::unique_ptr<Pass>> m_passes;
 
-        GBufferPass*    m_gBufferPass = nullptr;
-        IBLPass*        m_iblPass = nullptr;
-        LightingPass*   m_lightingPass = nullptr;
-        TAAPass*        m_taaPass = nullptr;
+        GBufferPass* m_gBufferPass = nullptr;
+        IBLPass* m_iblPass = nullptr;
+        LightingPass* m_lightingPass = nullptr;
+        TAAPass* m_taaPass = nullptr;
 
         std::vector<std::unique_ptr<Buffer>> uniformBuffers;
         uint32_t  m_currentFrame;
@@ -119,6 +119,9 @@ namespace graphics
             return &m_meshInstances;
         }
 
+        bool m_taaEnabled = true;
+        bool m_taaKeyWasPressed = false;
+
         template<typename T>
         T* GetPass(const std::string& name)
         {
@@ -130,4 +133,4 @@ namespace graphics
     };
 }
 
-#endif //VRAKTAL_GRAPHICS_RENDERER_H
+#endif //VRAKTAL_GRAPHICS_RENDERER_H 

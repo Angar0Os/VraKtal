@@ -26,21 +26,26 @@ namespace graphics
 			uint32_t currentFrame) override;
 
 		void SetInputs(const PassAttachment& currentColor,
-			const PassAttachment& velocityTex);
+			const PassAttachment& velocityTex,
+			const PassAttachment& depthCurrent,
+			const PassAttachment& depthHistory);
 
 		const std::vector<PassAttachment>& GetColorAttachments() const override;
-		const PassAttachment* GetDepthAttachment()  const override;
+		const PassAttachment* GetDepthAttachment()               const override;
 
 	private:
 		Device& m_device;
 		const std::vector<std::unique_ptr<Buffer>>& m_uniformBuffers;
 
 		std::array<PassAttachment, 2> m_historyAttachments;
-
-		std::vector<PassAttachment> m_colorAttachments;
+		std::vector<PassAttachment>   m_colorAttachments;
 
 		const PassAttachment* m_currentColor = nullptr;
 		const PassAttachment* m_velocityTex = nullptr;
+		const PassAttachment* m_depthCurrent = nullptr;
+		const PassAttachment* m_depthHistory = nullptr;  
+
+		bool m_firstFrame = true;                        
 
 		void CreateAttachments();
 		void CreateDescriptorSetLayout();
