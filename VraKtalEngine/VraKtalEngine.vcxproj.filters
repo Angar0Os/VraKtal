@@ -239,10 +239,10 @@
       <Filter>external\include\portable-file-dialogs</Filter>
     </ClInclude>
     <ClInclude Include="include\graphics\renderPass\taaPass.h">
-      <Filter>Header Files\graphics\renderPass</Filter>
+      <Filter>include\graphics\renderPass</Filter>
     </ClInclude>
     <ClInclude Include="include\graphics\renderPass\toneMappingPass.h">
-      <Filter>Header Files\graphics\renderPass</Filter>
+      <Filter>include\graphics\renderPass</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -373,10 +373,10 @@
       <Filter>external\include\imGuizmo</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\renderPass\taaPass.cpp">
-      <Filter>Source Files\graphics\renderPass</Filter>
+      <Filter>src\graphics\renderPass</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\renderPass\toneMappingPass.cpp">
-      <Filter>Source Files\graphics\renderPass</Filter>
+      <Filter>src\graphics\renderPass</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -392,14 +392,14 @@
     <None Include="..\bin\assets\shaders\lighting.slang">
       <Filter>bin\assets\shaders</Filter>
     </None>
-    <None Include="..\bin\assets\shaders\taa.slang">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="..\bin\assets\shaders\toneMapping.slang">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
     <None Include="..\external\include\imGuizmo\.editorconfig">
       <Filter>external\include\imGuizmo</Filter>
+    </None>
+    <None Include="..\bin\assets\shaders\taa.slang">
+      <Filter>bin\assets\shaders</Filter>
+    </None>
+    <None Include="..\bin\assets\shaders\toneMapping.slang">
+      <Filter>bin\assets\shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -297,7 +297,6 @@
     <ClCompile Include="src\graphics\renderPass\lightingPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\taaPass.cpp" />
     <ClCompile Include="src\graphics\renderPass\toneMappingPass.cpp" />
-    <ClCompile Include="src\graphics\resources\object\scene.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\loaders\materialLoader.cpp" />
     <ClCompile Include="src\loaders\meshLoader.cpp" />

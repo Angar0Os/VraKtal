@@ -112,13 +112,11 @@ void cs_main(uint3 threadId: SV_DispatchThreadID)
     }
 
     float3 historyColor = historyBuffer.SampleLevel(previousUV, 0).xyz;
-
     historyColor = clamp(historyColor, colorMin, colorMax);
 
     float speed = length(velocity);
-    float motionBlend = lerp(0.9f, 0.5f, saturate(speed * 20.0f));
+    float motionBlend = lerp(0.75f, 0.5f, saturate(speed * 20.0f));
 
     float3 color = lerp(currentColor, historyColor, motionBlend);
-
     outTaa[threadId.xy] = float4(color, 1.0f);
 }
