@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <cstdint>
 #include <stdexcept>
+#include <iostream>
+#include <algorithm>
 
 template <typename T>
 class NamedStorageMap
@@ -11,6 +13,13 @@ class NamedStorageMap
 public:
     using ID = uint32_t;
     static constexpr ID INVALID_ID = 0xFFFFFFFFu;
+
+#ifdef VRAKTAL_EDITOR
+    ~NamedStorageMap<T>() {
+        std::cout << "storage " << typeid(T).name() << " deleted" << std::endl;
+    };
+#endif // VRAKTAL_EDITOR
+
 
 public:
     ID Add(const std::string& _name)
@@ -74,14 +83,23 @@ public:
         return it->second;
     }
 
+    ID Find(const T& _value) const
+    {
+        for (ID id = 0; id < static_cast<ID>(values.size()); ++id)
+        {
+            if (IsValidIndex(id) && values[id] == _value)
+                return id;
+        }
+
+        return INVALID_ID;
+    }
+
     T& Get(ID _id)
     {
         if (!IsValidIndex(_id))
             throw std::runtime_error("Invalid NamedStorageMap id");
         return values[_id];
     }
-
-    
 
     const std::string& GetName(ID _id) const
     {

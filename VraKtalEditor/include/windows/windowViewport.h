@@ -3,7 +3,7 @@
 
 class ImGuiWindows;
 
-class WindowViewport : ImguiWindowBase
+class WindowViewport : public ImguiWindowBase
 {
 public:
 	WindowViewport(ImGuiWindows& _imguiWindows);

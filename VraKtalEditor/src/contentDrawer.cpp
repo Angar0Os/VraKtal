@@ -14,9 +14,14 @@
 #include "MDI/IconsMaterialDesignIcons.h"
 #include <command/fileCommands.h>
 
+#include "./imGuiWindows.h"
+#include "../include/windows/others/dragNdrop.h"
+#include "../include/windows/popup/projectModal.h"
+
+
 constexpr const char* baseAssetPath = "assets";
 
-ContentDrawer::ContentDrawer() : m_currentPath(baseAssetPath), m_needsRefresh(true)
+ContentDrawer::ContentDrawer(ImGuiWindows* _windows) : m_currentPath(baseAssetPath), m_needsRefresh(true), m_windowManager(_windows)
 {
 	try {
 		m_currentPath = std::filesystem::absolute(baseAssetPath);
@@ -30,10 +35,7 @@ ContentDrawer::ContentDrawer() : m_currentPath(baseAssetPath), m_needsRefresh(tr
 	}
 }
 
-ContentDrawer::~ContentDrawer()
-{
-
-}
+ContentDrawer::~ContentDrawer() {}
 
 void ContentDrawer::SetCommandHistory(command::CommandHistory* history)
 {
@@ -58,6 +60,11 @@ void ContentDrawer::ClearSelection()
 
 void ContentDrawer::GetContentDrawerWindow()
 {
+	if (!m_windowManager->GetProjectModal()->GetLastCreatedProjectPath().empty() && m_windowManager->GetProjectModal()->HasNewProjectCreated()) //Check if new project have been loaded or created 
+	{
+		SetCurrentPath(m_windowManager->GetProjectModal()->GetLastCreatedProjectPath());
+	}
+
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu(ICON_MDI_PLUS " Add")) {
 			if (ImGui::MenuItem(ICON_MDI_FOLDER " Folder")) {
@@ -176,13 +183,16 @@ void ContentDrawer::GetContentDrawerWindow()
 	ImFont* largeIconFont = ImGui::GetIO().Fonts->Fonts[1];
 
 	HandleFileActions();
-
 	ShowRenameDialog();
 	ShowDeleteDialog();
 
 	if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !ImGui::IsAnyItemHovered()) {
 		if (!m_clipboardPaths.empty()) {
 			ImGui::OpenPopup("EmptySpaceMenu");
+		}
+		else
+		{
+			ClearSelection();
 		}
 	}
 
@@ -191,10 +201,6 @@ void ContentDrawer::GetContentDrawerWindow()
 			PerformPaste();
 		}
 		ImGui::EndPopup();
-	}
-
-	if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered()) {
-		ClearSelection();
 	}
 
 	for (size_t i = 0; i < m_cachedFiles.size(); ++i)
@@ -215,12 +221,21 @@ void ContentDrawer::GetContentDrawerWindow()
 				IM_COL32(100, 150, 255, 100),
 				4.0f
 			);
+
+			m_windowManager->SetSelectedItem(&fileEntry);
+
 		}
 
 		ImGui::PushFont(largeIconFont);
-		const char* icon = fileEntry.isDirectory ? ICON_MDI_FOLDER : GetIconForFileType(fileEntry.fileType);
+
+		const char* icon = fileEntry.isDirectory
+			? ICON_MDI_FOLDER
+			: GetIconForFileType(fileEntry.fileType);
 
 		bool clicked = ImGui::Button(icon, ImVec2(buttonSize, 0));
+		
+		m_windowManager->GetDragNDrop()->Drag<FileEntry>(fileEntry);
+
 		ImGui::PopFont();
 
 		if (clicked) {
@@ -276,7 +291,6 @@ void ContentDrawer::GetContentDrawerWindow()
 
 		ImGui::EndGroup();
 		ImGui::SameLine();
-
 		ImGui::PopID();
 	}
 }
@@ -322,17 +336,13 @@ void ContentDrawer::HandleFileActions()
 				
 				m_showRenameDialog = true;
 			}
-
 			// Windows specific
 			strncpy_s(m_renameBuffer, m_cachedFiles[m_renameTargetIndex].filename.c_str(), sizeof(m_renameBuffer) - 1);
-
 			m_showRenameDialog = true;
 		}
-
 		if (ImGui::MenuItem(ICON_MDI_DELETE " Delete", "Del")) {
 			m_showDeleteDialog = true;
 		}
-
 		if (ImGui::MenuItem(ICON_MDI_FOLDER_OPEN " Show in Explorer")) {
 			for (size_t idx : m_selectedIndices) {
 				if (idx < m_cachedFiles.size()) {
@@ -347,16 +357,22 @@ void ContentDrawer::HandleFileActions()
 		if (ImGui::MenuItem(ICON_MDI_CONTENT_COPY " Copy", "Ctrl+C")) {
 			PerformCopy();
 		}
-
 		if (ImGui::MenuItem(ICON_MDI_CONTENT_CUT " Cut", "Ctrl+X")) {
 			PerformCut();
 		}
-
 		if (ImGui::MenuItem(ICON_MDI_CONTENT_PASTE " Paste", "Ctrl+V", false, !m_clipboardPaths.empty())) {
 			PerformPaste();
 		}
-
 		ImGui::EndPopup();
+	}
+	else
+	{
+		bool canClearSelection = !m_showDeleteDialog && !m_showRenameDialog;
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::GetIO().KeyCtrl  && !ImGui::GetIO().KeyShift && canClearSelection)
+		{
+			ClearSelection();
+			std::cout << "cleared selections" << std::endl;
+		}
 	}
 }
 
@@ -562,7 +578,6 @@ void ContentDrawer::ShowRenameDialog()
 		}
 
 		ImGui::OpenPopup("Rename");
-		m_showRenameDialog = false;
 	}
 
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -574,10 +589,9 @@ void ContentDrawer::ShowRenameDialog()
 		{
 			ImGui::CloseCurrentPopup();
 			ImGui::EndPopup();
-
+			m_showRenameDialog = false;
 			return;
 		}
-
 
 		ImGui::Text("Rename: %s", m_cachedFiles[m_renameTargetIndex].filename.c_str());
 		ImGui::Separator();
@@ -590,12 +604,14 @@ void ContentDrawer::ShowRenameDialog()
 		{
 			PerformRename();
 			ImGui::CloseCurrentPopup();
+			m_showRenameDialog = false;
 		}
 
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0)))
 		{
 			ImGui::CloseCurrentPopup();
+			m_showRenameDialog = false;
 		}
 
 		ImGui::EndPopup();
@@ -606,7 +622,6 @@ void ContentDrawer::ShowDeleteDialog()
 {
 	if (m_showDeleteDialog) {
 		ImGui::OpenPopup("Delete Confirmation");
-		m_showDeleteDialog = false;
 	}
 
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
@@ -628,10 +643,12 @@ void ContentDrawer::ShowDeleteDialog()
 		if (ImGui::Button("Delete", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
 			PerformDelete();
 			ImGui::CloseCurrentPopup();
+			m_showDeleteDialog = false;
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0))) {
 			ImGui::CloseCurrentPopup();
+			m_showDeleteDialog = false;
 		}
 
 		ImGui::EndPopup();
@@ -641,6 +658,36 @@ void ContentDrawer::ShowDeleteDialog()
 const char* ContentDrawer::GetIconForFileType(FileType type)
 {
 	switch (type) {
+	case FileType::ImagePNG:
+	case FileType::ImageJPEG:
+		return ICON_MDI_FILE_IMAGE;
+
+	case FileType::AudioMP3:
+	case FileType::AudioWAV:
+		return ICON_MDI_FILE_MUSIC;
+
+	case FileType::MeshOBJ:
+	case FileType::MeshGLTF:
+	case FileType::MeshGLB:
+		return ICON_MDI_CUBE_OUTLINE;
+
+	case FileType::Unknown:
+	default:
+		return ICON_MDI_FILE;
+	}
+}
+
+std::filesystem::path FileEntry::GetRelativeFileLocation()
+{
+	return std::filesystem::relative(this->path);
+}
+
+const char* FileHelper::GetFileTypeIcon(FileType type)
+{
+	switch (type) {
+	case FileType::Folder:
+        return ICON_MDI_FOLDER;
+
 	case FileType::ImagePNG:
 	case FileType::ImageJPEG:
 		return ICON_MDI_FILE_IMAGE;

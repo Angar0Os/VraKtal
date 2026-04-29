@@ -28,7 +28,7 @@ namespace core {
 	private:
 
 		NamedStorageMap<Axis2DAction> Axis2DActionsStorage;
-		NamedStorageMap<KeyActions>		ActionsStorage;
+		NamedStorageMap<KeyActions>	ActionsStorage;
 
 	public:
 		explicit Input(core::Window& window, core::gpu::Device* _device);

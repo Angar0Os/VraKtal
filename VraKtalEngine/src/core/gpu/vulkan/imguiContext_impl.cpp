@@ -17,6 +17,9 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_vulkan.h"
 #include "imGuizmo/ImGuizmo.h"
+#include <implot3D/implot3d.h>
+
+#include <scene/timeline/components/mesh.h>
 
 
 #include "MDI/IconsMaterialDesignIcons.h"
@@ -24,11 +27,13 @@
 #include <iostream>
 #include <vulkan/vulkan_handles.hpp>
 #include <GLFW/glfw3.h>
+#include <glm/fwd.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <graphics/renderer.h>
 
 
 core::gpu::ImguiContext::ImguiContext(Window& _window, Device& _device)
 {
-
 	m_impl = std::make_unique<Impl>(_window, _device , &m_viewport);
 }
 
@@ -42,7 +47,6 @@ void core::gpu::ImguiContext::PrepareDrawData()
 	ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
 
 	ImGui::NewFrame();
-	ImGuizmo::BeginFrame();
 
 	m_prepareDrawDataFunc();
 
@@ -73,10 +77,9 @@ core::gpu::ImguiContext::ViewportState* core::gpu::ImguiContext::GetViewportStat
 core::gpu::ImguiContext::Impl::Impl(Window& _window, Device& _device , ViewportState* _viewport)
 {
 	CreateContext(_window, _device);
-
-	m_viewportState = _viewport;
-	m_device = &_device;
 	m_window = &_window;
+	m_device = &_device;
+	m_viewportState = _viewport;
 }
 
 core::gpu::ImguiContext::Impl::~Impl()
@@ -85,7 +88,7 @@ core::gpu::ImguiContext::Impl::~Impl()
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-
+	ImPlot3D::DestroyContext;
 	if (imguiDescriptorPool != VK_NULL_HANDLE)
 	{
 		vkDestroyDescriptorPool(*m_device->GetImpl().device, imguiDescriptorPool, nullptr);
@@ -97,6 +100,7 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+    ImPlot3D::CreateContext();
 	ImGui::StyleColorsDark();
 
 	ImGuiIO& io = ImGui::GetIO();
@@ -170,8 +174,7 @@ void core::gpu::ImguiContext::Impl::CreateContext(Window& _window, Device& _devi
 	init_info.PipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
 
 	ImGui_ImplVulkan_Init(&init_info);
-	ImGuizmo::SetRect(0, 0, (float)_device.GetImpl().swapchainExtent.width, (float)_device.GetImpl().swapchainExtent.height);
-	ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
+	
 
 }
 
@@ -304,6 +307,10 @@ void core::gpu::ImguiContext::Impl::DrawViewportComponent(uint32_t width, uint32
 			ImVec2(1, 1)
 		);
 
+		ImVec2 p = ImGui::GetItemRectMin();
+		m_viewportState->posX = p.x;
+		m_viewportState->posY = p.y;
+
 		m_viewportState->hovered = ImGui::IsItemHovered();
 		m_viewportState->clicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
 		m_viewportState->focused = ImGui::IsWindowFocused();
@@ -326,27 +333,6 @@ void core::gpu::ImguiContext::Impl::RenderSceneToViewport(core::gpu::CommandBuff
 
 	if (m_viewportState->width <= 1 || m_viewportState->height <= 1)
 		return;
-
-	//On doit ajuster la camera
-	const float aspectRatio = static_cast<float>(m_viewportState->width) / static_cast<float>(m_viewportState->height);
-
-	glm::mat4 projection = glm::perspectiveLH_ZO(
-		glm::radians(45.0f),
-		aspectRatio,
-		0.1f,
-		100.0f
-	);
-	projection[1][1] *= -1;
-
-	glm::vec3 cameraPosition = glm::vec3(0.0f, 3.0f, -5.0f);
-
-	glm::mat4 view = glm::lookAtLH(
-		cameraPosition,
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f)
-	);
-
-	renderer->SetCamera(view, projection);
 
 	cmd->TransitionImageLayout(
 		m_viewportImage.colorImage.get(),
@@ -429,11 +415,6 @@ void core::gpu::ImguiContext::Impl::EnsureViewport(uint32_t width, uint32_t heig
 
 void core::gpu::ImguiContext::Impl::OnResize()
 {
-	ImGuizmo::SetRect(
-		0, 0,
-		(float)m_device->GetImpl().swapchainExtent.width,
-		(float)m_device->GetImpl().swapchainExtent.height
-	);
 
 	if (m_viewportImage.colorImage)
 		DestroyViewport();
@@ -447,4 +428,17 @@ core::gpu::Image* core::gpu::ImguiContext::GetViewportImage()
 void core::gpu::ImguiContext::OnResize()
 {
 	m_impl->OnResize();
+}
+
+glm::mat4 core::gpu::ImguiContext::GetViewportProjection()
+{
+	const float aspectRatio = static_cast<float>(GetViewportState()->width) / static_cast<float>(GetViewportState()->height);
+	glm::mat4 projection = glm::perspectiveLH_ZO(
+		glm::radians(45.0f),
+		aspectRatio,
+		0.1f,
+		100.0f
+	);
+	projection[1][1] *= -1;
+    return projection;
 }

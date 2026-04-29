@@ -107,13 +107,17 @@ std::vector<int> core::Input::GetCurrentKeyPressed()
 void core::Input::Update()
 {
 	// Update mouse movement
+
+
 	float _xoffset = m_mousePosition.x - LastMousePosition.x;
 	float _yoffset = LastMousePosition.y - m_mousePosition.y; // reversed since y-coordinates go from bottom to top
-
+	
 	MouseMovement = glm::vec2(_xoffset, _yoffset);
 	LastMousePosition = m_mousePosition;
-
+	
 	m_mouseBind.Execute(MouseMovement);
+
+
 
 	for (auto act : ActionsStorage.GetActiveValues())
 	{
