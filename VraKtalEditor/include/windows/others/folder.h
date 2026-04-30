@@ -30,12 +30,12 @@ namespace hierarchy {
 
 		void MoveEntityToFolder(EntityID entity, FolderID targetFolder);
 		void MoveFolderToFolder(FolderID _idMoving, FolderID _idTarget);
+		void DeleteFolder(FolderID _folderID);
 
 		void RemoveEntityFromFolder(EntityID entity);
 		void RemoveEntityFromAllFolders(EntityID entity);
 
 		void CollectVisibleEntities(FolderID folderID, std::vector<EntityID>& out);
-
 		void CollectFolderAsOneBlock(FolderID folderID, std::vector<EntityID>& out);
 
 		std::vector<EntityID> GetEntitiesInRange(EntityID _start, EntityID _end);

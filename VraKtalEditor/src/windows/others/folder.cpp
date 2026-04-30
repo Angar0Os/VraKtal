@@ -95,6 +95,53 @@ namespace hierarchy {
         movingFolder.parent = _idTarget;
     }
 
+    void FolderManager::DeleteFolder(FolderID folderID)
+    {
+        if (folderID == INVALID_FOLDER || folderID == m_rootFolder)
+            return;
+
+        Folder& folder = GetFolder(folderID);
+
+        // Déplacer les entités du folder vers le parent
+        if (folder.parent != INVALID_FOLDER)
+        {
+            Folder& parent = GetFolder(folder.parent);
+
+            for (EntityID entity : folder.entities)
+            {
+                parent.entities.push_back(entity);
+                m_entityFolder[entity] = parent.id;
+            }
+
+            // Déplacer les enfants vers le parent
+            for (FolderID childID : folder.children)
+            {
+                Folder& child = GetFolder(childID);
+                child.parent = parent.id;
+                parent.children.push_back(childID);
+            }
+
+            // Retirer le folder supprimé des children du parent
+            parent.children.erase(
+                std::remove(parent.children.begin(), parent.children.end(), folderID),
+                parent.children.end()
+            );
+        }
+
+        // Supprimer le folder du vector
+        m_folders.erase(
+            std::remove_if(
+                m_folders.begin(),
+                m_folders.end(),
+                [folderID](const Folder& f)
+                {
+                    return f.id == folderID;
+                }
+            ),
+            m_folders.end()
+        );
+    }
+
     void FolderManager::RemoveEntityFromFolder(EntityID entity)
     {
         auto it = m_entityFolder.find(entity);
@@ -138,7 +185,6 @@ namespace hierarchy {
 
         return std::vector<EntityID>(startIt, endIt + 1);
     }
-
 
     void FolderManager::CollectVisibleEntities(FolderID folderID, std::vector<EntityID>& out)
     {
