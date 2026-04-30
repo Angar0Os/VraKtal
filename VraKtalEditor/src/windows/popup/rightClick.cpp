@@ -1,5 +1,6 @@
 #include "../../../include/windows/popup/rightClick.h"
 #include "../../../include/imGuiWindows.h"
+#include "../../../include/windows/windowHierarchy.h"
 
 #include <scene/scene.h>
 #include <utils/denseStorage.h>
@@ -22,6 +23,11 @@ void RightClick::Content(WindowHierarchy* _window)
     if (ImGui::Selectable("Add Entity"))
     {
         m_windows->GetScene()->CreateEntity();
+        CloseMenu();
+    }
+    if (ImGui::Selectable("Add Folder"))
+    {
+        _window->CreateFolder("New Folder");
         CloseMenu();
     }
 }
