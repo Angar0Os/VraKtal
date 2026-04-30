@@ -3,6 +3,8 @@
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
+#include <scene/timeline/entityBase.h>
+#include "folder.h"
 
 namespace graphics::resources
 {
@@ -19,8 +21,32 @@ struct FileEntry;
 class ImGuiWindows;
 class RessourceManager;
 
+namespace hierarchy {
+    struct Folder;
+}
+
 using Mesh_ID = uint32_t;
 static constexpr Mesh_ID INVALID_ID = 0xFFFFFFFFu;
+
+template<typename T, typename Tag>
+struct PayloadWrap
+{
+    T value{};
+
+    PayloadWrap() = default;
+    PayloadWrap(T v) : value(v) {}
+
+    operator T() const
+    {
+        return value;
+    }
+
+    PayloadWrap& operator=(T v)
+    {
+        value = v;
+        return *this;
+    }
+};
 
 struct DragNDrop
 {
@@ -81,15 +107,31 @@ private:
 
 template<>
 void DragNDrop::Drag(FileEntry& _fileEntry);
-
 template<>
 FileEntry* DragNDrop::Content(FileEntry& _fileEntry);
+#pragma region Inspector
 
-template<>
-FileEntry* DragNDrop::Content(Mesh_ID& _meshID);
-
+struct MaterialIndexTag {};
+using MaterialIndexPayload = PayloadWrap<uint32_t, MaterialIndexTag>;
 using MaterialIndex = uint32_t;
 template<>
-void DragNDrop::Drag(MaterialIndex& _materialIndex);
+void DragNDrop::Drag(MaterialIndexPayload& _materialIndex);
 template<>
-MaterialIndex* DragNDrop::Content(MaterialIndex& _meshID);
+MaterialIndexPayload* DragNDrop::Content(MaterialIndex& _meshID);
+template<>
+FileEntry* DragNDrop::Content(Mesh_ID& _meshID);
+#pragma endregion
+
+struct FolderIDTag {};
+using FolderIDPayload = PayloadWrap<uint32_t, FolderIDTag>;
+template<>
+void DragNDrop::Drag(hierarchy::Folder& _folder);
+template<>
+hierarchy::Folder* DragNDrop::Content(hierarchy::FolderID& _folder);
+
+struct EntityIDTag {};
+using EntityIDPayload = PayloadWrap<uint32_t, EntityIDTag>;
+template<>
+void DragNDrop::Drag(EntityIDPayload& _fileEntry);
+template<>
+EntityIDPayload* DragNDrop::Content(EntityID& _ID);

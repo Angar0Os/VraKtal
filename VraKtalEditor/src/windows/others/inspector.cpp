@@ -102,11 +102,11 @@ void Inspect::Draw(timeline::MeshInstance& _mesh)
                         ressourceMesh.materials[i]->name;
 
                     ImGui::Selectable(label.c_str(), false);
-
-                    m_windowManager->GetDragNDrop()->Drag<MaterialIndex>(materialIndex);
+                    MaterialIndexPayload IndexPayLoad = static_cast<MaterialIndex>(i);
+                    m_windowManager->GetDragNDrop()->Drag<MaterialIndexPayload>(IndexPayLoad);
 
                     MaterialIndex dropped = INVALID_ID;
-                    m_windowManager->GetDragNDrop()->DropItem<MaterialIndex, MaterialIndex>(dropped);
+                    m_windowManager->GetDragNDrop()->DropItem<MaterialIndexPayload, MaterialIndex>(dropped);
 
                     if (dropped != INVALID_ID && dropped != static_cast<MaterialIndex>(i))
                     {
