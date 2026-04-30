@@ -96,6 +96,9 @@
     <ClCompile Include="src\windows\popup\rightClick.cpp">
       <Filter>Source Files\windows\popup</Filter>
     </ClCompile>
+    <ClCompile Include="src\windows\others\folder.cpp">
+      <Filter>Source Files\windows\others</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -151,6 +154,9 @@
     </ClInclude>
     <ClInclude Include="include\windows\popup\rightClick.h">
       <Filter>Header Files\windows\popup</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\others\folder.h">
+      <Filter>Header Files\windows\others</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
