@@ -96,21 +96,49 @@ MaterialIndexPayload* DragNDrop::Content(MaterialIndex& _materialIndex)
 }
 
 template<>
-void DragNDrop::Drag(EntityIDPayload& _ID)
+void DragNDrop::Drag(EntityPayload& _payload)
 {
     if (ImGui::BeginDragDropSource())
     {
-        ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &_ID, sizeof(EntityIDPayload));
-        std::string Name;
+        ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &_payload, sizeof(EntityPayload));
+        if (_payload.count > 1)
+        {
+            ImGui::Text("Moving %d Entities", _payload.count);
+        }
+        else if (_payload.count == 1)
+        {
+            EntityID entity = _payload.entities[0];
 
-        if (m_windowManager.GetScene()->GetComponentStorage<std::string>().Has(_ID))
-            Name = m_windowManager.GetScene()->GetComponentStorage<std::string>().Get(_ID);
+            if (m_windowManager.GetScene()->GetComponentStorage<std::string>().Has(entity))
+            {
+                const std::string& name =
+                    m_windowManager.GetScene()->GetComponentStorage<std::string>().Get(entity);
+
+                ImGui::Text("Moving %s", name.c_str());
+            }
+        }
         else
-            Name = "Undefined Name - ANORMAL BEHAVIOR";
-
-        ImGui::TextUnformatted(Name.c_str());
+        {
+            ImGui::Text("ENTITIES SHOULD HAVE A NAME");
+        }
         ImGui::EndDragDropSource();
     }
+}
+
+template<>
+EntityPayload* DragNDrop::Content()
+{
+    static EntityPayload lastPayload;
+
+    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY"))
+    {
+        if (payload->DataSize != sizeof(EntityPayload))
+            return nullptr;
+        lastPayload = *static_cast<const EntityPayload*>(payload->Data);
+        return &lastPayload;
+    }
+
+    return nullptr;
 }
 
 template<>
@@ -119,7 +147,6 @@ void DragNDrop::Drag(hierarchy::Folder& _folder)
     if (ImGui::BeginDragDropSource())
     {
         hierarchy::Folder* folderPtr = &_folder;
-
         ImGui::SetDragDropPayload(
             "HIERARCHY_FOLDER",
             &folderPtr,
@@ -147,19 +174,3 @@ hierarchy::Folder* DragNDrop::Content(hierarchy::FolderID& _folder)
     return nullptr;
 }
 
-template<>
-EntityIDPayload* DragNDrop::Content(EntityID& _ID)
-{
-    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY"))
-    {
-        IM_ASSERT(payload->DataSize == sizeof(EntityIDPayload));
-
-        EntityIDPayload* droppedEntityPayload =
-            static_cast<EntityIDPayload*>(payload->Data);
-
-        _ID = *droppedEntityPayload;
-        return droppedEntityPayload;
-    }
-
-    return nullptr;
-}

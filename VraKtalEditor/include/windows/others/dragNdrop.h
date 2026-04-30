@@ -91,12 +91,31 @@ struct DragNDrop
         return droppedEntry;
     }
 
+    template<typename DraggedType>
+    DraggedType* DropItem() {
+        DraggedType* droppedEntry = nullptr;
+        if (ImGui::BeginDragDropTarget())
+        {
+            droppedEntry = Content<DraggedType>();
+            ImGui::EndDragDropTarget();
+        }
+        return droppedEntry;
+    }
+
 private:
     ImGuiWindows& m_windowManager;
     RessourceManager& m_reManager;
 
     template<typename DraggedType, typename DroppedReceived>
     DraggedType* Content(DroppedReceived& object) {
+        ImGui::BeginPopup("DropAvailability");
+        ImGui::Text("No DropAvailable");
+        ImGui::EndPopup();
+        return nullptr;
+    }
+
+    template<typename DraggedType>
+    DraggedType* Content() {
         ImGui::BeginPopup("DropAvailability");
         ImGui::Text("No DropAvailable");
         ImGui::EndPopup();
@@ -129,9 +148,11 @@ void DragNDrop::Drag(hierarchy::Folder& _folder);
 template<>
 hierarchy::Folder* DragNDrop::Content(hierarchy::FolderID& _folder);
 
-struct EntityIDTag {};
-using EntityIDPayload = PayloadWrap<uint32_t, EntityIDTag>;
+struct EntityPayload { //Fun fact imgui peut pas prendre de std::vector 
+    uint32_t count = 0;
+    EntityID entities[128];
+};
 template<>
-void DragNDrop::Drag(EntityIDPayload& _fileEntry);
+void DragNDrop::Drag(EntityPayload& _payload);
 template<>
-EntityIDPayload* DragNDrop::Content(EntityID& _ID);
+EntityPayload* DragNDrop::Content();
