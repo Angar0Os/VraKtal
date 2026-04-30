@@ -9,6 +9,7 @@
 #include "timeline/entityBase.h"
 #include <unordered_map>
 
+
 class Scene
 {
 private:
@@ -32,7 +33,6 @@ public:
 
 	template<class T>
 	EntityID CreateEntity(T _toAdd);
-
 	EntityID CloneEntiy(EntityID _id);
 
 public:
@@ -59,6 +59,57 @@ private:
 		static std::size_t next = 0;
 		return next++;
 	};
+
+#ifdef VRAKTAL_EDITOR
+public :
+	void CallOnCreatedCallBacks(std::pair<EntityID, size_t> _data);
+	void CallOnDestroyedCallBacks(std::pair<EntityID, size_t> _data);
+
+	template <typename T>
+	struct EntityChangeCallBack
+	{
+		void* context = nullptr; // Objet si data
+		void (*callback)(void*,T) = nullptr;
+		void Execute(const T& value) const
+		{
+			if (callback)
+				callback(context, value);
+		}
+	};
+
+	template<typename T, void(T::* Method)(std::pair<EntityID, size_t>)>
+	void AddOnEntityCreatedCallBack(T* instance)
+	{
+		EntityChangeCallBack <std::pair<EntityID, size_t>> action;
+		action.context = instance;
+		action.callback = &MethodCaller<T, Method>;
+
+		m_CreatedCallbacks.push_back(action);
+	}
+
+	template<typename T, void(T::* Method)(std::pair<EntityID, size_t>)>
+	void AddOnEntityDestroyedCallBack(T* instance)
+	{
+		EntityChangeCallBack <std::pair<EntityID, size_t>> action;
+		action.context = instance;
+		action.callback = &MethodCaller<T, Method>;
+
+		m_DestroyedCallbacks.push_back(action);
+	}
+
+private:
+	std::vector<EntityChangeCallBack<std::pair<EntityID, size_t>>> m_CreatedCallbacks;
+	std::vector<EntityChangeCallBack<std::pair<EntityID, size_t>>> m_DestroyedCallbacks;
+
+	template<typename T, void(T::* Method)(std::pair<EntityID, size_t>)>
+	static void MethodCaller(void* context,std::pair<EntityID, size_t> _pair)
+	{
+		T* obj = static_cast<T*>(context);
+		(obj->*Method)(_pair);
+	}
+
+#endif // VRAKTAL_EDITOR
+
 
 };
 
