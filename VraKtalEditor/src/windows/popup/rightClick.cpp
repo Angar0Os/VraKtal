@@ -11,6 +11,7 @@
 
 #include <variant>
 #include <unordered_map>
+#include <windows/others/folder.h>
 
 
 RightClick::RightClick(ImGuiWindows* _windows) : m_windows(_windows) {}
@@ -31,6 +32,28 @@ void RightClick::Content(WindowHierarchy* _window)
         CloseMenu();
     }
 }
+template<>
+void RightClick::Content(WindowHierarchy* window, hierarchy::Folder* folder)
+{
+    if (ImGui::Selectable("Rename Folder"))
+    {
+        window->RenameFolder(folder->id);
+        CloseMenu();
+    }
+
+    if (ImGui::Selectable("Delete Folder"))
+    {
+        window->DeleteFolder(folder->id);
+        CloseMenu();
+    }
+
+    if (ImGui::Selectable("Delete Folder And Content"))
+    {
+        window->DeleteFolderAndContent(folder->id);
+        CloseMenu();
+    }
+}
+
 
 template<>
 void RightClick::Content(EntityID* _ID) 

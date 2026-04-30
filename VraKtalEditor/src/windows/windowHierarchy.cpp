@@ -34,7 +34,6 @@ WindowHierarchy::WindowHierarchy(Scene& _scene, ImGuiWindows& _imGuiWindows) : m
 
     AddTypeFilter(typeid(timeline::MeshInstance) , "Mesh");
     AddTypeFilter(typeid(timeline::Light), "Light");
-
 }
 
 WindowHierarchy::~WindowHierarchy()
@@ -57,6 +56,8 @@ void WindowHierarchy::Draw()
         {
             std::cout << "Cleared Entity" << std::endl;
             m_entitiesSelected.clear();
+            m_selectedFolder = INVALID_ENTITY;
+            LastTypeSelectedWasFolderId = false;
         }
 
         HandleRightClick();
@@ -72,8 +73,10 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
     EntityID SelectedItemID = m_imGuiWindows.IsSelectedItemType<EntityID>() ? m_imGuiWindows.GetSelectedItem<EntityID>() : INVALID_ENTITY;
     bool isEntitySelected = (m_entitiesSelected.contains(_ID) && m_entitiesSelected.at(_ID)) || m_rangeSelectStartEnd.first == _ID ? true : false;
 
+
     if (m_renamingEntity == _ID)
     {
+
         ImGui::SetNextItemWidth(-1.0f);
     
         const bool enterPressed = ImGui::InputText(
@@ -83,24 +86,18 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
             ImGuiInputTextFlags_EnterReturnsTrue |
             ImGuiInputTextFlags_AutoSelectAll
         );
-    
-        if (ImGui::IsItemActive() && ImGui::IsKeyPressed(ImGuiKey_Escape))
+        if (enterPressed || ImGui::IsItemDeactivatedAfterEdit() || ((ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) || ImGui::GetMouseClickedCount(ImGuiMouseButton_Right)) && !ImGui::IsItemClicked()))
         {
-            m_renamingEntity = -1;
-        }
-        else if (enterPressed)
-        {
-            label = m_entityRenameBuffer;
-            m_renamingEntity = -1;
-        }
-        else if (ImGui::IsItemDeactivatedAfterEdit())
-        {
-            label = m_entityRenameBuffer;
-            m_renamingEntity = -1;
-        }
-        else if (SelectedItemID != m_renamingEntity)
-        {
-            m_renamingEntity = -1;
+            if (m_scene.GetComponentStorage<std::string>().Has(_ID))
+            {
+                m_scene.GetComponentStorage<std::string>().Get(_ID) = m_entityRenameBuffer;
+                m_renamingEntity = INVALID_ENTITY;
+            }
+            else
+            {
+
+                m_scene.GetComponentStorage<std::string>().Add(_ID, m_entityRenameBuffer);
+            }
         }
     }
     else
@@ -111,17 +108,34 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.1f, 0.3f, 0.9f, 1.0f));
     
         ImGui::Selectable(label.c_str(), isEntitySelected);
-    
         ImGui::PopStyleColor(3);
-    
+
+        EntityPayload payload;
+        if (isEntitySelected)
+        {
+            for (auto& [entity, selected] : m_entitiesSelected)
+            {
+                if (selected && payload.count < 128)
+                {
+                    payload.entities[payload.count++] = entity;
+                }
+            }
+        }
+        else
+        {
+            payload.entities[payload.count++] = _ID;
+        }
+
+        m_imGuiWindows.GetDragNDrop()->Drag<EntityPayload>(payload);
+
         if (ImGui::IsItemHovered())
         {
-            //si on hover one entitee on la select avant
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
             {
-                if (!m_entitiesSelected.contains(_ID) || !m_entitiesSelected.at(_ID))
+                if (!isEntitySelected)
                 {
                     SetSelectedEntity(_ID);
+                    m_selectionAnchor = _ID;
                 }
             }
             else if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
@@ -129,7 +143,7 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
                 m_renamingEntity = _ID;
                 strncpy_s(m_entityRenameBuffer, sizeof(m_entityRenameBuffer), label.c_str(), _TRUNCATE);
             }
-            else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImGui::IsMouseDragging(ImGuiMouseButton_Left))
             {
                 if (ImGui::GetIO().KeyShift)
                 {
@@ -146,12 +160,11 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
                 }
                 else if (ImGui::GetIO().KeyCtrl)
                 {
-                    if (isEntitySelected) {
-                        RemoveEntity(_ID);
-                    }
-                    else {
+                    if (isEntitySelected)
+                        RemoveEntityFromSelected(_ID);
+                    else
                         AddSelectedEntity(_ID);
-                    }
+
                     m_selectionAnchor = _ID;
                 }
                 else
@@ -195,19 +208,34 @@ void WindowHierarchy::HandleRangeSelect()
 
 void WindowHierarchy::HandleRightClick()
 {
-    if (m_entitiesSelected.size() == 0)
+    if (LastTypeSelectedWasFolderId && m_selectedFolder != INVALID_ENTITY)
     {
-        m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy>(this);
+        if (m_pendingDeleteFolder != m_selectedFolder)
+        {
+            m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy , hierarchy::Folder>(this , &m_folderManager.GetFolder(m_selectedFolder));
+        }
+        else
+        {
+            m_selectedFolder = INVALID_ID;
+            m_pendingDeleteFolder = INVALID_ID;
+        }
     }
-    else if (m_entitiesSelected.size() == 1)
+    else if (m_entitiesSelected.size() > 0)
     {
-        EntityID id = m_entitiesSelected.begin()->first;
-        m_imGuiWindows.GetRightClick()->Draw<EntityID>(&id);
+        if (m_entitiesSelected.size() == 1)
+        {
+            EntityID id = m_entitiesSelected.begin()->first;
+            m_imGuiWindows.GetRightClick()->Draw<EntityID>(&id);
+        }
+        else
+        {
+            std::vector<EntityID> selectedEntities = ConstructSelectedEntitiesVector();
+            m_imGuiWindows.GetRightClick()->Draw<std::vector<EntityID>>(&selectedEntities);
+        }
     }
     else
     {
-        std::vector<EntityID> selectedEntities = ConstructSelectedEntitiesVector();
-        m_imGuiWindows.GetRightClick()->Draw<std::vector<EntityID>>(&selectedEntities);
+        m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy>(this);
     }
 }
 
@@ -224,8 +252,6 @@ void WindowHierarchy::OnEntityDestroyedCallBack(std::pair<EntityID, size_t> _pai
 void WindowHierarchy::CreateFolder(std::string _name)
 {
     hierarchy::FolderID newFolder = m_folderManager.CreateFolder(_name, m_folderManager.m_rootFolder);
-    m_renamingFolder = newFolder;
-    strncpy_s(m_folderRenameBuffer, sizeof(m_folderRenameBuffer), "New Folder", _TRUNCATE);
 }
 
 void WindowHierarchy::AddSelectedEntity(EntityID _ID)
@@ -240,10 +266,12 @@ void WindowHierarchy::AddSelectedEntity(EntityID _ID)
         m_entitiesSelected.insert({ _ID, true });
     }
 
+    LastTypeSelectedWasFolderId = false;
+
     UpdateManagerSelectedItem(_ID);
 }
 
-void WindowHierarchy::RemoveEntity(EntityID _ID)
+void WindowHierarchy::RemoveEntityFromSelected(EntityID _ID)
 {
     if (m_entitiesSelected.contains(_ID))
     {
@@ -258,7 +286,7 @@ void WindowHierarchy::SetSelectedEntity(EntityID _ID)
     AddSelectedEntity(_ID);
 }
 
-bool WindowHierarchy::IsSelectedIndex(size_t index)
+bool WindowHierarchy::IsEntitySelected(EntityID index)
 {
     if (m_entitiesSelected.contains(index))
     {
@@ -326,13 +354,22 @@ void WindowHierarchy::DrawFilterBar()
 
 void WindowHierarchy::UpdateManagerSelectedItem(EntityID _selectedIndex)
 {
-    if (m_entitiesSelected.size() == 1)
+    if (LastTypeSelectedWasFolderId)
     {
-        m_imGuiWindows.SetSelectedItem<EntityID>(_selectedIndex);
+        m_entitiesSelected.clear();
+        m_imGuiWindows.SetSelectedItem<hierarchy::Folder*>(&m_folderManager.GetFolder(m_selectedFolder));
     }
     else
     {
-        m_imGuiWindows.SetSelectedItem<std::monostate>({});
+        m_selectedFolder = 0;
+        if (m_entitiesSelected.size() == 1)
+        {
+            m_imGuiWindows.SetSelectedItem<EntityID>(_selectedIndex);
+        }
+        else
+        {
+            m_imGuiWindows.SetSelectedItem<std::monostate>({});
+        }
     }
 }
 
@@ -383,7 +420,23 @@ void WindowHierarchy::DrawFolders(hierarchy::FolderID _folderID)
     const bool isRoot = folder.id == m_folderManager.m_rootFolder;
     if (isRoot)
     {
-        // Pas de TreeNode, pas de nom, pas de drag/drop, pas de fermeture.
+        //Handle Dropped Folder on Folder 
+        hierarchy::FolderID droppedFolderID = INVALID_ENTITY;
+        hierarchy::Folder* Droppedfolder = m_imGuiWindows.GetDragNDrop()->DropWindow<hierarchy::Folder, hierarchy::FolderID>(droppedFolderID);
+        if (Droppedfolder != nullptr)
+        {
+            m_folderManager.MoveFolderToFolder(Droppedfolder->id, folder.id);
+        }
+        EntityPayload* payload = m_imGuiWindows.GetDragNDrop()->DropItem<EntityPayload>();
+        if (payload != nullptr)
+        {
+            for (uint32_t i = 0; i < payload->count; i++)
+            {
+                m_folderManager.MoveEntityToFolder(payload->entities[i], folder.id);
+            }
+        }
+
+        // Pas de TreeNode, pas de nom, pas de fermeture pour le root il est puni
         for (hierarchy::FolderID childID : folder.children)
         {
             DrawFolders(childID);
@@ -416,10 +469,44 @@ void WindowHierarchy::DrawFolders(hierarchy::FolderID _folderID)
     }
 
     ImGuiTreeNodeFlags isLeaf = (folder.entities.size() > 0 || folder.children.size() > 0) ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf;
-    ImGuiTreeNodeFlags flags = isLeaf | ImGuiTreeNodeFlags_SpanAvailWidth;
+    bool bIsSelected = m_selectedFolder == folder.id;
+    ImGuiTreeNodeFlags flags =
+        isLeaf | //pour la fleche
+        ImGuiTreeNodeFlags_SpanAvailWidth | //pour la largeur
+        (bIsSelected ? ImGuiTreeNodeFlags_Selected : 0); //pour la couleur
 
     ImGui::PushID(static_cast<int>(folder.id));
     bool opened = ImGui::TreeNodeEx(folder.name.c_str(), flags);
+    if (ImGui::IsItemHovered()) // Rename
+    {
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) || ImGui::IsKeyPressed(ImGuiKey_F2))
+        {
+            RenameFolder(folder.id);
+        }
+        else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+        {
+            SelectFolder(folder.id);
+        }
+    }
+
+    //Handle Drag of Folder
+    m_imGuiWindows.GetDragNDrop()->Drag<hierarchy::Folder>(folder);
+    //Handle Dropped Folder on Folder 
+    hierarchy::FolderID droppedFolderID = INVALID_ENTITY;
+    hierarchy::Folder* Droppedfolder = m_imGuiWindows.GetDragNDrop()->DropItem<hierarchy::Folder, hierarchy::FolderID>(droppedFolderID);
+    if (Droppedfolder != nullptr)
+    {
+        m_folderManager.MoveFolderToFolder(Droppedfolder->id, folder.id);
+    }
+
+    EntityPayload* payload = m_imGuiWindows.GetDragNDrop()->DropItem<EntityPayload>();
+    if (payload != nullptr)
+    {
+        for (uint32_t i = 0; i < payload->count; i++)
+        {
+            m_folderManager.MoveEntityToFolder(payload->entities[i], folder.id);
+        }
+    }
 
     if (opened)
     {
@@ -441,3 +528,36 @@ void WindowHierarchy::DrawFolders(hierarchy::FolderID _folderID)
     ImGui::PopID();
 }
 
+void WindowHierarchy::RenameFolder(hierarchy::FolderID _folderID)
+{
+    m_renamingFolder = _folderID;
+    strncpy_s(m_folderRenameBuffer, sizeof(m_folderRenameBuffer), "New Folder", _TRUNCATE);
+}
+
+void WindowHierarchy::DeleteFolder(hierarchy::FolderID _folderID)
+{
+    m_pendingDeleteFolder = _folderID;
+    m_folderManager.DeleteFolder(_folderID);
+}
+
+void WindowHierarchy::DeleteFolderAndContent(hierarchy::FolderID _folderID)
+{
+    for (hierarchy::FolderID childFolder : m_folderManager.GetFolder(_folderID).children)
+    {
+        DeleteFolder(childFolder);
+    }
+    for (EntityID entity : m_folderManager.GetFolder(_folderID).entities)
+    {
+        m_scene.DestroyEntity(entity);
+    }
+
+    DeleteFolder(_folderID);
+
+}
+
+void WindowHierarchy::SelectFolder(hierarchy::FolderID _folderID)
+{
+    m_selectedFolder = _folderID;
+    LastTypeSelectedWasFolderId = true;
+    UpdateManagerSelectedItem(INVALID_ENTITY);
+}

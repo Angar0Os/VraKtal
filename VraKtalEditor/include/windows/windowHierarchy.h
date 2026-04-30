@@ -35,7 +35,9 @@ public:
 	void OnEntityDestroyedCallBack(std::pair<EntityID, size_t> _pair);
 
 	void CreateFolder(std::string _name);
-
+	void RenameFolder(hierarchy::FolderID _folderID);
+	void DeleteFolder(hierarchy::FolderID _folderID);
+	void DeleteFolderAndContent(hierarchy::FolderID _folderID);
 private:
 	void DrawEntityHierarchyItem(EntityID _ID);
 	void HandleRangeSelect();
@@ -45,15 +47,15 @@ private:
 	Scene& m_scene;
 	ImGuiWindows& m_imGuiWindows;
 
-	size_t m_renamingEntity;
+	EntityID m_renamingEntity;
 	char m_entityRenameBuffer[256] = {};
 
 	std::unordered_map<EntityID, bool> m_entitiesSelected;
 
 	void AddSelectedEntity(EntityID _ID);
-	void RemoveEntity(EntityID _ID);
+	void RemoveEntityFromSelected(EntityID _ID);
 	void SetSelectedEntity(EntityID _ID);
-	bool IsSelectedIndex(size_t index);
+	bool IsEntitySelected(EntityID index);
 	
 	void UpdateManagerSelectedItem(EntityID _selectedIndex);
 
@@ -73,8 +75,13 @@ private:
 	void AddTypeFilter(std::type_index type, const std::string& name);
 	bool PassTypeFilters(EntityID _ID);
 
+	bool LastTypeSelectedWasFolderId = false;
+
 	hierarchy::FolderManager m_folderManager;
 	void DrawFolders(hierarchy::FolderID _folderID);
+	void SelectFolder(hierarchy::FolderID _folderID);
+	hierarchy::FolderID m_selectedFolder = INVALID_ENTITY;
 	hierarchy::FolderID m_renamingFolder = hierarchy::INVALID_FOLDER;
+	hierarchy::FolderID m_pendingDeleteFolder = INVALID_ENTITY;
 	char m_folderRenameBuffer[256] = {};
 };
