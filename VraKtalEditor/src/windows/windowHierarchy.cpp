@@ -17,11 +17,24 @@
 
 #include <scene/scene.h>
 #include <scene/timeline/components/mesh.h>
+#include <scene/timeline/components/light.h>
 #include <graphics/renderer.h>
 #include <core/gpu/buffer.h>
+#include <string>
+#include <typeindex>
+#include <utility>
+#include <iostream>
+
+
 
 WindowHierarchy::WindowHierarchy(Scene& _scene, ImGuiWindows& _imGuiWindows) : m_scene(_scene), m_imGuiWindows(_imGuiWindows), m_renamingEntity(INVALID_ENTITY), m_rangeSelectStartEnd({INVALID_ENTITY , INVALID_ENTITY})
 {
+    m_scene.AddOnEntityCreatedCallBack<WindowHierarchy, &WindowHierarchy::OnEntityCreatedCallBack>(this);
+    m_scene.AddOnEntityDestroyedCallBack<WindowHierarchy, &WindowHierarchy::OnEntityDestroyedCallBack>(this);
+
+    AddTypeFilter(typeid(timeline::MeshInstance) , "Mesh");
+    AddTypeFilter(typeid(timeline::Light), "Light");
+
 }
 
 WindowHierarchy::~WindowHierarchy()
@@ -33,17 +46,10 @@ void WindowHierarchy::Draw()
     ComponentStorage<timeline::MeshInstance>& meshStorage = m_scene.GetComponentStorage<timeline::MeshInstance>();
     if (m_imGuiWindows.BeginWindow("Hierarchy", true))
     {
-        if (m_rangeSelectStartEnd.first != INVALID_ENTITY && m_rangeSelectStartEnd.second != INVALID_ENTITY)
-        {
-            SetSelectedEntityInRange(m_rangeSelectStartEnd.first, m_rangeSelectStartEnd.second);
-            m_rangeSelectStartEnd.first = INVALID_ENTITY;
-            m_rangeSelectStartEnd.second= INVALID_ENTITY;
-        }
-
-        for (size_t i = 0; i < m_scene.GetAliveEntities().size() ; i++)
-        {
-            DrawEntityHierarchyItem(i);
-        }
+        DrawFilterBar();
+        ImGui::Separator();
+        HandleRangeSelect();
+        DrawFolders(m_folderManager.m_rootFolder);
 
         if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) &&
             (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) &&
@@ -53,45 +59,20 @@ void WindowHierarchy::Draw()
             m_entitiesSelected.clear();
         }
 
-        if (m_entitiesSelected.size() == 0)
-        {   
-            m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy>(this);
-        }
-        else if (m_entitiesSelected.size() == 1)
-        {
-            size_t id = m_entitiesSelected.begin()->first;
-            if (id < m_scene.GetAliveEntities().size())
-            {
-                m_imGuiWindows.GetRightClick()->Draw<EntityID>(&m_imGuiWindows.GetScene()->GetAliveEntities()[id]);
-            }
-        }
-        else
-        {
-            std::vector<EntityID> selectedEntities = ConstructSelectedEntitiesVector();
-            m_imGuiWindows.GetRightClick()->Draw<std::vector<EntityID>>(&selectedEntities);
-        }
+        HandleRightClick();
+
     }
     m_imGuiWindows.EndWindow("Hierarchy");
 }
 
-void WindowHierarchy::DrawEntityHierarchyItem(size_t indexInAlive)
+void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
 {
-
-    EntityID ID = m_scene.GetAliveEntities()[indexInAlive];
-    if (!m_scene.GetComponentStorage<std::string>().Has(ID))
-        return;
-
-    std::string& label = m_scene.GetEntityComponent<std::string>(ID);
+    std::string label = m_scene.GetComponentStorage<std::string>().Has(_ID) ? m_scene.GetEntityComponent<std::string>(_ID) : "This Entity Have no name this isn't normal behaviour";
 
     EntityID SelectedItemID = m_imGuiWindows.IsSelectedItemType<EntityID>() ? m_imGuiWindows.GetSelectedItem<EntityID>() : INVALID_ENTITY;
-    bool isEntitySelected = false;
+    bool isEntitySelected = (m_entitiesSelected.contains(_ID) && m_entitiesSelected.at(_ID)) || m_rangeSelectStartEnd.first == _ID ? true : false;
 
-    if (m_entitiesSelected.contains(indexInAlive))
-    {
-        isEntitySelected = m_entitiesSelected.at(indexInAlive);
-    }
-
-    if (m_renamingEntity == indexInAlive)
+    if (m_renamingEntity == _ID)
     {
         ImGui::SetNextItemWidth(-1.0f);
     
@@ -124,6 +105,7 @@ void WindowHierarchy::DrawEntityHierarchyItem(size_t indexInAlive)
     }
     else
     {
+
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.4f, 1.0f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.5f, 1.0f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.1f, 0.3f, 0.9f, 1.0f));
@@ -137,78 +119,52 @@ void WindowHierarchy::DrawEntityHierarchyItem(size_t indexInAlive)
             //si on hover one entitee on la select avant
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
             {
-                if (!m_entitiesSelected.contains(indexInAlive) || !m_entitiesSelected.at(indexInAlive))
+                if (!m_entitiesSelected.contains(_ID) || !m_entitiesSelected.at(_ID))
                 {
-                    SetSelectedEntity(indexInAlive);
+                    SetSelectedEntity(_ID);
                 }
             }
             else if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
             {
-                m_renamingEntity = indexInAlive;
+                m_renamingEntity = _ID;
                 strncpy_s(m_entityRenameBuffer, sizeof(m_entityRenameBuffer), label.c_str(), _TRUNCATE);
             }
             else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
             {
                 if (ImGui::GetIO().KeyShift)
                 {
-                    if (m_rangeSelectStartEnd.first == INVALID_ENTITY)
+                    if (m_selectionAnchor != INVALID_ENTITY)
                     {
-                        if (m_entitiesSelected.size() > 0)
-                        {
-                            size_t Smallest = GetSmallestSelectedEntity();
-                            size_t Biggest = GetBiggestSelectedEntity();
-                            if (Biggest > indexInAlive && Smallest < indexInAlive)
-                            {
-                                m_rangeSelectStartEnd.first = Biggest;
-                                m_rangeSelectStartEnd.second = Smallest;
-                            }
-                            if (Biggest > indexInAlive)
-                            {
-                                m_rangeSelectStartEnd.first = Biggest;
-                            }
-                            else
-                            {
-                                m_rangeSelectStartEnd.first = Smallest;
-                            }
-
-                        }
-                        else
-                        {
-                            m_rangeSelectStartEnd.first = indexInAlive;
-                        }
-                        if (m_rangeSelectStartEnd.second == INVALID_ID)
-                        {
-                            m_rangeSelectStartEnd.second = indexInAlive;
-                        }
+                        m_rangeSelectStartEnd.first = m_selectionAnchor;
+                        m_rangeSelectStartEnd.second = _ID;
                     }
                     else
                     {
-                        m_rangeSelectStartEnd.second = indexInAlive;
+                        SetSelectedEntity(_ID);
+                        m_selectionAnchor = _ID;
                     }
-
                 }
-                else if (ImGui::GetIO().KeyCtrl) //si on appuie sur ctrl en cliquant gauche
+                else if (ImGui::GetIO().KeyCtrl)
                 {
-                    if (IsSelectedIndex(indexInAlive)) //si l'entitee est deja selectionee on la retire
-                    {
-                        RemoveEntity(indexInAlive);
+                    if (isEntitySelected) {
+                        RemoveEntity(_ID);
                     }
-                    else 
-                    {
-                        AddSelectedEntity(indexInAlive); // si non on l'ajoute aux indices selectionees
+                    else {
+                        AddSelectedEntity(_ID);
                     }
+                    m_selectionAnchor = _ID;
                 }
                 else
                 {
-                    SetSelectedEntity(indexInAlive); //si on fait juste clique gauche sur une entitee on la set en selctionee
+                    SetSelectedEntity(_ID);
+                    m_selectionAnchor = _ID;
                 }
-
             }
         }
         //DragNDrop
-        if (m_scene.GetComponentStorage<timeline::MeshInstance>().Has(ID))
+        if (m_scene.GetComponentStorage<timeline::MeshInstance>().Has(_ID))
         {
-            m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(m_scene.GetComponentStorage<timeline::MeshInstance>().Get(ID).meshID);
+            m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(m_scene.GetComponentStorage<timeline::MeshInstance>().Get(_ID).meshID);
         }
         else
         {
@@ -216,14 +172,63 @@ void WindowHierarchy::DrawEntityHierarchyItem(size_t indexInAlive)
             m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(draggedMeshID);
             if (draggedMeshID != INVALID_ID)
             {
-                m_scene.GetComponentStorage<timeline::MeshInstance>().Add(ID, timeline::MeshInstance{ .meshID = draggedMeshID });
+                m_scene.GetComponentStorage<timeline::MeshInstance>().Add(_ID, timeline::MeshInstance{ .meshID = draggedMeshID });
             }
         }
         
     }
 }
 
-void WindowHierarchy::AddSelectedEntity(size_t _ID)
+void WindowHierarchy::HandleRangeSelect()
+{
+    if (m_rangeSelectStartEnd.first != INVALID_ENTITY && m_rangeSelectStartEnd.second != INVALID_ENTITY)
+    {
+        m_entitiesSelected.clear();
+        for (EntityID entity : m_folderManager.GetEntitiesInRange(m_rangeSelectStartEnd.first, m_rangeSelectStartEnd.second))
+        {
+            AddSelectedEntity(entity);
+        }
+        m_rangeSelectStartEnd.first = INVALID_ENTITY;
+        m_rangeSelectStartEnd.second = INVALID_ENTITY;
+    }
+}
+
+void WindowHierarchy::HandleRightClick()
+{
+    if (m_entitiesSelected.size() == 0)
+    {
+        m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy>(this);
+    }
+    else if (m_entitiesSelected.size() == 1)
+    {
+        EntityID id = m_entitiesSelected.begin()->first;
+        m_imGuiWindows.GetRightClick()->Draw<EntityID>(&id);
+    }
+    else
+    {
+        std::vector<EntityID> selectedEntities = ConstructSelectedEntitiesVector();
+        m_imGuiWindows.GetRightClick()->Draw<std::vector<EntityID>>(&selectedEntities);
+    }
+}
+
+void WindowHierarchy::OnEntityCreatedCallBack(std::pair<EntityID, size_t> _pair)
+{
+    m_folderManager.MoveEntityToFolder(_pair.first, m_folderManager.m_rootFolder);
+}
+
+void WindowHierarchy::OnEntityDestroyedCallBack(std::pair<EntityID, size_t> _pair)
+{
+    m_folderManager.RemoveEntityFromAllFolders(_pair.first);
+}
+
+void WindowHierarchy::CreateFolder(std::string _name)
+{
+    hierarchy::FolderID newFolder = m_folderManager.CreateFolder(_name, m_folderManager.m_rootFolder);
+    m_renamingFolder = newFolder;
+    strncpy_s(m_folderRenameBuffer, sizeof(m_folderRenameBuffer), "New Folder", _TRUNCATE);
+}
+
+void WindowHierarchy::AddSelectedEntity(EntityID _ID)
 {
     std::cout << "Add Entity: " << _ID << std::endl;
     if (m_entitiesSelected.contains(_ID))
@@ -238,33 +243,19 @@ void WindowHierarchy::AddSelectedEntity(size_t _ID)
     UpdateManagerSelectedItem(_ID);
 }
 
-void WindowHierarchy::RemoveEntity(size_t _ID)
+void WindowHierarchy::RemoveEntity(EntityID _ID)
 {
     if (m_entitiesSelected.contains(_ID))
     {
         m_entitiesSelected.erase(_ID);
     }
-
     UpdateManagerSelectedItem(_ID);
 }
 
-void WindowHierarchy::SetSelectedEntity(size_t _ID)
+void WindowHierarchy::SetSelectedEntity(EntityID _ID)
 {
     m_entitiesSelected.clear();
     AddSelectedEntity(_ID);
-}
-
-void WindowHierarchy::SetSelectedEntityInRange(size_t _IDStart, size_t _IDEnd)
-{
-    if (_IDStart > _IDEnd)
-    {
-        std::swap(_IDStart, _IDEnd);
-    }
-
-    for (size_t ID = _IDStart; ID <= _IDEnd ; ID++)
-    {
-        AddSelectedEntity(ID);
-    }
 }
 
 bool WindowHierarchy::IsSelectedIndex(size_t index)
@@ -276,36 +267,6 @@ bool WindowHierarchy::IsSelectedIndex(size_t index)
     return false;
 }
 
-size_t WindowHierarchy::GetSmallestSelectedEntity()
-{
-    if (m_entitiesSelected.size() == 0)
-        return INVALID_ENTITY;
-    if (m_entitiesSelected.size() == 1)
-        return m_entitiesSelected.begin()->first;
-
-    size_t ID = INVALID_ENTITY;
-    for (auto& var : m_entitiesSelected)
-    {
-        ID = var.first < ID ? var.first : ID;
-    }
-    return ID;
-}
-
-size_t WindowHierarchy::GetBiggestSelectedEntity()
-{
-    if (m_entitiesSelected.size() == 0)
-        return INVALID_ENTITY;
-    if (m_entitiesSelected.size() == 1)
-        return m_entitiesSelected.begin()->first;
-
-    int ID = -1;
-    for (auto& var : m_entitiesSelected)
-    {
-        ID = int(var.first) > ID ? int(var.first) : ID;
-    }
-    return ID == -1 ? INVALID_ID : ID;
-}
-
 std::vector<EntityID> WindowHierarchy::ConstructSelectedEntitiesVector()
 {
     std::vector<EntityID> toReturn;
@@ -313,23 +274,170 @@ std::vector<EntityID> WindowHierarchy::ConstructSelectedEntitiesVector()
     {
         if (var.second)
         {
-            if (var.first < m_scene.GetAliveEntities().size())
-            {
-                toReturn.push_back(m_scene.GetAliveEntities()[var.first]);
-            }
+           toReturn.push_back(var.first);
         }
     }
     return toReturn;
 }
 
-void WindowHierarchy::UpdateManagerSelectedItem(size_t _selectedIndex)
+void WindowHierarchy::DrawFilterBar()
+{
+    float spacing = ImGui::GetStyle().ItemSpacing.x;
+
+    float resetButtonWidth = ImGui::CalcTextSize("Reset").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+
+    float filtersWidth = ImGui::GetContentRegionAvail().x - resetButtonWidth - spacing;
+
+    if (ImGui::Selectable("Filters", false, 0, ImVec2(filtersWidth, 0.0f)))
+    {
+        ImGui::OpenPopup("HierarchyFiltersPopup");
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Reset", ImVec2(resetButtonWidth, 0.0f)))
+    {
+        for (auto& filter : m_typeFilters)
+        {
+            filter.enabled = false;
+        }
+    }
+
+    if (ImGui::BeginPopup("HierarchyFiltersPopup"))
+    {
+        ImGui::Text("Type filters");
+        ImGui::Separator();
+
+        for (auto& filter : m_typeFilters)
+        {
+            ImGui::PushID(filter.name.c_str());
+
+            if (ImGui::Selectable(filter.name.c_str(), filter.enabled))
+            {
+                filter.enabled = !filter.enabled;
+            }
+
+            ImGui::PopID();
+        }
+
+        ImGui::EndPopup();
+    }
+}
+
+void WindowHierarchy::UpdateManagerSelectedItem(EntityID _selectedIndex)
 {
     if (m_entitiesSelected.size() == 1)
     {
-        m_imGuiWindows.SetSelectedItem<EntityID>(m_scene.GetAliveEntities()[_selectedIndex]);
+        m_imGuiWindows.SetSelectedItem<EntityID>(_selectedIndex);
     }
     else
     {
         m_imGuiWindows.SetSelectedItem<std::monostate>({});
     }
 }
+
+void WindowHierarchy::AddTypeFilter(std::type_index type, const std::string& name)
+{
+    for (const TypeFilter& filter : m_typeFilters)
+    {
+        if (filter.type == type)
+            return;
+    }
+
+    m_typeFilters.push_back({
+        type,
+        name,
+        false
+        });
+}
+
+bool WindowHierarchy::PassTypeFilters(EntityID _ID)
+{
+    bool hasActiveFilter = false;
+    for (const TypeFilter& filter : m_typeFilters)
+    {
+        if (!filter.enabled) //On skip le filter si il est desactivee
+            continue;
+
+        hasActiveFilter = true;
+
+        if (filter.type == std::type_index(typeid(timeline::MeshInstance)) &&
+            m_scene.GetComponentStorage<timeline::MeshInstance>().Has(_ID))
+        {
+            return true;
+        }
+
+        if (filter.type == std::type_index(typeid(timeline::Light)) &&
+            m_scene.GetComponentStorage<timeline::Light>().Has(_ID))
+        {
+            return true;
+        }
+    }
+
+    return !hasActiveFilter;
+}
+
+void WindowHierarchy::DrawFolders(hierarchy::FolderID _folderID)
+{
+    hierarchy::Folder& folder = m_folderManager.GetFolder(_folderID);
+    const bool isRoot = folder.id == m_folderManager.m_rootFolder;
+    if (isRoot)
+    {
+        // Pas de TreeNode, pas de nom, pas de drag/drop, pas de fermeture.
+        for (hierarchy::FolderID childID : folder.children)
+        {
+            DrawFolders(childID);
+        }
+
+        for (EntityID entity : folder.entities)
+        {
+            DrawEntityHierarchyItem(entity);
+        }
+
+        return;
+    }
+    
+    if (m_renamingFolder == folder.id)
+    {
+        ImGui::SetKeyboardFocusHere();
+
+        bool enterPressed = ImGui::InputText(
+            "##RenameFolder",
+            m_folderRenameBuffer,
+            sizeof(m_folderRenameBuffer),
+            ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll
+        );
+        if (enterPressed || ImGui::IsItemDeactivatedAfterEdit() || ((ImGui::GetMouseClickedCount(ImGuiMouseButton_Left) || ImGui::GetMouseClickedCount(ImGuiMouseButton_Right)) && !ImGui::IsItemClicked()))
+        {
+            folder.name = m_folderRenameBuffer;
+            m_renamingFolder = hierarchy::INVALID_FOLDER;
+        }
+        return;
+    }
+
+    ImGuiTreeNodeFlags isLeaf = (folder.entities.size() > 0 || folder.children.size() > 0) ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf;
+    ImGuiTreeNodeFlags flags = isLeaf | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+    ImGui::PushID(static_cast<int>(folder.id));
+    bool opened = ImGui::TreeNodeEx(folder.name.c_str(), flags);
+
+    if (opened)
+    {
+        for (hierarchy::FolderID childID : folder.children)
+        {
+            DrawFolders(childID);
+        }
+
+        for (EntityID entity : folder.entities)
+        {
+            if (PassTypeFilters(entity))
+            {
+                DrawEntityHierarchyItem(entity);
+            }
+        }
+
+        ImGui::TreePop();
+    }
+    ImGui::PopID();
+}
+
