@@ -69,6 +69,9 @@ namespace core::gpu {
     class Device;
 }
 
+namespace hierarchy {
+    struct Folder;
+}
 
 #pragma endregion
 class ImGuiWindows
@@ -157,7 +160,7 @@ private:
     core::gpu::ImguiContext* m_imGuiContext;
     Scene* m_scene;
     core::Input* m_input;
-    std::variant<std::monostate, EntityID, graphics::resources::Mesh*, FileEntry*> m_selectedItem = std::monostate{};
+    std::variant<std::monostate, EntityID, graphics::resources::Mesh*, FileEntry* , hierarchy::Folder*> m_selectedItem = std::monostate{};
 };
 
 #endif //EDITOR_IMGUIWINDOWS_H
