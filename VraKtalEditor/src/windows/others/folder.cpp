@@ -25,6 +25,7 @@ namespace hierarchy {
             });
 
         GetFolder(_parent).children.push_back(id);
+        m_folderParent[id] = _parent;
         return id;
     }
 
@@ -55,6 +56,43 @@ namespace hierarchy {
         }
         GetFolder(targetFolder).entities.push_back(entity);
         m_entityFolder[entity] = targetFolder;
+    }
+
+    void FolderManager::MoveFolderToFolder(FolderID _idMoving, FolderID _idTarget)
+    {
+        if (_idMoving == INVALID_FOLDER || _idTarget == INVALID_FOLDER)
+            return;
+        if (_idMoving == m_rootFolder)
+            return; // Root 
+        if (_idMoving == _idTarget)
+            return;
+
+        Folder& movingFolder = GetFolder(_idMoving);
+        Folder& targetFolder = GetFolder(_idTarget);
+
+        FolderID parentCheck = _idTarget;
+        while (parentCheck != INVALID_FOLDER)
+        {
+            if (parentCheck == _idMoving)
+                return;
+            parentCheck = GetFolder(parentCheck).parent;
+        }
+
+        if (movingFolder.parent != INVALID_FOLDER)
+        {
+            Folder& oldParent = GetFolder(movingFolder.parent);
+
+            oldParent.children.erase(
+                std::remove(oldParent.children.begin(), oldParent.children.end(), _idMoving),
+                oldParent.children.end()
+            );
+        }
+
+        if (std::find(targetFolder.children.begin(), targetFolder.children.end(), _idMoving) == targetFolder.children.end())
+        {
+            targetFolder.children.push_back(_idMoving);
+        }
+        movingFolder.parent = _idTarget;
     }
 
     void FolderManager::RemoveEntityFromFolder(EntityID entity)

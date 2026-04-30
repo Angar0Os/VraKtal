@@ -29,6 +29,7 @@ namespace hierarchy {
 		Folder& GetFolder(FolderID _id);
 
 		void MoveEntityToFolder(EntityID entity, FolderID targetFolder);
+		void MoveFolderToFolder(FolderID _idMoving, FolderID _idTarget);
 
 		void RemoveEntityFromFolder(EntityID entity);
 		void RemoveEntityFromAllFolders(EntityID entity);
@@ -41,6 +42,7 @@ namespace hierarchy {
 
 		std::vector<Folder> m_folders;
 		std::unordered_map<EntityID, FolderID> m_entityFolder;
+		std::unordered_map<FolderID, FolderID> m_folderParent;
 		FolderID m_rootFolder = 0;
 		FolderID m_nextFolderID = 1;
 	
