@@ -444,7 +444,10 @@ void WindowHierarchy::DrawFolders(hierarchy::FolderID _folderID)
 
         for (EntityID entity : folder.entities)
         {
-            DrawEntityHierarchyItem(entity);
+            if (PassTypeFilters(entity))
+            {
+                DrawEntityHierarchyItem(entity);
+            }
         }
 
         return;
@@ -542,11 +545,15 @@ void WindowHierarchy::DeleteFolder(hierarchy::FolderID _folderID)
 
 void WindowHierarchy::DeleteFolderAndContent(hierarchy::FolderID _folderID)
 {
+
     for (hierarchy::FolderID childFolder : m_folderManager.GetFolder(_folderID).children)
     {
-        DeleteFolder(childFolder);
+        m_folderManager.DeleteFolder(childFolder);
     }
-    for (EntityID entity : m_folderManager.GetFolder(_folderID).entities)
+    //on doit faire une copie a cause du bind OnDestroyedEntity
+    std::vector<EntityID> entities = m_folderManager.GetFolder(_folderID).entities;
+
+    for (EntityID entity : entities)
     {
         m_scene.DestroyEntity(entity);
     }
