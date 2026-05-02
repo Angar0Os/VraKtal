@@ -48,11 +48,11 @@ void ImGuizmoHelper::DrawGuizmo()
         return;
     }
 
-
     auto viewport = m_imGuiWindows.GetContext()->GetViewportState();
     if (! viewport->width <= 0 && !viewport->height <= 0)
     {
         ImGuizmo::BeginFrame();
+        DrawGuizmoToolbar();
         ImGuizmo::SetDrawlist();
         ImGuizmo::SetRect(viewport->posX, viewport->posY, viewport->width, viewport->height);
 
@@ -94,4 +94,51 @@ void ImGuizmoHelper::DrawGuizmo()
 void ImGuizmoHelper::AddMatriceToEdit(glm::mat4* _matrice)
 {
     m_matrices.push_back(_matrice);
+}
+
+void ImGuizmoHelper::DrawGuizmoToolbar()
+{
+    ImGui::SetNextWindowPos(ImVec2(
+        m_imGuiWindows.GetContext()->GetViewportState()->posX + 10.0f,
+        m_imGuiWindows.GetContext()->GetViewportState()->posY + 10.0f
+    ));
+
+    ImGui::SetNextWindowBgAlpha(0.35f);
+
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoDecoration |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_AlwaysAutoResize;
+
+    if (ImGui::Begin("##GuizmoToolbar", nullptr, flags))
+    {
+        auto ToggleButton = [](const char* label, bool active)
+            {
+                if (active)
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+
+                bool pressed = ImGui::Button(label);
+
+                if (active)
+                    ImGui::PopStyleColor();
+
+                return pressed;
+            };
+
+        if (ToggleButton("T", m_settings.currentOperation == ImGuizmo::TRANSLATE))
+            m_settings.currentOperation = ImGuizmo::TRANSLATE;
+
+        ImGui::SameLine();
+
+        if (ToggleButton("R", m_settings.currentOperation == ImGuizmo::ROTATE))
+            m_settings.currentOperation = ImGuizmo::ROTATE;
+
+        ImGui::SameLine();
+
+        if (ToggleButton("S", m_settings.currentOperation == ImGuizmo::SCALE))
+            m_settings.currentOperation = ImGuizmo::SCALE;
+    }
+
+    ImGui::End();
 }
