@@ -21,8 +21,8 @@ namespace graphics
 {
 	struct PassAttachment
 	{
-		std::unique_ptr<Image>   image;
-		std::unique_ptr<Texture> texture;
+		std::unique_ptr<Image>   image   = nullptr;
+		std::unique_ptr<Texture> texture = nullptr;
 	};
 
 	struct ColorAttachmentDesc

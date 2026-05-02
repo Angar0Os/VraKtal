@@ -39,7 +39,7 @@ void graphics::LightingPass::CreateAttachments()
 		.mipLevels = 1,
 		.format = TextureFormat::RGBA8_SRGB,
 		.tiling = ImageTiling::Optimal,
-		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc,
+		.usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc | ImageUsage::Sampled,
 		.memoryProperties = EMemoryProperty::DeviceLocal,
 		.samples = SampleCount::e1
 	};
@@ -215,7 +215,7 @@ void graphics::LightingPass::Draw(CommandBuffer& cmd,
 	cmd.TransitionImageLayout(
 		m_colorAttachments[0].image.get(),
 		ImageLayout::ColorAttachment,
-		ImageLayout::TransferSrc,
+		ImageLayout::ShaderReadOnly,
 		false
 	);
 }

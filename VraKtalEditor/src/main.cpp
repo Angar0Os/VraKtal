@@ -85,7 +85,7 @@ public:
         timeline::MeshInstance timelineMesh;
         timelineMesh.meshID = m_reManager->GetRessourceID<graphics::resources::Mesh>("assets/models/cave.obj");
         timelineMesh.temp_properties.transform = glm::rotate(glm::mat4(1), glm::radians(270.0f), { 1,0,0 });
-        timelineMesh.temp_properties.transform = glm::scale(timelineMesh.temp_properties.transform, glm::vec3(10, 10, 10));
+        timelineMesh.temp_properties.transform = glm::scale(timelineMesh.temp_properties.transform, glm::vec3(1.0f, 1.0f, 1.0f));
         m_scene->CreateEntity<timeline::MeshInstance>(timelineMesh);
     }
 
@@ -101,103 +101,119 @@ public:
             Sand.SetTexture("assets/textures/extracted_textures/diffuse_sand.jpg.png", "albedo");
             Sand.SetTexture("assets/textures/extracted_textures/normal_sand.png.png", "normal");
             Sand.SetMetallicRoughness(0.0, 0.75);
+
             graphics::resources::object::Material Rocktill;
             Rocktill.name = "Rocktill";
             Rocktill.SetTexture("assets/textures/extracted_textures/diffus_rocktill_02.jpg.png", "albedo");
             Rocktill.SetTexture("assets/textures/extracted_textures/normal_rocktill_02.png.png", "normal");
             Rocktill.SetMetallicRoughness(0.0, 0.85);
+
             graphics::resources::object::Material watreplant;
             watreplant.name = "watreplant";
             watreplant.SetTexture("assets/textures/extracted_textures/diffus_plane_watreplant.tga.png", "albedo");
             watreplant.SetTexture("assets/textures/extracted_textures/normal_plane_watreplant.png.png", "normal");
             watreplant.SetMetallicRoughness(0.0, 0.65);
+
             graphics::resources::object::Material foliage;
             foliage.name = "foliage";
             foliage.SetTexture("assets/textures/extracted_textures/diffus_foliage_03_copy.tga.png", "albedo");
             foliage.SetTexture("assets/textures/extracted_textures/normal_foliage_03.png.png", "normal");
             foliage.SetMetallicRoughness(0.0, 0.78);
+
             graphics::resources::object::Material foliage1;
             foliage1.name = "foliage";
             foliage1.SetTexture("assets/textures/extracted_textures/diffus_foliage_03_copy.tga.png", "albedo");
             foliage1.SetTexture("assets/textures/extracted_textures/normal_foliage_03.png.png", "normal");
             foliage1.SetMetallicRoughness(0.0, 0.78);
+
             graphics::resources::object::Material CaveFoliage;
             CaveFoliage.name = "Cave Foliage";
             CaveFoliage.SetTexture("assets/textures/extracted_textures/diffuse_cave_foliage.tga.png", "albedo");
             CaveFoliage.SetTexture("assets/textures/extracted_textures/normal_cave_foliage.png.png", "normal");
             CaveFoliage.SetMetallicRoughness(0.0, 0.60);
+
             graphics::resources::object::Material Cave;
             Cave.name = "Cave";
             Cave.SetTexture("assets/textures/extracted_textures/diffuse_cave.jpg.png", "albedo");
             Cave.SetTexture("assets/textures/extracted_textures/normal_cave.png.png", "normal");
             Cave.SetMetallicRoughness(0.0, 0.72);
+
             graphics::resources::object::Material grass;
             grass.name = "grass";
             grass.SetTexture("assets/textures/extracted_textures/diffuse_grass.jpg.png", "albedo");
             grass.SetTexture("assets/textures/extracted_textures/normal_grass.png.png", "normal");
             grass.SetMetallicRoughness(0.0, 0.88);
+
             graphics::resources::object::Material CaveIndoor;
             CaveIndoor.name = "Cave indoor";
             CaveIndoor.SetTexture("assets/textures/extracted_textures/diffuse_cave_indoor.jpg.png", "albedo");
             CaveIndoor.SetTexture("assets/textures/extracted_textures/normal_cave_indoor.png.png", "normal");
             CaveIndoor.SetMetallicRoughness(0.0, 0.82);
+
             graphics::resources::object::Material CaveBole;
             CaveBole.name = "Cave bole";
             CaveBole.SetTexture("assets/textures/extracted_textures/diffuse_cave_bole.jpg.png", "albedo");
             CaveBole.SetTexture("assets/textures/extracted_textures/normal_cave_bole.png.png", "normal");
             CaveBole.SetMetallicRoughness(0.0, 0.90);
+
             graphics::resources::object::Material CaveFoliage1;
             CaveFoliage1.name = "Cave foliage";
             CaveFoliage1.SetTexture("assets/textures/extracted_textures/diffuse_cave_foliage.tga.png", "albedo");
             CaveFoliage1.SetTexture("assets/textures/extracted_textures/normal_cave_foliage.png.png", "normal");
             CaveFoliage1.SetMetallicRoughness(0.0, 0.60);
+
             graphics::resources::object::Material CaveRock;
             CaveRock.name = "Cave rocktill";
             CaveRock.SetTexture("assets/textures/extracted_textures/diffus_rocktill_02.jpg.png", "albedo");
             CaveRock.SetTexture("assets/textures/extracted_textures/normal_rocktill_02.png.png", "normal");
             CaveRock.SetMetallicRoughness(0.0, 0.80);
+
             graphics::resources::object::Material Rocks;
             Rocks.name = "Rocks";
             Rocks.SetTexture("assets/textures/extracted_textures/diffus_rocks.jpg.png", "albedo");
             Rocks.SetTexture("assets/textures/extracted_textures/normal_rocks.png.png", "normal");
             Rocks.SetMetallicRoughness(0.0, 0.78);
+
             graphics::resources::object::Material Stones;
             Stones.name = "Stones";
             Stones.SetTexture("assets/textures/extracted_textures/diffuse_cave_stones.jpg.png", "albedo");
             Stones.SetTexture("assets/textures/extracted_textures/normal_cave_stones.png.png", "normal");
             Stones.SetMetallicRoughness(0.0, 0.70);
+
             graphics::resources::object::Material skeleton;
             skeleton.name = "skeleton";
             skeleton.SetTexture("assets/textures/extracted_textures/diffuse_skeleton.jpg.png", "albedo");
             skeleton.SetTexture("assets/textures/extracted_textures/normal_skeleton.png.png", "normal");
             skeleton.SetMetallicRoughness(0.0, 0.85);
+
             graphics::resources::object::Material fetich;
             fetich.name = "fetich";
             fetich.SetTexture("assets/textures/extracted_textures/diffus_fetich.jpg.png", "albedo");
             fetich.SetTexture("assets/textures/extracted_textures/normal_fetich.png.png", "normal");
             fetich.SetMetallicRoughness(0.0, 0.68);
+
             graphics::resources::object::Material GrassTransition;
             GrassTransition.name = "grass transition";
             GrassTransition.SetTexture("assets/textures/extracted_textures/diffus_grass-transition_clairiere.jpg.png", "albedo");
             GrassTransition.SetMetallicRoughness(0.0, 0.86);
 
-            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, GrassTransition  , matLayout)) ;
-            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, CaveFoliage   , matLayout))    ;
-            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, Rocktill   , matLayout))       ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, Sand, matLayout));
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, Rocktill   , matLayout))       ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, watreplant   , matLayout))     ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, foliage   , matLayout))        ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, foliage1   , matLayout))       ;
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, CaveFoliage   , matLayout))    ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, Cave   , matLayout))           ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, grass   , matLayout))          ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, CaveIndoor   , matLayout))     ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, CaveBole   , matLayout))       ;
-            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, CaveFoliage  , matLayout))     ;
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, CaveFoliage1  , matLayout))    ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, CaveRock  , matLayout))        ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, Rocks  , matLayout))           ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, Stones  , matLayout))          ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, skeleton  , matLayout))        ;
             mesh->materials.push_back(loaders::MaterialLoader::Load(_device, fetich  , matLayout))          ;
+            mesh->materials.push_back(loaders::MaterialLoader::Load(_device, GrassTransition  , matLayout)) ;
             
         }
 
@@ -224,7 +240,7 @@ public:
             glm::radians(45.0f),
             aspectRatio,
             0.1f,
-            100.0f
+            1000.0f
         );
         projection[1][1] *= -1;
 
@@ -249,7 +265,7 @@ public:
     ~Camera() {};
 
     void MoveCamera(glm::vec2 value) {
-        float speed = 0.05;
+        float speed = 0.1;
         cameraPosition += (value.y * speed) * direction;
 
         glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -316,6 +332,7 @@ int main()
         {
             imGuiWindows.DrawImGui();
         });
+
 #endif //VRAKTAL_EDITOR
 
     const float aspectRatio = 800.0f / 600.0f;
@@ -323,7 +340,7 @@ int main()
         glm::radians(45.0f),
         aspectRatio,
         0.1f,
-        100.0f
+        100000.0f
     );
     projection[1][1] *= -1;
 
