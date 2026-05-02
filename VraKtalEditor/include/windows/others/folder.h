@@ -40,12 +40,14 @@ namespace hierarchy {
 
 		std::vector<EntityID> GetEntitiesInRange(EntityID _start, EntityID _end);
 
-		std::vector<Folder> m_folders;
+		std::vector<Folder> m_folders; //tout les folders 
 		std::unordered_map<EntityID, FolderID> m_entityFolder;
-		std::unordered_map<FolderID, FolderID> m_folderParent;
+
 		FolderID m_rootFolder = 0;
 		FolderID m_nextFolderID = 1;
-	
+		
+		//c'est frustrant , c'est sur qu'on peut faire mieux
+
 	private:
 		void InitFolders();
 	};

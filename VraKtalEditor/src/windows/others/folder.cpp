@@ -25,7 +25,6 @@ namespace hierarchy {
             });
 
         GetFolder(_parent).children.push_back(id);
-        m_folderParent[id] = _parent;
         return id;
     }
 
