@@ -12,6 +12,7 @@
 #include <variant>
 #include <unordered_map>
 #include <windows/others/folder.h>
+#include <scene/timeline/entityBase.h>
 
 
 RightClick::RightClick(ImGuiWindows* _windows) : m_windows(_windows) {}
@@ -50,6 +51,14 @@ void RightClick::Content(WindowHierarchy* window, hierarchy::Folder* folder)
     if (ImGui::Selectable("Delete Folder And Content"))
     {
         window->DeleteFolderAndContent(folder->id);
+        CloseMenu();
+    }
+
+    if (ImGui::Selectable("Add Entity to Folder"))
+    {
+        EntityID createdEntity = m_windows->GetScene()->CreateEntity();
+        window->GetFolderManager()->MoveEntityToFolder(createdEntity, folder->id);
+        folder->open = true;
         CloseMenu();
     }
 }
