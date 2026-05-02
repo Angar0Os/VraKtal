@@ -33,6 +33,7 @@ ImGuizmoHelper::ImGuizmoHelper(ImGuiWindows* _imGuiWindows, core::Input* _input)
     _input->BindActionKey({ input::Key::S }, "Scale");
     _input->BindActionCallback<GuizmoSettings, &GuizmoSettings::SetOperationToScale>("Scale", &m_settings, input::KeyState::Press);
 
+    m_settings.currentMode = ImGuizmo::LOCAL;
 }
 
 ImGuizmoHelper::~ImGuizmoHelper()
