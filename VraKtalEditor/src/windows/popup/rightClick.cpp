@@ -1,5 +1,6 @@
 #include "../../../include/windows/popup/rightClick.h"
 #include "../../../include/imGuiWindows.h"
+#include "../../../include/windows/windowHierarchy.h"
 
 #include <scene/scene.h>
 #include <utils/denseStorage.h>
@@ -9,6 +10,9 @@
 #include <scene/timeline/components/light.h>
 
 #include <variant>
+#include <unordered_map>
+#include <windows/others/folder.h>
+#include <scene/timeline/entityBase.h>
 
 
 RightClick::RightClick(ImGuiWindows* _windows) : m_windows(_windows) {}
@@ -18,30 +22,72 @@ RightClick::~RightClick(){}
 template<>
 void RightClick::Content(WindowHierarchy* _window)
 {
-    if (ImGui::Button("Add Entity"))
+    if (ImGui::Selectable("Add Entity"))
     {
         m_windows->GetScene()->CreateEntity();
+        CloseMenu();
+    }
+    if (ImGui::Selectable("Add Folder"))
+    {
+        _window->CreateFolder("New Folder");
+        CloseMenu();
+    }
+}
+template<>
+void RightClick::Content(WindowHierarchy* window, hierarchy::Folder* folder)
+{
+    if (ImGui::Selectable("Rename Folder"))
+    {
+        window->RenameFolder(folder->id);
+        CloseMenu();
+    }
+
+    if (ImGui::Selectable("Delete Folder"))
+    {
+        window->DeleteFolder(folder->id);
+        CloseMenu();
+    }
+
+    if (ImGui::Selectable("Delete Folder And Content"))
+    {
+        window->DeleteFolderAndContent(folder->id);
+        CloseMenu();
+    }
+
+    if (ImGui::Selectable("Add Entity to Folder"))
+    {
+        EntityID createdEntity = m_windows->GetScene()->CreateEntity();
+        window->GetFolderManager()->MoveEntityToFolder(createdEntity, folder->id);
+        folder->open = true;
+        CloseMenu();
+    }
+}
+
+
+template<>
+void RightClick::Content(EntityID* _ID) 
+{
+    if (*_ID == INVALID_ENTITY)
+    {
+        return;
+    }
+
+    if (ImGui::Selectable("Destroy Entity"))
+    {
+        m_windows->GetScene()->DestroyEntity(*_ID);
         CloseMenu();
     }
 }
 
 template<>
-void RightClick::Content(EntityID* _ID) 
+void RightClick::Content(std::vector<EntityID>* _IdMap)
 {
-    EntityID selectedEntity = m_windows->IsSelectedItemType<EntityID>() ? m_windows->GetSelectedItem<EntityID>() : INVALID_ENTITY;
-
-    if (selectedEntity == INVALID_ENTITY)
+    if (ImGui::Selectable("Destroy Entity"))
     {
-        return;
-    }
-
-    if (ImGui::Button("Destroy Entity"))
-    {
-        if (selectedEntity == *_ID)
+        for (auto var : *_IdMap)
         {
-            m_windows->ResetSelectedItem();
+            m_windows->GetScene()->DestroyEntity(var);
         }
-        m_windows->GetScene()->DestroyEntity(*_ID);
         CloseMenu();
     }
 }

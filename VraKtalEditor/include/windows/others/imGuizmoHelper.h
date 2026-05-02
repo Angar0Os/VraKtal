@@ -32,10 +32,13 @@ public:
 
 	void DrawGuizmo();
 	void AddMatriceToEdit(glm::mat4* _matrice);
+private:
+	void DrawGuizmoToolbar();
 
 private:
 	ImGuiWindows& m_imGuiWindows;
 
 	GuizmoSettings m_settings;
 	std::vector<glm::mat4*> m_matrices;
+
 };

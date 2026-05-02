@@ -38,13 +38,18 @@ EntityID Scene::CreateEntity()
 		reverseEntityMap.resize(nextEntityId + 1, INVALID);
 		reverseEntityMap[nextEntityId] = (uint32_t)aliveEntities.size() - 1;
 	}
+
 	std::string entityName = "entity" + std::to_string(aliveEntities.back());
 	GetComponentStorage<std::string>().Add(aliveEntities.back(),entityName);
+	
+	CallOnCreatedCallBacks({ aliveEntities.back() , aliveEntities.size() });
+	
 	return aliveEntities.back();
 }
 
 void Scene::DestroyEntity(EntityID entityID)
 {
+	CallOnDestroyedCallBacks({ entityID , reverseEntityMap[entityID] });
 	int index = reverseEntityMap[entityID];
 
 	if (aliveEntities[index])
@@ -68,5 +73,21 @@ void Scene::DestroyEntity(EntityID entityID)
 	else
 	{
 		std::cout << "Entity with ID: " << entityID << " does not exist." << std::endl;
+	}
+}
+
+void Scene::CallOnCreatedCallBacks(std::pair<EntityID, size_t> _data)
+{
+	for (size_t i = 0; i < m_CreatedCallbacks.size(); i++)
+	{
+		m_CreatedCallbacks[i].Execute(_data);
+	}
+}
+
+void Scene::CallOnDestroyedCallBacks(std::pair<EntityID, size_t> _data)
+{
+	for (size_t i = 0; i < m_DestroyedCallbacks.size(); i++)
+	{
+		m_DestroyedCallbacks[i].Execute(_data);
 	}
 }

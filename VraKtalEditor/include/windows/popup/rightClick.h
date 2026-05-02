@@ -3,10 +3,16 @@
 #include <typeindex>
 #include <scene/timeline/entityBase.h>
 #include <iostream>
+#include <vector>
+#include <unordered_map>
 
 class ImGuiWindows;
 class WindowHierarchy;
 class WindowInspector;
+
+namespace hierarchy {
+    struct Folder;
+}
 
 class RightClick
 {
@@ -14,41 +20,36 @@ public:
     RightClick(ImGuiWindows* _windows);
 	~RightClick();
 
-    template<typename T>
-    bool Draw(T* object) {
-        if (!object)
+    template<typename... Args>
+    bool Draw(Args*... objects)
+    {
+        if (((objects == nullptr) || ...))
             return false;
 
         if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) &&
             ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-        { //Set Value correctly and open menu
-            std::cout << "Right click on " << typeid(T).name() << std::endl;
-            m_lastType = object;
-            bMenuOpen = true;
+        {
+            std::cout << "Right click popup" << std::endl;
 
             ImGui::SetNextWindowPos(ImGui::GetMousePos());
             ImGui::OpenPopup("RightClickPopup");
         }
 
-        if (m_lastType == object && ImGui::BeginPopup("RightClickPopup")) //Draw menu
+        if (ImGui::BeginPopup("RightClickPopup"))
         {
-            Content<T>(object);
+            Content<Args...>(objects...);
             ImGui::EndPopup();
             return true;
         }
-        else if (m_lastType == object && bMenuOpen)
-        {
-            CloseMenu();
-            return false;
-        }
 
         return false;
-    };
+    }
 
-    template<typename T>
-    void Content(T* object) {
+    template<typename... Args>
+    void Content(Args*... objects)
+    {
         ImGui::Text("No inspector available for this type.");
-    };
+    }
 
 private:
 	ImGuiWindows* m_windows;
@@ -65,8 +66,15 @@ private:
 #pragma region Hierarchy
 template<>
 void RightClick::Content(WindowHierarchy* _window);
+
+template<>
+void RightClick::Content(WindowHierarchy* window, hierarchy::Folder* folder);
+
 template<>
 void RightClick::Content(EntityID* _ID);
+
+template<>
+void RightClick::Content(std::vector<EntityID>* _IdMap);
 #pragma endregion
 
 #pragma region Inspector

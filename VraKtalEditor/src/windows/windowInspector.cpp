@@ -41,6 +41,7 @@ void WindowInspector::Draw()
 
             if (ID != INVALID_ENTITY)
             {
+                //Handle Drop
                 Mesh_ID draggedMeshID = INVALID_ID;
                 m_windows.GetDragNDrop()->DropWindow<FileEntry, Mesh_ID>(draggedMeshID);
                 if (draggedMeshID != INVALID_ID)
@@ -48,8 +49,17 @@ void WindowInspector::Draw()
                     scene->GetComponentStorage<timeline::MeshInstance>().Get(ID).meshID = draggedMeshID;
                 }
 
-                std::string& label = scene->GetEntityComponent<std::string>(ID);
-                ImGui::Text("%s", label.c_str());
+                if (scene->GetComponentStorage<std::string>().Has(ID))
+                {
+                    std::string& label = scene->GetEntityComponent<std::string>(ID);
+                    ImGui::Text("%s", label.c_str());
+                    ImGui::SameLine();
+                    ImGui::Text("#%d", ID);
+                }
+                else
+                {
+                    ImGui::Text("This Entity Have no name this is not normal behaviour");
+                }
 
                 if (scene->GetComponentStorage<timeline::MeshInstance>().Has(ID))
                 {
@@ -69,12 +79,20 @@ void WindowInspector::Draw()
             FileEntry* file = m_windows.GetSelectedItem<FileEntry*>();
             if (file->fileType == FileType::MeshGLTF || file->fileType == FileType::MeshOBJ)
             {
-                ImGui::Text("Mesh Preview: %s" , file->path);
                 uint32_t ressourceID = m_ressourceManager->GetRessourceID<graphics::resources::Mesh>(file->GetRelativeFileLocation().string());
-                if (ressourceID != 0xFFFFFFFFu)
+                if (ressourceID != INVALID_ID)
                 {
+                    ImGui::Text("Mesh Preview: %s" , file->path.string().c_str());
                     graphics::resources::Mesh& _mesh = m_ressourceManager->GetRessource<graphics::resources::Mesh>(ressourceID);
                     m_windows.GetMeshPlot()->Draw(&_mesh);
+                }
+                else
+                {
+                    ImGui::Text("Mesh isn't loaded");
+                    if (ImGui::Button(("Load Mesh" + file->filename).c_str()))
+                    {
+                        m_ressourceManager->LoadRessource<graphics::resources::Mesh>(file->GetRelativeFileLocation().string());
+                    }
                 }
             }
             else
