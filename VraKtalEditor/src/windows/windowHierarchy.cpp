@@ -45,9 +45,19 @@ void WindowHierarchy::Draw()
     ComponentStorage<timeline::MeshInstance>& meshStorage = m_scene.GetComponentStorage<timeline::MeshInstance>();
     if (m_imGuiWindows.BeginWindow("Hierarchy", true))
     {
+        HandleInputs();
+
+        if (m_pendingDeleteFolder == m_selectedFolder)
+        {
+            m_selectedFolder = INVALID_ID;
+            m_pendingDeleteFolder = INVALID_ID;
+        }
+
         DrawFilterBar();
         ImGui::Separator();
+        
         HandleRangeSelect();
+        
         DrawFolders(m_folderManager.m_rootFolder);
 
         if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) &&
@@ -210,15 +220,7 @@ void WindowHierarchy::HandleRightClick()
 {
     if (LastTypeSelectedWasFolderId && m_selectedFolder != INVALID_ENTITY)
     {
-        if (m_pendingDeleteFolder != m_selectedFolder)
-        {
-            m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy , hierarchy::Folder>(this , &m_folderManager.GetFolder(m_selectedFolder));
-        }
-        else
-        {
-            m_selectedFolder = INVALID_ID;
-            m_pendingDeleteFolder = INVALID_ID;
-        }
+        m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy , hierarchy::Folder>(this , &m_folderManager.GetFolder(m_selectedFolder));
     }
     else if (m_entitiesSelected.size() > 0)
     {
@@ -236,6 +238,48 @@ void WindowHierarchy::HandleRightClick()
     else
     {
         m_imGuiWindows.GetRightClick()->Draw<WindowHierarchy>(this);
+    }
+}
+
+void WindowHierarchy::HandleInputs()
+{
+    if (!ImGui::IsWindowFocused())
+        return;
+
+    /*
+        On pourrait utiliser notre system d'input pour ca.
+        Je sais que c'est pas quelque chose qu'imGui recommande donc je sais pas si c'est une bonne idee
+    */
+
+    if (LastTypeSelectedWasFolderId && m_selectedFolder != INVALID_ID)
+    {
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) || ImGui::IsKeyPressed(ImGuiKey_F2))
+        {
+            RenameFolder(m_selectedFolder);
+        }
+        else if (ImGui::IsKeyPressed(ImGuiKey_Delete))
+        {
+            if (ImGui::IsKeyPressed(ImGuiKey_LeftShift))
+            {
+                DeleteFolderAndContent(m_selectedFolder);
+            }
+            else
+            {
+                DeleteFolder(m_selectedFolder);
+            }
+
+        }
+        
+    }
+    else if (!LastTypeSelectedWasFolderId && m_entitiesSelected.size() > 0)
+    {
+        if (ImGui::IsKeyPressed(ImGuiKey_Delete))
+        {
+            for (auto& var : m_entitiesSelected)
+            {
+                m_scene.DestroyEntity(var.first);
+            }
+        }
     }
 }
 
@@ -441,7 +485,6 @@ void WindowHierarchy::DrawFolders(hierarchy::FolderID _folderID)
         {
             DrawFolders(childID);
         }
-
         for (EntityID entity : folder.entities)
         {
             if (PassTypeFilters(entity))
@@ -476,17 +519,15 @@ void WindowHierarchy::DrawFolders(hierarchy::FolderID _folderID)
     ImGuiTreeNodeFlags flags =
         isLeaf | //pour la fleche
         ImGuiTreeNodeFlags_SpanAvailWidth | //pour la largeur
-        (bIsSelected ? ImGuiTreeNodeFlags_Selected : 0); //pour la couleur
+        (bIsSelected ? ImGuiTreeNodeFlags_Selected : 0) | //pour la couleur
+        (folder.open ? ImGuiTreeNodeFlags_DefaultOpen : 0) //pour ouvrir le node f(est-ce que le folder est ouvert)
+        ;
 
     ImGui::PushID(static_cast<int>(folder.id));
     bool opened = ImGui::TreeNodeEx(folder.name.c_str(), flags);
     if (ImGui::IsItemHovered()) // Rename
     {
-        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) || ImGui::IsKeyPressed(ImGuiKey_F2))
-        {
-            RenameFolder(folder.id);
-        }
-        else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))
         {
             SelectFolder(folder.id);
         }
@@ -510,7 +551,6 @@ void WindowHierarchy::DrawFolders(hierarchy::FolderID _folderID)
             m_folderManager.MoveEntityToFolder(payload->entities[i], folder.id);
         }
     }
-
     if (opened)
     {
         for (hierarchy::FolderID childID : folder.children)

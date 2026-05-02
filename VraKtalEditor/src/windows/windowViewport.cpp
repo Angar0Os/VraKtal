@@ -47,6 +47,7 @@ void WindowViewport::Draw()
 				glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
 			glfwSetInputMode(m_imguiWindows->GetWindow()->GlfwHandle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
+
 		m_imguiWindows->GetImGuizmoHelper()->DrawGuizmo();
 	}
 	m_imguiWindows->EndWindow("Viewport");

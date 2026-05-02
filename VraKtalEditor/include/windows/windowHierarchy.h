@@ -38,10 +38,13 @@ public:
 	void RenameFolder(hierarchy::FolderID _folderID);
 	void DeleteFolder(hierarchy::FolderID _folderID);
 	void DeleteFolderAndContent(hierarchy::FolderID _folderID);
+
+	hierarchy::FolderManager* GetFolderManager() { return &m_folderManager; };
 private:
 	void DrawEntityHierarchyItem(EntityID _ID);
 	void HandleRangeSelect();
 	void HandleRightClick();
+	void HandleInputs();
 
 private:
 	Scene& m_scene;
