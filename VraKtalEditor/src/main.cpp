@@ -39,6 +39,7 @@
 #endif // VRAKTAL_EDITOR
 #include <scene/system/systems/lightSystem.h>
 #include <memory>
+#include <graphics/resources/object/mesh.h>
 
 
 class App
@@ -349,7 +350,7 @@ int main()
     systemManager.AddSystem<LightSystem>(&renderer);
 
 #ifdef VRAKTAL_EDITOR
-    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input , app.m_scene ,*app.m_reManager , &device);
+    ImGuiWindows imGuiWindows = ImGuiWindows(device.GetImGuiContext(), &renderer, &window, input , app.m_scene ,*app.m_reManager , *app.m_asManager, &device);
     device.GetImGuiContext()->BindPrepareDrawData([&]()
         {
             imGuiWindows.DrawImGui();

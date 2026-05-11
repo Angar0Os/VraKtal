@@ -276,19 +276,14 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 
 			for (const auto& submesh : mesh->subMeshes)
 			{
-				auto* mat = mesh->GetMaterial(submesh.materialIndex);
-				if (!mat)
-					mat = m_fallbackMaterial.get();
+				auto& mat = mesh->GetMaterial(submesh.materialIndex);
 
-				if (mat && mat->descriptorSet)
-				{
-					cmd.BindDescriptorSets(
-						m_pipeline.get(),
-						mat->descriptorSet.get(),
-						0,
-						1
-					);
-				}
+				cmd.BindDescriptorSets(
+					m_pipeline.get(),
+					mat.descriptorSet.get(),
+					0,
+					1
+				);
 
 				cmd.DrawIndexed(
 					submesh.indexCount,

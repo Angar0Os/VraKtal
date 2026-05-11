@@ -9,7 +9,7 @@ materialInstanceManager::materialInstanceManager(graphics::Renderer& _renderer, 
 
 materialInstanceManager::~materialInstanceManager() {}
 
-std::shared_ptr<graphics::resources::MaterialInstance> materialInstanceManager::CreateMaterialInstance(graphics::assets::Material& _material)
+std::shared_ptr<graphics::resources::Material> materialInstanceManager::CreateMaterialInstance(graphics::assets::Material& _material)
 {
 	auto matInstance = factory::MaterialFactory::CreateMaterialInstance(m_device, _material, GetMaterialDescriptorSetLayout(_material.materialType));
 	m_materialInstanceMap[_material.name];

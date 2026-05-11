@@ -1,18 +1,24 @@
 #include "../../../include/windows/others/inspector.h"
 #include "../../../include/windows/others/dragNdrop.h"
 #include "../../../include/imGuiWindows.h"
-#include <graphics/resources/object/mesh.h>
+
 #include <scene/timeline/components/light.h>
 #include <scene/timeline/components/mesh.h>
 
 #include <filesystem>
 
-#include <graphics/materialInstance.h>
+#include <graphics/resources/object/mesh.h>
+#include <graphics/resources/material.h>
+
+#include <core/manager/assetManager.h>
 
 #include <memory>
 #include <utility>
 
 #pragma region glm
+Inspect::Inspect(ImGuiWindows* _windowManager, RessourceManager* _ressourceManager, AssetManager& _astManager)
+    : m_ressourceManager(_ressourceManager), m_windowManager(_windowManager) , m_assetManager(_astManager){};
+
 template<>
 void Inspect::Draw(glm::mat4& transform)
 {
@@ -77,8 +83,8 @@ using MaterialIndex = uint32_t;
 template<>
 void Inspect::Draw(timeline::MeshInstance& _mesh)
 {
-    bool bMeshDefined = _mesh.meshID != -1;
-    std::string path = bMeshDefined ? m_ressourceManager->GetRessourcePath<graphics::resources::Mesh>(_mesh.meshID) : "undefined path";
+    bool bMeshDefined = _mesh.assetID != INVALID_ID;
+    std::string path = bMeshDefined ? m_assetManager.GetRessource<graphics::assets::Mesh>(_mesh.assetID).path : "undefined path";
 
     std::string displayName = "Mesh";
 
@@ -90,7 +96,7 @@ void Inspect::Draw(timeline::MeshInstance& _mesh)
         {
             if (ImGui::CollapsingHeader("Materials"))
             {
-                graphics::resources::Mesh& ressourceMesh = m_ressourceManager->GetRessource<graphics::resources::Mesh>(_mesh.meshID);
+                graphics::resources::Mesh& ressourceMesh = m_ressourceManager->GetResource<graphics::resources::Mesh>(_mesh.assetID);
                 for (int i = 0; i < ressourceMesh.materials.size(); i++)
                 {
                     ImGui::PushID(i);
@@ -99,7 +105,7 @@ void Inspect::Draw(timeline::MeshInstance& _mesh)
 
                     std::string label =
                         "Material[" + std::to_string(i) + "] " +
-                        ressourceMesh.materials[i]->name;
+                        ressourceMesh.materials[i].name;
 
                     ImGui::Selectable(label.c_str(), false);
                     MaterialIndexPayload IndexPayLoad = static_cast<MaterialIndex>(i);
@@ -164,5 +170,3 @@ void Inspect::Draw(timeline::Light& _light)
     }
 }
 
-Inspect::Inspect(ImGuiWindows* _windowManager, RessourceManager* _ressourceManager)
-    : m_ressourceManager(_ressourceManager), m_windowManager(_windowManager){};

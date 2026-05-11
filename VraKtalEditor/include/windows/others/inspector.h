@@ -32,7 +32,7 @@ class ImGuiWindows;
 
 struct Inspect
 {
-    Inspect(ImGuiWindows* _windowManager, RessourceManager* _ressourceManager);
+    Inspect(ImGuiWindows* _windowManager, RessourceManager* _ressourceManager , AssetManager& _astManager);
 
     template<typename T>
     void Draw(T& object) {
@@ -41,6 +41,7 @@ struct Inspect
 
 private:
     RessourceManager* m_ressourceManager;
+    AssetManager& m_assetManager;
     ImGuiWindows* m_windowManager;
 };
 

@@ -2,6 +2,8 @@
 
 #include <string>
 #include <glm/glm.hpp>
+
+#include <graphics/assets/asset.h>
 namespace graphics {
 	enum class MaterialType
 	{
@@ -14,7 +16,7 @@ namespace graphics {
 
 namespace graphics::assets
 {
-	struct Material 
+	struct Material : public Asset
 	{
 		/* 
 			On utilise le material pour savoir ce que l'instance va contenir 
@@ -39,7 +41,7 @@ namespace graphics::assets
 		std::string roughnessTexture;
 		std::string aoTexture;
 		std::string emissiveTexture;
-		MaterialType materialType = graphics::MaterialType::PBR;
+		MaterialType materialType = graphics::MaterialType::PBR; // -> Use this to find dsLayout
 
 		glm::vec3 albedo;
 		float metallic;

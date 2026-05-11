@@ -136,9 +136,6 @@
     <ClInclude Include="include\core\input\keys.h">
       <Filter>include\core\input</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\materialInstance.h">
-      <Filter>include\graphics</Filter>
-    </ClInclude>
     <ClInclude Include="include\graphics\pass.h">
       <Filter>include\graphics</Filter>
     </ClInclude>
@@ -148,16 +145,10 @@
     <ClInclude Include="include\graphics\resources\project.h">
       <Filter>include\graphics\resources</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\camera.h">
-      <Filter>include\graphics\resources\object</Filter>
-    </ClInclude>
     <ClInclude Include="include\graphics\resources\object\light.h">
       <Filter>include\graphics\resources\object</Filter>
     </ClInclude>
     <ClInclude Include="include\graphics\resources\object\mesh.h">
-      <Filter>include\graphics\resources\object</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\object.h">
       <Filter>include\graphics\resources\object</Filter>
     </ClInclude>
     <ClInclude Include="include\graphics\resources\object\staticMesh.h">
@@ -262,14 +253,14 @@
     <ClInclude Include="include\factory\meshFactory.h">
       <Filter>include\factory</Filter>
     </ClInclude>
-    <ClInclude Include="include\utils\ressourceStorage.h">
-      <Filter>include\utils</Filter>
-    </ClInclude>
     <ClInclude Include="include\utils\typeIndex.h">
       <Filter>include\utils</Filter>
     </ClInclude>
     <ClInclude Include="include\graphics\assets\asset.h">
       <Filter>include\graphics\assets</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\material.h">
+      <Filter>include\graphics\resources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

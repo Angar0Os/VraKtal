@@ -9,12 +9,14 @@
 #include <core/gpu/descriptorSet.h>
 #include <core/gpu/descriptorSetLayout.h>
 
+#include <graphics/assets/asset.h>
+
 #include <glm/glm.hpp>
 
 #include <memory>
 #include <string>
 
-struct MaterialGPUData
+struct MaterialGPUData //have to find a better way to do this , per material domain MaterialGPUData ?
 {
 	glm::vec4 baseColor;
 	// rgb = albedoColor, a = unused
@@ -33,7 +35,7 @@ namespace graphics::resources
 		puisque enfaite si on modifie des valeurs il faut quand meme les sauver (gpuData uniquement)
 	*/
 
-	struct MaterialInstance //runtime tres proche du gpu 
+	struct Material
 	{
 		std::string name = "Default";
 

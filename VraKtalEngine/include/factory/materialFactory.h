@@ -1,8 +1,9 @@
 #pragma once
 
-#include <graphics/materialInstance.h>
+#include <graphics/resources/material.h>
 #include <graphics/assets/material.h>
 #include <core/gpu/device.h>
+#include <graphics/renderer.h>
 #include <core/gpu/descriptorSetLayout.h>
 
 #include <memory>
@@ -13,13 +14,17 @@ namespace factory
 	class MaterialFactory
 	{
 	public:
-		static std::shared_ptr<graphics::resources::MaterialInstance> CreateMaterialInstance(
+		MaterialFactory(core::gpu::Device& device , graphics::Renderer& _renderer);
+
+		graphics::resources::Material Create(const graphics::assets::Material& asset);
+
+		static std::shared_ptr<graphics::resources::Material> CreateMaterialInstance(
 			core::gpu::Device& device,
 			const graphics::assets::Material& material,
 			const core::gpu::DescriptorSetLayout* dsLayout
 		);
 
-		static std::shared_ptr<graphics::resources::MaterialInstance> CreateDefault(
+		static std::shared_ptr<graphics::resources::Material> CreateDefault(
 			core::gpu::Device& device,
 			const core::gpu::DescriptorSetLayout* dsLayout);
 
@@ -37,7 +42,11 @@ namespace factory
 
 		static void BindAndUpdate(
 			core::gpu::Device& device,
-			graphics::resources::MaterialInstance& instance,
+			graphics::resources::Material& instance,
 			const core::gpu::DescriptorSetLayout* dsLayout);
+
+	private:
+		core::gpu::Device& m_device;
+		graphics::Renderer& m_renderer;
 	};
 }

@@ -15,15 +15,16 @@ namespace core::gpu
 #pragma once
 
 #include <core/gpu/accelerationStructure.h>
-#include <graphics/materialInstance.h>
+#include <graphics/resources/material.h>
 #include <core/gpu/buffer.h>
 
+#include <graphics/assets/mesh.h>
 
 #include <vector>
 #include <memory>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <graphics/assets/mesh.h>
+#include <stdexcept>
 
 
 
@@ -31,11 +32,11 @@ namespace graphics::resources
 {
 	struct Mesh
 	{
-		MaterialInstance* GetMaterial(uint32_t index) const
+		Material& GetMaterial(uint32_t index)
 		{
 			if (index < materials.size())
-				return materials[index].get();
-			return nullptr;
+				return materials[index];
+			throw std::runtime_error("Mesh::GetMaterial(index): index not found in std::vector<Material> materials");
 		}
 		/*Cette partie n'est pas un Asset c'est la partie ressource car c'est du runtime*/
 		std::unique_ptr<core::gpu::Buffer> vertexBuffer;
@@ -44,7 +45,7 @@ namespace graphics::resources
 		std::unique_ptr<core::gpu::Buffer> rtIndexBuffer;
 		std::unique_ptr<core::gpu::AccelerationStructure> blas;
 
-		std::vector<std::shared_ptr<MaterialInstance>> materials;
+		std::vector<Material> materials;
 		std::vector<SubMesh>  subMeshes;
 
 		core::gpu::Buffer* GetVertexBuffer()  const { return vertexBuffer.get(); }

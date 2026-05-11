@@ -6,7 +6,7 @@
 
 namespace graphics{
 	namespace resources{
-		struct MaterialInstance;
+		struct Material;
 	}
 	namespace assets {
 		struct Material;
@@ -29,7 +29,7 @@ public:
 	materialInstanceManager(graphics::Renderer& _renderer , core::gpu::Device& _device);
 	~materialInstanceManager();
 
-	std::shared_ptr<graphics::resources::MaterialInstance> CreateMaterialInstance(graphics::assets::Material& _material);
+	std::shared_ptr<graphics::resources::Material> CreateMaterialInstance(graphics::assets::Material& _material);
 
 	void UpdateMaterialInstancesOf(std::string _MaterialName); //To call when we'll edit Materials;
 
@@ -37,7 +37,7 @@ private:
 	const core::gpu::DescriptorSetLayout* GetMaterialDescriptorSetLayout(graphics::MaterialType _type);
 
 private:
-	std::unordered_map<std::string, std::vector<std::shared_ptr<graphics::resources::MaterialInstance>>> m_materialInstanceMap;
+	std::unordered_map<std::string, std::vector<std::shared_ptr<graphics::resources::Material>>> m_materialInstanceMap;
 
 	core::gpu::Device& m_device;
 	graphics::Renderer& m_renderer;
