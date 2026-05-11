@@ -3,6 +3,7 @@
 #pragma once
 
 #include <core/gpu/device.h>
+#include <core/gpu/buffer.h>
 #include <core/gpu/image.h>
 #include <core/gpu/texture.h>
 #include <core/gpu/descriptorSet.h>
@@ -13,9 +14,26 @@
 #include <memory>
 #include <string>
 
+struct MaterialGPUData
+{
+	glm::vec4 baseColor;
+	// rgb = albedoColor, a = unused
+
+	glm::vec4 params;
+	// x = metallic
+	// y = roughness
+	// z = hasAlbedoTexture
+	// w = hasNormalTexture
+};
+
 namespace graphics::resources
 {
-	struct MaterialInstance
+	/* 
+		On pourrait faire un materialInstanceAsset pour la serialisation
+		puisque enfaite si on modifie des valeurs il faut quand meme les sauver (gpuData uniquement)
+	*/
+
+	struct MaterialInstance //runtime tres proche du gpu 
 	{
 		std::string name = "Default";
 
@@ -37,7 +55,43 @@ namespace graphics::resources
 		bool hasRoughnessMetalTexture = false;
 
 		std::unique_ptr<core::gpu::DescriptorSet> descriptorSet;
+		std::unique_ptr<core::gpu::Buffer> materialBuffer;
+		MaterialGPUData gpuData;
+
+		size_t index; // used by materialInstanceManager to remove on destruction
+
+		void SetBaseColor(const glm::vec4& color)
+		{
+			gpuData.baseColor = color;
+
+			materialBuffer->CopyFrom(
+				&gpuData,
+				sizeof(MaterialGPUData)
+			);
+		}
+
+		void SetRoughness(const float& _roughness)
+		{
+			gpuData.params.y = _roughness;
+
+			materialBuffer->CopyFrom(
+				&gpuData,
+				sizeof(MaterialGPUData)
+			);
+		}
+
+		void SetMetalness(const float& _metalness)
+		{
+			gpuData.params.x = _metalness;
+
+			materialBuffer->CopyFrom(
+				&gpuData,
+				sizeof(MaterialGPUData)
+			);
+		}
 	};
+
+
 }
 
 #endif //VRAKTAL_GRAPHICS_MATERIAL_INSTANCE_H

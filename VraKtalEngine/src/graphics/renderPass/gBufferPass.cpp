@@ -1,10 +1,11 @@
 #include <graphics/renderPass/gBufferPass.h>
 
-#include <loaders/materialLoader.h>
+#include <factory/materialFactory.h>
 
 #include <core/gpu/descriptorSet.h>
 #include <core/enum.h>
 #include <loaders/shaderLoader.h>
+#include <graphics/assets/mesh.h>
 
 using namespace core;
 using namespace core::gpu;
@@ -90,16 +91,24 @@ void graphics::GBufferPass::CreateDescriptorSetLayout()
 
 void graphics::GBufferPass::CreateMaterialLayout()
 {
+	SDescriptorSetLayoutBinding materialUBOBinding{
+		.binding = 0,
+		.descriptorType = EDescriptorType::UniformBuffer,
+		.stageFlags = core::ShaderStage::Fragment
+	};
+
 	SDescriptorSetLayoutBinding albedoBinding{
 		.binding = 1,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
 		.stageFlags = core::ShaderStage::Fragment
 	};
+
 	SDescriptorSetLayoutBinding normalBinding{
 		.binding = 2,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
 		.stageFlags = core::ShaderStage::Fragment
 	};
+
 	SDescriptorSetLayoutBinding roughMetalBinding{
 		.binding = 3,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
@@ -108,13 +117,20 @@ void graphics::GBufferPass::CreateMaterialLayout()
 
 	m_materialLayout = std::make_unique<DescriptorSetLayout>(
 		&m_device,
-		SDescriptorSetLayoutCreateInfo{ .bindings = { albedoBinding, normalBinding, roughMetalBinding } }
+		SDescriptorSetLayoutCreateInfo{
+			.bindings = {
+				materialUBOBinding,
+				albedoBinding,
+				normalBinding,
+				roughMetalBinding
+			}
+		}
 	);
 }
 
 void graphics::GBufferPass::CreateFallbackMaterial()
 {
-	m_fallbackMaterial = loaders::MaterialLoader::CreateDefault(m_device, m_materialLayout.get());
+	m_fallbackMaterial = factory::MaterialFactory::CreateDefault(m_device, m_materialLayout.get());
 }
 
 void graphics::GBufferPass::CreatePipeline()
@@ -123,14 +139,14 @@ void graphics::GBufferPass::CreatePipeline()
 
 	SVertexInputBinding vertexBinding{
 		.binding = 0,
-		.stride = sizeof(resources::Vertex),
+		.stride = sizeof(graphics::Vertex),
 		.inputRate = VertexInputRate::Vertex
 	};
 
 	std::vector<SVertexInputAttribute> vertexAttributes = {
-		{0, 0, TextureFormat::RGB32_Float, offsetof(resources::Vertex, position)},
-		{1, 0, TextureFormat::RGB32_Float, offsetof(resources::Vertex, normal)},
-		{2, 0, TextureFormat::RG32_Float,  offsetof(resources::Vertex, uv)}
+		{0, 0, TextureFormat::RGB32_Float, offsetof(graphics::Vertex, position)},
+		{1, 0, TextureFormat::RGB32_Float, offsetof(graphics::Vertex, normal)},
+		{2, 0, TextureFormat::RG32_Float,  offsetof(graphics::Vertex, uv)}
 	};
 
 	std::vector<PushConstantRange> pushConstants = {
@@ -258,15 +274,29 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 				0, sizeof(PushConstants), &pc
 			);
 
-			for (const auto& submesh : mesh->GetSubmeshes())
+			for (const auto& submesh : mesh->subMeshes)
 			{
 				auto* mat = mesh->GetMaterial(submesh.materialIndex);
-				if (!mat) mat = m_fallbackMaterial.get();
+				if (!mat)
+					mat = m_fallbackMaterial.get();
 
 				if (mat && mat->descriptorSet)
-					cmd.BindDescriptorSets(m_pipeline.get(), mat->descriptorSet.get(), 0, 1);
+				{
+					cmd.BindDescriptorSets(
+						m_pipeline.get(),
+						mat->descriptorSet.get(),
+						0,
+						1
+					);
+				}
 
-				cmd.DrawIndexed(submesh.indexCount, 1, submesh.firstIndex, submesh.vertexOffset, 0);
+				cmd.DrawIndexed(
+					submesh.indexCount,
+					1,
+					submesh.firstIndex,
+					submesh.vertexOffset,
+					0
+				);
 			}
 
 			m_prevModelTransforms[currentFrame][mesh] = transform;

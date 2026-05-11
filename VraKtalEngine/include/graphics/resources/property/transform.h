@@ -6,6 +6,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+// THIS FILE IS NEVER USED 
+
 namespace graphics::resources::property
 {
 	struct Transform

@@ -8,13 +8,13 @@
 
 namespace graphics::resources
 {
-    class Mesh;
+    struct Mesh;
 }
 
 namespace scene::timeline::components
 {
     class Light;
-    class Mesh;
+    struct Mesh;
 }
 
 struct FileEntry;

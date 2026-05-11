@@ -33,7 +33,6 @@ public:
 	template<typename T, typename... Args>
 	void AddSystem(Args&&... args) {
 		static_assert(std::is_base_of<SystemBase, T>::value, "T must derive from SystemBase");
-		std::cout << "Adding system of " << typeid(T).name() << std::endl;
 		T* system = new T(std::forward<Args>(args)...);
 		m_systems[std::type_index(typeid(T))] = reinterpret_cast<SystemBase*>(system);
 	};

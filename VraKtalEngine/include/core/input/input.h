@@ -43,7 +43,6 @@ namespace core {
 			InputCallback action;
 			action.context = instance;
 			action.callback = &MethodCaller<T, Method>;
-			std::cout << "Binding " << actionName << " to " << input::KeyStateToString(onWhat) << std::endl;
 			BindFunctionToAction(actionName, action, onWhat);
 		}
 
@@ -56,7 +55,6 @@ namespace core {
 			if (!Axis2DActionsStorage.Contains(actionName))
 				return;
 			Axis2DActionsStorage.Get(Axis2DActionsStorage.Find(actionName)).FunctionAxis2D = action;
-			std::cout << "Binded Axis Function to Action : " << actionName << std::endl;
 		}
 
 		template<typename T, void(T::* Method)(glm::vec2)>
@@ -64,7 +62,6 @@ namespace core {
 		{
 			m_mouseBind.context = instance;
 			m_mouseBind.callback = &MethodCaller<T, Method>;
-			std::cout << "Binded Mouse Callback to Function" << std::endl;
 		}
 
 	private:

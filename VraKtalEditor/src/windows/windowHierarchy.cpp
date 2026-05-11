@@ -24,6 +24,7 @@
 #include <typeindex>
 #include <utility>
 #include <iostream>
+#include <utils/denseStorage.h>
 
 
 
@@ -42,7 +43,7 @@ WindowHierarchy::~WindowHierarchy()
 
 void WindowHierarchy::Draw()
 {
-    ComponentStorage<timeline::MeshInstance>& meshStorage = m_scene.GetComponentStorage<timeline::MeshInstance>();
+    DenseStorage<EntityID,timeline::MeshInstance>& meshStorage = m_scene.GetComponentStorage<timeline::MeshInstance>();
     if (m_imGuiWindows.BeginWindow("Hierarchy", true))
     {
         HandleInputs();
@@ -187,7 +188,7 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
         //DragNDrop
         if (m_scene.GetComponentStorage<timeline::MeshInstance>().Has(_ID))
         {
-            m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(m_scene.GetComponentStorage<timeline::MeshInstance>().Get(_ID).meshID);
+            m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(m_scene.GetComponentStorage<timeline::MeshInstance>().Get(_ID).assetID);
         }
         else
         {
@@ -195,7 +196,7 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
             m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(draggedMeshID);
             if (draggedMeshID != INVALID_ID)
             {
-                m_scene.GetComponentStorage<timeline::MeshInstance>().Add(_ID, timeline::MeshInstance{ .meshID = draggedMeshID });
+                m_scene.GetComponentStorage<timeline::MeshInstance>().Add(_ID, timeline::MeshInstance{ .assetID = draggedMeshID });
             }
         }
         

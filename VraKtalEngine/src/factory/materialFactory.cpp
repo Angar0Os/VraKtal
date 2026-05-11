@@ -1,4 +1,6 @@
-#include <loaders/materialLoader.h>
+#include <factory/materialFactory.h>
+#include <core/manager/ressourceManager.h>
+
 
 #include <core/gpu/buffer.h>
 #include <core/gpu/commandBuffer.h>
@@ -13,7 +15,7 @@ using namespace core;
 using namespace core::gpu;
 using namespace graphics::resources;
 
-std::unique_ptr<Image> loaders::MaterialLoader::UploadTexture(
+std::unique_ptr<Image> factory::MaterialFactory::UploadTexture( // Moved to texture loader
 	Device& device,
 	const std::string& filepath,
 	bool               isSRGB)
@@ -23,7 +25,7 @@ std::unique_ptr<Image> loaders::MaterialLoader::UploadTexture(
 
 	if (!pixels)
 	{
-		std::cerr << "MaterialLoader: failed to load texture " << filepath << ", using fallback\n";
+		std::cerr << "MaterialFactory: failed to load texture " << filepath << ", using fallback\n";
 		return nullptr;
 	}
 
@@ -69,7 +71,7 @@ std::unique_ptr<Image> loaders::MaterialLoader::UploadTexture(
 	return image;
 }
 
-std::unique_ptr<Image> loaders::MaterialLoader::UploadHDRTexture(
+std::unique_ptr<Image> factory::MaterialFactory::UploadHDRTexture(
 	Device& device,
 	const std::string& filepath)
 {
@@ -78,7 +80,7 @@ std::unique_ptr<Image> loaders::MaterialLoader::UploadHDRTexture(
 
 	if (!pixels)
 	{
-		std::cerr << "MaterialLoader: failed to load HDR " << filepath << "\n";
+		std::cerr << "MaterialFactory: failed to load HDR " << filepath << "\n";
 		return nullptr;
 	}
 
@@ -124,7 +126,7 @@ std::unique_ptr<Image> loaders::MaterialLoader::UploadHDRTexture(
 	return image;
 }
 
-std::unique_ptr<Image> loaders::MaterialLoader::CreateFallback1x1(
+std::unique_ptr<Image> factory::MaterialFactory::CreateFallback1x1(
 	Device& device,
 	uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
@@ -167,31 +169,32 @@ std::unique_ptr<Image> loaders::MaterialLoader::CreateFallback1x1(
 	return image;
 }
 
-void loaders::MaterialLoader::BindAndUpdate(
+void factory::MaterialFactory::BindAndUpdate(
 	Device& device,
 	MaterialInstance& instance,
 	const core::gpu::DescriptorSetLayout* dsLayout)
 {
 	instance.descriptorSet = std::make_unique<DescriptorSet>(&device, const_cast<DescriptorSetLayout*>(dsLayout));
-
+	instance.descriptorSet->Bind(0, *instance.materialBuffer);
 	instance.descriptorSet->Bind(1, *instance.albedoTexture);
 	instance.descriptorSet->Bind(2, *instance.normalTexture);
 	instance.descriptorSet->Bind(3, *instance.roughnessMetalTexture);
 	instance.descriptorSet->Update(device);
 }
 
-std::unique_ptr<MaterialInstance> loaders::MaterialLoader::Load(
+std::shared_ptr<MaterialInstance> factory::MaterialFactory::CreateMaterialInstance(
 	Device& device,
-	const graphics::resources::object::Material& material,
-	const core::gpu::DescriptorSetLayout* dsLayout)
+	const graphics::assets::Material& material,
+	const core::gpu::DescriptorSetLayout* dsLayout
+)
 {
-	auto instance = std::make_unique<MaterialInstance>();
+	auto instance = std::make_shared<MaterialInstance>();
 	instance->name = material.name;
 	instance->albedoColor = material.albedo;
 	instance->metalness = material.metallic;
 	instance->roughnessValue = material.roughness;
 
-	if (material.useAlbedoTexture && !material.albedoTexture.empty())
+	if (material.albedoTexture.size() > 0 && !material.albedoTexture.empty())
 	{
 		instance->albedoImage = UploadTexture(device, material.albedoTexture, true);
 	}
@@ -206,9 +209,9 @@ std::unique_ptr<MaterialInstance> loaders::MaterialLoader::Load(
 	{
 		instance->hasAlbedoTexture = true;
 	}
-	instance->albedoTexture = std::make_unique<core::gpu::Texture>(device, *instance->albedoImage);
+	instance->albedoTexture = std::make_unique<core::gpu::Texture>(device, *instance->albedoImage); // On creer les textures a partir des images ?
 
-	if (material.useNormalTexture && !material.normalTexture.empty())
+	if (material.normalTexture.size() > 0 && !material.normalTexture.empty())
 	{
 		instance->normalImage = UploadTexture(device, material.normalTexture, false);
 	}
@@ -222,10 +225,7 @@ std::unique_ptr<MaterialInstance> loaders::MaterialLoader::Load(
 	}
 	instance->normalTexture = std::make_unique<core::gpu::Texture>(device, *instance->normalImage);
 
-	bool hasRM = (material.useRoughnessTexture && !material.roughnessTexture.empty())
-		|| (material.useMetallicTexture && !material.metallicTexture.empty());
-
-	if (material.useRoughnessTexture && !material.roughnessTexture.empty())
+	if (material.roughnessTexture.size() > 0 && !material.roughnessTexture.empty())
 	{
 		instance->roughnessMetalImage = UploadTexture(device, material.roughnessTexture, false);
 	}
@@ -240,15 +240,36 @@ std::unique_ptr<MaterialInstance> loaders::MaterialLoader::Load(
 		instance->hasRoughnessMetalTexture = true;
 	}
 	instance->roughnessMetalTexture = std::make_unique<core::gpu::Texture>(device, *instance->roughnessMetalImage);
+	instance->gpuData.baseColor = glm::vec4(material.albedo, 1.0f);
+	instance->gpuData.params = glm::vec4(
+		material.metallic,   // x
+		material.roughness,  // y
+		instance->hasAlbedoTexture ? 1.0f : 0.0f, // z
+		instance->hasNormalTexture ? 1.0f : 0.0f  // w
+	);
+
+	SBufferCreateInfo bufferInfo{
+		.size = sizeof(MaterialGPUData),
+		.usage = EBufferUsage::UniformBuffer,
+		.memoryProperties = EMemoryProperty::HostVisible | EMemoryProperty::HostCoherent
+	};
+
+	instance->materialBuffer =
+		std::make_unique<core::gpu::Buffer>(&device, bufferInfo);
+
+	instance->materialBuffer->CopyFrom(
+		&instance->gpuData,
+		sizeof(MaterialGPUData)
+	);
 
 	BindAndUpdate(device, *instance, dsLayout);
 	return instance;
 }
 
-std::unique_ptr<MaterialInstance> loaders::MaterialLoader::CreateDefault(
+std::shared_ptr<MaterialInstance> factory::MaterialFactory::CreateDefault(
 	Device& device,
 	const core::gpu::DescriptorSetLayout* dsLayout)
 {
-	graphics::resources::object::Material mat;
-	return Load(device, mat, dsLayout);
+	graphics::assets::Material mat;
+	return nullptr;
 }

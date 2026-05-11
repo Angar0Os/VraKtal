@@ -344,15 +344,22 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 
 void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)
 {
-	if (!m_gBufferPass) return;
+	if (!m_gBufferPass)
+		return;
 
 	for (const auto& meshInstance : m_meshInstances)
 	{
-		if (!meshInstance.first->vertexBuffer || !meshInstance.first->indexBuffer)
+		auto* mesh = meshInstance.first;
+		const glm::mat4& model = meshInstance.second;
+
+		if (!mesh)
+			continue;
+
+		if (!mesh->vertexBuffer || !mesh->indexBuffer)
 			continue;
 
 		PushConstants pushConstants;
-		pushConstants.model = meshInstance.second;
+		pushConstants.model = model;
 
 		_cmd->PushConstants(
 			m_gBufferPass->GetPipeline(),
@@ -362,9 +369,19 @@ void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)
 			&pushConstants
 		);
 
-		_cmd->BindVertexBuffer(meshInstance.first->vertexBuffer.get());
-		_cmd->BindIndexBuffer(meshInstance.first->indexBuffer.get());
-		_cmd->DrawIndexed(meshInstance.first->indexCount);
+		_cmd->BindVertexBuffer(mesh->vertexBuffer.get());
+		_cmd->BindIndexBuffer(mesh->indexBuffer.get());
+
+		for (const auto& submesh : mesh->subMeshes)
+		{
+			_cmd->DrawIndexed(
+				submesh.indexCount,
+				1,
+				submesh.firstIndex,
+				submesh.vertexOffset,
+				0
+			);
+		}
 	}
 }
 

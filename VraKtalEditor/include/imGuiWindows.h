@@ -60,7 +60,7 @@ namespace timeline {
 
 namespace graphics {
     namespace resources {
-        class Mesh;
+        struct Mesh;
     }
     class Renderer;
 }

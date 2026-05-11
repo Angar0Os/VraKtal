@@ -18,7 +18,7 @@
 namespace graphics
 {
     namespace ressources {
-        class Mesh;
+        struct Mesh;
     }
     class Renderer;
 }

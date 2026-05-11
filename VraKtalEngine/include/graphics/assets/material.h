@@ -1,38 +1,53 @@
-#ifndef VRAKTAL_GRAPHICS_RESOURCES_MATERIAL_H
-#define VRAKTAL_GRAPHICS_RESOURCES_MATERIAL_H
 #pragma once
 
 #include <string>
 #include <glm/glm.hpp>
-
-namespace graphics::resources::object
-{
-	struct Material
+namespace graphics {
+	enum class MaterialType
 	{
-		std::string name;
+		PBR,
+		Unlit,
+		Skybox
+	};
+}
 
+
+namespace graphics::assets
+{
+	struct Material 
+	{
+		/* 
+			On utilise le material pour savoir ce que l'instance va contenir 
+			L'instance est un peu le resultat du chargement du material donc on PEUT
+			Stocker les materials dans les ressources.
+			On peut aussi stocker les material instances dans les ressources ? 
+				non parceque les ressources sont partagees
+			Qu'estce que ca veut dire ? 
+				On ne veut (surement) pas pouvoir faire :
+				entityA.material = resourceManager.Get<MaterialInstance>("wood");
+				entityB.material = resourceManager.Get<MaterialInstance>("wood");
+				entityA.material->SetBaseColor(red);
+				et la on est baisee car le mat de entityB change aussi.
+			Donc on doit soit avoir un un runtimeMaterialManager mais que a l'editor
+			pour pouvoir update les materiaux des mesh dont on change le parent de l'instance.
+		*/
+
+		std::string name;
 		std::string albedoTexture;
 		std::string normalTexture;
 		std::string metallicTexture;
 		std::string roughnessTexture;
 		std::string aoTexture;
 		std::string emissiveTexture;
+		MaterialType materialType = graphics::MaterialType::PBR;
 
 		glm::vec3 albedo;
 		float metallic;
 		float roughness;
 		float ao;
 		glm::vec3 emissive;
-
-		bool useAlbedoTexture;
-		bool useNormalTexture;
-		bool useMetallicTexture;
-		bool useRoughnessTexture;
-		bool useAOTexture;
-		bool useEmissiveTexture;
-
-		float opacity;
 		float emissiveStrength;
+		float opacity;
 		bool doubleSided;
 
 		Material()
@@ -42,44 +57,10 @@ namespace graphics::resources::object
 			roughness(1.0f),
 			ao(1.0f),
 			emissive(0.0f, 0.0f, 0.0f),
-			useAlbedoTexture(false),
-			useNormalTexture(false),
-			useMetallicTexture(false),
-			useRoughnessTexture(false),
-			useAOTexture(false),
-			useEmissiveTexture(false),
 			opacity(1.0f),
 			emissiveStrength(1.0f),
 			doubleSided(false)
 		{
-		}
-
-		void SetAlbedo(float r, float g, float b)
-		{
-			albedo = glm::vec3(r, g, b);
-		}
-
-		void SetAlbedo(const glm::vec3& color)
-		{
-			albedo = color;
-		}
-
-		void SetEmissive(float r, float g, float b, float strength = 1.0f)
-		{
-			emissive = glm::vec3(r, g, b);
-			emissiveStrength = strength;
-		}
-
-		void SetEmissive(const glm::vec3& color, float strength = 1.0f)
-		{
-			emissive = color;
-			emissiveStrength = strength;
-		}
-
-		void SetMetallicRoughness(float metal, float rough)
-		{
-			metallic = glm::clamp(metal, 0.0f, 1.0f);
-			roughness = glm::clamp(rough, 0.0f, 1.0f);
 		}
 
 		void SetTexture(const std::string& path, const std::string& type)
@@ -87,32 +68,26 @@ namespace graphics::resources::object
 			if (type == "albedo" || type == "diffuse" || type == "base_color")
 			{
 				albedoTexture = path;
-				useAlbedoTexture = true;
 			}
 			else if (type == "normal")
 			{
 				normalTexture = path;
-				useNormalTexture = true;
 			}
 			else if (type == "metallic")
 			{
 				metallicTexture = path;
-				useMetallicTexture = true;
 			}
 			else if (type == "roughness")
 			{
 				roughnessTexture = path;
-				useRoughnessTexture = true;
 			}
 			else if (type == "ao" || type == "ambient_occlusion")
 			{
 				aoTexture = path;
-				useAOTexture = true;
 			}
 			else if (type == "emissive")
 			{
 				emissiveTexture = path;
-				useEmissiveTexture = true;
 			}
 		}
 
@@ -121,32 +96,26 @@ namespace graphics::resources::object
 			if (type == "albedo" || type == "diffuse" || type == "base_color")
 			{
 				albedoTexture.clear();
-				useAlbedoTexture = false;
 			}
 			else if (type == "normal")
 			{
 				normalTexture.clear();
-				useNormalTexture = false;
 			}
 			else if (type == "metallic")
 			{
 				metallicTexture.clear();
-				useMetallicTexture = false;
 			}
 			else if (type == "roughness")
 			{
 				roughnessTexture.clear();
-				useRoughnessTexture = false;
 			}
 			else if (type == "ao" || type == "ambient_occlusion")
 			{
 				aoTexture.clear();
-				useAOTexture = false;
 			}
 			else if (type == "emissive")
 			{
 				emissiveTexture.clear();
-				useEmissiveTexture = false;
 			}
 		}
 
@@ -158,19 +127,6 @@ namespace graphics::resources::object
 			roughnessTexture.clear();
 			aoTexture.clear();
 			emissiveTexture.clear();
-
-			useAlbedoTexture = false;
-			useNormalTexture = false;
-			useMetallicTexture = false;
-			useRoughnessTexture = false;
-			useAOTexture = false;
-			useEmissiveTexture = false;
-		}
-
-		bool HasTextures() const
-		{
-			return useAlbedoTexture || useNormalTexture || useMetallicTexture ||
-				useRoughnessTexture || useAOTexture || useEmissiveTexture;
 		}
 
 		Material Clone(const std::string& newName = "") const
@@ -180,7 +136,6 @@ namespace graphics::resources::object
 				mat.name = newName;
 			return mat;
 		}
+
 	};
 }
-
-#endif //VRAKTAL_GRAPHICS_RESOURCES_MATERIAL_H

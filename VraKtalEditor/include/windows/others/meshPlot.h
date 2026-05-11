@@ -1,11 +1,12 @@
 #pragma once
 #include "../../imGuiWindows.h"
 
+
 class ImGuiWindows;
 
-namespace graphics::resources
+namespace graphics::assets
 {
-    class Mesh;
+    struct Mesh;
 }
 
 class MeshPlot
@@ -15,7 +16,7 @@ public:
 	MeshPlot(ImGuiWindows* _windowManager);
 	~MeshPlot();
 
-    void Draw(graphics::resources::Mesh* _mesh);
+    void Draw(graphics::assets::Mesh* _mesh);
 
 private:
     ImGuiWindows* m_windowManager;

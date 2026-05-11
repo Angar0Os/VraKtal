@@ -18,7 +18,7 @@ namespace timeline {
 	struct MeshInstance : public ComponentBase
 	{
 		std::vector<Keyframe<MeshProperties>> keyframes;
-		uint32_t meshID = -1;
+		uint32_t assetID = INVALID_ENTITY;
 		MeshProperties temp_properties;
 	};
 

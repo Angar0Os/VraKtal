@@ -9,6 +9,7 @@
 #include <atomic>
 
 #include <graphics/resources/object/mesh.h>
+#include <graphics/assets/mesh.h>
 #include <core/gpu/buffer.h>
 
 #include "./loaderBase.h"
@@ -63,36 +64,32 @@ namespace loaders
         }
     };
 
-    class MeshLoader :public LoaderBase
+    class MeshLoader : public LoaderBase
     {
     private:
-        core::gpu::Device* m_device;
         std::vector<Job>            m_jobQueue;
         JobID                       m_nextJobID = 1;
-
-        std::shared_ptr<graphics::resources::Mesh> LoadGLTF(const std::string& filepath);
-        std::shared_ptr<graphics::resources::Mesh> LoadOBJ(const std::string& filepath);
-        void CreateBuffersForMesh(graphics::resources::Mesh* mesh);
-        void CreateBLASForMesh(graphics::resources::Mesh* mesh);
-
         bool AreDependenciesDone(const Job& job) const;
         JobID PushJob(std::string name,
             std::function<void()> task,
             std::vector<JobID> deps = {},
             std::function<void()> onComplete = nullptr);
 
+
+        static void LoadGLTF(const std::string& filepath, graphics::assets::Mesh& mesh);
+        static void LoadOBJ(const std::string& filepath, graphics::assets::Mesh& mesh);
+       
     public:
-        explicit MeshLoader(core::gpu::Device* device);
-
         JobID LoadMesh(const std::string& filepath, std::function<void(std::shared_ptr<graphics::resources::Mesh>)> onComplete = nullptr);
-
         JobID CreatePlane(float width, float height, int subdivisionsX = 1, int subdivisionsZ = 1,
                             std::function<void(std::shared_ptr<graphics::resources::Mesh>)> onComplete = nullptr);
-
         void ProcessJobs();
         void PurgeFinishedJobs();
+        
+        explicit MeshLoader();
+        std::shared_ptr<void> Load(const std::string& path, const LoadOptions* options) override;
 
-        std::shared_ptr<void> Load(const std::string& path);
+        static void LoadMeshFromDisk(const std::string& path , graphics::assets::Mesh& _mesh);
     };
 }
 

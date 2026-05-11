@@ -4,7 +4,7 @@
 
 #include <graphics/resources/object/object.h>
 #include <graphics/resources/object/mesh.h>
-#include <graphics/resources/object/material.h>
+#include <graphics/assets/material.h>
 #include <memory>
 
 namespace graphics::resources::object
@@ -13,13 +13,13 @@ namespace graphics::resources::object
 	{
 	public:
 		std::shared_ptr<Mesh> mesh;
-		std::shared_ptr<Material> material;
+		std::shared_ptr<graphics::assets::Material> material;
 
 		StaticMesh() {}
 
 		StaticMesh(const std::string& name,
 			std::shared_ptr<Mesh> meshPtr,
-			std::shared_ptr<Material> matPtr)
+			std::shared_ptr<graphics::assets::Material> matPtr)
 			: Object(name), mesh(meshPtr), material(matPtr)
 		{
 		}
