@@ -11,6 +11,7 @@
 
 #include <string>
 #include <sstream>
+#include <filesystem>
 
 namespace utils {
     namespace YamlSerializer
