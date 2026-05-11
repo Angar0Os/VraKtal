@@ -4,6 +4,7 @@
 
 #include <core/gpu/imguiContext.h>
 #include <core/gpu/buffer.h>
+#include <core/input/input.h>
 
 #include <imgui/imgui.h>
 
@@ -17,10 +18,22 @@ WindowViewport::~WindowViewport()
 {
 }
 
+static bool wasFocused = false;
+
 void WindowViewport::Draw()
 {
 	if (m_imguiWindows->BeginWindow("Viewport", true))
 	{
+		bool isFocused = ImGui::IsWindowFocused();
+
+		if ((isFocused && !wasFocused) || (!isFocused && wasFocused)) {
+			m_imguiWindows->GetInput()->ToggleAction("CameraLook");
+			m_imguiWindows->GetInput()->ToggleAction("MoveCameraUp");
+			m_imguiWindows->GetInput()->ToggleAxis2DAction("MoveCamera");
+		}
+
+		wasFocused = isFocused;
+
 		ImVec2 avail = ImGui::GetContentRegionAvail();
 		uint32_t width = std::max(1u, static_cast<uint32_t>(avail.x));
 		uint32_t height = std::max(1u, static_cast<uint32_t>(avail.y));

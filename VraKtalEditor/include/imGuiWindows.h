@@ -92,6 +92,7 @@ public:
     core::gpu::ImguiContext* GetContext();
     core::Window* GetWindow() { return m_window; };
     Scene* GetScene() { return m_scene; };
+    core::Input* GetInput() { return m_input; };
 
     void ResetSelectedItem();
 

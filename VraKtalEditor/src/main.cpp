@@ -249,15 +249,15 @@ public:
         _input.BindMouseCallback<Camera, &Camera::Look>(this);
         
         _input.AddAction("CameraLook");
-        _input.BindActionKey({ input::Key::GLFW_MOUSE_BUTTON_RIGHT}, "CameraLook");
+        _input.BindActionKey({ input::Key::GLFW_MOUSE_BUTTON_RIGHT}, "CameraLook", false);
         _input.BindActionCallback<Camera, &Camera::EnableLook>("CameraLook", this, input::KeyState::Press);
         _input.BindActionCallback<Camera, &Camera::DisableLook>("CameraLook", this, input::KeyState::Release);
 
-        _input.AddAxis2DAction("MoveCamera", input::Key::D, input::Key::A, input::Key::W, input::Key::S);
+        _input.AddAxis2DAction("MoveCamera", input::Key::D, input::Key::A, input::Key::W, input::Key::S, false);
         _input.BindAxis2DCallack<Camera, &Camera::MoveCamera>("MoveCamera", this);
 
         _input.AddAction("MoveCameraUp");
-        _input.BindActionKey({ input::Key::SPACE }, "MoveCameraUp");
+        _input.BindActionKey({ input::Key::SPACE }, "MoveCameraUp", false);
         _input.BindActionCallback<Camera, &Camera::MoveCameraUp>("MoveCameraUp", this, input::KeyState::OnGoing);
 
 
