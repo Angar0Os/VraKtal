@@ -1,164 +1,211 @@
 #include "utils/yamlParser.h"
 #include <fstream>
 #include <iostream>
+#include <chrono>
+#include <filesystem>
 
-namespace utils
+RessourceManager* utils::YamlParser::_resManager = nullptr;
+
+glm::mat4 utils::YamlParser::ParseMat4(const fkyaml::node& node)
 {
-	YamlParser::YamlParser(const std::string& filePath) : m_filePath(filePath), m_isValid(false)
-	{
-		LoadFile();
-	}
+    glm::mat4 m(1.0f);
 
-	YamlParser::~YamlParser() {}
+    if (node.is_sequence() && node.size() == 4) {
+        for (int i = 0; i < 4; ++i) {
+            if (node[i].is_sequence() && node[i].size() == 4) {
+                m[i][0] = node[i][0].get_value<float>();
+                m[i][1] = node[i][1].get_value<float>();
+                m[i][2] = node[i][2].get_value<float>();
+                m[i][3] = node[i][3].get_value<float>();
+            }
+        }
+    }
 
-	void YamlParser::LoadFile()
-	{
-		try {
-			std::ifstream ifs(m_filePath);
-			if (!ifs.is_open()) {
-				std::cerr << "Failed to open YAML file: " << m_filePath << std::endl;
-				m_isValid = false;
-				return;
-			}
+    return m;
+}
 
-			std::vector<fkyaml::node> docs = fkyaml::node::deserialize_docs(ifs);
-			
-			if (docs.empty()) {
-				std::cerr << "No YAML documents found in file: " << m_filePath << std::endl;
-				m_isValid = false;
-				return;
-			}
-			
-			m_root = docs[0];
-			m_isValid = true;
-		}
-		catch (const fkyaml::exception& e) {
-			std::cerr << "Failed to load YAML file: " << e.what() << std::endl;
-			m_isValid = false;
-		}
-	}
+glm::vec3 utils::YamlParser::ParseVec3(const fkyaml::node& node)
+{
+    glm::vec3 v(0.0f);
 
-	std::vector<fkyaml::node> YamlParser::GetObjectsByType(const std::string& type)
-	{
-		std::vector<fkyaml::node> result;
+    if (node.is_mapping()) {
+        if (node.contains("x")) {
+            v.x = node["x"].get_value<float>();
+        }
 
-		if (!m_isValid || !m_root.has_value()) {
-			std::cerr << "Cannot get objects: YAML file is invalid" << std::endl;
-			return result;
-		}
+        if (node.contains("y")) {
+            v.y = node["y"].get_value<float>();
+        }
 
-		try {
-			const fkyaml::node& root = m_root.value();
+        if (node.contains("z")) {
+            v.z = node["z"].get_value<float>();
+        }
+    }
 
-			if (!root.contains("project")) {
-				std::cerr << "No 'project' key found in YAML" << std::endl;
-				return result;
-			}
+    return v;
+}
 
-			const fkyaml::node& project = root["project"];
+template<typename KeyframeContainer, typename PropertyReader>
+void utils::YamlParser::ParseKeyframes(const fkyaml::node& keyframesNode, KeyframeContainer& container, PropertyReader&& readPropFn)
+{
+    if (!keyframesNode.is_sequence()) {
+        return;
+    }
 
-			if (!project.contains("scenes")) {
-				std::cerr << "No 'scenes' key found in project" << std::endl;
-				return result;
-			}
+    for (const auto& kfNode : keyframesNode) {
+        typename KeyframeContainer::value_type kf;
 
-			const fkyaml::node& scenes = project["scenes"];
+        if (kfNode.contains("time")) {
+            kf.time = kfNode["time"].get_value<float>();
+        }
 
-			for (const auto& scene : scenes) {
-				if (!scene.contains("objects")) {
-					continue;
-				}
+        if (kfNode.contains("interpolation")) {
+            kf.interpolation = static_cast<EInterpolationType>(kfNode["interpolation"].get_value<int>());
+        }
 
-				const fkyaml::node& objects = scene["objects"];
+        readPropFn(kfNode, kf.property);
 
-				for (const auto& object : objects) {
-					if (!object.contains("type")) {
-						continue;
-					}
+        container.push_back(kf);
+    }
+}
 
-					std::string objectType = object["type"].get_value<std::string>();
+void utils::YamlParser::ParseLightComponent(Scene* scene, const fkyaml::node& compNode)
+{
+    timeline::Light light;
 
-					if (objectType == type) {
-						result.push_back(object);
-					}
-				}
-			}
-		}
-		catch (const fkyaml::exception& e) {
-			std::cerr << "Error getting objects by type: " << e.what() << std::endl;
-		}
+    if (compNode.contains("bIsActive")) {
+        light.bIsActive = compNode["bIsActive"].get_value<bool>();
+    }
 
-		return result;
-	}
+    auto ReadProp = [](const fkyaml::node& node, timeline::LightProperty& property) {
+        if (node.contains("position")) property.position = ParseVec3(node["position"]);
+        if (node.contains("direction")) property.direction = ParseVec3(node["direction"]);
+        if (node.contains("color")) property.color = ParseVec3(node["color"]);
+        if (node.contains("intensity")) property.intensity = node["intensity"].get_value<float>();
+        if (node.contains("enabled")) property.enabled = node["enabled"].get_value<bool>();
+        if (node.contains("LightType")) property.type = static_cast<timeline::LightType>(node["LightType"].get_value<int>());
+        if (node.contains("innerConeAngle")) property.innerConeAngle = node["innerConeAngle"].get_value<float>();
+        if (node.contains("outerConeAngle")) property.outerConeAngle = node["outerConeAngle"].get_value<float>();
+        if (node.contains("constant")) property.constant = node["constant"].get_value<float>();
+        if (node.contains("linear")) property.linear = node["linear"].get_value<float>();
+        if (node.contains("quadratic")) property.quadratic = node["quadratic"].get_value<float>();
+        if (node.contains("radius")) property.radius = node["radius"].get_value<float>();
+        if (node.contains("lightRadius")) property.lightRadius = node["lightRadius"].get_value<float>();
+    };
 
-	std::vector<graphics::resources::Light> YamlParser::LoadLights()
-	{
-		std::vector<graphics::resources::Light> lights;
+    ReadProp(compNode, light.temp_property);
 
-		std::vector<fkyaml::node> lightNodes = GetObjectsByType("Light");
+    if (compNode.contains("keyframes")) {
+        ParseKeyframes(compNode["keyframes"], light.keyframes, ReadProp);
+    }
 
-		for (const auto& node : lightNodes) {
-			lights.push_back(ParseLight(node));
-		}
+    scene->CreateEntity<timeline::Light>(light);
+}
 
-		return lights;
-	}
+void utils::YamlParser::ParseMeshComponent(Scene* scene, const fkyaml::node& compNode)
+{
+    timeline::MeshInstance mesh;
 
-	graphics::resources::Light YamlParser::ParseLight(const fkyaml::node& node)
-	{
-		graphics::resources::Light light;
+    if (compNode.contains("bIsActive")) {
+        mesh.bIsActive = compNode["bIsActive"].get_value<bool>();
+    }
 
-		// TODO: see if some attribute are mandatory / optional etc
+    if (compNode.contains("path") && _resManager) {
+        std::string path = compNode["path"].get_value<std::string>();
+        mesh.meshID = _resManager->GetRessourceID<graphics::resources::Mesh>(path);
+    }
 
-		try {
-			if (node.contains("name")) {
-				light.name = node["name"].get_value<std::string>();
-			}
+    auto ReadProp = [](const fkyaml::node& node, auto& property) {
+        if (node.contains("transform")) {
+            property.transform = ParseMat4(node["transform"]);
+        }
+    };
 
-			if (node.contains("color")) {
-				const fkyaml::node& color = node["color"];
+    ReadProp(compNode, mesh.temp_properties);
 
-				light.color = glm::vec3(
-					color["r"].get_value<float>(),
-					color["g"].get_value<float>(),
-					color["b"].get_value<float>()
-				);
-			}
+    if (compNode.contains("keyframes")) {
+        ParseKeyframes(compNode["keyframes"], mesh.keyframes, ReadProp);
+    }
 
+    scene->CreateEntity<timeline::MeshInstance>(mesh);
+}
 
-			// TODO: refacto bc generic use in much of object types 
-			if (node.contains("transform")) {
-				const fkyaml::node& transform = node["transform"];
+void utils::YamlParser::ParseEntity(Scene* scene, const fkyaml::node& entityNode)
+{
+    std::string name = "Unnamed";
+    if (entityNode.contains("name")) {
+        name = entityNode["name"].get_value<std::string>();
+    }
 
-				if (transform.contains("position")) {
-					const fkyaml::node& position = transform["position"];
-					light.position = glm::vec3(
-						position["x"].get_value<float>(),
-						position["y"].get_value<float>(),
-						position["z"].get_value<float>()
-					);
-				}
-			}
+    if (!entityNode.contains("components")) {
+        return;
+    }
 
-			if (node.contains("intensity")) {
-				light.intensity = node["intensity"].get_value<float>();
-			}
+    for (const auto& compNode : entityNode["components"]) {
+        if (!compNode.contains("type")) {
+            continue;
+        }
 
-			if (node.contains("radius")) {
-				light.lightRadius = node["radius"].get_value<float>();
-			}
+        std::string type = compNode["type"].get_value<std::string>();
 
-			if (node.contains("enabled")) {
-				light.enabled = node["enabled"].get_value<bool>();
-			}
+        if (type == "Light") {
+            ParseLightComponent(scene, compNode);
+        }
+        else if (type == "MeshInstance") {
+            ParseMeshComponent(scene, compNode);
+        }
+    }
+}
 
-			// TODO: see for custom light type
-			light.type = graphics::resources::LightType::Point;
-		}
-		catch (const fkyaml::exception& e) {
-			std::cerr << "Error parsing light: " << e.what() << std::endl;
-		}
+bool utils::YamlParser::LoadProject(const std::filesystem::path& inputPath, Scene* scene, RessourceManager* resManager)
+{
+    _resManager = resManager;
 
-		return light;
-	}
+    if (!scene) {
+        std::cerr << "[YamlParser] Scene is null." << std::endl;
+        return false;
+    }
+
+    auto startLoad = std::chrono::high_resolution_clock::now();
+
+    try {
+        std::ifstream ifs(inputPath);
+        if (!ifs.is_open()) {
+            std::cerr << "[YamlParser] Cannot open file for reading: " << "\n"; // add path ref
+
+            return false;
+        }
+
+        std::vector<fkyaml::node> docs = fkyaml::node::deserialize_docs(ifs);
+
+        if (docs.empty()) {
+            return false;
+        }
+
+        const fkyaml::node& root = docs[0];
+
+        if (!root.contains("project") || !root["project"].contains("scene")) {
+            std::cerr << "[YamlParser] Invalid format: missing project or scene root." << std::endl;
+
+            return false;
+        }
+
+        const fkyaml::node& sceneNode = root["project"]["scene"];
+
+        for (const auto& entityNode : sceneNode) {
+            ParseEntity(scene, entityNode);
+        }
+
+    }
+    catch (const fkyaml::exception& e) {
+        std::cerr << "[YamlParser] Parse error: " << e.what() << "\n";
+
+        return false;
+    }
+
+    auto endLoad = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> loadDuration = endLoad - startLoad;
+    std::cout << "Loaded project from YAML in: " << loadDuration.count() << " ms" << std::endl;
+
+    return true;
 }

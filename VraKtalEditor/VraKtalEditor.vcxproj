@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -157,6 +157,7 @@
     <ClCompile Include="src\utils\yamlParser.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)VraKtalEditor\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="src\utils\yamlSerializer.cpp" />
     <ClCompile Include="src\windows\others\dragNdrop.cpp" />
     <ClCompile Include="src\windows\others\folder.cpp" />
     <ClCompile Include="src\windows\others\imGuizmoHelper.cpp" />
@@ -177,6 +178,7 @@
     <ClInclude Include="include\command\command.h" />
     <ClInclude Include="include\command\commandHistory.h" />
     <ClInclude Include="include\command\fileCommands.h" />
+    <ClInclude Include="include\utils\yamlSerializer.h" />
     <ClInclude Include="include\windows\ImguiWindowBase.h" />
     <ClInclude Include="include\windows\others\dragNdrop.h" />
     <ClInclude Include="include\windows\others\folder.h" />

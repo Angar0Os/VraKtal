@@ -14,12 +14,8 @@
 #include <loaders/materialLoader.h>
 #include "imGuiWindows.h"
 #include "utils/yamlParser.h"
+#include <utils/yamlSerializer.h>
 #include <core/input/input.h>
-
-#include <core/manager/ressourceManager.h>
-
-#include <scene/system/systemManager.h>
-#include <scene/system/systems/meshSystem.h>
 
 #include <scene/scene.h>
 #include <scene/timeline/components/mesh.h>
@@ -46,9 +42,17 @@ public:
         _input.BindActionKey({ input::Key::F }, "SpawnVikingRoom");
         _input.BindActionCallback<App, &App::SpawnVikingRoom>("SpawnVikingRoom", this, input::KeyState::Press);
 
+        _input.AddAction("SaveProject");
+        _input.BindActionKey({ input::Key::S , input::Key::LEFT_CONTROL}, "SaveProject");
+        _input.BindActionCallback<App, &App::SaveProject>("SaveProject", this, input::KeyState::Press);
+
         _input.AddAction("SpawnCave");
         _input.BindActionKey({ input::Key::F , input::Key::LEFT_CONTROL }, "SpawnCave");
         _input.BindActionCallback<App, &App::SpawnCave>("SpawnCave", this, input::KeyState::Press);
+
+        _input.AddAction("LoadProject");
+        _input.BindActionKey({ input::Key::L , input::Key::LEFT_CONTROL }, "LoadProject");
+        _input.BindActionCallback<App, &App::LoadProject>("LoadProject", this, input::KeyState::Press);
 
         m_scene = new Scene();
         m_scene->RegisterComponentStorage<timeline::MeshInstance>();
@@ -219,6 +223,16 @@ public:
 
     }
 
+    void SaveProject()
+    {
+        utils::YamlSerializer::SaveProject("main-project.yaml", m_scene, m_reManager);
+    }
+
+    void LoadProject()
+    {
+        utils::YamlParser::LoadProject("main-project.yaml", m_scene, m_reManager);
+    }
+
     Scene* m_scene;
     RessourceManager* m_reManager;
 private:
@@ -357,19 +371,15 @@ int main()
     uint32_t currentFrameIndex = 0;
     uint32_t frameCounter = 0;
 
-    utils::YamlParser parser("project.yaml");
-    std::vector<graphics::resources::Light> lights;
-    if (parser.IsValid())
-        lights = parser.LoadLights();
+    //timeline::Light light1;
+    //light1.temp_property.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
+    //light1.temp_property.color = glm::vec3(1.0f, 0.9f, 0.2f);
+    //light1.temp_property.intensity = 10.0f;
+    //light1.temp_property.radius = 0.1f;
+    //light1.temp_property.enabled = true;
 
-    timeline::Light light1;
-    light1.temp_property.position = glm::vec3(3.0f * glm::cos(time), 4.0f, 3.0f * glm::sin(time));
-    light1.temp_property.color = glm::vec3(1.0f, 0.9f, 0.2f);
-    light1.temp_property.intensity = 10.0f;
-    light1.temp_property.radius = 0.1f;
-    light1.temp_property.enabled = true;
-    EntityID lightID = app.m_scene->CreateEntity<timeline::Light>(light1);
-    auto& light = app.m_scene->GetEntityComponent<timeline::Light>(lightID);
+    //EntityID lightID = app.m_scene->CreateEntity<timeline::Light>(light1);
+    //auto& light = app.m_scene->GetEntityComponent<timeline::Light>(lightID);
 
     while (!window.ShouldClose() && !app.ShouldClose())
     {
@@ -411,7 +421,7 @@ int main()
         auto image = imGuiWindows.GetContext()->GetViewportImage();
         //On doit ajuster la camera
         if (imGuiWindows.GetContext()->GetViewportState()->width > 0 && imGuiWindows.GetContext()->GetViewportState()->height > 0)
-                renderer.SetCamera(camera.GetView(), imGuiWindows.GetContext()->GetViewportProjection());
+            renderer.SetCamera(camera.GetView(), imGuiWindows.GetContext()->GetViewportProjection());
 
         renderer.Render(imGuiWindows.GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
         auto cmd = renderer.GetCurrentCommandBuffer();

@@ -99,6 +99,9 @@
     <ClCompile Include="src\windows\others\folder.cpp">
       <Filter>Source Files\windows\others</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\yamlSerializer.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -157,6 +160,9 @@
     </ClInclude>
     <ClInclude Include="include\windows\others\folder.h">
       <Filter>Header Files\windows\others</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\yamlSerializer.h">
+      <Filter>Header Files\utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

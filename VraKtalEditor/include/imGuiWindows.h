@@ -11,6 +11,7 @@
 #include <vector>
 #include <variant>
 #include <glm/glm.hpp>
+#include <core/manager/ressourceManager.h>
 
 #include "windows/ImguiWindowBase.h"
 #include <scene/timeline/entityBase.h>
@@ -157,6 +158,7 @@ private:
 
     core::Window* m_window;
     graphics::Renderer* m_renderer;
+    RessourceManager* m_manager;
     core::gpu::ImguiContext* m_imGuiContext;
     Scene* m_scene;
     core::Input* m_input;
