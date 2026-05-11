@@ -76,6 +76,8 @@ public:
 	void SetCurrentPath(std::filesystem::path newPath);
 	void SetCommandHistory(command::CommandHistory* history);
 
+	void HandleExternalFileDrop(const std::vector<std::string>& filePaths);
+
 private:
     ImGuiWindows* m_windowManager;
 };

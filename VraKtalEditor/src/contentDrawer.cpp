@@ -60,6 +60,8 @@ void ContentDrawer::ClearSelection()
 
 void ContentDrawer::GetContentDrawerWindow()
 {
+	static ImGuiTextFilter filter;
+
 	if (!m_windowManager->GetProjectModal()->GetLastCreatedProjectPath().empty() && m_windowManager->GetProjectModal()->HasNewProjectCreated()) //Check if new project have been loaded or created 
 	{
 		SetCurrentPath(m_windowManager->GetProjectModal()->GetLastCreatedProjectPath());
@@ -83,6 +85,8 @@ void ContentDrawer::GetContentDrawerWindow()
 		if (ImGui::MenuItem(ICON_MDI_REFRESH)) {
 			m_needsRefresh = true;
 		}
+
+		filter.Draw("Filter (inc -exc)", 150.0f);
 
 		std::filesystem::path tempPath = m_currentPath;
 		std::vector<std::pair<std::string, std::filesystem::path>> breadcrumbs;
@@ -203,9 +207,15 @@ void ContentDrawer::GetContentDrawerWindow()
 		ImGui::EndPopup();
 	}
 
-	for (size_t i = 0; i < m_cachedFiles.size(); ++i)
+	std::vector<FileEntry> filteredFiles = m_cachedFiles;
+
+	for (size_t i = 0; i < filteredFiles.size(); ++i)
 	{
-		auto& fileEntry = m_cachedFiles[i];
+		auto& fileEntry = filteredFiles[i];
+
+        if (!filter.PassFilter(fileEntry.filename.c_str())) {
+			continue;
+		}
 
 		ImGui::PushID(static_cast<int>(i));
 		ImGui::BeginGroup();
@@ -253,7 +263,7 @@ void ContentDrawer::GetContentDrawerWindow()
 				size_t end = std::max(lastSelected, i);
 
 				for (size_t idx = start; idx <= end; ++idx) {
-					m_cachedFiles[idx].isSelected = true;
+					filteredFiles[idx].isSelected = true;
 					m_selectedIndices.insert(idx);
 				}
 			}
@@ -289,9 +299,33 @@ void ContentDrawer::GetContentDrawerWindow()
 		ImGui::PopTextWrapPos();
 
 		ImGui::EndGroup();
-		ImGui::SameLine();
+
+		float nextButtonX = ImGui::GetItemRectMax().x + ImGui::GetStyle().ItemSpacing.x + buttonSize;
+		float windowVisibleX = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+
+		if (nextButtonX < windowVisibleX) {
+			ImGui::SameLine();
+		}
+
 		ImGui::PopID();
 	}
+}
+
+void ContentDrawer::HandleExternalFileDrop(const std::vector<std::string>& filePaths)
+{
+	if (!m_commandHistory) {
+		return;
+	}
+
+	std::vector<std::filesystem::path> sourcePaths;
+	for (const auto& file : filePaths) {
+		sourcePaths.push_back(std::filesystem::path(file));
+	}
+
+	auto cmd = std::make_unique<command::ImportFileCommand>(sourcePaths, m_currentPath);
+	m_commandHistory->ExecuteCommand(std::move(cmd));
+
+	m_needsRefresh = true;
 }
 
 void ContentDrawer::SetCurrentPath(std::filesystem::path newPath)

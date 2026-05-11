@@ -96,6 +96,8 @@ public:
 
     void ResetSelectedItem();
 
+    void HandleExternalFileDrop(const std::vector<std::string>& filePaths);
+
     template<typename T>
     void SetSelectedItem(T value)
     {

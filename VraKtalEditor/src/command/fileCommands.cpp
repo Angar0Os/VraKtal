@@ -40,7 +40,7 @@ namespace command {
 						std::filesystem::copy(m_paths[i], m_backupPaths[i], std::filesystem::copy_options::recursive);
 					}
 					else {
-						std::filesystem::copy_file(m_paths[i], m_backupPaths[i]);
+						std::filesystem::copy_file(m_paths[i], m_backupPaths[i], std::filesystem::copy_options::overwrite_existing);
 					}
 
 					std::filesystem::remove_all(m_paths[i]);

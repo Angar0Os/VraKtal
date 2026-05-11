@@ -10,6 +10,8 @@ struct GLFWwindow;
 
 namespace core
 {
+	using DropCallback = void(*)(GLFWwindow*, int, const char**);
+
 	class Window
 	{
 	private:
@@ -24,6 +26,8 @@ namespace core
 		void PollEvents();
 		bool ShouldClose() const;
 		void Close();
+
+		void SetDropCallback(DropCallback callback);
 
 		std::pair<uint32_t, uint32_t> Size() const;
 		const char* Title() const;

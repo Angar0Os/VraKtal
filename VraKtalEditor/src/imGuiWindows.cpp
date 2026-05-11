@@ -58,6 +58,19 @@ struct Popups
 	ProjectModal* projectModal;
 };
 
+static ImGuiWindows* imguiWindowsInstance = nullptr;
+
+static void GLFWDropCallback(GLFWwindow* window, int count, const char** paths)
+{
+	if (imguiWindowsInstance) {
+		std::vector<std::string> droppedFiles;
+		for (int i = 0; i < count; ++i) {
+			droppedFiles.push_back(std::string(paths[i]));
+		}
+
+		imguiWindowsInstance->HandleExternalFileDrop(droppedFiles);
+	}
+}
 
 ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager , core::gpu::Device* _device)
     : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager ,_device, _renderer)) ,m_popups(new Popups(this))
@@ -76,6 +89,12 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 	m_windows.push_back(new WindowViewport(*this));
 	m_windows.push_back(new WindowHierarchy(*_scene , *this));
     m_windows.push_back(new WindowInspector(*this , _manager));
+
+	imguiWindowsInstance = this;
+
+	if (m_window) {
+		m_window->SetDropCallback(GLFWDropCallback);
+	}
 }
 
 ImGuiWindows::~ImGuiWindows()
@@ -196,6 +215,14 @@ void ImGuiWindows::DisplayWindowStateManagerMenu()
 		ImGui::EndMenu();
 	}
 }
+
+void ImGuiWindows::HandleExternalFileDrop(const std::vector<std::string>& filePaths)
+{
+	if (m_contentDrawer) {
+		m_contentDrawer->HandleExternalFileDrop(filePaths);
+	}
+}
+
 
 void ImGuiWindows::MainWindow()
 {
