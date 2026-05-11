@@ -195,7 +195,9 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
             m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(draggedMeshID);
             if (draggedMeshID != INVALID_ID)
             {
-                m_scene.GetComponentStorage<timeline::MeshInstance>().Add(_ID, timeline::MeshInstance{ .meshID = draggedMeshID });
+                timeline::MeshInstance toAdd;
+                toAdd.meshID = draggedMeshID;
+                m_scene.GetComponentStorage<timeline::MeshInstance>().Add(_ID, toAdd);
             }
         }
         
