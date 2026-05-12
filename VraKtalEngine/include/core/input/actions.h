@@ -11,6 +11,8 @@ struct KeyActions //vector we are going to poss through to call when needed
 	std::vector<InputCallback>	Release;
 	std::vector<InputCallback>	OnGoing;
 	std::vector<input::Key> keys;
+	
+	bool enabled = true;
 
 	KeyActions() {
 		Press.resize(2);
@@ -23,4 +25,6 @@ struct Axis2DAction
 {
 	InputAxisCallback<glm::vec2> FunctionAxis2D;
 	input::Key key[4] = {input::Key::RIGHT ,input::Key::LEFT ,input::Key::UP,input::Key::DOWN};
+
+	bool enabled = true;
 };

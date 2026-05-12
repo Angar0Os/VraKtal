@@ -123,7 +123,7 @@ void core::Input::Update()
 	{
 		input::KeyState bindingState = GetBindingState(act->keys);
 
-		if (bindingState != input::KeyState::Up)
+		if (bindingState != input::KeyState::Up && act->enabled)
 		{
 			CallAction(act, bindingState);
 		}
@@ -131,6 +131,10 @@ void core::Input::Update()
 
 	for (auto axisId : Axis2DActionsStorage.GetActiveValues())
 	{
+		if (!axisId->enabled) {
+			continue;
+		}
+
 		glm::vec2 value(0.0f);
 
 		value.x += CurrentKeys[static_cast<size_t>(axisId->key[0])] ? 1.0f : 0.0f;
@@ -221,13 +225,15 @@ void core::Input::RemoveAction(std::string _actionName)
 	ActionsStorage.Remove(_actionName);
 }
 
-void core::Input::AddAxis2DAction(std::string _actionName, input::Key _positiveX, input::Key _negativeX, input::Key _positiveY, input::Key _negativeY)
+void core::Input::AddAxis2DAction(std::string _actionName, input::Key _positiveX, input::Key _negativeX, input::Key _positiveY, input::Key _negativeY, bool enable)
 {
 	Axis2DActionsStorage.Add(_actionName);
 	Axis2DActionsStorage.Get(Axis2DActionsStorage.Find(_actionName)).key[0] = _positiveX;
 	Axis2DActionsStorage.Get(Axis2DActionsStorage.Find(_actionName)).key[1] = _negativeX;
 	Axis2DActionsStorage.Get(Axis2DActionsStorage.Find(_actionName)).key[2] = _positiveY;
 	Axis2DActionsStorage.Get(Axis2DActionsStorage.Find(_actionName)).key[3] = _negativeY;
+
+	Axis2DActionsStorage.Get(Axis2DActionsStorage.Find(_actionName)).enabled = enable;
 }
 
 void core::Input::RemoveAxis2DAction(std::string _actionName)
@@ -314,12 +320,35 @@ glm::vec2* core::Input::GetMouseMovement()
 	return &MouseMovement;
 }
 
-bool core::Input::BindActionKey(std::vector<input::Key> _keys, std::string _actionName)
+bool core::Input::BindActionKey(std::vector<input::Key> _keys, std::string _actionName, bool enable)
 {
 	auto id = ActionsStorage.Find(_actionName);
 	if (id != NamedStorageMap<KeyActions>::INVALID_ID)
 	{
+		ActionsStorage.Get(id).enabled = enable;
 		ActionsStorage.Get(id).keys = _keys;
+		return true;
+	}
+	return false;
+}
+
+bool core::Input::ToggleAction(std::string _actionName)
+{
+	auto id = ActionsStorage.Find(_actionName);
+	if (id != NamedStorageMap<KeyActions>::INVALID_ID)
+	{
+		ActionsStorage.Get(id).enabled = !ActionsStorage.Get(id).enabled;
+		return true;
+	}
+	return false;
+}
+
+bool core::Input::ToggleAxis2DAction(std::string _actionName)
+{
+	auto id = Axis2DActionsStorage.Find(_actionName);
+	if (id != NamedStorageMap<KeyActions>::INVALID_ID)
+	{
+		Axis2DActionsStorage.Get(id).enabled = !Axis2DActionsStorage.Get(id).enabled;
 		return true;
 	}
 	return false;

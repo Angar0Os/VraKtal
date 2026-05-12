@@ -85,10 +85,13 @@ namespace core {
 	public: //User Side
 		void AddAction(std::string _actionName);						// Add an action ex: "MoveForward"
 		void RemoveAction(std::string _actionName);
-		bool BindActionKey(std::vector<input::Key> _keys, std::string _actionName);
+		bool BindActionKey(std::vector<input::Key> _keys, std::string _actionName, bool enable = true);
+		bool ToggleAction(std::string _actionName);
 
-		void AddAxis2DAction(std::string _actionName, input::Key _positiveX, input::Key _negativeX, input::Key _positiveY, input::Key _negativeY); // Add an axis 2D action ex: "Move" with WASD
+
+		void AddAxis2DAction(std::string _actionName, input::Key _positiveX, input::Key _negativeX, input::Key _positiveY, input::Key _negativeY, bool enable = true); // Add an axis 2D action ex: "Move" with WASD
 		void RemoveAxis2DAction(std::string _actionName);
+		bool ToggleAxis2DAction(std::string _actionName);
 
 		NamedStorageMap<KeyActions>& GetActionsStorage() { return ActionsStorage; };
 		NamedStorageMap<Axis2DAction>& GetAxisStorage() { return Axis2DActionsStorage; }
