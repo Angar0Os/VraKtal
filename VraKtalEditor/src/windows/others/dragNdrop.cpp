@@ -50,7 +50,7 @@ FileEntry* DragNDrop::Content(Mesh_ID& _meshID)
             return nullptr;
         if (droppedEntry->fileType == FileType::MeshGLB || droppedEntry->fileType == FileType::MeshGLTF || droppedEntry->fileType == FileType::MeshOBJ)
         {
-            //_meshID = m_reManager.GetRessourceID<graphics::resources::Mesh>(droppedEntry->GetRelativeFileLocation().string());
+            //_meshID = m_reManager.GetAssetID<graphics::resources::Mesh>(droppedEntry->GetRelativeFileLocation().string());
             return droppedEntry;
         }
     }

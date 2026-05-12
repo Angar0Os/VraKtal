@@ -42,22 +42,22 @@ public:
 	T& LoadAsset(std::string _path , const loaders::LoadOptions* options);
 	
 	template<typename T>
-	T& GetRessource(std::string _path);
+	T& GetAsset(std::string _path);
 	
 	template<typename T>
-	T& GetRessource(uint32_t _ID);
+	T& GetAsset(uint32_t _ID);
 	
 	template<typename T> 
-	uint32_t GetRessourceID(std::string _path);
+	uint32_t GetAssetID(std::string _path);
 
 	template<typename T> 
-	const std::string& GetRessourcePath(uint32_t _ID);
+	const std::string& GetAssetPath(uint32_t _ID);
 
 	template<typename T> 
-	const std::string& GetRessourcePath(T& _ressource);
+	const std::string& GetAssetPath(T& _ressource);
 	
 	template<typename T> 
-	uint32_t AddExistingRessource(std::string _path , T& _ressource);
+	uint32_t AddExistingAsset(std::string _path , T& _ressource);
 private:
 	std::unordered_map<std::type_index, loaders::LoaderBase*> m_loaders;
 	std::unordered_map<std::type_index, InterfaceStorage*> m_storages;
@@ -79,7 +79,7 @@ inline T& AssetManager::LoadAsset(std::string _path , const loaders::LoadOptions
 #ifdef VRAKTAL_EDITOR
 		std::cout << "ressource at: " << _path << "already loaded" << std::endl;
 #endif // VRAKTAL_EDITOR
-		return GetRessource<T>(_path);
+		return GetAsset<T>(_path);
 	}
 
 	loaders::LoaderBase* loader = m_loaders[typeid(T)];
@@ -93,7 +93,7 @@ inline T& AssetManager::LoadAsset(std::string _path , const loaders::LoadOptions
 }
 
 template<typename T>
-inline T& AssetManager::GetRessource(std::string _path)
+inline T& AssetManager::GetAsset(std::string _path)
 {
 	std::replace(_path.begin(), _path.end(), '\\', '/');
 
@@ -102,14 +102,14 @@ inline T& AssetManager::GetRessource(std::string _path)
 }
 
 template<typename T>
-inline T& AssetManager::GetRessource(uint32_t _ID)
+inline T& AssetManager::GetAsset(uint32_t _ID)
 {
 	NamedStorageMap<T>& storage = static_cast<Storage<T>*>(m_storages[typeid(T)])->data;
 	return storage.Get(_ID);
 }
 
 template<typename T>
-inline uint32_t AssetManager::GetRessourceID(std::string _path)
+inline uint32_t AssetManager::GetAssetID(std::string _path)
 {
 	std::replace(_path.begin(), _path.end(), '\\', '/');
 	NamedStorageMap<T>& storage = static_cast<Storage<T>*>(m_storages[typeid(T)])->data;
@@ -118,21 +118,21 @@ inline uint32_t AssetManager::GetRessourceID(std::string _path)
 }
 
 template<typename T>
-inline const std::string& AssetManager::GetRessourcePath(uint32_t _ID)
+inline const std::string& AssetManager::GetAssetPath(uint32_t _ID)
 {
 	NamedStorageMap<T>& storage = static_cast<Storage<T>*>(m_storages[typeid(T)])->data;
 	return storage.GetName(_ID);
 }
 
 template<typename T>
-inline const std::string& AssetManager::GetRessourcePath(T& _ressource) // cette fonction est couteuse niquez moi
+inline const std::string& AssetManager::GetAssetPath(T& _ressource) // cette fonction est couteuse niquez moi
 {
 	NamedStorageMap<T>& storage = static_cast<Storage<T>*>(m_storages[typeid(T)])->data;
 	return storage.GetName(storage.Find(_ressource));
 }
 
 template<typename T>
-inline uint32_t AssetManager::AddExistingRessource(std::string _path, T& _ressource)
+inline uint32_t AssetManager::AddExistingAsset(std::string _path, T& _ressource)
 {
 	std::replace(_path.begin(), _path.end(), '\\', '/');
 	NamedStorageMap<T>& storage = static_cast<Storage<T>*>(m_storages[typeid(T)])->data;

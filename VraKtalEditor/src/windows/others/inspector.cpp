@@ -84,7 +84,7 @@ template<>
 void Inspect::Draw(timeline::MeshInstance& _mesh)
 {
     bool bMeshDefined = _mesh.assetID != INVALID_ID;
-    std::string path = bMeshDefined ? m_assetManager.GetRessource<graphics::assets::Mesh>(_mesh.assetID).path : "undefined path";
+    std::string path = bMeshDefined ? m_assetManager.GetAsset<graphics::assets::Mesh>(_mesh.assetID).path : "undefined path";
 
     std::string displayName = "Mesh";
 

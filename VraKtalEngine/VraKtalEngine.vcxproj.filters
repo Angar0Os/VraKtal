@@ -259,6 +259,9 @@
     <ClInclude Include="include\graphics\resources\material.h">
       <Filter>include\graphics\resources</Filter>
     </ClInclude>
+    <ClInclude Include="include\utils\macro.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="external\include\imPlot3D\implot3d.cpp">

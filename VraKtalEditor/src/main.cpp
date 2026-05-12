@@ -39,6 +39,8 @@
 #include <scene/system/systems/lightSystem.h>
 #include <memory>
 #include <graphics/resources/object/mesh.h>
+#include <graphics/assets/mesh.h>
+#include <graphics/resources/material.h>
 
 
 class App
@@ -53,10 +55,6 @@ public:
         _input.AddAction("SpawnVikingRoom");
         _input.BindActionKey({ input::Key::F }, "SpawnVikingRoom");
         _input.BindActionCallback<App, &App::SpawnVikingRoom>("SpawnVikingRoom", this, input::KeyState::Press);
-
-        _input.AddAction("SpawnCave");
-        _input.BindActionKey({ input::Key::F , input::Key::LEFT_CONTROL }, "SpawnCave");
-        _input.BindActionCallback<App, &App::SpawnCave>("SpawnCave", this, input::KeyState::Press);
 
         m_scene = new Scene();
         m_scene->RegisterComponentStorage<timeline::MeshInstance>();
@@ -75,11 +73,19 @@ public:
         graphics::assets::Mesh meshAsset;
         meshAsset.path = "assets/models/viking_room.obj";
         loaders::MeshLoader::LoadMeshFromDisk("assets/models/viking_room.obj", meshAsset);
-        m_asManager->AddExistingRessource<graphics::assets::Mesh>("assets/models/viking_room.obj" , meshAsset);
+        m_asManager->AddExistingAsset<graphics::assets::Mesh>("assets/models/viking_room.obj" , meshAsset);
 
+        graphics::assets::Material Sand;
+        Sand.name = "Sand";
+        Sand.SetTexture("assets/textures/extracted_textures/diffuse_sand.jpg.png", "albedo");
+        Sand.SetTexture("assets/textures/extracted_textures/normal_sand.png.png", "normal");
+        
         //Ok maintenant on doit creer notre ressource runtime a partir du mesh avec notre factory
         m_reManager->RegisterRessourceType<graphics::resources::Mesh>(_device);
-        m_reManager->CreateRessource<graphics::resources::Mesh>(m_asManager->GetRessource<graphics::assets::Mesh>(m_asManager->GetRessourceID<graphics::assets::Mesh>("assets/models/viking_room.obj")));
+        m_reManager->RegisterRessourceType<graphics::resources::Material>(_device , _renderer);
+        m_reManager->CreateRessource<graphics::resources::Mesh>(m_asManager->GetAsset<graphics::assets::Mesh>(m_asManager->GetAssetID<graphics::assets::Mesh>("assets/models/viking_room.obj")));
+        graphics::resources::Mesh& meshRessource = m_reManager->GetResource<graphics::resources::Mesh>(m_asManager->GetAssetID<graphics::assets::Mesh>("assets/models/viking_room.obj"));
+        meshRessource.materials.push_back(factory::MaterialFactory::CreateMaterialInstance(_device, Sand, _renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout()));
     }
     ~App() {
         delete m_scene;
@@ -96,29 +102,18 @@ public:
     void SpawnVikingRoom() {
         std::cout << "Spawn Viking Room Action Triggered" << std::endl;
         timeline::MeshInstance timelineMesh;
-        timelineMesh.assetID = m_asManager->GetRessourceID<graphics::assets::Mesh>("assets/models/viking_room.obj");
+        timelineMesh.assetID = m_asManager->GetAssetID<graphics::assets::Mesh>("assets/models/viking_room.obj");
         timelineMesh.temp_properties.transform = glm::rotate(glm::mat4(1), glm::radians(270.0f) , {1,0,0});
         timelineMesh.temp_properties.transform = glm::scale(timelineMesh.temp_properties.transform,glm::vec3(10,10,10));
         m_scene->CreateEntity<timeline::MeshInstance>(timelineMesh);
     }
 
-    void SpawnCave() {
-        //timeline::MeshInstance timelineMesh;
-        //timelineMesh.assetID = m_reManager->GetRessourceID<graphics::resources::Mesh>("assets/models/viking_room.obj");
-        //m_reManager->GetRessource<graphics::resources::Mesh>(timelineMesh.assetID).materials[0].get()->SetMetalness(1);
-    }
-
     void LoadAssetsDebug(graphics::Renderer& _renderer , core::gpu::Device& _device)
     {
         //SpawnVikingRoom();
-        //auto* matLayout = _renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
+        auto* matLayout = _renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout();
         //auto* mesh = m_reManager->LoadRessource<graphics::resources::Mesh>("assets/models/cave.obj" , nullptr);
         //{
-        //    graphics::assets::Material Sand;
-        //    Sand.name = "Sand";
-        //    Sand.SetTexture("assets/textures/extracted_textures/diffuse_sand.jpg.png", "albedo");
-        //    Sand.SetTexture("assets/textures/extracted_textures/normal_sand.png.png", "normal");
-        //    Sand.SetMetallicRoughness(0.0, 0.75);
 
         //    graphics::assets::Material Rocktill;
         //    Rocktill.name = "Rocktill";

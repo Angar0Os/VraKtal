@@ -4,11 +4,14 @@
 #include <memory>
 
 #include <graphics/assets/mesh.h>
+#include <graphics/assets/material.h>
 #include <graphics/resources/object/mesh.h>
 
 #include <utils/NamedStorageMapped.h>
 #include <utils/denseStorage.h>
 #include <utils/typeIndex.h>
+
+#include <utils/macro.h>
 
 struct IFactoryWrapper
 {
@@ -36,46 +39,22 @@ struct ResourceStorageData : public IRessourceStorage
 
 #pragma region forwardDecl
 class AssetManager;
-
-namespace factory 
-{
-	struct MeshFactory;
-	struct TextureFactory;
-}
-namespace graphics 
-{
-	namespace assets 
-	{
-		struct Mesh;
-		struct Texture;
-	}
-	namespace resources 
-	{
-		struct Mesh;
-		struct Texture;
-	}
-}
 namespace core::gpu 
 {
 	class Device;
 }
+
+VRAKTAL_FORWARD_DECLARE_ASSET_RESOURCE_FACTORY(Material, MaterialFactory)
+VRAKTAL_FORWARD_DECLARE_ASSET_RESOURCE_FACTORY(Mesh, MeshFactory)
+VRAKTAL_FORWARD_DECLARE_ASSET_RESOURCE_FACTORY(Texture, TextureFactory)
 #pragma endregion
 
 #pragma region RessourceTraits
 template<typename TResource>
 struct ResourceTraits;
-template<>
-struct ResourceTraits<graphics::resources::Mesh>
-{
-	using AssetType = graphics::assets::Mesh;
-	using FactoryType = factory::MeshFactory;
-};
-template<>
-struct ResourceTraits<graphics::resources::Texture>
-{
-	using AssetType = graphics::assets::Texture;
-	using FactoryType = factory::TextureFactory;
-};
+VRAKTAL_RESOURCE_TRAITS(Mesh)
+VRAKTAL_RESOURCE_TRAITS(Texture)
+VRAKTAL_RESOURCE_TRAITS(Material)
 #pragma endregion
 
 class RessourceManager

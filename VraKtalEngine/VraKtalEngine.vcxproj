@@ -249,6 +249,7 @@
     <ClInclude Include="include\scene\timeline\entityBase.h" />
     <ClInclude Include="include\scene\timeline\keyframe.h" />
     <ClInclude Include="include\utils\denseStorage.h" />
+    <ClInclude Include="include\utils\macro.h" />
     <ClInclude Include="include\utils\NamedStorageMapped.h" />
     <ClInclude Include="include\utils\typeIndex.h" />
     <ClInclude Include="src\core\gpu\vulkan\accelerationStructure_impl.h" />
