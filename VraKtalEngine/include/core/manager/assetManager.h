@@ -125,7 +125,7 @@ inline const std::string& AssetManager::GetAssetPath(uint32_t _ID)
 }
 
 template<typename T>
-inline const std::string& AssetManager::GetAssetPath(T& _ressource) // cette fonction est couteuse niquez moi
+inline const std::string& AssetManager::GetAssetPath(T& _ressource) // cette fonction est couteuse
 {
 	NamedStorageMap<T>& storage = static_cast<Storage<T>*>(m_storages[typeid(T)])->data;
 	return storage.GetName(storage.Find(_ressource));
