@@ -105,7 +105,7 @@ void Inspect::Draw(timeline::MeshInstance& _mesh)
 
                     std::string label =
                         "Material[" + std::to_string(i) + "] " +
-                        ressourceMesh.materials[i].name;
+                        ressourceMesh.materials[i]->name;
 
                     ImGui::Selectable(label.c_str(), false);
                     MaterialIndexPayload IndexPayLoad = static_cast<MaterialIndex>(i);

@@ -75,17 +75,18 @@ public:
         loaders::MeshLoader::LoadMeshFromDisk("assets/models/viking_room.obj", meshAsset);
         m_asManager->AddExistingAsset<graphics::assets::Mesh>("assets/models/viking_room.obj" , meshAsset);
 
-        graphics::assets::Material Sand;
-        Sand.name = "Sand";
-        Sand.SetTexture("assets/textures/extracted_textures/diffuse_sand.jpg.png", "albedo");
-        Sand.SetTexture("assets/textures/extracted_textures/normal_sand.png.png", "normal");
-        
         //Ok maintenant on doit creer notre ressource runtime a partir du mesh avec notre factory
         m_reManager->RegisterRessourceType<graphics::resources::Mesh>(_device);
         m_reManager->RegisterRessourceType<graphics::resources::Material>(_device , _renderer);
         m_reManager->CreateRessource<graphics::resources::Mesh>(m_asManager->GetAsset<graphics::assets::Mesh>(m_asManager->GetAssetID<graphics::assets::Mesh>("assets/models/viking_room.obj")));
         graphics::resources::Mesh& meshRessource = m_reManager->GetResource<graphics::resources::Mesh>(m_asManager->GetAssetID<graphics::assets::Mesh>("assets/models/viking_room.obj"));
-        meshRessource.materials.push_back(factory::MaterialFactory::CreateMaterialInstance(_device, Sand, _renderer.GetPass<graphics::GBufferPass>("GBuffer")->GetMaterialLayout()));
+        
+        graphics::assets::Material Sand;
+        Sand.name = "Sand";
+        Sand.SetTexture("assets/textures/extracted_textures/diffuse_sand.jpg.png", "albedo");
+        Sand.SetTexture("assets/textures/extracted_textures/normal_sand.png.png", "normal");
+        uint32_t MatId = m_reManager->CreateRessource<graphics::resources::Material>(Sand);
+        meshRessource.materials.push_back(&m_reManager->GetResource<graphics::resources::Material>(MatId));
     }
     ~App() {
         delete m_scene;
