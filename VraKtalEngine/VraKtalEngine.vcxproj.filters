@@ -405,7 +405,9 @@
     <ClCompile Include="src\core\manager\assetManager.cpp">
       <Filter>src\core\manager</Filter>
     </ClCompile>
-    <ClCompile Include="include\factory\meshFactory.cpp" />
+    <ClCompile Include="include\factory\meshFactory.cpp">
+      <Filter>src\factory</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\shaders\gbuffer.slang">
