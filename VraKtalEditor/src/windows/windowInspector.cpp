@@ -17,8 +17,10 @@
 #include <scene/timeline/components/light.h>
 
 #include <core/manager/ressourceManager.h>
+#include <core/manager/assetManager.h>
+#include <graphics/resources/object/mesh.h>
 
-WindowInspector::WindowInspector(ImGuiWindows& _windows, RessourceManager& _reManager) : m_windows(_windows), m_ressourceManager(&_reManager)
+WindowInspector::WindowInspector(ImGuiWindows& _windows, RessourceManager& _reManager, AssetManager& _astManager) : m_windows(_windows), m_ressourceManager(&_reManager) , m_assetManager(_astManager)
 {
 }
 
@@ -46,7 +48,7 @@ void WindowInspector::Draw()
                 m_windows.GetDragNDrop()->DropWindow<FileEntry, Mesh_ID>(draggedMeshID);
                 if (draggedMeshID != INVALID_ID)
                 {
-                    scene->GetComponentStorage<timeline::MeshInstance>().Get(ID).meshID = draggedMeshID;
+                    scene->GetComponentStorage<timeline::MeshInstance>().Get(ID).assetID = draggedMeshID;
                 }
 
                 if (scene->GetComponentStorage<std::string>().Has(ID))
@@ -79,20 +81,16 @@ void WindowInspector::Draw()
             FileEntry* file = m_windows.GetSelectedItem<FileEntry*>();
             if (file->fileType == FileType::MeshGLTF || file->fileType == FileType::MeshOBJ)
             {
-                uint32_t ressourceID = m_ressourceManager->GetRessourceID<graphics::resources::Mesh>(file->GetRelativeFileLocation().string());
-                if (ressourceID != INVALID_ID)
+                uint32_t assetID = m_assetManager.GetAssetID<graphics::resources::Mesh>(file->GetRelativeFileLocation().string());
+                if (assetID != INVALID_ID)
                 {
                     ImGui::Text("Mesh Preview: %s" , file->path.string().c_str());
-                    graphics::resources::Mesh& _mesh = m_ressourceManager->GetRessource<graphics::resources::Mesh>(ressourceID);
-                    m_windows.GetMeshPlot()->Draw(&_mesh);
+                    m_windows.GetMeshPlot()->Draw(&m_assetManager.GetAsset<graphics::assets::Mesh>(assetID));
                 }
                 else
                 {
                     ImGui::Text("Mesh isn't loaded");
-                    if (ImGui::Button(("Load Mesh" + file->filename).c_str()))
-                    {
-                        m_ressourceManager->LoadRessource<graphics::resources::Mesh>(file->GetRelativeFileLocation().string());
-                    }
+                    //Need to create asset from mesh
                 }
             }
             else

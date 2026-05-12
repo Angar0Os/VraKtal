@@ -6,15 +6,42 @@
 #include <typeindex>
 
 #include <utils/denseStorage.h>
+#include <utils/typeIndex.h>
 #include "timeline/entityBase.h"
 #include <unordered_map>
+#include <memory>
 
+struct IComponentStorage
+{
+	virtual ~IComponentStorage() = default;
 
+	virtual void Remove(EntityID entity) = 0;
+	virtual bool Has(EntityID entity) const = 0;
+	virtual size_t Size() const = 0;
+};
+
+template<typename TComponent>
+struct ComponentStorageData : public IComponentStorage
+{
+	DenseStorage<EntityID, TComponent> data;
+
+	void Remove(EntityID entity) override
+	{
+		data.Remove(entity);
+	}
+
+	bool Has(EntityID entity) const override
+	{
+		return data.Has(entity);
+	}
+
+	size_t Size() const override
+	{
+		return data.Size();
+	}
+};
 class Scene
 {
-private:
-	std::vector<std::unique_ptr<BaseComponentStorage>> storages;
-	static constexpr uint32_t INVALID = 0xFFFFFFFFu;
 public:
 	Scene();
 	~Scene() noexcept;
@@ -25,40 +52,28 @@ private:
 	std::vector<EntityID> aliveEntities;
 	std::vector<EntityID> EntitiesFreeSlots;
 
-	std::unordered_map<std::type_index, std::unique_ptr<BaseComponentStorage>> m_registeredTypesMap;
-
+	std::vector<std::unique_ptr<IComponentStorage>> storages;
 public:
 	EntityID CreateEntity();
 	void DestroyEntity(EntityID _entity);
 
 	template<class T>
 	EntityID CreateEntity(T _toAdd);
-	EntityID CloneEntiy(EntityID _id);
 
 public:
-	template<class T>
+	template<class TValue>
 	void RegisterComponentStorage();
 
-	template<class T>
-	std::size_t ComponentTypeID();
-
-	template<class T>
-	ComponentStorage<T>& GetComponentStorage();
+	template<class TValue>
+	DenseStorage<EntityID,TValue>& GetComponentStorage();
 
 	template<typename... Ts, typename Fn>
 	inline void ForEach(Fn&& fn);
 
-	template<class T>
-	T& GetEntityComponent(EntityID _id);
+	template<class TValue>
+	TValue& GetEntityComponent(EntityID _id);
 
 	std::vector<EntityID>& GetAliveEntities(){ return aliveEntities; };
-	
-private:
-	inline std::size_t NextComponentTypeId()
-	{
-		static std::size_t next = 0;
-		return next++;
-	};
 
 #ifdef VRAKTAL_EDITOR
 public :
@@ -121,21 +136,19 @@ EntityID Scene::CreateEntity(T _toAdd)
 	return id;
 }
 
-template<class T>
-std::size_t Scene::ComponentTypeID()
+template<class TComponent>
+DenseStorage<EntityID, TComponent>& Scene::GetComponentStorage()
 {
-	static std::size_t id = NextComponentTypeId();
-	return id;
-}
+    const auto id = ComponentTypeID<TComponent>();
 
-template<class T>
-ComponentStorage<T>& Scene::GetComponentStorage()
-{
-	const auto id = ComponentTypeID<T>();
-	if (id >= storages.size() || !storages[id])
-		throw std::runtime_error("ComponentStorage<T> not declared");
+    if (storages.size() <= id || !storages[id])
+    {
+        RegisterComponentStorage<TComponent>();
+    }
 
-	return *static_cast<ComponentStorage<T>*>(storages[id].get());
+    auto* storageData = static_cast<ComponentStorageData<TComponent>*>(storages[id].get());
+
+    return storageData->data;
 }
 
 template<class T>
@@ -150,18 +163,18 @@ void Scene::RegisterComponentStorage()
 
 	if (!storages[id])
 	{
-		storages[id] = std::make_unique<ComponentStorage<T>>();
+		storages[id] = std::make_unique<ComponentStorageData<T>>();
 	}
 }
 
-template<class T>
-inline T& Scene::GetEntityComponent(EntityID _id)
+template<class TComponent>
+inline TComponent& Scene::GetEntityComponent(EntityID _id)
 {
-	const auto id = ComponentTypeID<T>();
+	const auto id = ComponentTypeID<TComponent>();
 	if (id >= storages.size() || !storages[id])
 		throw std::runtime_error("ComponentStorage<T> not declared");
 
-	return static_cast<ComponentStorage<T>*>(storages[id].get())->Get(_id);
+	return GetComponentStorage<TComponent>().Get(_id);
 }
 
 namespace ecs::detail

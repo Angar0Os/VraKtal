@@ -2,6 +2,7 @@
 #include "../../../include/imGuiWindows.h"
 
 #include <graphics/resources/object/mesh.h>
+#include <graphics/assets/mesh.h>
 
 #ifndef IMPLOT_DISABLE_OBSOLETE_FUNCTIONS
 #define IMPLOT_DISABLE_OBSOLETE_FUNCTIONS
@@ -22,7 +23,7 @@ MeshPlot::~MeshPlot()
 {
 }
 
-void MeshPlot::Draw(graphics::resources::Mesh* _mesh)
+void MeshPlot::Draw(graphics::assets::Mesh* _mesh)
 {
     // Choose line color
     static ImVec4 line_color = ImVec4(0.5f, 0.5f, 0.2f, 0.6f);
@@ -61,7 +62,7 @@ void MeshPlot::Draw(graphics::resources::Mesh* _mesh)
         spec.MarkerFillColor = marker_color;
         
         ImPlot3DSpec meshSpec = spec;
-        meshSpec.Stride = sizeof(graphics::resources::Vertex);
+        meshSpec.Stride = sizeof(graphics::Vertex);
 
         ImPlot3D::PlotMesh(
             "",

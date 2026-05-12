@@ -43,6 +43,7 @@ struct Popups;
 
 //Engine
 class RessourceManager;
+class AssetManager;
 class Scene;
 
 
@@ -60,7 +61,7 @@ namespace timeline {
 
 namespace graphics {
     namespace resources {
-        class Mesh;
+        struct Mesh;
     }
     class Renderer;
 }
@@ -78,7 +79,7 @@ class ImGuiWindows
 {
 public:
 
-    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager, core::gpu::Device* _device);
+    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager , AssetManager& _astManager, core::gpu::Device* _device);
     ~ImGuiWindows();
 
     struct WindowState

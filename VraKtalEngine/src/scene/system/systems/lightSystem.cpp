@@ -16,7 +16,7 @@ LightSystem::~LightSystem()
 void LightSystem::Update(Scene& _scene)
 {
     auto& lights = _scene.GetComponentStorage<timeline::Light>();
-    for (auto& light : lights.Components())
+    for (auto& light : lights.Values())
     {
         graphics::resources::Light alight;
 		alight.name = "aled";

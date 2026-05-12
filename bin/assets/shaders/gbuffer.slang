@@ -28,6 +28,16 @@ cbuffer PushConstants {
     float4x4 prevModel;
 };
 
+struct MaterialData
+{
+    float4 baseColor;
+    float4 params;
+    // params.x = metalness multiplier
+    // params.y = roughness multiplier
+};
+
+[[vk::binding(0, 1)]]
+ConstantBuffer<MaterialData> materialData;
 [[vk::binding(1, 1)]] Sampler2D albedoTex;
 [[vk::binding(2, 1)]] Sampler2D normalTex;
 [[vk::binding(3, 1)]] Sampler2D roughMetalTex;
@@ -84,20 +94,25 @@ FSOutput fragMain(VSOutput input)
     FSOutput o;
 
     float4 albedoSample = albedoTex.Sample(input.uv);
-    //albedoSample.rgb = pow(albedoSample.rgb, 2.2);
     float4 roughMetSample = roughMetalTex.Sample(input.uv);
 
     if (albedoSample.a < 0.2f)
         discard;
 
-    o.albedoMetal = float4(albedoSample.rgb, roughMetSample.g);
+    float3 albedo = albedoSample.rgb * materialData.baseColor.rgb;
+
+    float metalness = roughMetSample.g * materialData.params.x;
+    float roughness = roughMetSample.r * materialData.params.y;
+
+    o.albedoMetal = float4(albedo, metalness);
 
     float2 ndcCur = input.clipPosCur.xy / input.clipPosCur.w;
     float2 ndcPrev = input.clipPosPrev.xy / input.clipPosPrev.w;
-    o.velocity = (ndcCur - ndcPrev) * 0.5f; 
+    o.velocity = (ndcCur - ndcPrev) * 0.5f;
 
-    float3 Ngeo      = normalize(input.normal);
+    float3 Ngeo = normalize(input.normal);
     float3 texNormal = normalTex.Sample(input.uv).xyz * 2.0 - 1.0;
+
     float3 Nworld;
 
     if (abs(texNormal.x) < 0.01 && abs(texNormal.y) < 0.01)
@@ -106,14 +121,18 @@ FSOutput fragMain(VSOutput input)
     }
     else
     {
-        float3 up    = abs(Ngeo.y) < 0.99 ? float3(0.0, 1.0, 0.0) : float3(1.0, 0.0, 0.0);
-        float3 T     = normalize(cross(up, Ngeo));
-        float3 B     = cross(Ngeo, T);
+        float3 up = abs(Ngeo.y) < 0.99
+            ? float3(0.0, 1.0, 0.0)
+            : float3(1.0, 0.0, 0.0);
+
+        float3 T = normalize(cross(up, Ngeo));
+        float3 B = cross(Ngeo, T);
         float3x3 TBN = float3x3(T, B, Ngeo);
+
         Nworld = normalize(mul(texNormal, TBN));
     }
 
-    o.normalRough = float4(Nworld * 0.5 + 0.5, roughMetSample.r);
+    o.normalRough = float4(Nworld * 0.5 + 0.5, roughness);
 
     return o;
 }

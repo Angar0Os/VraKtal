@@ -35,7 +35,7 @@ EntityID Scene::CreateEntity()
 	{
 		nextEntityId++;
 		aliveEntities.push_back(nextEntityId);
-		reverseEntityMap.resize(nextEntityId + 1, INVALID);
+		reverseEntityMap.resize(nextEntityId + 1, INVALID_ENTITY);
 		reverseEntityMap[nextEntityId] = (uint32_t)aliveEntities.size() - 1;
 	}
 
@@ -56,7 +56,7 @@ void Scene::DestroyEntity(EntityID entityID)
 	{
 		for (size_t i = 0; i < storages.size(); i++)
 		{
-			storages[i].get()->Remove(entityID);
+			storages[i]->Remove(entityID);
 		}
 		// swap-remove dans alive
 		uint32_t idx = reverseEntityMap[entityID];
@@ -66,7 +66,7 @@ void Scene::DestroyEntity(EntityID entityID)
 		reverseEntityMap[last] = idx;
 
 		aliveEntities.pop_back();
-		reverseEntityMap[entityID] = INVALID;
+		reverseEntityMap[entityID] = INVALID_ENTITY;
 		EntitiesFreeSlots.push_back(entityID);
 
 	}

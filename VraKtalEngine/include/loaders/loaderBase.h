@@ -1,13 +1,23 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <iostream>
 
-class LoaderBase
+namespace loaders 
 {
-public:
-    LoaderBase() {};
-    ~LoaderBase() {};
-    virtual std::shared_ptr<void> Load(const std::string& path) = 0;
-};
-
-
+    struct LoadOptions
+    {
+        virtual ~LoadOptions() = default;
+    };
+    
+    class LoaderBase
+    {
+    public:
+        LoaderBase() {};
+        virtual ~LoaderBase() = default;
+        virtual std::shared_ptr<void> Load(const std::string& path, const LoadOptions* options) {
+            std::cout << "THIS CLASS SHOULDN'T EXIST" << std::endl;
+            return nullptr;
+        };
+    };
+}

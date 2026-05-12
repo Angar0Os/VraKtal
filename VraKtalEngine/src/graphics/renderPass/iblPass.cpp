@@ -4,7 +4,7 @@
 #include <core/gpu/device.h>
 #include <core/enum.h>
 #include <loaders/shaderLoader.h>
-#include <loaders/materialLoader.h>
+#include <factory/materialFactory.h>
 
 using namespace core;
 using namespace core::gpu;
@@ -21,7 +21,7 @@ graphics::IBLPass::IBLPass(Device& device,
 
 void graphics::IBLPass::LoadEnvironmentMaps()
 {
-    m_envMap.image = loaders::MaterialLoader::UploadHDRTexture(
+    m_envMap.image = factory::MaterialFactory::UploadHDRTexture(
         m_device, "assets/textures/skyboxes/citrus_1k.hdr");
     m_envMap.texture = std::make_unique<Texture>(m_device, *m_envMap.image);
 

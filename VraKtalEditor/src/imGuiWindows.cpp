@@ -32,8 +32,8 @@
 #include "../include/windows/others/dragNdrop.h"
 
 struct ImguiOthers {
-	ImguiOthers(ImGuiWindows* _windows, core::Input* _input , RessourceManager* _reManager , core::gpu::Device* _device , graphics::Renderer* _renderer)
-		: imGuizmoHelper(new ImGuizmoHelper(_windows, _input)), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , *_reManager)) , m_inspect(new Inspect(_windows,_reManager)) {};
+	ImguiOthers(ImGuiWindows* _windows, core::Input* _input , RessourceManager* _reManager , core::gpu::Device* _device , graphics::Renderer* _renderer , AssetManager& _astManager)
+		: imGuizmoHelper(new ImGuizmoHelper(_windows, _input)), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , *_reManager)) , m_inspect(new Inspect(_windows,_reManager,_astManager)) {};
 	~ImguiOthers() {
 		delete imGuizmoHelper;
 		delete meshPlot;
@@ -72,8 +72,8 @@ static void GLFWDropCallback(GLFWwindow* window, int count, const char** paths)
 	}
 }
 
-ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager , core::gpu::Device* _device)
-    : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager ,_device, _renderer)) ,m_popups(new Popups(this))
+ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager , AssetManager& _astManager, core::gpu::Device* _device)
+    : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager ,_device, _renderer , _astManager)) ,m_popups(new Popups(this))
 {
 	m_renderer = _renderer;
 	m_window = window;
@@ -88,7 +88,7 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 	m_windows.push_back(new WindowInput(_input , this));
 	m_windows.push_back(new WindowViewport(*this));
 	m_windows.push_back(new WindowHierarchy(*_scene , *this));
-    m_windows.push_back(new WindowInspector(*this , _manager));
+    m_windows.push_back(new WindowInspector(*this , _manager , _astManager));
 
 	imguiWindowsInstance = this;
 

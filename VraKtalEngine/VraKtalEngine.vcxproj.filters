@@ -136,9 +136,6 @@
     <ClInclude Include="include\core\input\keys.h">
       <Filter>include\core\input</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\materialInstance.h">
-      <Filter>include\graphics</Filter>
-    </ClInclude>
     <ClInclude Include="include\graphics\pass.h">
       <Filter>include\graphics</Filter>
     </ClInclude>
@@ -148,19 +145,10 @@
     <ClInclude Include="include\graphics\resources\project.h">
       <Filter>include\graphics\resources</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\camera.h">
-      <Filter>include\graphics\resources\object</Filter>
-    </ClInclude>
     <ClInclude Include="include\graphics\resources\object\light.h">
       <Filter>include\graphics\resources\object</Filter>
     </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\material.h">
-      <Filter>include\graphics\resources\object</Filter>
-    </ClInclude>
     <ClInclude Include="include\graphics\resources\object\mesh.h">
-      <Filter>include\graphics\resources\object</Filter>
-    </ClInclude>
-    <ClInclude Include="include\graphics\resources\object\object.h">
       <Filter>include\graphics\resources\object</Filter>
     </ClInclude>
     <ClInclude Include="include\graphics\resources\object\staticMesh.h">
@@ -177,9 +165,6 @@
     </ClInclude>
     <ClInclude Include="include\graphics\renderPass\lightingPass.h">
       <Filter>include\graphics\renderPass</Filter>
-    </ClInclude>
-    <ClInclude Include="include\loaders\materialLoader.h">
-      <Filter>include\loaders</Filter>
     </ClInclude>
     <ClInclude Include="include\loaders\meshLoader.h">
       <Filter>include\loaders</Filter>
@@ -243,6 +228,39 @@
     </ClInclude>
     <ClInclude Include="include\graphics\renderPass\toneMappingPass.h">
       <Filter>include\graphics\renderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="include\loaders\textureLoader.h">
+      <Filter>include\loaders</Filter>
+    </ClInclude>
+    <ClInclude Include="include\factory\assetFactory.h">
+      <Filter>include\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\assets\material.h">
+      <Filter>include\graphics\assets</Filter>
+    </ClInclude>
+    <ClInclude Include="include\factory\materialFactory.h">
+      <Filter>include\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\assets\mesh.h">
+      <Filter>include\graphics\assets</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\manager\assetManager.h">
+      <Filter>include\core\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="include\factory\meshFactory.h">
+      <Filter>include\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\typeIndex.h">
+      <Filter>include\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\assets\asset.h">
+      <Filter>include\graphics\assets</Filter>
+    </ClInclude>
+    <ClInclude Include="include\graphics\resources\material.h">
+      <Filter>include\graphics\resources</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\macro.h">
+      <Filter>include\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -327,9 +345,6 @@
     <ClCompile Include="src\graphics\renderPass\lightingPass.cpp">
       <Filter>src\graphics\renderPass</Filter>
     </ClCompile>
-    <ClCompile Include="src\loaders\materialLoader.cpp">
-      <Filter>src\loaders</Filter>
-    </ClCompile>
     <ClCompile Include="src\loaders\meshLoader.cpp">
       <Filter>src\loaders</Filter>
     </ClCompile>
@@ -378,6 +393,19 @@
     <ClCompile Include="src\graphics\renderPass\toneMappingPass.cpp">
       <Filter>src\graphics\renderPass</Filter>
     </ClCompile>
+    <ClCompile Include="src\loaders\textureLoader.cpp">
+      <Filter>src\loaders</Filter>
+    </ClCompile>
+    <ClCompile Include="src\factory\assetFactory.cpp">
+      <Filter>src\factory</Filter>
+    </ClCompile>
+    <ClCompile Include="src\factory\materialFactory.cpp">
+      <Filter>src\factory</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\manager\assetManager.cpp">
+      <Filter>src\core\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="include\factory\meshFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\shaders\gbuffer.slang">
@@ -387,9 +415,6 @@
       <Filter>bin\assets\shaders</Filter>
     </None>
     <None Include="..\bin\assets\shaders\irradiance_convolution.slang">
-      <Filter>bin\assets\shaders</Filter>
-    </None>
-    <None Include="..\bin\assets\shaders\lighting.slang">
       <Filter>bin\assets\shaders</Filter>
     </None>
     <None Include="..\external\include\imGuizmo\.editorconfig">
@@ -525,6 +550,15 @@
     </Filter>
     <Filter Include="src\loaders">
       <UniqueIdentifier>{fe9e2d92-21cb-4cbb-ace3-75edf7424251}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\factory">
+      <UniqueIdentifier>{a9605491-500a-491c-8b5d-d29134f13133}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\factory">
+      <UniqueIdentifier>{592d8de7-b081-4f29-b458-d35afdc08174}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\graphics\assets">
+      <UniqueIdentifier>{7e469e64-0fad-49aa-b0dc-18cccc045f0a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

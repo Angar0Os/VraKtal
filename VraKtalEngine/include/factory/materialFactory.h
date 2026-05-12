@@ -1,26 +1,30 @@
-#ifndef VRAKTAL_LOADERS_MATERIALLOADER_H
-#define VRAKTAL_LOADERS_MATERIALLOADER_H
 #pragma once
 
-#include <graphics/materialInstance.h>
-#include <graphics/resources/object/material.h>
+#include <graphics/resources/material.h>
+#include <graphics/assets/material.h>
 #include <core/gpu/device.h>
+#include <graphics/renderer.h>
 #include <core/gpu/descriptorSetLayout.h>
 
 #include <memory>
 #include <string>
-
-namespace loaders
+class RessourceManager;
+namespace factory
 {
-	class MaterialLoader
+	class MaterialFactory
 	{
 	public:
-		static std::unique_ptr<graphics::resources::MaterialInstance> Load(
-			core::gpu::Device& device,
-			const graphics::resources::object::Material& material,
-			const core::gpu::DescriptorSetLayout* dsLayout);
+		MaterialFactory(core::gpu::Device& device , graphics::Renderer& _renderer);
 
-		static std::unique_ptr<graphics::resources::MaterialInstance> CreateDefault(
+		graphics::resources::Material Create(const graphics::assets::Material& asset);
+
+		static graphics::resources::Material CreateMaterialInstance(
+			core::gpu::Device& device,
+			const graphics::assets::Material& material,
+			const core::gpu::DescriptorSetLayout* dsLayout
+		);
+
+		static graphics::resources::Material CreateDefault(
 			core::gpu::Device& device,
 			const core::gpu::DescriptorSetLayout* dsLayout);
 
@@ -38,9 +42,11 @@ namespace loaders
 
 		static void BindAndUpdate(
 			core::gpu::Device& device,
-			graphics::resources::MaterialInstance& instance,
+			graphics::resources::Material& instance,
 			const core::gpu::DescriptorSetLayout* dsLayout);
+
+	private:
+		core::gpu::Device& m_device;
+		graphics::Renderer& m_renderer;
 	};
 }
-
-#endif //VRAKTAL_LOADERS_MATERIALLOADER_H

@@ -7,6 +7,10 @@
 #include <iostream>
 #include <algorithm>
 
+struct InterfaceStorage {
+    virtual ~InterfaceStorage() = default;
+};
+
 template <typename T>
 class NamedStorageMap
 {
@@ -141,4 +145,10 @@ private:
     std::unordered_map<std::string, ID> nameToId;
     std::vector<T> values;
     std::vector<ID> freeIDs;
+};
+
+template<typename T>
+struct Storage : InterfaceStorage
+{
+    NamedStorageMap<T> data;
 };

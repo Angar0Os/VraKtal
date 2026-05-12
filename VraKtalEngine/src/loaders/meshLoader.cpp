@@ -14,12 +14,10 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
+#include <memory>
+#include <graphics/assets/mesh.h>
 
-loaders::MeshLoader::MeshLoader(core::gpu::Device* device)
-	: m_device(device)
-{
-}
-
+loaders::MeshLoader::MeshLoader(){}
 
 bool loaders::MeshLoader::AreDependenciesDone(const Job& job) const
 {
@@ -103,22 +101,15 @@ void loaders::MeshLoader::PurgeFinishedJobs()
 	m_jobQueue = std::move(remaining);
 }
 
-std::shared_ptr<void> loaders::MeshLoader::Load(const std::string& path)
+std::shared_ptr<void> loaders::MeshLoader::Load(const std::string& path, const LoadOptions* options)
 {
 
 	std::string ext = std::filesystem::path(path).extension().string();
 	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-	std::shared_ptr<graphics::resources::Mesh> mesh = nullptr;
-	if (ext == ".gltf" || ext == ".glb")
-		mesh = LoadGLTF(path);
-	else if (ext == ".obj")
-		mesh = LoadOBJ(path);
-	else
-		throw std::runtime_error("Unsupported mesh format: " + ext);
-
-	CreateBuffersForMesh(mesh.get());
-	CreateBLASForMesh(mesh.get());
+	std::shared_ptr<graphics::assets::Mesh> mesh = nullptr;
+	//CreateBuffersForMesh(mesh.get());
+	//CreateBLASForMesh(mesh.get());
 
 #ifdef VRAKTAL_EDITOR
 	std::cout << "loaded : " << path << std::endl;
@@ -127,52 +118,66 @@ std::shared_ptr<void> loaders::MeshLoader::Load(const std::string& path)
 	return mesh;
 }
 
+void loaders::MeshLoader::LoadMeshFromDisk(const std::string& path, graphics::assets::Mesh& _mesh)
+{
+	std::string ext = std::filesystem::path(path).extension().string();
+	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+	_mesh.path = path;
+
+	if (ext == ".gltf" || ext == ".glb")
+		LoadGLTF(path , _mesh);
+	else if (ext == ".obj")
+		LoadOBJ(path, _mesh);
+	else
+		throw std::runtime_error("Unsupported mesh format: " + ext);
+}
+
 loaders::JobID loaders::MeshLoader::LoadMesh(
 	const std::string& filepath,
 	std::function<void(std::shared_ptr<graphics::resources::Mesh>)> onComplete)
 {
-	auto meshHolder = std::make_shared<std::shared_ptr<graphics::resources::Mesh>>();
+	//auto meshHolder = std::make_shared<std::shared_ptr<graphics::resources::Mesh>>();
 
-	JobID parseID = PushJob(
-		"ParseFile:" + filepath,
-		[this, filepath, meshHolder]()
-		{
-			std::string ext = std::filesystem::path(filepath).extension().string();
-			std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+	//JobID parseID = PushJob(
+	//	"ParseFile:" + filepath,
+	//	[this, filepath, meshHolder]()
+	//	{
+	//		std::string ext = std::filesystem::path(filepath).extension().string();
+	//		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-			if (ext == ".gltf" || ext == ".glb")
-				*meshHolder = LoadGLTF(filepath);
-			else if (ext == ".obj")
-				*meshHolder = LoadOBJ(filepath);
-			else
-				throw std::runtime_error("Unsupported mesh format: " + ext);
-		}
-	);
+	//		if (ext == ".gltf" || ext == ".glb")
+	//			*meshHolder = LoadGLTF(filepath);
+	//		else if (ext == ".obj")
+	//			*meshHolder = LoadOBJ(filepath);
+	//		else
+	//			throw std::runtime_error("Unsupported mesh format: " + ext);
+	//	}
+	//);
 
-	JobID uploadID = PushJob(
-		"UploadBuffers:" + filepath,
-		[this, meshHolder]()
-		{
-			if (*meshHolder)
-				CreateBuffersForMesh(meshHolder->get());
-		},
-		{ parseID }
-	);
+	//JobID uploadID = PushJob(
+	//	"UploadBuffers:" + filepath,
+	//	[this, meshHolder]()
+	//	{
+	//		if (*meshHolder)
+	//			CreateBuffersForMesh(meshHolder->get());
+	//	},
+	//	{ parseID }
+	//);
 
-	JobID blasID = PushJob(
-		"BuildBLAS:" + filepath,
-		[this, meshHolder]()
-		{
-			if (*meshHolder)
-				CreateBLASForMesh(meshHolder->get());
-		},
-		{ uploadID },
-		onComplete
-		? std::function<void()>([meshHolder, onComplete]() { onComplete(*meshHolder); })
-		: std::function<void()>{}
-	);
+	//JobID blasID = PushJob(
+	//	"BuildBLAS:" + filepath,
+	//	[this, meshHolder]()
+	//	{
+	//		if (*meshHolder)
+	//			CreateBLASForMesh(meshHolder->get());
+	//	},
+	//	{ uploadID },
+	//	onComplete
+	//	? std::function<void()>([meshHolder, onComplete]() { onComplete(*meshHolder); })
+	//	: std::function<void()>{}
+	//);
 
-	return blasID;
+	return -1;
 }
 
 loaders::JobID loaders::MeshLoader::CreatePlane(
@@ -180,7 +185,7 @@ loaders::JobID loaders::MeshLoader::CreatePlane(
 	int subdivisionsX, int subdivisionsZ,
 	std::function<void(std::shared_ptr<graphics::resources::Mesh>)> onComplete)
 {
-		auto meshHolder = std::make_shared<std::shared_ptr<graphics::resources::Mesh>>();
+	/*	auto meshHolder = std::make_shared<std::shared_ptr<graphics::resources::Mesh>>();
 
 	JobID generateID = PushJob(
 		"GeneratePlane",
@@ -203,7 +208,7 @@ loaders::JobID loaders::MeshLoader::CreatePlane(
 			{
 				for (int x = 0; x < vertCountX; x++)
 				{
-					graphics::resources::Vertex vertex;
+					graphics::Vertex vertex;
 					vertex.position = glm::vec3(
 						-halfWidth + x * deltaX,
 						0.0f,
@@ -260,132 +265,12 @@ loaders::JobID loaders::MeshLoader::CreatePlane(
 		onComplete
 		? std::function<void()>([meshHolder, onComplete]() { onComplete(*meshHolder); })
 		: std::function<void()>{}
-	);
+	);*/
 
-	return blasID;
+	return -1;
 }
 
-void loaders::MeshLoader::CreateBuffersForMesh(graphics::resources::Mesh* mesh)
-{
-	if (!mesh || mesh->vertices.empty() || mesh->indices.empty())
-	{
-		std::cerr << "ERROR: Invalid mesh data for buffer creation!" << std::endl;
-		return;
-	}
-
-	size_t vertexBufferSize = mesh->vertices.size() * sizeof(graphics::resources::Vertex);
-	size_t indexBufferSize = mesh->indices.size() * sizeof(uint32_t);
-
-	core::gpu::SBufferCreateInfo stagingVertexInfo{
-		.size = vertexBufferSize,
-		.usage = core::EBufferUsage::TransferSrc,
-		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
-	};
-	auto stagingVertexBuffer = std::make_unique<core::gpu::Buffer>(m_device, stagingVertexInfo);
-
-	core::gpu::SBufferCreateInfo stagingIndexInfo{
-		.size = indexBufferSize,
-		.usage = core::EBufferUsage::TransferSrc,
-		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
-	};
-	auto stagingIndexBuffer = std::make_unique<core::gpu::Buffer>(m_device, stagingIndexInfo);
-
-	stagingVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
-	stagingIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
-
-	core::gpu::SBufferCreateInfo vertexInfo{
-		.size = vertexBufferSize,
-		.usage = core::EBufferUsage::VertexBuffer | core::EBufferUsage::TransferDst,
-		.memoryProperties = core::EMemoryProperty::DeviceLocal
-	};
-	mesh->vertexBuffer = std::make_unique<core::gpu::Buffer>(m_device, vertexInfo);
-
-	core::gpu::SBufferCreateInfo indexInfo{
-		.size = indexBufferSize,
-		.usage = core::EBufferUsage::IndexBuffer | core::EBufferUsage::TransferDst,
-		.memoryProperties = core::EMemoryProperty::DeviceLocal
-	};
-	mesh->indexBuffer = std::make_unique<core::gpu::Buffer>(m_device, indexInfo);
-
-	core::gpu::SBufferCreateInfo rtVertexInfo{
-		.size = vertexBufferSize,
-		.usage = core::EBufferUsage::AccelerationStructureBuildInput |
-							core::EBufferUsage::ShaderDeviceAddress |
-							core::EBufferUsage::StorageBuffer,
-		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
-	};
-	mesh->rtVertexBuffer = std::make_unique<core::gpu::Buffer>(m_device, rtVertexInfo);
-	mesh->rtVertexBuffer->CopyFrom(mesh->vertices.data(), vertexBufferSize);
-
-	core::gpu::SBufferCreateInfo rtIndexInfo{
-		.size = indexBufferSize,
-		.usage = core::EBufferUsage::AccelerationStructureBuildInput |
-							core::EBufferUsage::ShaderDeviceAddress |
-							core::EBufferUsage::StorageBuffer,
-		.memoryProperties = core::EMemoryProperty::HostVisible | core::EMemoryProperty::HostCoherent
-	};
-	mesh->rtIndexBuffer = std::make_unique<core::gpu::Buffer>(m_device, rtIndexInfo);
-	mesh->rtIndexBuffer->CopyFrom(mesh->indices.data(), indexBufferSize);
-
-	core::gpu::SCommandBufferCreateInfo cmdInfo{};
-	cmdInfo.device = m_device;
-	cmdInfo.level = core::ECommandBufferLevel::Primary;
-	cmdInfo.count = 1;
-	cmdInfo.singleTime = true;
-
-	auto transferCmd = std::make_unique<core::gpu::CommandBuffer>(m_device, cmdInfo);
-
-	transferCmd->Begin(0);
-	transferCmd->CopyBuffer(stagingVertexBuffer.get(), mesh->vertexBuffer.get(), vertexBufferSize);
-	transferCmd->CopyBuffer(stagingIndexBuffer.get(), mesh->indexBuffer.get(), indexBufferSize);
-	transferCmd->End(0);
-	transferCmd->SubmitImmediate(m_device);
-
-	mesh->indexCount = static_cast<uint32_t>(mesh->indices.size());
-}
-
-void loaders::MeshLoader::CreateBLASForMesh(graphics::resources::Mesh* mesh)
-{
-	if (!mesh || !mesh->rtVertexBuffer || !mesh->rtIndexBuffer)
-	{
-		std::cerr << "ERROR: RT buffers not found for BLAS creation!" << std::endl;
-		return;
-	}
-
-	core::gpu::SAccelerationStructureGeometry geometry{};
-	geometry.vertexBuffer = mesh->rtVertexBuffer.get();
-	geometry.vertexCount = static_cast<uint32_t>(mesh->vertices.size());
-	geometry.vertexStride = sizeof(graphics::resources::Vertex);
-	geometry.indexBuffer = mesh->rtIndexBuffer.get();
-	geometry.indexCount = static_cast<uint32_t>(mesh->indices.size());
-	geometry.triangleCount = geometry.indexCount / 3;
-	geometry.opaque = true;
-
-	core::gpu::SAccelerationStructureCreateInfo blasInfo{};
-	blasInfo.type = core::gpu::EAccelerationStructureType::BottomLevel;
-	blasInfo.geometries.push_back(geometry);
-	blasInfo.preferFastTrace = true;
-	blasInfo.allowUpdate = false;
-
-	mesh->blas = std::make_unique<core::gpu::AccelerationStructure>(m_device, blasInfo);
-
-	core::gpu::SCommandBufferCreateInfo cmdInfo{};
-	cmdInfo.device = m_device;
-	cmdInfo.count = 1;
-	cmdInfo.singleTime = true;
-	cmdInfo.level = core::ECommandBufferLevel::Primary;
-
-	core::gpu::CommandBuffer cmdBuffer(m_device, cmdInfo);
-
-	cmdBuffer.Begin(0);
-	cmdBuffer.BuildAccelerationStructure(mesh->blas.get());
-	cmdBuffer.End(0);
-	cmdBuffer.SubmitImmediate(m_device);
-
-	std::cout << "BLAS built for mesh during loading" << std::endl;
-}
-
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const std::string& filepath)
+void loaders::MeshLoader::LoadGLTF(const std::string& filepath, graphics::assets::Mesh& mesh)
 {
 	tinygltf::Model    model;
 	tinygltf::TinyGLTF loader;
@@ -403,8 +288,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 	if (!err.empty())  std::cerr << "GLTF Error: " << err << "\n";
 	if (!ret)          throw std::runtime_error("Failed to load GLTF: " + filepath);
 
-	auto mesh = std::make_shared<graphics::resources::Mesh>();
-	std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
+	std::unordered_map<graphics::Vertex, uint32_t> uniqueVertices{};
 
 	if (model.meshes.empty())
 		throw std::runtime_error("GLTF contains no meshes");
@@ -420,8 +304,8 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 	{
 		const tinygltf::Primitive& prim = gltfMesh.primitives[primIdx];
 
-		uint32_t submeshFirstIndex = static_cast<uint32_t>(mesh->indices.size());
-		uint32_t submeshVertexOffset = static_cast<uint32_t>(mesh->vertices.size());
+		uint32_t submeshFirstIndex = static_cast<uint32_t>(mesh.indices.size());
+		uint32_t submeshVertexOffset = static_cast<uint32_t>(mesh.vertices.size());
 
 		auto getFloatVec = [&](const std::string& name, int elementSize) -> std::vector<float>
 			{
@@ -468,12 +352,12 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 			}
 		}
 
-		std::unordered_map<graphics::resources::Vertex, uint32_t> localVertexMap;
+		std::unordered_map<graphics::Vertex, uint32_t> localVertexMap;
 		uint32_t localVertexCount = 0;
 
 		for (size_t i = 0; i < positions.size() / 3; i++)
 		{
-			graphics::resources::Vertex v{};
+			graphics::Vertex v{};
 			v.position = { positions[i * 3 + 0], positions[i * 3 + 1], positions[i * 3 + 2] };
 			if (!normals.empty())
 				v.normal = { normals[i * 3 + 0], normals[i * 3 + 1], normals[i * 3 + 2] };
@@ -487,8 +371,8 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 
 			if (!uniqueVertices.contains(v))
 			{
-				uniqueVertices[v] = static_cast<uint32_t>(mesh->vertices.size());
-				mesh->vertices.push_back(v);
+				uniqueVertices[v] = static_cast<uint32_t>(mesh.vertices.size());
+				mesh.vertices.push_back(v);
 			}
 
 			localVertexMap[v] = uniqueVertices[v];
@@ -499,7 +383,7 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 		{
 			for (auto idx : primitiveIndices)
 			{
-				graphics::resources::Vertex originalVertex{};
+				graphics::Vertex originalVertex{};
 				originalVertex.position = {
 					positions[idx * 3 + 0],
 					positions[idx * 3 + 1],
@@ -521,24 +405,22 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadGLTF(const s
 				else
 					originalVertex.tangent = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-				mesh->indices.push_back(uniqueVertices[originalVertex]);
+				mesh.indices.push_back(uniqueVertices[originalVertex]);
 			}
 		}
 
-		graphics::resources::SubMesh submesh;
+		graphics::SubMesh submesh;
 		submesh.firstIndex = submeshFirstIndex;
-		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
+		submesh.indexCount = static_cast<uint32_t>(mesh.indices.size() - submeshFirstIndex);
 		submesh.vertexOffset = 0;
 		submesh.materialIndex = (prim.material >= 0) ? prim.material : 0;
 		submesh.name = "primitive_" + std::to_string(primIdx);
 
-		mesh->subMeshes.push_back(submesh);
+		mesh.subMeshes.push_back(submesh);
 	}
-
-	return mesh;
 }
 
-std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const std::string& filepath)
+void loaders::MeshLoader::LoadOBJ(const std::string& filepath, graphics::assets::Mesh& mesh)
 {
 	tinyobj::attrib_t                attrib;
 	std::vector<tinyobj::shape_t>    shapes;
@@ -547,19 +429,19 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 
 	tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filepath.c_str());
 
-	auto mesh = std::make_shared<graphics::resources::Mesh>();
-	std::unordered_map<graphics::resources::Vertex, uint32_t> uniqueVertices{};
+
+	std::unordered_map<graphics::Vertex, uint32_t> uniqueVertices{};
 
 	for (size_t shapeIdx = 0; shapeIdx < shapes.size(); ++shapeIdx)
 	{
 		const auto& shape = shapes[shapeIdx];
 
-		uint32_t submeshFirstIndex = static_cast<uint32_t>(mesh->indices.size());
-		uint32_t submeshVertexOffset = static_cast<uint32_t>(mesh->vertices.size());
+		uint32_t submeshFirstIndex = static_cast<uint32_t>(mesh.indices.size());
+		uint32_t submeshVertexOffset = static_cast<uint32_t>(mesh.vertices.size());
 
 		for (const auto& index : shape.mesh.indices)
 		{
-			graphics::resources::Vertex vertex{};
+			graphics::Vertex vertex{};
 
 			if (index.vertex_index >= 0)
 			{
@@ -599,24 +481,22 @@ std::shared_ptr<graphics::resources::Mesh> loaders::MeshLoader::LoadOBJ(const st
 
 			if (!uniqueVertices.contains(vertex))
 			{
-				uniqueVertices[vertex] = static_cast<uint32_t>(mesh->vertices.size());
-				mesh->vertices.push_back(vertex);
+				uniqueVertices[vertex] = static_cast<uint32_t>(mesh.vertices.size());
+				mesh.vertices.push_back(vertex);
 			}
 
-			mesh->indices.push_back(uniqueVertices[vertex]);
+			mesh.indices.push_back(uniqueVertices[vertex]);
 		}
 
-		graphics::resources::SubMesh submesh;
+		graphics::SubMesh submesh;
 		submesh.firstIndex = submeshFirstIndex;
-		submesh.indexCount = static_cast<uint32_t>(mesh->indices.size() - submeshFirstIndex);
+		submesh.indexCount = static_cast<uint32_t>(mesh.indices.size() - submeshFirstIndex);
 		submesh.vertexOffset = 0;
 		submesh.materialIndex = static_cast<uint32_t>(shapeIdx);
 		submesh.name = shape.name.empty()
 			? ("shape_" + std::to_string(shapeIdx))
 			: shape.name;
 
-		mesh->subMeshes.push_back(submesh);
+		mesh.subMeshes.push_back(submesh);
 	}
-
-	return mesh;
 }

@@ -246,24 +246,21 @@ void core::Input::BindFunctionToAction(std::string _actionName, InputCallback _f
 	if (!ActionsStorage.Contains(_actionName))
 		return;
 	ActionID actionID = ActionsStorage.Find(_actionName);
-
-	std::cout << "Trying to bind " << _actionName << " to " << input::KeyStateToString(_onWhat) << std::endl;
-
 	switch (_onWhat)
 	{
 	case 0:
 		break;
 	case 1:
 		ActionsStorage.Get(actionID).Release.push_back(_functionToCall);
-		std::cout << "Binded " << _actionName << " to " << input::KeyStateToString(_onWhat) << std::endl;
+		//std::cout << "Binded " << _actionName << " to " << input::KeyStateToString(_onWhat) << std::endl;
 		break;
 	case 2:
 		ActionsStorage.Get(actionID).Press.push_back(_functionToCall);
-		std::cout << "Binded " << _actionName << " to " << input::KeyStateToString(_onWhat) << std::endl;
+		//std::cout << "Binded " << _actionName << " to " << input::KeyStateToString(_onWhat) << std::endl;
 		break;
 	case 3:
 		ActionsStorage.Get(actionID).OnGoing.push_back(_functionToCall);
-		std::cout << "Binded " << _actionName << " to " << input::KeyStateToString(_onWhat) << std::endl;
+		//std::cout << "Binded " << _actionName << " to " << input::KeyStateToString(_onWhat) << std::endl;
 		break;
 	default:
 		break;
