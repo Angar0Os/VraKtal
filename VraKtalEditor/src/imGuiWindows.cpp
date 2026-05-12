@@ -88,7 +88,7 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 	m_windows.push_back(new WindowInput(_input , this));
 	m_windows.push_back(new WindowViewport(*this));
 	m_windows.push_back(new WindowHierarchy(*_scene , *this));
-    m_windows.push_back(new WindowInspector(*this , _manager));
+    m_windows.push_back(new WindowInspector(*this , _manager , _astManager));
 
 	imguiWindowsInstance = this;
 
