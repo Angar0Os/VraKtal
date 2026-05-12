@@ -207,11 +207,9 @@ void ContentDrawer::GetContentDrawerWindow()
 		ImGui::EndPopup();
 	}
 
-	std::vector<FileEntry> filteredFiles = m_cachedFiles;
-
-	for (size_t i = 0; i < filteredFiles.size(); ++i)
+	for (size_t i = 0; i < m_cachedFiles.size(); ++i)
 	{
-		auto& fileEntry = filteredFiles[i];
+		auto& fileEntry = m_cachedFiles[i];
 
         if (!filter.PassFilter(fileEntry.filename.c_str())) {
 			continue;
@@ -263,7 +261,7 @@ void ContentDrawer::GetContentDrawerWindow()
 				size_t end = std::max(lastSelected, i);
 
 				for (size_t idx = start; idx <= end; ++idx) {
-					filteredFiles[idx].isSelected = true;
+					m_cachedFiles[idx].isSelected = true;
 					m_selectedIndices.insert(idx);
 				}
 			}
