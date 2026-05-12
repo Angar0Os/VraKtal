@@ -40,7 +40,7 @@ namespace command {
 						std::filesystem::copy(m_paths[i], m_backupPaths[i], std::filesystem::copy_options::recursive);
 					}
 					else {
-						std::filesystem::copy_file(m_paths[i], m_backupPaths[i]);
+						std::filesystem::copy_file(m_paths[i], m_backupPaths[i], std::filesystem::copy_options::overwrite_existing);
 					}
 
 					std::filesystem::remove_all(m_paths[i]);
@@ -165,8 +165,37 @@ namespace command {
 		try {
 			for (size_t i = 0; i < m_sourcePaths.size(); ++i) {
 				if (std::filesystem::is_directory(m_sourcePaths[i])) {
-					std::filesystem::copy(m_sourcePaths[i], m_destPaths[i], std::filesystem::copy_options::recursive);
-				} else {
+					auto sourceAbs = std::filesystem::absolute(m_sourcePaths[i]);
+					auto destAbs = std::filesystem::absolute(m_destPaths[i]);
+
+					bool destSource = false;
+
+					try {
+						auto rel = std::filesystem::relative(destAbs, sourceAbs);
+						destSource = rel.string().find("..") != 0;
+					}
+					catch (const std::exception&) {}
+
+					if (destSource) {
+						std::filesystem::create_directory(m_destPaths[i]);
+						for (const auto& entry : std::filesystem::recursive_directory_iterator(m_sourcePaths[i])) {
+							auto relativePath = std::filesystem::relative(entry.path(), m_sourcePaths[i]);
+							auto targetPath = m_destPaths[i] / relativePath;
+
+							if (entry.path().string().find(m_destPaths[i].string()) == std::string::npos) {
+								if (entry.is_directory()) {
+									std::filesystem::create_directories(targetPath);
+								} else {
+									std::filesystem::copy_file(entry.path(), targetPath, std::filesystem::copy_options::overwrite_existing);
+								}
+							}
+						}
+					}
+					else {
+						std::filesystem::copy(m_sourcePaths[i], m_destPaths[i], std::filesystem::copy_options::recursive);
+					}
+				}
+				else {
 					std::filesystem::copy_file(m_sourcePaths[i], m_destPaths[i]);
 				}
 			}

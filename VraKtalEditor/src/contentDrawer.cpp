@@ -60,6 +60,8 @@ void ContentDrawer::ClearSelection()
 
 void ContentDrawer::GetContentDrawerWindow()
 {
+	static ImGuiTextFilter filter;
+
 	if (!m_windowManager->GetProjectModal()->GetLastCreatedProjectPath().empty() && m_windowManager->GetProjectModal()->HasNewProjectCreated()) //Check if new project have been loaded or created 
 	{
 		SetCurrentPath(m_windowManager->GetProjectModal()->GetLastCreatedProjectPath());
@@ -83,6 +85,8 @@ void ContentDrawer::GetContentDrawerWindow()
 		if (ImGui::MenuItem(ICON_MDI_REFRESH)) {
 			m_needsRefresh = true;
 		}
+
+		filter.Draw("Filter (inc -exc)", 150.0f);
 
 		std::filesystem::path tempPath = m_currentPath;
 		std::vector<std::pair<std::string, std::filesystem::path>> breadcrumbs;
@@ -207,6 +211,10 @@ void ContentDrawer::GetContentDrawerWindow()
 	{
 		auto& fileEntry = m_cachedFiles[i];
 
+        if (!filter.PassFilter(fileEntry.filename.c_str())) {
+			continue;
+		}
+
 		ImGui::PushID(static_cast<int>(i));
 		ImGui::BeginGroup();
 
@@ -289,9 +297,33 @@ void ContentDrawer::GetContentDrawerWindow()
 		ImGui::PopTextWrapPos();
 
 		ImGui::EndGroup();
-		ImGui::SameLine();
+
+		float nextButtonX = ImGui::GetItemRectMax().x + ImGui::GetStyle().ItemSpacing.x + buttonSize;
+		float windowVisibleX = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+
+		if (nextButtonX < windowVisibleX) {
+			ImGui::SameLine();
+		}
+
 		ImGui::PopID();
 	}
+}
+
+void ContentDrawer::HandleExternalFileDrop(const std::vector<std::string>& filePaths)
+{
+	if (!m_commandHistory) {
+		return;
+	}
+
+	std::vector<std::filesystem::path> sourcePaths;
+	for (const auto& file : filePaths) {
+		sourcePaths.push_back(std::filesystem::path(file));
+	}
+
+	auto cmd = std::make_unique<command::ImportFileCommand>(sourcePaths, m_currentPath);
+	m_commandHistory->ExecuteCommand(std::move(cmd));
+
+	m_needsRefresh = true;
 }
 
 void ContentDrawer::SetCurrentPath(std::filesystem::path newPath)

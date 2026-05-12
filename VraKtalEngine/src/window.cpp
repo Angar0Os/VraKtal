@@ -48,6 +48,12 @@ void core::Window::PollEvents()
 	glfwPollEvents();
 }
 
+void core::Window::SetDropCallback(DropCallback callback)
+{
+    glfwSetDropCallback(m_window, callback);
+}
+
+
 bool core::Window::ShouldClose() const
 {
 	return glfwWindowShouldClose(m_window);
