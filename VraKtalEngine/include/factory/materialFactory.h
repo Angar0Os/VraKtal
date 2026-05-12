@@ -18,13 +18,13 @@ namespace factory
 
 		graphics::resources::Material Create(const graphics::assets::Material& asset);
 
-		static std::shared_ptr<graphics::resources::Material> CreateMaterialInstance(
+		static graphics::resources::Material CreateMaterialInstance(
 			core::gpu::Device& device,
 			const graphics::assets::Material& material,
 			const core::gpu::DescriptorSetLayout* dsLayout
 		);
 
-		static std::shared_ptr<graphics::resources::Material> CreateDefault(
+		static graphics::resources::Material CreateDefault(
 			core::gpu::Device& device,
 			const core::gpu::DescriptorSetLayout* dsLayout);
 

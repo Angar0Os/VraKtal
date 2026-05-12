@@ -44,22 +44,9 @@ namespace graphics {
 			std::vector<Vertex>   vertices;
 			std::vector<uint32_t> indices;
 			std::vector<SubMesh>  subMeshes;
-			uint32_t indexCount = 0; // ? 
 
-			std::vector<SubMesh> GetSubmeshes() const
-			{
-				if (!subMeshes.empty())
-					return subMeshes;
-
-				SubMesh defaultSubmesh;
-				defaultSubmesh.firstIndex = 0;
-				defaultSubmesh.indexCount = static_cast<uint32_t>(indices.size());
-				defaultSubmesh.vertexOffset = 0;
-				defaultSubmesh.materialIndex = 0;
-				defaultSubmesh.name = "default";
-				return { defaultSubmesh };
-			}
 			bool HasSubmeshes() const { return !subMeshes.empty(); }
+
 
 			uint32_t           GetVertexCount()   const { return static_cast<uint32_t>(vertices.size()); }
 			uint32_t           GetIndexCount()    const { return static_cast<uint32_t>(indices.size()); }

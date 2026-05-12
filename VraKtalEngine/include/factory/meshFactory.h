@@ -25,6 +25,8 @@ namespace factory {
 		static graphics::resources::Mesh CreateBuffersForMesh(const graphics::assets::Mesh& _mesh , core::gpu::Device* _device);
 		static void CreateBLASForMesh(graphics::resources::Mesh& mesh, const graphics::assets::Mesh& meshAsset, core::gpu::Device* _device);
 	
+		static void EnsureDefaultSubmesh(graphics::resources::Mesh& _mesh, graphics::assets::Mesh& _meshAsset);
+	private:
 		core::gpu::Device& m_device;
 	};
 

@@ -12,7 +12,6 @@ factory::MeshFactory::MeshFactory(core::gpu::Device& _device) : m_device(_device
 graphics::resources::Mesh MeshFactory::Create(const graphics::assets::Mesh& asset)
 {
 	graphics::resources::Mesh mesh = CreateBuffersForMesh(asset, &m_device);
-    EnsureDefaultSubmesh(mesh, const_cast<graphics::assets::Mesh&>(asset)); // EnsureDefaultSubmesh modifies the asset's submeshes if needed
 	CreateBLASForMesh(mesh, asset, &m_device);
 	return mesh;
 }

@@ -214,7 +214,6 @@
     <ClInclude Include="include\core\input\InputCallback.h" />
     <ClInclude Include="include\core\input\keys.h" />
     <ClInclude Include="include\core\manager\assetManager.h" />
-    <ClInclude Include="include\core\manager\materialInstanceManager.h" />
     <ClInclude Include="include\core\manager\ressourceManager.h" />
     <ClInclude Include="include\core\window.h" />
     <ClInclude Include="include\factory\assetFactory.h" />
@@ -298,7 +297,6 @@
     <ClCompile Include="src\core\gpu\vulkan\texture_impl.cpp" />
     <ClCompile Include="src\core\gpu_detail\converters.cpp" />
     <ClCompile Include="src\core\manager\assetManager.cpp" />
-    <ClCompile Include="src\core\manager\materialInstanceManager.cpp" />
     <ClCompile Include="src\core\manager\ressourceManager.cpp" />
     <ClCompile Include="src\factory\assetFactory.cpp" />
     <ClCompile Include="src\factory\materialFactory.cpp" />

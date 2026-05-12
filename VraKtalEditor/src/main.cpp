@@ -6,7 +6,6 @@
 #include <graphics/renderPass/gBufferPass.h>
 #include <graphics/resources/object/light.h>
 #include <graphics/assets/material.h>
-#include <core/manager/materialInstanceManager.h>
 
 #include <core/manager/ressourceManager.h>
 #include <core/manager/assetManager.h>
@@ -46,7 +45,6 @@ class App
 {
 public:
     App(core::Input& _input, core::gpu::Device& _device, graphics::Renderer& _renderer) : m_renderer(_renderer){
-        m_matInstManager = new materialInstanceManager(_renderer , _device);
 
         _input.AddAction("CloseApp");
         _input.BindActionKey({ input::Key::ESCAPE }, "CloseApp");
@@ -87,7 +85,6 @@ public:
         delete m_scene;
         delete m_reManager;
         delete m_asManager;
-        delete m_matInstManager;
     };
 
     bool ShouldClose() const { return bSouldCloseApp; }
@@ -243,7 +240,6 @@ public:
     RessourceManager* m_reManager;
     AssetManager* m_asManager;
     graphics::Renderer& m_renderer;
-    materialInstanceManager* m_matInstManager;
 private:
     bool bSouldCloseApp = false;
 };

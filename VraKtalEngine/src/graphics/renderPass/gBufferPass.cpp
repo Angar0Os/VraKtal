@@ -5,7 +5,6 @@
 #include <core/gpu/descriptorSet.h>
 #include <core/enum.h>
 #include <loaders/shaderLoader.h>
-#include <graphics/assets/mesh.h>
 
 using namespace core;
 using namespace core::gpu;
@@ -94,24 +93,28 @@ void graphics::GBufferPass::CreateMaterialLayout()
 	SDescriptorSetLayoutBinding materialUBOBinding{
 		.binding = 0,
 		.descriptorType = EDescriptorType::UniformBuffer,
+		.descriptorCount = 1,
 		.stageFlags = core::ShaderStage::Fragment
 	};
 
 	SDescriptorSetLayoutBinding albedoBinding{
 		.binding = 1,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
+		.descriptorCount = 1,
 		.stageFlags = core::ShaderStage::Fragment
 	};
 
 	SDescriptorSetLayoutBinding normalBinding{
 		.binding = 2,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
+		.descriptorCount = 1,
 		.stageFlags = core::ShaderStage::Fragment
 	};
 
 	SDescriptorSetLayoutBinding roughMetalBinding{
 		.binding = 3,
 		.descriptorType = EDescriptorType::CombinedImageSampler,
+		.descriptorCount = 1,
 		.stageFlags = core::ShaderStage::Fragment
 	};
 
@@ -130,7 +133,7 @@ void graphics::GBufferPass::CreateMaterialLayout()
 
 void graphics::GBufferPass::CreateFallbackMaterial()
 {
-	m_fallbackMaterial = factory::MaterialFactory::CreateDefault(m_device, m_materialLayout.get());
+    m_fallbackMaterial = std::make_unique<graphics::resources::Material>(factory::MaterialFactory::CreateDefault(m_device, m_materialLayout.get()));
 }
 
 void graphics::GBufferPass::CreatePipeline()
@@ -276,22 +279,13 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 
 			for (const auto& submesh : mesh->subMeshes)
 			{
-				auto& mat = mesh->GetMaterial(submesh.materialIndex);
+				graphics::resources::Material* mat = mesh->GetMaterial(submesh.materialIndex);
+				if (!mat) mat = m_fallbackMaterial.get();
 
-				cmd.BindDescriptorSets(
-					m_pipeline.get(),
-					mat.descriptorSet.get(),
-					0,
-					1
-				);
+				if (mat && mat->descriptorSet)
+					cmd.BindDescriptorSets(m_pipeline.get(), mat->descriptorSet.get(), 0, 1);
 
-				cmd.DrawIndexed(
-					submesh.indexCount,
-					1,
-					submesh.firstIndex,
-					submesh.vertexOffset,
-					0
-				);
+				cmd.DrawIndexed(submesh.indexCount, 1, submesh.firstIndex, submesh.vertexOffset, 0);
 			}
 
 			m_prevModelTransforms[currentFrame][mesh] = transform;

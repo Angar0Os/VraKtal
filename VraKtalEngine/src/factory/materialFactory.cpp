@@ -269,70 +269,70 @@ graphics::resources::Material factory::MaterialFactory::Create(const graphics::a
 	return material;
 }
 
-std::shared_ptr<Material> factory::MaterialFactory::CreateMaterialInstance(
+graphics::resources::Material factory::MaterialFactory::CreateMaterialInstance(
 	Device& device,
 	const graphics::assets::Material& material,
 	const core::gpu::DescriptorSetLayout* dsLayout //depend -> domain (postEffect , surface)
 )
 {
-	auto instance = std::make_shared<Material>();
-	instance->name = material.name;
-	instance->albedoColor = material.albedo;
-	instance->metalness = material.metallic;
-	instance->roughnessValue = material.roughness;
+	graphics::resources::Material instance;
+	instance.name = material.name;
+	instance.albedoColor = material.albedo;
+	instance.metalness = material.metallic;
+	instance.roughnessValue = material.roughness;
 
 	if (material.albedoTexture.size() > 0 && !material.albedoTexture.empty())
 	{
-		instance->albedoImage = UploadTexture(device, material.albedoTexture, true);
+		instance.albedoImage = UploadTexture(device, material.albedoTexture, true);
 	}
-	if (!instance->albedoImage)
+	if (!instance.albedoImage)
 	{
 		uint8_t r = static_cast<uint8_t>(material.albedo.r * 255);
 		uint8_t g = static_cast<uint8_t>(material.albedo.g * 255);
 		uint8_t b = static_cast<uint8_t>(material.albedo.b * 255);
-		instance->albedoImage = CreateFallback1x1(device, r, g, b, 255);
+		instance.albedoImage = CreateFallback1x1(device, r, g, b, 255);
 	}
 	else
 	{
-		instance->hasAlbedoTexture = true;
+		instance.hasAlbedoTexture = true;
 	}
-	instance->albedoTexture = std::make_unique<core::gpu::Texture>(device, *instance->albedoImage); // On creer les textures a partir des images ?
+	instance.albedoTexture = std::make_unique<core::gpu::Texture>(device, *instance.albedoImage); // On creer les textures a partir des images ?
 
 	if (material.normalTexture.size() > 0 && !material.normalTexture.empty())
 	{
-		instance->normalImage = UploadTexture(device, material.normalTexture, false);
+		instance.normalImage = UploadTexture(device, material.normalTexture, false);
 	}
-	if (!instance->normalImage)
+	if (!instance.normalImage)
 	{
-		instance->normalImage = CreateFallback1x1(device, 128, 128, 255, 255);
+		instance.normalImage = CreateFallback1x1(device, 128, 128, 255, 255);
 	}
 	else
 	{
-		instance->hasNormalTexture = true;
+		instance.hasNormalTexture = true;
 	}
-	instance->normalTexture = std::make_unique<core::gpu::Texture>(device, *instance->normalImage);
+	instance.normalTexture = std::make_unique<core::gpu::Texture>(device, *instance.normalImage);
 
 	if (material.roughnessTexture.size() > 0 && !material.roughnessTexture.empty())
 	{
-		instance->roughnessMetalImage = UploadTexture(device, material.roughnessTexture, false);
+		instance.roughnessMetalImage = UploadTexture(device, material.roughnessTexture, false);
 	}
-	if (!instance->roughnessMetalImage)
+	if (!instance.roughnessMetalImage)
 	{
 		uint8_t rough = static_cast<uint8_t>(material.roughness * 255);
 		uint8_t metal = static_cast<uint8_t>(material.metallic * 255);
-		instance->roughnessMetalImage = CreateFallback1x1(device, rough, metal, 0, 255);
+		instance.roughnessMetalImage = CreateFallback1x1(device, rough, metal, 0, 255);
 	}
 	else
 	{
-		instance->hasRoughnessMetalTexture = true;
+		instance.hasRoughnessMetalTexture = true;
 	}
-	instance->roughnessMetalTexture = std::make_unique<core::gpu::Texture>(device, *instance->roughnessMetalImage);
-	instance->gpuData.baseColor = glm::vec4(material.albedo, 1.0f);
-	instance->gpuData.params = glm::vec4(
+	instance.roughnessMetalTexture = std::make_unique<core::gpu::Texture>(device, *instance.roughnessMetalImage);
+	instance.gpuData.baseColor = glm::vec4(material.albedo, 1.0f);
+	instance.gpuData.params = glm::vec4(
 		material.metallic,   // x
 		material.roughness,  // y
-		instance->hasAlbedoTexture ? 1.0f : 0.0f, // z
-		instance->hasNormalTexture ? 1.0f : 0.0f  // w
+		instance.hasAlbedoTexture ? 1.0f : 0.0f, // z
+		instance.hasNormalTexture ? 1.0f : 0.0f  // w
 	);
 
 	SBufferCreateInfo bufferInfo{
@@ -341,22 +341,32 @@ std::shared_ptr<Material> factory::MaterialFactory::CreateMaterialInstance(
 		.memoryProperties = EMemoryProperty::HostVisible | EMemoryProperty::HostCoherent
 	};
 
-	instance->materialBuffer =
+	instance.materialBuffer =
 		std::make_unique<core::gpu::Buffer>(&device, bufferInfo);
 
-	instance->materialBuffer->CopyFrom(
-		&instance->gpuData,
+	instance.materialBuffer->CopyFrom(
+		&instance.gpuData,
 		sizeof(MaterialGPUData)
 	);
 
-	BindAndUpdate(device, *instance, dsLayout);
+	BindAndUpdate(device, instance, dsLayout);
 	return instance;
 }
 
-std::shared_ptr<Material> factory::MaterialFactory::CreateDefault(
+graphics::resources::Material factory::MaterialFactory::CreateDefault(
 	Device& device,
 	const core::gpu::DescriptorSetLayout* dsLayout)
 {
 	graphics::assets::Material mat;
-	return nullptr;
+
+	mat.name = "DefaultMaterial";
+	mat.albedo = glm::vec3(1.0f, 1.0f, 1.0f);
+	mat.metallic = 0.0f;
+	mat.roughness = 1.0f;
+
+	mat.albedoTexture.clear();
+	mat.normalTexture.clear();
+	mat.roughnessTexture.clear();
+
+	return factory::MaterialFactory::CreateMaterialInstance(device,mat,dsLayout);
 }

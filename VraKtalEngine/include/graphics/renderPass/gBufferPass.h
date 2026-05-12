@@ -56,7 +56,7 @@ namespace graphics
 		std::unordered_map<resources::Mesh*, glm::mat4> m_prevTransforms;
 
 		std::unique_ptr<DescriptorSetLayout>         m_materialLayout;
-		std::shared_ptr<resources::Material> m_fallbackMaterial;
+		std::unique_ptr<resources::Material> m_fallbackMaterial;
 		std::unordered_map<resources::Mesh*, glm::mat4>	m_prevModelTransforms[Device::s_FRAMES_IN_FLIGHT];
 
 		void CreateAttachments();

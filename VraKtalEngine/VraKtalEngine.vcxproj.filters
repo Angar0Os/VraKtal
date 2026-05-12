@@ -241,9 +241,6 @@
     <ClInclude Include="include\factory\materialFactory.h">
       <Filter>include\factory</Filter>
     </ClInclude>
-    <ClInclude Include="include\core\manager\materialInstanceManager.h">
-      <Filter>include\core\manager</Filter>
-    </ClInclude>
     <ClInclude Include="include\graphics\assets\mesh.h">
       <Filter>include\graphics\assets</Filter>
     </ClInclude>
@@ -401,9 +398,6 @@
     </ClCompile>
     <ClCompile Include="src\factory\materialFactory.cpp">
       <Filter>src\factory</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\manager\materialInstanceManager.cpp">
-      <Filter>src\core\manager</Filter>
     </ClCompile>
     <ClCompile Include="src\core\manager\assetManager.cpp">
       <Filter>src\core\manager</Filter>
