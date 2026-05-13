@@ -1,5 +1,7 @@
 #pragma once
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+
 #include "TimelineEditor.h"
 #include "imgui/imgui.h" 
 #include "imgui/imgui_Internal.h"
@@ -21,7 +23,7 @@ void TimelineEditor::getTimelineEditorWindow(AudioManager* audioman)
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar;
 	window_flags |= ImGuiWindowFlags_HorizontalScrollbar;
 	//window_flags |= ImGuiWindowFlags_NoScrollbar;
-	//window_flags |= ImGuiWindowFlags_NoScrollWithMouse;
+	window_flags |= ImGuiWindowFlags_NoScrollWithMouse;
 	ImGui::Begin("Track Editor", nullptr, window_flags);
 	if (ImGui::BeginMenuBar())
 	{
@@ -87,31 +89,19 @@ void TimelineEditor::TimelineWidget(const char* str_id, ImVec2 size)
 
 	ImGuiWindowFlags winFlag = ImGuiWindowFlags_HorizontalScrollbar;
 
-	//ImGui::BeginChild("ChildL", ImGui::GetContentRegionAvail(), ImGuiChildFlags_None, winFlag);
-
-
 		ImGui::PushID(str_id);
 
 			const ImGuiID id = window->GetID(str_id);
 
 			ImVec2 pos = window->DC.CursorPos;
-			ImRect total_bb(pos, size);  ///ImGui::GetContentRegionAvail()
+			ImRect total_bb(pos, pos + size);  
 
-			ImVec2 keyframeExplorerZone = ImVec2(total_bb.Max.x / 10, total_bb.Max.y);
-			//ImVec2 timelineZone = ImVec2(total_bb.Max.x - keyframeExplorerZone.x, total_bb.Max.y);// +(total_bb.Max.y - musicTrackZone.y));
-			
 
-			ImDrawList* draw_list = window->DrawList;
-			//draw_list->AddRectFilled(total_bb.Min, total_bb.Max, ImGui::GetColorU32(ImGuiCol_Border));
-
-			KeyframeExplorer("keyframeExplorer", keyframeExplorerZone);
+			KeyframeExplorer("keyframeExplorer", ImVec2(size.x / 10, size.y));
 			ImGui::SameLine();
 			Timelinevisualizer("timeline", ImGui::GetContentRegionAvail());
 
 		ImGui::PopID();
-
-
-	//ImGui::EndChild();
 }
 
 void TimelineEditor::KeyframeExplorer(const char* str_id, ImVec2 size)
@@ -124,18 +114,13 @@ void TimelineEditor::KeyframeExplorer(const char* str_id, ImVec2 size)
 	const ImGuiID id = window->GetID(str_id);
 
 	ImVec2 pos = window->DC.CursorPos;
-	ImRect bb(pos, size);
+	ImRect bb(pos, pos + size);
 
-	ImGui::BeginChild("keyframeExplo", bb.Max, ImGuiChildFlags_ResizeX, ImGuiWindowFlags_MenuBar);
+	ImGui::BeginChild("keyframeExplo", size, ImGuiChildFlags_ResizeX, ImGuiWindowFlags_MenuBar);
 		for (int i = 0; i < 100; i++)
 			ImGui::Text("%04d: scrollable region", i);
 	ImGui::EndChild();
 
-	//ImGui::ItemSize(bb);
-	//if (!ImGui::ItemAdd(bb, id)) return;
-
-	//ImDrawList* draw_list = window->DrawList;
-	//draw_list->AddRectFilled(bb.Min, bb.Max, ImGui::GetColorU32(ImGuiCol_Text));
 }
 
 void TimelineEditor::MusicTrackSlider(const char* str_id, float* current_time, float duration, ImVec2 size)
@@ -219,19 +204,110 @@ void TimelineEditor::Timelinevisualizer(const char* str_id, ImVec2 size)
 		MusicTrackSlider("trackSlider", &currentTime, length, musicTrackZone);
 
 		ImVec2 vizualizerZone = ImVec2(bb.Max.x, ImGui::GetContentRegionAvail().y);
-		ImGui::BeginChild("timelineVizu", vizualizerZone, ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
+		ImGui::BeginChild("timelineVizu", vizualizerZone, ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+			
 
-			ImVec2 cpos  = ImGui::GetCursorScreenPos();
-			ImVec2 ecart = ImVec2((cpos.x - bb.Min.x),(cpos.y - bb.Min.y ));
-			ImGui::SetCursorScreenPos(ImVec2(cpos.x - ecart.x, cpos.y - ecart.y + 25));
-			cpos = ImGui::GetCursorScreenPos();
+			//vizualizerZone = ImVec2(bb.Max.x, ImGui::GetContentRegionAvail().y);
+			gridOfCell("gridOfCell", vizualizerZone, 25, 50);
 
-				ImDrawList* draw_list = window->DrawList;
-				draw_list->AddRectFilled(cpos, ImVec2(bb.Max.x + bb.Min.x, bb.Max.y + bb.Min.y), ImGui::GetColorU32(ImGuiCol_Button));
+			//ImVec2 cpos  = ImGui::GetCursorScreenPos();
+			//ImVec2 ecart = ImVec2((cpos.x - bb.Min.x),(cpos.y - bb.Min.y ));
+			//ImGui::SetCursorScreenPos(ImVec2(cpos.x - ecart.x, cpos.y - ecart.y + 25));
+			//cpos = ImGui::GetCursorScreenPos();
+
 
 				Cursor("cursor", ImVec2(bb.Max.x + bb.Min.x, bb.Max.y + bb.Min.y));
 		ImGui::EndChild();
 	ImGui::EndGroup();
+}
+
+void TimelineEditor::gridOfCell(const char* str_id, ImVec2 size, int col, int row)
+{
+	ImGuiWindow* window = ImGui::GetCurrentWindow();
+	if (window->SkipItems) return;
+
+	ImGuiContext& g = *GImGui;
+	const ImGuiStyle& style = g.Style;
+	const ImGuiID id = window->GetID(str_id);
+
+	ImVec2 pos = window->DC.CursorPos;
+	ImRect bb(pos, pos + ImVec2(cellSize.x * col, cellSize.y * row));
+
+	ImGui::ItemSize(bb);
+	if (!ImGui::ItemAdd(bb, id)) return;
+	std::vector<Cell*> cellRow;
+
+	for (int i = 0; i < col; i++)
+	{
+		cellRow.clear();
+		ImGui::SameLine();
+		for (int j = 0; j < row; j++)
+		{	
+			std::string gridId = "Cell_" + std::to_string(i) + "_" + std::to_string(j);
+
+			//ImGui::PushID(i + j);
+			cellRow.push_back(CreateCell(gridId.c_str(), bb.Min + ImVec2(cellSize.x * i, cellSize.y * j)));
+			//ImGui::PopID();
+		}
+		cellGrid.push_back(cellRow);
+	}
+
+}
+
+Cell* TimelineEditor::CreateCell(const char* str_id, ImVec2 position)
+{
+	ImGuiWindow* window = ImGui::GetCurrentWindow();
+	if (window->SkipItems) return nullptr;
+
+	ImGuiContext& g = *GImGui;
+	const ImGuiStyle& style = g.Style;
+	
+
+	ImVec2 spos = ImGui::GetCursorScreenPos();
+	ImRect sbb(position, position + cellSize);
+
+	Cell* result = new Cell;
+	result->surface = sbb;
+
+	cellBody(sbb);
+
+	ImDrawList* draw_list = window->DrawList;
+	ImVec2 minVecSubCell;
+	ImVec2 maxVecsubCell;
+
+	for (int i = 0; i < beatperrow; i++)
+	{
+		std::string subId = "sub" + std::string(str_id) + "_" + std::to_string(i);
+		const ImGuiID id = window->GetID(subId.c_str());
+
+		minVecSubCell = ImVec2(sbb.Min.x + (( (sbb.Max.x - sbb.Min.x) / beatperrow) * (i)), sbb.Min.y);
+		maxVecsubCell = ImVec2(sbb.Min.x + (( (sbb.Max.x - sbb.Min.x) / beatperrow) * (i + 1)), sbb.Max.y);
+		ImRect rectSub(minVecSubCell, maxVecsubCell);//sbb.Min
+
+		
+
+		ImGui::PushID(id);
+		bool hovered, held;
+		bool pressed = ImGui::ButtonBehavior(rectSub, id, &hovered, &held);
+		if (held)
+		{
+			
+		}
+		else if (hovered)
+		{
+			draw_list->AddRectFilled(rectSub.Min, rectSub.Max, ImGui::GetColorU32(ImGuiCol_Border));
+			ImGui::SetItemTooltip(subId.c_str());
+		}
+		else
+		{
+
+		}
+		draw_list->AddLine(rectSub.Min, ImVec2(rectSub.Min.x, rectSub.Max.y), ImGui::GetColorU32(ImGuiCol_Border));
+		draw_list->AddLine(rectSub.Max, ImVec2(rectSub.Max.x, rectSub.Min.y), ImGui::GetColorU32(ImGuiCol_Border));
+		ImGui::PopID();
+	}
+
+	return result;
 }
 
 void TimelineEditor::Cursor(const char* str_id, ImVec2 size)
@@ -248,6 +324,18 @@ void TimelineEditor::Cursor(const char* str_id, ImVec2 size)
 
 	ImDrawList* draw_list = window->DrawList;
 	draw_list->AddRectFilled(ImVec2(cursorPos.x - cursorSize * 2, cursorPos.y), ImVec2(cursorPos.x + cursorSize * 2, size.y), cursorCol);
+}
+
+void TimelineEditor::cellBody(ImRect bb)
+{
+	ImGuiWindow* window = ImGui::GetCurrentWindow();
+	if (window->SkipItems) ;
+
+	ImDrawList* draw_list = window->DrawList;
+	draw_list->AddLine(bb.Min, ImVec2(bb.Max.x, bb.Min.y), ImGui::GetColorU32(ImGuiCol_Text));
+	draw_list->AddLine(ImVec2(bb.Min.x + cellBorderWidth, bb.Min.y) , ImVec2(bb.Min.x + cellBorderWidth, bb.Max.y) , ImGui::GetColorU32(ImGuiCol_Text));
+	draw_list->AddLine(ImVec2(bb.Max.x + cellBorderWidth, bb.Max.y) , ImVec2(bb.Max.x + cellBorderWidth, bb.Min.y), ImGui::GetColorU32(ImGuiCol_Text));
+	draw_list->AddLine(bb.Max, ImVec2(bb.Min.x, bb.Max.y), ImGui::GetColorU32(ImGuiCol_Text));
 }
 
 std::string TimelineEditor::ConvertToTime(float time)
