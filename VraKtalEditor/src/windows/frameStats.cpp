@@ -25,7 +25,20 @@ void WindowStat::Draw()
 
         for (const auto& [categoryName, categoryProfiles] : profiles)
         {
-            if (ImGui::TreeNode(categoryName.c_str()))
+            float categoryTotalMs = 0.0f;
+
+            for (const auto& [profileName, stats] : categoryProfiles)
+            {
+                categoryTotalMs += stats.lastMs;
+            }
+
+            if (ImGui::TreeNodeEx(
+                categoryName.c_str(),
+                0,
+                "%s : %.3f ms",
+                categoryName.c_str(),
+                categoryTotalMs
+            ))
             {
                 for (const auto& [profileName, stats] : categoryProfiles)
                 {

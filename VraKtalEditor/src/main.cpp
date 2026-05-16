@@ -308,8 +308,10 @@ int main()
     {
         vraktal.Update();
 
+        vraktal.GetTime().Begin("Engine", "BeginFrame");
         if (!vraktal.BeginFrame())
             continue;
+        vraktal.GetTime().End("Engine", "BeginFrame");
 
 #ifdef VRAKTAL_EDITOR
         imGuiWindows.Update();
@@ -317,7 +319,9 @@ int main()
         vraktal.Render();
 #endif // VRAKTAL_EDITOR
 
+        vraktal.GetTime().Begin("Engine", "EndFrame");
         vraktal.EndFrame();
+        vraktal.GetTime().End("Engine", "EndFrame");
     }
 
     vraktal.Cleanup();

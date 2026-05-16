@@ -155,8 +155,10 @@ void ImGuiWindows::Update()
 
         cmd->BeginRendering(&m_vraktal.GetDevice(), { imguiColor }, noDepth);
 
-        GetContext()->PrepareDrawData();
+		GetContext()->PrepareDrawData();
         GetContext()->DrawEditors(cmd);
+
+
         cmd->EndRendering();
 
         cmd->TransitionImageLayout(
@@ -174,6 +176,7 @@ void ImGuiWindows::SetScene(uint32_t _sceneID)
 
 void ImGuiWindows::DrawImGui()
 {
+	m_vraktal.GetTime().Begin("Editor", "Draw Editor");
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(viewport->WorkPos);
 	ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -196,6 +199,7 @@ void ImGuiWindows::DrawImGui()
 	if (GetProjectModal()->HasNewProjectCreated()) {
 		GetProjectModal()->ResetProjectCreatedFlag();
 	}
+	m_vraktal.GetTime().End("Editor", "Draw Editor");
 }
 
 core::gpu::ImguiContext* ImGuiWindows::GetContext()

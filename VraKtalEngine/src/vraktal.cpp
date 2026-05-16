@@ -62,7 +62,8 @@ Vraktal::~Vraktal() {}
 
 void Vraktal::Update()
 {
-    m_core.get()->time.Update();
+    GetTime().Begin("Engine", "Update");
+    GetTime().Update();
 
     time += timeStep;
 
@@ -74,18 +75,18 @@ void Vraktal::Update()
         return;
     }
 
+    m_core.get()->time.Begin("Engine","Inputs/PollEvents");
     m_core->window.PollEvents();
-    m_core.get()->time.Begin("Global","Inputs");
     m_core->input.Update();
-    m_core.get()->time.End("Global","Inputs");
+    m_core.get()->time.End("Engine","Inputs/PollEvents");
 
-    m_core.get()->time.Begin("Global","Scene Update");
+    m_core.get()->time.Begin("Engine","Scene Update");
     for(Scene& _scene : m_ecs.get()->sceneManager.GetScenes())
     {
         m_ecs.get()->systemManager.Update(_scene);
     }
-    m_core.get()->time.End("Global","Scene Update");
-
+    m_core.get()->time.End("Engine","Scene Update");
+    GetTime().End("Engine", "Update");
 }
 
 bool Vraktal::BeginFrame()
@@ -100,15 +101,11 @@ bool Vraktal::BeginFrame()
 
 void Vraktal::Render()
 {
-    m_core.get()->time.Begin("Global","Render");
     GetRenderer().Render(GetDevice().GetSwapchainImage(m_imageIndex), ImageLayout::Present);
-    m_core.get()->time.End("Global","Render");
 }
 
 void Vraktal::RenderInImage(core::gpu::Image* _image, ImageLayout _layout) {
-    m_core.get()->time.Begin("Global","Render");
     GetRenderer().Render(_image, _layout);
-    m_core.get()->time.End("Global","Render");
 }
 
 void Vraktal::EndFrame()
