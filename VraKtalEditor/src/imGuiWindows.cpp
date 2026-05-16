@@ -1,10 +1,14 @@
+#pragma once
 #define NOMINMAX
 #include <imGuiWindows.h>
 #include "command/fileCommands.h"
 
+#include <vraktal.h>
+
 #include <core/gpu/imguiContext.h>
 #include <core/input/input.h>
 #include <graphics/renderer.h>
+#include <core/manager/sceneManager.h>
 #include <scene/scene.h>
 
 
@@ -22,6 +26,8 @@
 #include "../include/windows/WindowViewport.h"
 #include "../include/windows/windowHierarchy.h"
 #include "../include/windows/windowInspector.h"
+#include "../include/windows/frameStats.h"
+#include "../include/windows/windowAsset.h"
 
 #include "../include/windows/popup/projectModal.h"
 #include "../include/windows/popup/rightClick.h"
@@ -30,10 +36,11 @@
 #include "../include/windows/others/inspector.h"
 #include "../include/windows/others/meshPlot.h"
 #include "../include/windows/others/dragNdrop.h"
+#include <core/enum.h>
 
 struct ImguiOthers {
-	ImguiOthers(ImGuiWindows* _windows, core::Input* _input , RessourceManager* _reManager , core::gpu::Device* _device , graphics::Renderer* _renderer , AssetManager& _astManager)
-		: imGuizmoHelper(new ImGuizmoHelper(_windows, _input)), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , *_reManager)) , m_inspect(new Inspect(_windows,_reManager,_astManager)) {};
+	ImguiOthers(ImGuiWindows* _windows , Vraktal& _vraktal)
+		: imGuizmoHelper(new ImGuizmoHelper(_windows, &_vraktal.GetInput())), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , _vraktal.GetRessourceManager())) , m_inspect(new Inspect(_windows, &_vraktal.GetRessourceManager(), _vraktal.GetAssetManager())) { };
 	~ImguiOthers() {
 		delete imGuizmoHelper;
 		delete meshPlot;
@@ -72,12 +79,12 @@ static void GLFWDropCallback(GLFWwindow* window, int count, const char** paths)
 	}
 }
 
-ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager , AssetManager& _astManager, core::gpu::Device* _device)
-    : m_imGuiContext(_imGuiContext), m_scene(_scene), m_others(new ImguiOthers(this, &_input , &_manager ,_device, _renderer , _astManager)) ,m_popups(new Popups(this))
+ImGuiWindows::ImGuiWindows(Vraktal& _vraktal) 
+    : m_imGuiContext(_vraktal.GetDevice().GetImGuiContext()), m_others(new ImguiOthers(this, _vraktal)), m_popups(new Popups(this)), m_camera(_vraktal.GetInput()), m_vraktal(_vraktal)
 {
-	m_renderer = _renderer;
-	m_window = window;
-	m_input = &_input;
+	m_renderer = &_vraktal.GetRenderer();
+	m_window = &_vraktal.GetWindow();
+	m_input = &_vraktal.GetInput();
 
 	command::ClearBackupDirectory();
 	m_commandHistory = std::make_unique<command::CommandHistory>(100);
@@ -85,10 +92,12 @@ ImGuiWindows::ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Ren
 	m_contentDrawer = new ContentDrawer(this);
 	m_contentDrawer->SetCommandHistory(m_commandHistory.get());
 
-	m_windows.push_back(new WindowInput(_input , this));
+	m_windows.push_back(new WindowInput(_vraktal.GetInput(), this));
 	m_windows.push_back(new WindowViewport(*this));
-	m_windows.push_back(new WindowHierarchy(*_scene , *this));
-    m_windows.push_back(new WindowInspector(*this , _manager , _astManager));
+    m_windows.push_back(new WindowHierarchy(_vraktal.GetSceneManager(), *this));
+	m_windows.push_back(new WindowInspector(*this, _vraktal.GetRessourceManager(), _vraktal.GetAssetManager()));
+	m_windows.push_back(new WindowStat(*this));
+	m_windows.push_back(new WindowAsset(*this));
 
 	imguiWindowsInstance = this;
 
@@ -117,6 +126,52 @@ Inspect* ImGuiWindows::GetInspect()					{ return m_others->m_inspect;		}
 RightClick* ImGuiWindows::GetRightClick()			{ return m_popups->rightClick;		}
 ProjectModal* ImGuiWindows::GetProjectModal()	{ return m_popups->projectModal;	}
 
+
+
+void ImGuiWindows::Update()
+{
+        GetContext()->PrepareForDrawing();
+        //On doit ajuster la camera
+        if (GetContext()->GetViewportState()->width > 0 && GetContext()->GetViewportState()->height > 0)
+                m_vraktal.GetRenderer().SetCamera(m_camera.GetView(), GetContext()->GetViewportProjection());
+
+        m_vraktal.RenderInImage(GetContext()->GetViewportImage(), ImageLayout::ShaderReadOnly);
+        auto* cmd = m_vraktal.GetRenderer().GetCurrentCommandBuffer();
+        auto* swapchainImage = m_vraktal.GetDevice().GetSwapchainImage(m_vraktal.GetImageIndex());
+
+        CommandBuffer::RenderingAttachmentInfo imguiColor{};
+        imguiColor.image = swapchainImage;
+        imguiColor.clear = false;
+
+        CommandBuffer::DepthAttachmentInfo noDepth{};
+        noDepth.image = nullptr;
+
+        cmd->TransitionImageLayout(
+            swapchainImage,
+            ImageLayout::Undefined,
+            ImageLayout::ColorAttachment,
+            false
+        );
+
+        cmd->BeginRendering(&m_vraktal.GetDevice(), { imguiColor }, noDepth);
+
+        GetContext()->PrepareDrawData();
+        GetContext()->DrawEditors(cmd);
+        cmd->EndRendering();
+
+        cmd->TransitionImageLayout(
+            swapchainImage,
+            ImageLayout::ColorAttachment,
+            ImageLayout::Present,
+            false
+        );
+}
+
+void ImGuiWindows::SetScene(uint32_t _sceneID)
+{
+	m_scene = &m_vraktal.GetSceneManager().GetScene(_sceneID);
+}
+
 void ImGuiWindows::DrawImGui()
 {
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -132,7 +187,6 @@ void ImGuiWindows::DrawImGui()
 	GetProjectModal()->Draw();
 	
 	ContentDrawerWindow();
-
 
 	for (auto& var : m_windows)
 	{

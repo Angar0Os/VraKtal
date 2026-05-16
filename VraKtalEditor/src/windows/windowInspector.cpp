@@ -81,7 +81,7 @@ void WindowInspector::Draw()
             FileEntry* file = m_windows.GetSelectedItem<FileEntry*>();
             if (file->fileType == FileType::MeshGLTF || file->fileType == FileType::MeshOBJ)
             {
-                uint32_t assetID = m_assetManager.GetAssetID<graphics::resources::Mesh>(file->GetRelativeFileLocation().string());
+                uint32_t assetID = m_assetManager.GetAssetID<graphics::assets::Mesh>(file->GetRelativeFileLocation().string());
                 if (assetID != INVALID_ID)
                 {
                     ImGui::Text("Mesh Preview: %s" , file->path.string().c_str());

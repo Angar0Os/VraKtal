@@ -6,17 +6,22 @@
 #include <unordered_map>
 #include <string>
 #include <core/window.h>
-#include "command/commandHistory.h"
 #include <imgui/imgui.h>
 #include <vector>
 #include <variant>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
+#include "command/commandHistory.h"
 #include "windows/ImguiWindowBase.h"
 #include <scene/timeline/entityBase.h>
 #include <utility>
 
+#include "editorCamera.h"
+
 #pragma region ForwardDeclarations
+class Vraktal;
+
 //Windows
 class ContentDrawer;
 class WindowInput;
@@ -46,7 +51,6 @@ class RessourceManager;
 class AssetManager;
 class Scene;
 
-
 namespace core {
     class Input;
 
@@ -74,12 +78,13 @@ namespace hierarchy {
     struct Folder;
 }
 
+
 #pragma endregion
 class ImGuiWindows
 {
 public:
 
-    ImGuiWindows(core::gpu::ImguiContext* _imGuiContext, graphics::Renderer* _renderer, core::Window* window, core::Input& _input, Scene* _scene, RessourceManager& _manager , AssetManager& _astManager, core::gpu::Device* _device);
+    ImGuiWindows(Vraktal& _vraktal);
     ~ImGuiWindows();
 
     struct WindowState
@@ -94,6 +99,7 @@ public:
     core::Window* GetWindow() { return m_window; };
     Scene* GetScene() { return m_scene; };
     core::Input* GetInput() { return m_input; };
+    Vraktal& GetVraktal() { return m_vraktal; };
 
     void ResetSelectedItem();
 
@@ -124,8 +130,6 @@ public:
     void EndWindow(const std::string& name);
     void DisplayWindowStateManagerMenu();
 
-
-
     //helper
     glm::mat4 GetView();
 
@@ -139,6 +143,10 @@ public:
     RightClick* GetRightClick();
     ProjectModal* GetProjectModal();
 
+    void Update();
+
+    void SetScene(uint32_t _sceneID);
+
 private:
     void AddWindowToManager(const std::string& name, bool windowState);
 
@@ -146,6 +154,8 @@ private:
     void ContentDrawerWindow();
     void MainWindow();
     void LoadProject();
+
+    Camera m_camera;
 
     std::unordered_map<std::string, WindowState> m_windowStatesList;
 
@@ -158,6 +168,8 @@ private:
 
     ImguiOthers* m_others;
     Popups* m_popups;
+
+    Vraktal& m_vraktal;
 
     core::Window* m_window;
     graphics::Renderer* m_renderer;

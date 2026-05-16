@@ -97,15 +97,14 @@ void Inspect::Draw(timeline::MeshInstance& _mesh)
             if (ImGui::CollapsingHeader("Materials"))
             {
                 graphics::resources::Mesh& ressourceMesh = m_ressourceManager->GetResource<graphics::resources::Mesh>(_mesh.assetID);
-                for (int i = 0; i < ressourceMesh.materials.size(); i++)
+                for (int i = 0; i < ressourceMesh.materialIds.size(); i++)
                 {
                     ImGui::PushID(i);
 
                     MaterialIndex materialIndex = static_cast<MaterialIndex>(i);
 
                     std::string label =
-                        "Material[" + std::to_string(i) + "] " +
-                        ressourceMesh.materials[i]->name;
+                        "Material[" + std::to_string(i) + "]";
 
                     ImGui::Selectable(label.c_str(), false);
                     MaterialIndexPayload IndexPayLoad = static_cast<MaterialIndex>(i);
@@ -117,8 +116,8 @@ void Inspect::Draw(timeline::MeshInstance& _mesh)
                     if (dropped != INVALID_ID && dropped != static_cast<MaterialIndex>(i))
                     {
                         std::swap(
-                            ressourceMesh.materials[i],
-                            ressourceMesh.materials[dropped]
+                            ressourceMesh.materialIds[i],
+                            ressourceMesh.materialIds[dropped]
                         );
                     }
 

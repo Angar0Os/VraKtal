@@ -1,4 +1,5 @@
 #pragma once
+
 #include "ImguiWindowBase.h"
 #include <core/input/keys.h>
 
@@ -9,13 +10,17 @@
 #include <utils/denseStorage.h>
 #include <string>
 #include <typeindex>
+#include <utility>
+
 #include "others/folder.h"
 
 class ImGuiWindows;
 class Scene;
+class SceneManager;
 
-namespace timeline {
-	struct MeshInstance;
+namespace timeline
+{
+    struct MeshInstance;
 }
 
 namespace graphics
@@ -26,65 +31,86 @@ namespace graphics
 class WindowHierarchy : public ImguiWindowBase
 {
 public:
-	WindowHierarchy(Scene& _scene, ImGuiWindows& _imGuiWindows);
-	~WindowHierarchy();
+    WindowHierarchy(SceneManager& _sceneManager, ImGuiWindows& _imGuiWindows);
+    ~WindowHierarchy();
 
-	void Draw() override;
+    void Draw() override;
 
-	void OnEntityCreatedCallBack(std::pair<EntityID, size_t> _pair);
-	void OnEntityDestroyedCallBack(std::pair<EntityID, size_t> _pair);
+    void OnEntityCreatedCallBack(std::pair<EntityID, size_t> _pair);
+    void OnEntityDestroyedCallBack(std::pair<EntityID, size_t> _pair);
 
-	void CreateFolder(std::string _name);
-	void RenameFolder(hierarchy::FolderID _folderID);
-	void DeleteFolder(hierarchy::FolderID _folderID);
-	void DeleteFolderAndContent(hierarchy::FolderID _folderID);
+    void CreateFolder(std::string _name);
+    void RenameFolder(hierarchy::FolderID _folderID);
+    void DeleteFolder(hierarchy::FolderID _folderID);
+    void DeleteFolderAndContent(hierarchy::FolderID _folderID);
 
-	hierarchy::FolderManager* GetFolderManager() { return &m_folderManager; };
-private:
-	void DrawEntityHierarchyItem(EntityID _ID);
-	void HandleRangeSelect();
-	void HandleRightClick();
-	void HandleInputs();
+    hierarchy::FolderManager* GetFolderManager();
 
 private:
-	Scene& m_scene;
-	ImGuiWindows& m_imGuiWindows;
+    Scene* GetActiveScene();
+    const Scene* GetActiveScene() const;
+    EntityID GetActiveSceneID() const;
 
-	EntityID m_renamingEntity;
-	char m_entityRenameBuffer[256] = {};
+    void SyncActiveScene();
+    void BindActiveSceneCallbacks();
+    void ClearSelection();
+    void SyncFolderManagerWithScene(Scene& _scene, hierarchy::FolderManager& _folderManager);
 
-	std::unordered_map<EntityID, bool> m_entitiesSelected;
+    hierarchy::FolderManager& GetActiveFolderManager();
 
-	void AddSelectedEntity(EntityID _ID);
-	void RemoveEntityFromSelected(EntityID _ID);
-	void SetSelectedEntity(EntityID _ID);
-	bool IsEntitySelected(EntityID index);
-	
-	void UpdateManagerSelectedItem(EntityID _selectedIndex);
+private:
+    void DrawEntityHierarchyItem(EntityID _ID);
+    void HandleRangeSelect();
+    void HandleRightClick();
+    void HandleInputs();
 
-	std::pair<size_t, size_t> m_rangeSelectStartEnd;
-	EntityID m_selectionAnchor = INVALID_ENTITY;
+private:
+    SceneManager& m_sceneManager;
+    ImGuiWindows& m_imGuiWindows;
 
-	std::vector<EntityID> ConstructSelectedEntitiesVector();
+    EntityID m_currentSceneID = INVALID_ENTITY;
 
-	void DrawFilterBar();
-	struct TypeFilter
-	{
-		std::type_index type;
-		std::string name;
-		bool enabled = false;
-	};
-	std::vector<TypeFilter> m_typeFilters;
-	void AddTypeFilter(std::type_index type, const std::string& name);
-	bool PassTypeFilters(EntityID _ID);
+    std::unordered_map<EntityID, bool> m_sceneCallbacksBound;
+    std::unordered_map<EntityID, hierarchy::FolderManager> m_folderManagers;
 
-	bool LastTypeSelectedWasFolderId = false;
+    EntityID m_renamingEntity;
+    char m_entityRenameBuffer[256] = {};
 
-	hierarchy::FolderManager m_folderManager;
-	void DrawFolders(hierarchy::FolderID _folderID);
-	void SelectFolder(hierarchy::FolderID _folderID);
-	hierarchy::FolderID m_selectedFolder = INVALID_ENTITY;
-	hierarchy::FolderID m_renamingFolder = hierarchy::INVALID_FOLDER;
-	hierarchy::FolderID m_pendingDeleteFolder = INVALID_ENTITY;
-	char m_folderRenameBuffer[256] = {};
+    std::unordered_map<EntityID, bool> m_entitiesSelected;
+
+    void AddSelectedEntity(EntityID _ID);
+    void RemoveEntityFromSelected(EntityID _ID);
+    void SetSelectedEntity(EntityID _ID);
+    bool IsEntitySelected(EntityID index);
+
+    void UpdateManagerSelectedItem(EntityID _selectedIndex);
+
+    std::pair<EntityID, EntityID> m_rangeSelectStartEnd;
+    EntityID m_selectionAnchor = INVALID_ENTITY;
+
+    std::vector<EntityID> ConstructSelectedEntitiesVector();
+
+    void DrawFilterBar();
+
+    struct TypeFilter
+    {
+        std::type_index type;
+        std::string name;
+        bool enabled = false;
+    };
+
+    std::vector<TypeFilter> m_typeFilters;
+    void AddTypeFilter(std::type_index type, const std::string& name);
+    bool PassTypeFilters(EntityID _ID);
+
+    bool LastTypeSelectedWasFolderId = false;
+
+    void DrawFolders(hierarchy::FolderID _folderID);
+    void SelectFolder(hierarchy::FolderID _folderID);
+
+    hierarchy::FolderID m_selectedFolder = hierarchy::INVALID_FOLDER;
+    hierarchy::FolderID m_renamingFolder = hierarchy::INVALID_FOLDER;
+    hierarchy::FolderID m_pendingDeleteFolder = hierarchy::INVALID_FOLDER;
+
+    char m_folderRenameBuffer[256] = {};
 };

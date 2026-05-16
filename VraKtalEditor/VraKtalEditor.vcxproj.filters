@@ -99,6 +99,15 @@
     <ClCompile Include="src\windows\others\folder.cpp">
       <Filter>Source Files\windows\others</Filter>
     </ClCompile>
+    <ClCompile Include="src\editorCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\windows\frameStats.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\windows\windowAsset.cpp">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imGuiWindows.h">
@@ -157,6 +166,15 @@
     </ClInclude>
     <ClInclude Include="include\windows\others\folder.h">
       <Filter>Header Files\windows\others</Filter>
+    </ClInclude>
+    <ClInclude Include="include\editorCamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\frameStats.h">
+      <Filter>Header Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\windowAsset.h">
+      <Filter>Header Files\windows</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -151,12 +151,14 @@
     <ClCompile Include="src\command\commandHistory.cpp" />
     <ClCompile Include="src\command\fileCommands.cpp" />
     <ClCompile Include="src\contentDrawer.cpp" />
+    <ClCompile Include="src\editorCamera.cpp" />
     <ClCompile Include="src\imGuiWindows.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\utils\fileTypeDetector.cpp" />
     <ClCompile Include="src\utils\yamlParser.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)VraKtalEditor\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ClCompile Include="src\windows\frameStats.cpp" />
     <ClCompile Include="src\windows\others\dragNdrop.cpp" />
     <ClCompile Include="src\windows\others\folder.cpp" />
     <ClCompile Include="src\windows\others\imGuizmoHelper.cpp" />
@@ -164,12 +166,14 @@
     <ClCompile Include="src\windows\others\meshPlot.cpp" />
     <ClCompile Include="src\windows\popup\projectModal.cpp" />
     <ClCompile Include="src\windows\popup\rightClick.cpp" />
+    <ClCompile Include="src\windows\windowAsset.cpp" />
     <ClCompile Include="src\windows\windowHierarchy.cpp" />
     <ClCompile Include="src\windows\windowInput.cpp" />
     <ClCompile Include="src\windows\windowInspector.cpp" />
     <ClCompile Include="src\windows\windowViewport.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\editorCamera.h" />
     <ClInclude Include="include\imGuiWindows.h" />
     <ClInclude Include="include\contentDrawer.h" />
     <ClInclude Include="include\utils\fileTypeDetector.h" />
@@ -177,6 +181,7 @@
     <ClInclude Include="include\command\command.h" />
     <ClInclude Include="include\command\commandHistory.h" />
     <ClInclude Include="include\command\fileCommands.h" />
+    <ClInclude Include="include\windows\frameStats.h" />
     <ClInclude Include="include\windows\ImguiWindowBase.h" />
     <ClInclude Include="include\windows\others\dragNdrop.h" />
     <ClInclude Include="include\windows\others\folder.h" />
@@ -185,6 +190,7 @@
     <ClInclude Include="include\windows\others\meshPlot.h" />
     <ClInclude Include="include\windows\popup\projectModal.h" />
     <ClInclude Include="include\windows\popup\rightClick.h" />
+    <ClInclude Include="include\windows\windowAsset.h" />
     <ClInclude Include="include\windows\windowHierarchy.h" />
     <ClInclude Include="include\windows\windowInput.h" />
     <ClInclude Include="include\windows\windowInspector.h" />
