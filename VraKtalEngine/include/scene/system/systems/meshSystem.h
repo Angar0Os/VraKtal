@@ -13,12 +13,12 @@ namespace graphics {
 class MeshSystem : public SystemBase
 {
 public:
-	MeshSystem(graphics::Renderer* _renderer , RessourceManager* _reManager);
+	MeshSystem(graphics::Renderer& _renderer , RessourceManager& _reManager);
 	~MeshSystem();
 
     void Update(Scene& _scene) override;
 
 private:
-    graphics::Renderer* m_renderer;
-	RessourceManager* m_ressourceManager;
+    graphics::Renderer& m_renderer;
+	RessourceManager& m_ressourceManager;
 };

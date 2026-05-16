@@ -16,10 +16,13 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
+#include <core/time.h>
 
 using namespace core;
 using namespace core::gpu;
 using namespace graphics::resources;
+
+class RessourceManager;
 
 namespace graphics
 {
@@ -57,11 +60,14 @@ namespace graphics
     {
         glm::mat4 model;
     };
+
+
     class Renderer
     {
     private:
         Window& m_window;
         Device& m_device;
+        RessourceManager& m_ressourceManager;
 
         std::vector<std::unique_ptr<CommandBuffer>> m_commandBuffers;
         std::unique_ptr<AccelerationStructure>      m_tlas;
@@ -86,6 +92,8 @@ namespace graphics
         glm::mat4 m_projMatrix;
         glm::vec3 m_cameraPosition;
 
+        core::Time& m_time;
+
         void CreateCommandBuffers();
         void BuildTLAS();
         void RebuildAccelerationStructures();
@@ -93,7 +101,7 @@ namespace graphics
         void CreateUniformBuffers();
         void InitPasses();
     public:
-        Renderer(core::Window& window, Device& device);
+        Renderer(Window& window, Device& device, RessourceManager& _reManager, core::Time& _time);
         ~Renderer();
 
         void SetCamera(const glm::mat4& view, const glm::mat4& projection);
@@ -103,6 +111,8 @@ namespace graphics
         void OnResize();
         void DrawScene(core::gpu::CommandBuffer* _cmd);
         void Cleanup();
+
+        void SetRessourceManager() {};
 
         CommandBuffer* GetCurrentCommandBuffer();
 

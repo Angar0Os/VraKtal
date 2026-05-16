@@ -58,6 +58,9 @@ public:
 	
 	template<typename T> 
 	uint32_t AddExistingAsset(std::string _path , T& _ressource);
+
+	std::unordered_map<std::type_index, InterfaceStorage*>& GetAssetStorages() { return m_storages; };
+
 private:
 	std::unordered_map<std::type_index, loaders::LoaderBase*> m_loaders;
 	std::unordered_map<std::type_index, InterfaceStorage*> m_storages;

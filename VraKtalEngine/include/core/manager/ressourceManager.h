@@ -3,10 +3,6 @@
 #include <unordered_map>
 #include <memory>
 
-#include <graphics/assets/mesh.h>
-#include <graphics/assets/material.h>
-#include <graphics/resources/object/mesh.h>
-
 #include <utils/NamedStorageMapped.h>
 #include <utils/denseStorage.h>
 #include <utils/typeIndex.h>
@@ -39,9 +35,15 @@ struct ResourceStorageData : public IRessourceStorage
 
 #pragma region forwardDecl
 class AssetManager;
+
 namespace core::gpu 
 {
 	class Device;
+}
+
+namespace graphics
+{
+	class Renderer;
 }
 
 VRAKTAL_FORWARD_DECLARE_ASSET_RESOURCE_FACTORY(Material, MaterialFactory)
@@ -52,15 +54,15 @@ VRAKTAL_FORWARD_DECLARE_ASSET_RESOURCE_FACTORY(Texture, TextureFactory)
 #pragma region RessourceTraits
 template<typename TResource>
 struct ResourceTraits;
-VRAKTAL_RESOURCE_TRAITS(Mesh)
-VRAKTAL_RESOURCE_TRAITS(Texture)
-VRAKTAL_RESOURCE_TRAITS(Material)
+VRAKTAL_RESOURCE_TRAITS(Mesh, MeshFactory)
+VRAKTAL_RESOURCE_TRAITS(Texture, TextureFactory)
+VRAKTAL_RESOURCE_TRAITS(Material, MaterialFactory);
 #pragma endregion
 
 class RessourceManager
 {
 public:
-	RessourceManager(core::gpu::Device& _device , AssetManager& _astManager);
+	RessourceManager(core::gpu::Device& _device , graphics::Renderer& _renderer);
 	~RessourceManager();
 
 	template<typename TResource , typename... Args>
@@ -70,6 +72,9 @@ public:
 	uint32_t CreateRessource(const ResourceTraits<TResource>::AssetType& _asset);
 
 	template<typename TResource>
+	TResource* CreateRessource_ptr(const ResourceTraits<TResource>::AssetType& _asset);
+
+	template<typename TResource>
 	TResource& GetResource(uint32_t _assetID);
 
 private:
@@ -77,7 +82,6 @@ private:
 	std::vector<std::unique_ptr<IRessourceStorage>> m_resourcesStorages;
 
 	core::gpu::Device& m_device;
-	AssetManager& m_assetManager;
 };
 
 template<typename TResource, typename... Args>
@@ -101,21 +105,92 @@ void RessourceManager::RegisterRessourceType(Args&&... args)
 	{
 		m_resourcesStorages[id] = std::make_unique<ResourceStorageData<TResource>>();
 	}
+
+    std::cout << "Registered resource type: " << typeid(TResource).name() << std::endl;
 }
 
 template<typename TResource>
-inline uint32_t RessourceManager::CreateRessource(const ResourceTraits<TResource>::AssetType& _asset)
+inline uint32_t RessourceManager::CreateRessource(
+	const typename ResourceTraits<TResource>::AssetType& _asset
+)
 {
 	using TFactory = typename ResourceTraits<TResource>::FactoryType;
+
 	const auto id = ComponentTypeID<TResource>();
-	static_cast<ResourceStorageData<TResource>*>(m_resourcesStorages[id].get())->data.Add(
-		_asset.id,
-		static_cast<FactoryWrapper<TFactory>*>(m_factories[id].get())->factory.Create(_asset));
-	
+
+	if (_asset.id == 0xFFFFFFFFu)
+		throw std::runtime_error("CreateRessource: asset id is INVALID_ID");
+
+	if (id >= m_factories.size())
+		throw std::runtime_error("CreateRessource: factory vector too small");
+
+	if (id >= m_resourcesStorages.size())
+		throw std::runtime_error("CreateRessource: storage vector too small");
+
+	if (!m_factories[id])
+		throw std::runtime_error("CreateRessource: factory not registered");
+
+	if (!m_resourcesStorages[id])
+		throw std::runtime_error("CreateRessource: storage not registered");
+
+	auto* storage =
+		static_cast<ResourceStorageData<TResource>*>(m_resourcesStorages[id].get());
+
+	auto* factory =
+		static_cast<FactoryWrapper<TFactory>*>(m_factories[id].get());
+
+	TResource resource = factory->factory.Create(_asset);
+
+	storage->data.Add(_asset.id, std::move(resource));
+
 	std::cout << "Ressource created for asset: " << _asset.id << std::endl;
 
-	auto& niquezmoi = GetResource<TResource>(_asset.id);
 	return _asset.id;
+}
+
+template<typename TResource>
+inline TResource* RessourceManager::CreateRessource_ptr(
+	const typename ResourceTraits<TResource>::AssetType& _asset
+)
+{
+	using TFactory = typename ResourceTraits<TResource>::FactoryType;
+
+	const auto id = ComponentTypeID<TResource>();
+
+	std::cout << "CreateRessource<" << typeid(TResource).name() << ">\n";
+	std::cout << "type id: " << id << "\n";
+	std::cout << "factories size: " << m_factories.size() << "\n";
+	std::cout << "storages size: " << m_resourcesStorages.size() << "\n";
+	std::cout << "asset id: " << _asset.id << "\n";
+
+	if (_asset.id == 0xFFFFFFFFu)
+		throw std::runtime_error("CreateRessource: asset id is INVALID_ID");
+
+	if (id >= m_factories.size())
+		throw std::runtime_error("CreateRessource: factory vector too small");
+
+	if (id >= m_resourcesStorages.size())
+		throw std::runtime_error("CreateRessource: storage vector too small");
+
+	if (!m_factories[id])
+		throw std::runtime_error("CreateRessource: factory not registered");
+
+	if (!m_resourcesStorages[id])
+		throw std::runtime_error("CreateRessource: storage not registered");
+
+	auto* storage =
+		static_cast<ResourceStorageData<TResource>*>(m_resourcesStorages[id].get());
+
+	auto* factory =
+		static_cast<FactoryWrapper<TFactory>*>(m_factories[id].get());
+
+	TResource resource = factory->factory.Create(_asset);
+
+	storage->data.Add(_asset.id, std::move(resource));
+
+	std::cout << "Ressource created for asset: " << _asset.id << std::endl;
+
+	return &GetResource<TResource>(_asset.id);
 }
 
 template<typename TResource>

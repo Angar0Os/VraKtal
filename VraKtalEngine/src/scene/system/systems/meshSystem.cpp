@@ -5,7 +5,7 @@
 #include <scene/scene.h>
 #include <graphics/resources/object/mesh.h>
 
-MeshSystem::MeshSystem(graphics::Renderer* _renderer, RessourceManager* _reManager) : m_ressourceManager(_reManager) , m_renderer(_renderer) {
+MeshSystem::MeshSystem(graphics::Renderer& _renderer, RessourceManager& _reManager) : m_ressourceManager(_reManager) , m_renderer(_renderer) {
 }
 
 MeshSystem::~MeshSystem()
@@ -24,7 +24,7 @@ void MeshSystem::Update(Scene& _scene)
             if (meshInstance.keyframes.size() == 0)
             {
                 // TODO
-                m_renderer->PushMesh(&m_ressourceManager->GetResource<graphics::resources::Mesh>(meshInstance.assetID), meshInstance.temp_properties.transform);
+                m_renderer.PushMesh(&m_ressourceManager.GetResource<graphics::resources::Mesh>(meshInstance.assetID), meshInstance.temp_properties.transform);
             }
         }
     }

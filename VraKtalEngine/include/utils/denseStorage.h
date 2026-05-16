@@ -1,25 +1,25 @@
 #pragma once
-#include <vector>
-#include <iostream>
-#include <unordered_map>
-#include <cstdint>
-#include <algorithm>
-#include <utility>
-#include <stdexcept>
 
-template<typename TKey , typename TValue>
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <iostream>
+#include <stdexcept>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+template<typename TKey, typename TValue>
 struct DenseStorage
 {
 public:
-
     using ID = uint32_t;
     static constexpr ID INVALID_ID = 0xFFFFFFFFu;
 
-    // Ajoute ou remplace
-    TValue& Add(const TKey& key, TValue value) 
+    TValue& Add(const TKey& key, TValue value)
     {
         auto it = m_keyToDense.find(key);
-        if (it != m_keyToDense.end()) //l'elem existe deja
+        if (it != m_keyToDense.end())
         {
             ID index = it->second;
             m_denseValues[index] = std::move(value);
@@ -36,21 +36,21 @@ public:
     void Remove(const TKey& key)
     {
         auto it = m_keyToDense.find(key);
-        if (it == m_keyToDense.end()) // l'elem n'existe pas
+        if (it == m_keyToDense.end())
             return;
-
-        //swap pop
 
         ID toDeleteIndex = it->second;
         ID lastIndex = static_cast<ID>(m_denseKeys.size() - 1);
 
-        if (toDeleteIndex != lastIndex) //swap
+        if (toDeleteIndex != lastIndex)
         {
             TKey lastKey = m_denseKeys[lastIndex];
+
             m_denseKeys[toDeleteIndex] = std::move(m_denseKeys[lastIndex]);
             m_denseValues[toDeleteIndex] = std::move(m_denseValues[lastIndex]);
 
-            m_keyToDense[lastIndex] = toDeleteIndex;
+            // Important: update the moved key, not the old dense index.
+            m_keyToDense[lastKey] = toDeleteIndex;
         }
 
         m_denseKeys.pop_back();
@@ -73,6 +73,16 @@ public:
         return m_denseValues[it->second];
     }
 
+    const TValue& Get(const TKey& key) const
+    {
+        auto it = m_keyToDense.find(key);
+
+        if (it == m_keyToDense.end())
+            throw std::runtime_error("DenseStorage::Get() const: key not found");
+
+        return m_denseValues[it->second];
+    }
+
     ID GetDenseIndex(const TKey& key) const
     {
         auto it = m_keyToDense.find(key);
@@ -84,6 +94,12 @@ public:
     }
 
     TValue& GetByDenseIndex(ID index)
+    {
+        assert(index < m_denseValues.size());
+        return m_denseValues[index];
+    }
+
+    const TValue& GetByDenseIndex(ID index) const
     {
         assert(index < m_denseValues.size());
         return m_denseValues[index];
@@ -112,12 +128,13 @@ public:
         m_keyToDense.clear();
     }
 
-    const std::vector<TKey>& Keys() const {return m_denseKeys;}
-    std::vector<TValue>& Values() {return m_denseValues;}
-    const std::vector<TValue>& Values() const {return m_denseValues;}
+    const std::vector<TKey>& Keys() const { return m_denseKeys; }
+
+    std::vector<TValue>& Values() { return m_denseValues; }
+    const std::vector<TValue>& Values() const { return m_denseValues; }
 
 private:
-    std::vector<TKey> m_denseKeys;              // Keys qui ont T
-    std::vector<TValue> m_denseValues;          // Les values de T
-    std::unordered_map<TKey, ID> m_keyToDense;  // 
+    std::vector<TKey> m_denseKeys;
+    std::vector<TValue> m_denseValues;
+    std::unordered_map<TKey, ID> m_keyToDense;
 };

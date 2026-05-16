@@ -20,7 +20,9 @@ using namespace core;
 using namespace core::gpu;
 using namespace graphics::resources;
 
-factory::MaterialFactory::MaterialFactory(core::gpu::Device& device, graphics::Renderer& _renderer) : m_device(device) , m_renderer(_renderer) {}
+factory::MaterialFactory::MaterialFactory(core::gpu::Device& device, graphics::Renderer& _renderer) : m_device(device) , m_renderer(_renderer) {
+	std::cout << "Created Material factory" << std::endl;
+}
 
 std::unique_ptr<Image> factory::MaterialFactory::UploadTexture( // Moved to texture loader
 	Device& device,

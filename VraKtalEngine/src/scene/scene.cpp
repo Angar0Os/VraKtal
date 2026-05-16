@@ -4,12 +4,13 @@
 #include <string>
 #endif
 
-Scene::Scene(){
-	#ifdef VRAKTAL_EDITOR
-		RegisterComponentStorage<std::string>(); //pour les noms
-	#endif // VRAKTAL_EDITOR
+Scene::Scene(std::string _name, bool _createNameStorage)
+	: m_name(_name)
+	, m_createdWithNameStorage(_createNameStorage)
+{
+	if (m_createdWithNameStorage)
+		RegisterComponentStorage<std::string>();
 }
-
 Scene::~Scene() noexcept
 {
 	std::cout << "Destroying World instance..." << std::endl;
@@ -39,8 +40,11 @@ EntityID Scene::CreateEntity()
 		reverseEntityMap[nextEntityId] = (uint32_t)aliveEntities.size() - 1;
 	}
 
-	std::string entityName = "entity" + std::to_string(aliveEntities.back());
-	GetComponentStorage<std::string>().Add(aliveEntities.back(),entityName);
+	if (m_createdWithNameStorage)
+	{
+		std::string entityName = "entity" + std::to_string(aliveEntities.back());
+		GetComponentStorage<std::string>().Add(aliveEntities.back(), entityName);
+	}
 	
 	CallOnCreatedCallBacks({ aliveEntities.back() , aliveEntities.size() });
 	
@@ -56,7 +60,11 @@ void Scene::DestroyEntity(EntityID entityID)
 	{
 		for (size_t i = 0; i < storages.size(); i++)
 		{
-			storages[i]->Remove(entityID);
+			if (storages[i])
+			{
+				storages[i]->Remove(entityID);
+
+			}
 		}
 		// swap-remove dans alive
 		uint32_t idx = reverseEntityMap[entityID];

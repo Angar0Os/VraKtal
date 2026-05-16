@@ -53,6 +53,33 @@ public:
         return id;
     }
 
+    ID Add(const std::string& _name , T& _value)
+    {
+        auto it = nameToId.find(_name);
+        if (it != nameToId.end())
+            return it->second;
+
+        ID id = 0;
+
+        if (!freeIDs.empty())
+        {
+            id = freeIDs.back();
+            freeIDs.pop_back();
+
+            names[id] = _name;
+            values[id] = std::move(_value);
+        }
+        else
+        {
+            id = static_cast<ID>(names.size());
+            names.push_back(_name);
+            values.emplace_back(std::move(_value));
+        }
+
+        nameToId.emplace(_name, id);
+        return id;
+    }
+
     ID Remove(const std::string& _name)
     {
         auto it = nameToId.find(_name);
@@ -138,6 +165,22 @@ public:
     std::vector<std::string>& GetAllNames()
     {
         return names;
+    }
+    std::unordered_map<std::string, ID>& GetNameIdMap()
+    {
+        return nameToId;
+    }
+
+    void ChangeName(ID _id, const std::string& _newName)
+    {
+        if (!IsValidIndex(_id))
+            throw std::runtime_error("Invalid NamedStorageMap id");
+        const std::string& oldName = names[_id];
+        auto it = nameToId.find(oldName);
+        if (it != nameToId.end())
+            nameToId.erase(it);
+        names[_id] = _newName;
+        nameToId.emplace(_newName, _id);
     }
 
 private:

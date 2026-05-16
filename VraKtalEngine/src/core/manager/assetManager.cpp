@@ -1,6 +1,9 @@
 #include <core/manager/assetManager.h>
-#include <loaders/meshLoader.h>
 
+#include <loaders/meshLoader.h>
+#include <graphics/assets/mesh.h>
+
+#include <graphics/assets/material.h>
 
 AssetManager::AssetManager()
 {
@@ -15,6 +18,7 @@ AssetManager::AssetManager()
 	*/
 
 	RegisterType<loaders::MeshLoader, graphics::assets::Mesh>(new loaders::MeshLoader());
+	RegisterType<void*, graphics::assets::Material>(nullptr);
 }
 
 AssetManager::~AssetManager()

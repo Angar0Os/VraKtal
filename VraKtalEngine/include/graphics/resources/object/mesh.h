@@ -40,15 +40,15 @@ namespace graphics::resources
 		std::unique_ptr<core::gpu::Buffer> rtIndexBuffer;
 		std::unique_ptr<core::gpu::AccelerationStructure> blas;
 
-		std::vector<Material*> materials;
+		std::vector<uint32_t> materialIds;
 		std::vector<SubMesh>  subMeshes;
 
 		uint32_t indexCount = 0;
 
-		Material* GetMaterial(uint32_t index)
+		uint32_t* GetMaterial(uint32_t index)
 		{
-			if (index < materials.size())
-				return materials[index];
+			if (index < materialIds.size())
+				return &materialIds[index];
 
 			return nullptr;
 		}

@@ -8,6 +8,8 @@
 #include <core/gpu/buffer.h>
 #include <core/gpu/descriptorSet.h>
 #include <core/gpu/pipeline.h>
+#include <core/time.h>
+
 #include <core/enum.h>
 #include <loaders/shaderLoader.h>
 
@@ -18,15 +20,17 @@ using namespace core;
 using namespace core::gpu;
 using namespace graphics;
 
-Renderer::Renderer(Window& window, Device& device)
+Renderer::Renderer(Window& window, Device& device , RessourceManager& _reManager , core::Time& _time)
 	: m_window(window)
 	, m_device(device)
+	, m_ressourceManager(_reManager)
 	, m_currentFrame(0)
 	, m_running(true)
 	, m_frameCounter(0)
 	, m_viewMatrix(glm::mat4(1.0f))
 	, m_projMatrix(glm::mat4(1.0f))
 	, m_cameraPosition(glm::vec3(0.0f))
+	, m_time(_time)
 {
 	CreateCommandBuffers();
 	CreateUniformBuffers();
@@ -41,7 +45,7 @@ Renderer::~Renderer()
 
 void Renderer::InitPasses()
 {
-	auto gBufferPass = std::make_unique<GBufferPass>(m_device, uniformBuffers);
+	auto gBufferPass = std::make_unique<GBufferPass>(m_device, m_ressourceManager ,uniformBuffers);
 	m_gBufferPass = gBufferPass.get();
 	m_passes.push_back(std::move(gBufferPass));
 
@@ -248,14 +252,36 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 {
 	if (!m_running) return;
 
+	m_time.Begin("Renderer" , "Begin_Frame");
 	m_device.BeginFrame(m_currentFrame);
+	m_time.End("Renderer", "Begin_Frame");
 
+	m_time.Begin("Renderer", "Build_TLAS");
 	BuildTLAS();
-	RebuildAccelerationStructures();
-	UpdateUniformBuffer(m_currentFrame);
+	m_time.End("Renderer", "Build_TLAS");
 
+	m_time.Begin("Renderer","Rebuild_Acceleration_Structures"); //PREND BEAUCOUP TROP DE TEMPS 
+	/*
+		si instance ajoutée / supprimée:
+			rebuild TLAS
+		si seulement transform changée :
+			update / refit TLAS
+		si rien n’a changé :
+			réutilise TLAS
+	*/
+	RebuildAccelerationStructures();
+	m_time.End("Renderer","Rebuild_Acceleration_Structures");
+
+	m_time.Begin("Renderer","Update_Uniform_Buffer");
+	UpdateUniformBuffer(m_currentFrame);
+	m_time.End("Renderer","Update_Uniform_Buffer");
+
+	m_time.Begin("Renderer","Command_Buffer_Begin");
 	auto& cmd = m_commandBuffers[m_currentFrame];
 	cmd->Begin(0);
+	m_time.End("Renderer","Command_Buffer_Begin");
+
+	m_time.Begin("Renderer","Prepare_GBuffer_Inputs");
 
 	m_gBufferPass->SetMeshInstances(&m_meshInstances);
 
@@ -276,11 +302,23 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 		depthDesc.clearDepth = 1.0f;
 	}
 
+	m_time.End("Renderer","Prepare_GBuffer_Inputs");
+
+	m_time.Begin("Renderer","GBuffer_Pass");
 	m_gBufferPass->Draw(*cmd, colorDescs, depthDesc, m_currentFrame);
+	m_time.End("Renderer","GBuffer_Pass");
+
+	m_time.Begin("Renderer","IBL_Pass");
 
 	if (m_tlasPerFrame[m_currentFrame])
+	{
 		m_iblPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
-	m_iblPass->Draw(*cmd, {}, {}, m_currentFrame);
+		m_iblPass->Draw(*cmd, {}, {}, m_currentFrame);
+	}
+
+	m_time.End("Renderer","IBL_Pass");
+
+	m_time.Begin("Renderer","Prepare_Lighting_Inputs");
 
 	if (m_tlasPerFrame[m_currentFrame])
 		m_lightingPass->SetTLAS(m_tlasPerFrame[m_currentFrame].get());
@@ -302,14 +340,26 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 		lightDepthDesc.clearDepth = 1.0f;
 	}
 
+	m_time.End("Renderer","Prepare_Lighting_Inputs");
+
+	m_time.Begin("Renderer","Lighting_Pass");
 	m_lightingPass->Draw(*cmd, lightColorDescs, lightDepthDesc, m_currentFrame);
+	m_time.End("Renderer","Lighting_Pass");
 
+	m_time.Begin("Renderer","TAA_Pass");
 	m_taaPass->Draw(*cmd, {}, {}, m_currentFrame);
+	m_time.End("Renderer","TAA_Pass");
 
+	m_time.Begin("Renderer","ToneMapping_Pass");
 	m_toneMappingPass->Draw(*cmd, {}, {}, m_currentFrame);
+	m_time.End("Renderer","ToneMapping_Pass");
 
 	if (outputImage)
 	{
+		m_time.Begin("Renderer","Blit_To_Output");
+
+		auto* src = m_toneMappingPass->GetColorAttachments()[0].image.get();
+
 		cmd->TransitionImageLayout(
 			outputImage,
 			ImageLayout::Undefined,
@@ -318,16 +368,23 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 		);
 
 		cmd->TransitionImageLayout(
-			m_toneMappingPass->GetColorAttachments()[0].image.get(),
+			src,
 			ImageLayout::ShaderReadOnly,
 			ImageLayout::TransferSrc,
 			false
 		);
 
 		cmd->BlitImage(
-			m_toneMappingPass->GetColorAttachments()[0].image.get(),
+			src,
 			outputImage,
 			&m_device
+		);
+
+		cmd->TransitionImageLayout(
+			src,
+			ImageLayout::TransferSrc,
+			ImageLayout::ShaderReadOnly,
+			false
 		);
 
 		cmd->TransitionImageLayout(
@@ -336,10 +393,14 @@ void Renderer::Render(core::gpu::Image* outputImage, ImageLayout outputLayout)
 			outputLayout,
 			false
 		);
+
+		m_time.End("Renderer","Blit_To_Output");
 	}
 
+	m_time.Begin("Renderer","Clear_Render_Lists");
 	m_meshInstances.clear();
 	m_lights.clear();
+	m_time.End("Renderer","Clear_Render_Lists");
 }
 
 void graphics::Renderer::DrawScene(core::gpu::CommandBuffer* _cmd)

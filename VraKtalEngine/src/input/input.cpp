@@ -17,11 +17,11 @@ struct core::Input::Internal
 	GLFWwindow* window = nullptr;
 };
 
-core::Input::Input(core::Window& window, core::gpu::Device* _device) : m_internal(new Internal)
+core::Input::Input(core::Window* window, core::gpu::Device* _device) : m_internal(new Internal)
 {
-	m_internal->window = static_cast<GLFWwindow*>(window.GlfwHandle());
+	m_internal->window = static_cast<GLFWwindow*>(window->GlfwHandle());
 	m_instance = this;
-	m_windowRef = &window;
+	m_windowRef = window;
 
 	// Initialisation du callback de resize — notifie la Window ET le device
 	m_windowResize = [this](int width, int height)

@@ -10,6 +10,7 @@
 #include "timeline/entityBase.h"
 #include <unordered_map>
 #include <memory>
+#include <string>
 
 struct IComponentStorage
 {
@@ -43,8 +44,34 @@ struct ComponentStorageData : public IComponentStorage
 class Scene
 {
 public:
-	Scene();
+    Scene(std::string _name = "", bool _createNameStorage = false);
 	~Scene() noexcept;
+
+	Scene(const Scene&) = delete;
+	Scene& operator=(const Scene&) = delete;
+
+	Scene(Scene&&) noexcept = default;
+	Scene& operator=(Scene&&) noexcept = default;
+
+	bool operator==(const Scene& other) const noexcept
+	{
+		return m_name == other.m_name;
+	}
+
+	bool operator!=(const Scene& other) const noexcept
+	{
+		return !(*this == other);
+	}
+
+public:
+	std::string GetName() { return m_name; };
+
+	void SetName(const std::string& _name)
+	{
+		m_name = _name;
+    }
+
+    void SetActive(bool _active) { m_isActive = _active; }
 
 private:
 	EntityID nextEntityId = 0;
@@ -53,6 +80,10 @@ private:
 	std::vector<EntityID> EntitiesFreeSlots;
 
 	std::vector<std::unique_ptr<IComponentStorage>> storages;
+	bool m_createdWithNameStorage;
+
+    bool m_isActive = false;
+	std::string m_name = "";
 public:
 	EntityID CreateEntity();
 	void DestroyEntity(EntityID _entity);

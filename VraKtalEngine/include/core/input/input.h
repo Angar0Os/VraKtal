@@ -31,7 +31,7 @@ namespace core {
 		NamedStorageMap<KeyActions>	ActionsStorage;
 
 	public:
-		explicit Input(core::Window& window, core::gpu::Device* _device);
+		explicit Input(core::Window* window, core::gpu::Device* _device);
 		~Input();
 		void Update();
 
