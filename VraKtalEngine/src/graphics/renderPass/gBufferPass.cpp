@@ -1,6 +1,8 @@
 #include <graphics/renderPass/gBufferPass.h>
 
 #include <factory/materialFactory.h>
+#include <core/manager/ressourceManager.h>
+
 
 #include <core/gpu/descriptorSet.h>
 #include <core/enum.h>
@@ -11,10 +13,11 @@ using namespace core::gpu;
 using namespace graphics::resources;
 
 
-graphics::GBufferPass::GBufferPass(Device& device,
+graphics::GBufferPass::GBufferPass(Device& device, RessourceManager& _reManager,
 	const std::vector<std::unique_ptr<Buffer>>& uniformBuffers)
 	: Pass("GBuffer")
 	, m_device(device)
+	, m_reManager(_reManager)
 	, m_uniformBuffers(uniformBuffers)
 {
 	Init(device);
@@ -279,8 +282,16 @@ void graphics::GBufferPass::Draw(CommandBuffer& cmd,
 
 			for (const auto& submesh : mesh->subMeshes)
 			{
-				graphics::resources::Material* mat = mesh->GetMaterial(submesh.materialIndex);
-				if (!mat) mat = m_fallbackMaterial.get();
+				uint32_t* matId = mesh->GetMaterial(submesh.materialIndex);
+				graphics::resources::Material* mat = nullptr;
+				if (!matId)
+				{
+					mat = m_fallbackMaterial.get();
+				}
+				else
+				{
+					mat = &m_reManager.GetResource<graphics::resources::Material>(*matId);
+				}
 
 				if (mat && mat->descriptorSet)
 					cmd.BindDescriptorSets(m_pipeline.get(), mat->descriptorSet.get(), 0, 1);

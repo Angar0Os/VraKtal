@@ -848,6 +848,9 @@ void core::gpu::Device::ClearResizeFlag()
 void Device::RecreateSwapchain()
 {
 	if (m_impl) m_impl->RecreateSwapchain();
+#ifdef VRAKTAL_EDITOR
+	m_imGuiContext->OnResize();
+#endif
 }
 
 #ifdef VRAKTAL_EDITOR

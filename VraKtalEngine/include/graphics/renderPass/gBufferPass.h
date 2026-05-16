@@ -11,7 +11,7 @@
 #include <glm/glm.hpp>
 #include <unordered_map>
 #include <vector>
-
+class RessourceManager;
 namespace graphics
 {
 	struct GBufferPushConstants {
@@ -22,7 +22,7 @@ namespace graphics
 	class GBufferPass final : public Pass
 	{
 	public:
-		explicit GBufferPass(Device& device,
+		explicit GBufferPass(Device& device,RessourceManager& _reManager,
 			const std::vector<std::unique_ptr<Buffer>>& uniformBuffers);
 		~GBufferPass() override = default;
 
@@ -47,6 +47,7 @@ namespace graphics
 		const Pipeline* GetPipeline() const { return m_pipeline.get(); }
 	private:
 		Device& m_device;
+		RessourceManager& m_reManager;
 
 		const std::vector<std::unique_ptr<Buffer>>& m_uniformBuffers;
 		const std::vector<std::pair<resources::Mesh*, glm::mat4>>* m_meshInstances = nullptr;

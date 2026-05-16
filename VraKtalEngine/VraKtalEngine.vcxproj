@@ -215,6 +215,8 @@
     <ClInclude Include="include\core\input\keys.h" />
     <ClInclude Include="include\core\manager\assetManager.h" />
     <ClInclude Include="include\core\manager\ressourceManager.h" />
+    <ClInclude Include="include\core\manager\sceneManager.h" />
+    <ClInclude Include="include\core\time.h" />
     <ClInclude Include="include\core\window.h" />
     <ClInclude Include="include\factory\assetFactory.h" />
     <ClInclude Include="include\factory\materialFactory.h" />
@@ -252,6 +254,7 @@
     <ClInclude Include="include\utils\macro.h" />
     <ClInclude Include="include\utils\NamedStorageMapped.h" />
     <ClInclude Include="include\utils\typeIndex.h" />
+    <ClInclude Include="include\vraktal.h" />
     <ClInclude Include="src\core\gpu\vulkan\accelerationStructure_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\buffer_impl.h" />
     <ClInclude Include="src\core\gpu\vulkan\commandBuffer_impl.h" />
@@ -299,6 +302,9 @@
     <ClCompile Include="src\core\gpu_detail\converters.cpp" />
     <ClCompile Include="src\core\manager\assetManager.cpp" />
     <ClCompile Include="src\core\manager\ressourceManager.cpp" />
+    <ClCompile Include="src\core\manager\sceneManager.cpp" />
+    <ClCompile Include="src\core\time.cpp" />
+    <ClCompile Include="src\core\window.cpp" />
     <ClCompile Include="src\factory\assetFactory.cpp" />
     <ClCompile Include="src\factory\materialFactory.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
@@ -314,7 +320,7 @@
     <ClCompile Include="src\scene\system\systemManager.cpp" />
     <ClCompile Include="src\scene\system\systems\lightSystem.cpp" />
     <ClCompile Include="src\scene\system\systems\meshSystem.cpp" />
-    <ClCompile Include="src\window.cpp" />
+    <ClCompile Include="src\vraktal.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\shaders\gbuffer.slang" />
@@ -323,6 +329,7 @@
     <None Include="..\bin\assets\shaders\taa.slang" />
     <None Include="..\bin\assets\shaders\toneMapping.slang" />
     <None Include="..\external\include\imGuizmo\.editorconfig" />
+    <None Include="cpp.hint" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="..\external\fonts\materialdesignicons-webfont.ttf" />

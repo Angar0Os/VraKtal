@@ -262,6 +262,15 @@
     <ClInclude Include="include\utils\macro.h">
       <Filter>include\utils</Filter>
     </ClInclude>
+    <ClInclude Include="include\vraktal.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\manager\sceneManager.h">
+      <Filter>include\core\manager</Filter>
+    </ClInclude>
+    <ClInclude Include="include\core\time.h">
+      <Filter>include\core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="external\include\imPlot3D\implot3d.cpp">
@@ -287,9 +296,6 @@
     </ClCompile>
     <ClCompile Include="src\scene\system\systems\meshSystem.cpp">
       <Filter>src\scene\system\systems</Filter>
-    </ClCompile>
-    <ClCompile Include="src\window.cpp">
-      <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\core\gpu\vulkan\accelerationStructure_impl.cpp">
       <Filter>src\core\gpu\vulkan</Filter>
@@ -408,6 +414,18 @@
     <ClCompile Include="include\factory\meshFactory.cpp">
       <Filter>src\factory</Filter>
     </ClCompile>
+    <ClCompile Include="src\vraktal.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\manager\sceneManager.cpp">
+      <Filter>src\core\manager</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\time.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\window.cpp">
+      <Filter>src\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\bin\assets\shaders\gbuffer.slang">
@@ -428,6 +446,7 @@
     <None Include="..\bin\assets\shaders\toneMapping.slang">
       <Filter>bin\assets\shaders</Filter>
     </None>
+    <None Include="cpp.hint" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="bin">
