@@ -18,6 +18,9 @@
 #include <utility>
 
 #include "editorCamera.h"
+#include <graphics/assets/mesh.h>
+#include <graphics/assets/material.h>
+#include <graphics/assets/asset.h>
 
 #pragma region ForwardDeclarations
 class Vraktal;
@@ -43,8 +46,6 @@ class   RightClick;
 class   ProjectModal;
 
 struct Popups;
-
-
 
 //Engine
 class RessourceManager;
@@ -77,6 +78,11 @@ namespace core::gpu {
 namespace hierarchy {
     struct Folder;
 }
+
+template<typename TAsset>
+struct AssetID {
+    uint32_t assetID = INVALID_ENTITY;
+};
 
 
 #pragma endregion
@@ -176,7 +182,8 @@ private:
     core::gpu::ImguiContext* m_imGuiContext;
     Scene* m_scene;
     core::Input* m_input;
-    std::variant<std::monostate, EntityID, graphics::resources::Mesh*, FileEntry* , hierarchy::Folder*> m_selectedItem = std::monostate{};
+    std::variant<std::monostate, EntityID, graphics::resources::Mesh*, graphics::assets::Mesh*, graphics::assets::Material*,
+        FileEntry* , hierarchy::Folder*> m_selectedItem = std::monostate{};
 };
 
 #endif //EDITOR_IMGUIWINDOWS_H

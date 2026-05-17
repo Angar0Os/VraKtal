@@ -76,6 +76,9 @@ public:
 
 	template<typename TResource>
 	TResource& GetResource(uint32_t _assetID);
+	
+	template<typename TResource>
+	bool HasResource(uint32_t _assetID);
 
 private:
 	std::vector<std::unique_ptr<IFactoryWrapper>> m_factories;
@@ -198,4 +201,11 @@ inline TResource& RessourceManager::GetResource(uint32_t _assetID)
 {
 	const auto id = ComponentTypeID<TResource>();
 	return static_cast<ResourceStorageData<TResource>*>(m_resourcesStorages[id].get())->data.Get(_assetID);
+}
+
+template<typename TResource>
+inline bool RessourceManager::HasResource(uint32_t _assetID)
+{
+	const auto id = ComponentTypeID<TResource>();
+	return static_cast<ResourceStorageData<TResource>*>(m_resourcesStorages[id].get())->data.Has(_assetID);
 }

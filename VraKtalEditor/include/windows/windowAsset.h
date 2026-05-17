@@ -3,6 +3,8 @@
 #include <windows/ImguiWindowBase.h>
 #include <utils/NamedStorageMapped.h>
 
+#include <core/manager/assetManager.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <string>
@@ -11,6 +13,10 @@
 #include <vector>
 
 #include <imgui/imgui.h>
+
+#include <windows/others/dragNdrop.h>
+#include <imguiWindows.h>
+
 
 class AssetManager;
 class ImGuiWindows;
@@ -143,9 +149,7 @@ void WindowAsset::DrawStorageContent(Storage<TAsset>& _storage)
             assets.push_back({ path, id });
     }
 
-    std::sort(
-        assets.begin(),
-        assets.end(),
+    std::sort(assets.begin(), assets.end(),
         [](const auto& a, const auto& b)
         {
             return a.first < b.first;
@@ -162,44 +166,31 @@ void WindowAsset::DrawStorageContent(Storage<TAsset>& _storage)
     {
         ImGui::PushID(static_cast<int>(id));
 
-        const bool selected =
-            m_selectedType == type &&
-            m_selectedAssetID == id;
+        const bool selected = m_selectedType == type && m_selectedAssetID == id;
 
-        const std::string label =
-            "[" + std::to_string(id) + "] " + path;
+        const std::string label = "[" + std::to_string(id) + "] " + path;
+
 
         if (ImGui::Selectable(label.c_str(), selected))
         {
             m_selectedType = type;
             m_selectedAssetID = id;
         }
-
-        if (ImGui::BeginPopupContextItem("AssetContextMenu"))
-        {
-            if (ImGui::MenuItem("Copy path"))
-                ImGui::SetClipboardText(path.c_str());
-
-            if (ImGui::MenuItem("Copy ID"))
-            {
-                const std::string idText = std::to_string(id);
-                ImGui::SetClipboardText(idText.c_str());
-            }
-
-            ImGui::EndPopup();
-        }
-
+/*
         if (ImGui::IsItemHovered())
         {
-            ImGui::BeginTooltip();
-
-            ImGui::TextUnformatted(typeName.c_str());
-            ImGui::Separator();
-            ImGui::Text("ID: %u", id);
-            ImGui::TextWrapped("%s", path.c_str());
-
-            ImGui::EndTooltip();
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            {
+                m_windowManager.SetSelectedItem<TAsset*>(&m_assetManager.GetAsset<TAsset>(id));
+            }
         }
+*/
+
+        //m_windowManager.GetDragNDrop()->Drag<TAsset>(m_assetManager.GetAsset<TAsset>(id));
+        
+        PayloadWrap<uint32_t, TAsset> payload;
+        payload.value = id;
+        m_windowManager.GetDragNDrop()->Drag<TAsset>(payload);
 
         ImGui::PopID();
     }

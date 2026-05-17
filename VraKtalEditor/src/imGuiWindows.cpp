@@ -40,7 +40,7 @@
 
 struct ImguiOthers {
 	ImguiOthers(ImGuiWindows* _windows , Vraktal& _vraktal)
-		: imGuizmoHelper(new ImGuizmoHelper(_windows, &_vraktal.GetInput())), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , _vraktal.GetRessourceManager())) , m_inspect(new Inspect(_windows, &_vraktal.GetRessourceManager(), _vraktal.GetAssetManager())) { };
+		: imGuizmoHelper(new ImGuizmoHelper(_windows, &_vraktal.GetInput())), meshPlot(new MeshPlot(_windows)) , dragNdrop(new DragNDrop(*_windows , _vraktal)) , m_inspect(new Inspect(_windows, &_vraktal.GetRessourceManager(), _vraktal.GetAssetManager())) { };
 	~ImguiOthers() {
 		delete imGuizmoHelper;
 		delete meshPlot;

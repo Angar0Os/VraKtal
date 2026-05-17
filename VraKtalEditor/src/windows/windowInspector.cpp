@@ -98,6 +98,16 @@ void WindowInspector::Draw()
                 ImGui::Text("Unsuported Object");
             }
         }
+        else if (m_windows.IsSelectedItemType<graphics::assets::Mesh*>())
+        {
+            graphics::assets::Mesh* mesh = m_windows.GetSelectedItem<graphics::assets::Mesh*>();
+            m_windows.GetInspect()->Draw<graphics::assets::Mesh>(*mesh);
+        }
+        else if (m_windows.IsSelectedItemType<graphics::assets::Material*>())
+        {
+            graphics::assets::Material* material = m_windows.GetSelectedItem<graphics::assets::Material*>();
+            m_windows.GetInspect()->Draw<graphics::assets::Material>(*material);
+        }
     }
     m_windows.EndWindow("Inspector");
 }

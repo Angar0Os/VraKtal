@@ -10,7 +10,11 @@
 #include <graphics/resources/object/mesh.h>
 #include <graphics/resources/material.h>
 
+#include <graphics/assets/material.h>
+
 #include <core/manager/assetManager.h>
+
+#include <utils/EditorHelper.h>
 
 #include <memory>
 #include <utility>
@@ -84,15 +88,11 @@ template<>
 void Inspect::Draw(timeline::MeshInstance& _mesh)
 {
     bool bMeshDefined = _mesh.assetID != INVALID_ID;
-    std::string path = bMeshDefined ? m_assetManager.GetAsset<graphics::assets::Mesh>(_mesh.assetID).path : "undefined path";
-
-    std::string displayName = "Mesh";
+    std::string name = bMeshDefined ? m_assetManager.GetAsset<graphics::assets::Mesh>(_mesh.assetID).name : "undefined name";
 
     if (bMeshDefined)
     {
-        std::string fileName = std::filesystem::path(path).filename().string();
-        displayName += " - " + fileName;
-        if (ImGui::CollapsingHeader(displayName.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
         {
             if (ImGui::CollapsingHeader("Materials"))
             {
@@ -102,23 +102,19 @@ void Inspect::Draw(timeline::MeshInstance& _mesh)
                     ImGui::PushID(i);
 
                     MaterialIndex materialIndex = static_cast<MaterialIndex>(i);
-
-                    std::string label =
-                        "Material[" + std::to_string(i) + "]";
+                    std::string label = "[" + std::to_string(i) + "] " + m_assetManager.GetAsset<graphics::assets::Material>(ressourceMesh.materialIds[i]).name.c_str();
 
                     ImGui::Selectable(label.c_str(), false);
-                    MaterialIndexPayload IndexPayLoad = static_cast<MaterialIndex>(i);
-                    m_windowManager->GetDragNDrop()->Drag<MaterialIndexPayload>(IndexPayLoad);
+                    PayloadWrap<uint32_t, graphics::assets::Material> payload;
+                    payload.value = i;
+                    m_windowManager->GetDragNDrop()->Drag<graphics::assets::Material>(payload);
 
-                    MaterialIndex dropped = INVALID_ID;
-                    m_windowManager->GetDragNDrop()->DropItem<MaterialIndexPayload, MaterialIndex>(dropped);
+                    uint32_t droppedMaterial = INVALID_ID;
+                    m_windowManager->GetDragNDrop()->DropItem<graphics::assets::Material, uint32_t>(droppedMaterial);
 
-                    if (dropped != INVALID_ID && dropped != static_cast<MaterialIndex>(i))
+                    if (droppedMaterial != INVALID_ID && droppedMaterial != static_cast<uint32_t>(i))
                     {
-                        std::swap(
-                            ressourceMesh.materialIds[i],
-                            ressourceMesh.materialIds[dropped]
-                        );
+                        ressourceMesh.materialIds[i] = droppedMaterial;
                     }
 
                     ImGui::PopID();
@@ -129,8 +125,7 @@ void Inspect::Draw(timeline::MeshInstance& _mesh)
     }
     else
     {
-        displayName += " - undefined";
-        ImGui::Text(displayName.c_str());
+        ImGui::Text(name.c_str());
     }
 }
 
@@ -169,3 +164,108 @@ void Inspect::Draw(timeline::Light& _light)
     }
 }
 
+template<>
+void Inspect::Draw(graphics::assets::Mesh& _mesh) 
+{
+    utils::DrawStringProperty("Name", _mesh.name);
+    utils::DrawStringProperty("Path", _mesh.path);
+
+    ImGui::SeparatorText("Statistics");
+
+    ImGui::Text("Vertices: %u", _mesh.GetVertexCount());
+    ImGui::Text("Indices: %u", _mesh.GetIndexCount());
+    ImGui::Text("Triangles: %u", _mesh.GetIndexCount() / 3);
+    ImGui::Text("Submeshes: %zu", _mesh.subMeshes.size());
+
+    if (ImGui::Button("Recalculate Normals"))
+        _mesh.RecalculateNormals();
+
+    ImGui::SeparatorText("Submeshes");
+
+    if (_mesh.subMeshes.empty())
+    {
+        ImGui::TextDisabled("No submeshes.");
+        return;
+    }
+
+    for (size_t i = 0; i < _mesh.subMeshes.size(); ++i)
+    {
+        graphics::SubMesh& subMesh = _mesh.subMeshes[i];
+
+        std::string label = subMesh.name.empty()
+            ? "SubMesh " + std::to_string(i)
+            : subMesh.name;
+
+        ImGui::PushID(static_cast<int>(i));
+
+        if (ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth))
+        {
+            utils::DrawStringProperty("Name", subMesh.name);
+
+            ImGui::Text("First Index: %u", subMesh.firstIndex);
+            ImGui::Text("Index Count: %u", subMesh.indexCount);
+            ImGui::Text("Vertex Offset: %u", subMesh.vertexOffset);
+            ImGui::Text("Triangle Count: %u", subMesh.GetTriangleCount());
+
+            int materialIndex = static_cast<int>(subMesh.materialIndex);
+
+            if (ImGui::DragInt("Material Index", &materialIndex, 1.0f, 0, 1024))
+                subMesh.materialIndex = static_cast<uint32_t>(materialIndex);
+
+            ImGui::TreePop();
+        }
+
+        ImGui::PopID();
+    }
+}
+
+
+template<>
+void Inspect::Draw(graphics::assets::Material& _material) 
+{
+    utils::DrawStringProperty("Name", _material.name);
+
+    ImGui::SeparatorText("Textures");
+
+    utils::DrawStringProperty("Albedo", _material.albedoTexture);
+    utils::DrawStringProperty("Normal", _material.normalTexture);
+    utils::DrawStringProperty("Metallic", _material.metallicTexture);
+    utils::DrawStringProperty("Roughness", _material.roughnessTexture);
+    utils::DrawStringProperty("AO", _material.aoTexture);
+    utils::DrawStringProperty("Emissive", _material.emissiveTexture);
+
+    if (ImGui::Button("Clear all textures"))
+        _material.ClearAllTextures();
+
+    ImGui::SeparatorText("Material Type");
+
+    const char* materialTypeNames[] =
+    {
+        "PBR",
+        "Unlit",
+        "Skybox"
+    };
+
+    int currentType = static_cast<int>(_material.materialType);
+
+    if (ImGui::Combo("Type", &currentType, materialTypeNames, IM_ARRAYSIZE(materialTypeNames)))
+        _material.materialType = static_cast<graphics::MaterialType>(currentType);
+
+    ImGui::SeparatorText("Surface");
+
+    ImGui::ColorEdit3("Albedo Color", glm::value_ptr(_material.albedo));
+
+    ImGui::DragFloat("Metallic", &_material.metallic, 0.01f, 0.0f, 1.0f);
+    ImGui::DragFloat("Roughness", &_material.roughness, 0.01f, 0.0f, 1.0f);
+    ImGui::DragFloat("AO", &_material.ao, 0.01f, 0.0f, 1.0f);
+
+    ImGui::SeparatorText("Emission");
+
+    ImGui::ColorEdit3("Emissive Color", glm::value_ptr(_material.emissive));
+    ImGui::DragFloat("Emissive Strength", &_material.emissiveStrength, 0.01f, 0.0f, 100.0f);
+
+    ImGui::SeparatorText("Rendering");
+
+    ImGui::DragFloat("Opacity", &_material.opacity, 0.01f, 0.0f, 1.0f);
+    ImGui::Checkbox("Double Sided", &_material.doubleSided);
+}

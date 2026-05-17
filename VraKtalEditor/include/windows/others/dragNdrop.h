@@ -1,5 +1,6 @@
 #pragma once
 #include <core/manager/ressourceManager.h>
+#include <core/manager/assetManager.h>
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
@@ -10,6 +11,11 @@ namespace graphics::resources
 {
     struct Mesh;
 }
+namespace graphics::assets
+{
+    struct Mesh;
+}
+
 
 namespace scene::timeline::components
 {
@@ -20,6 +26,7 @@ namespace scene::timeline::components
 struct FileEntry;
 class ImGuiWindows;
 class RessourceManager;
+class AssetManager;
 
 namespace hierarchy {
     struct Folder;
@@ -47,17 +54,40 @@ struct PayloadWrap
         return *this;
     }
 };
+template<typename TAsset>
+using AssetPayload = PayloadWrap<uint32_t, TAsset>;
+template<typename TAsset>
+struct AssetPayloadTraits;
+template<>
+struct AssetPayloadTraits<graphics::assets::Mesh>
+{
+    static constexpr const char* Name = "PAYLOAD_ASSET_MESH";
+    static constexpr const char* DisplayName = "Mesh";
+};
+template<>
+struct AssetPayloadTraits<graphics::assets::Material>
+{
+    static constexpr const char* Name = "PAYLOAD_ASSET_MATERIAL";
+    static constexpr const char* DisplayName = "Material";
+};
+
+class Vraktal;
 
 struct DragNDrop
 {
-    DragNDrop(ImGuiWindows& _windowManager , RessourceManager& _reManager): m_windowManager(_windowManager) , m_reManager(_reManager){};
+    DragNDrop(ImGuiWindows& _windwManager, Vraktal& _vraktal);
 
     template<typename T>
     void Drag(T& object) {
-        ImGui::BeginPopup("DragAvailability");
-        ImGui::Text("No DragAvailable");
-        ImGui::EndPopup();
+        if (ImGui::BeginPopup("DragAvailability"))
+        {
+            ImGui::Text("No DragAvailable");
+            ImGui::EndPopup();
+        };
     };
+
+    template<typename TAsset>
+    void Drag(AssetPayload<TAsset>& _payload);
     
     template<typename DraggedType , typename DroppedReceived>
     DraggedType* DropWindow(DroppedReceived& object) {
@@ -105,6 +135,8 @@ struct DragNDrop
 private:
     ImGuiWindows& m_windowManager;
     RessourceManager& m_reManager;
+    AssetManager& m_astManager;
+
 
     template<typename DraggedType, typename DroppedReceived>
     DraggedType* Content(DroppedReceived& object) {
@@ -121,6 +153,28 @@ private:
         ImGui::EndPopup();
         return nullptr;
     }
+
+    template<typename TAsset>
+    TAsset* AcceptAssetContent(uint32_t& _assetID)
+    {
+        using Payload = AssetPayload<TAsset>;
+
+        constexpr const char* payloadName = AssetPayloadTraits<TAsset>::Name;
+
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(payloadName))
+        {
+            IM_ASSERT(payload->DataSize == sizeof(Payload));
+
+            const Payload* assetPayload =
+                static_cast<const Payload*>(payload->Data);
+
+            _assetID = assetPayload->value;
+
+            return &m_astManager.GetAsset<TAsset>(_assetID);
+        }
+
+        return nullptr;
+    };
 
 };
 
@@ -156,3 +210,25 @@ template<>
 void DragNDrop::Drag(EntityPayload& _payload);
 template<>
 EntityPayload* DragNDrop::Content();
+
+template<typename TAsset>
+inline void DragNDrop::Drag(AssetPayload<TAsset>& _payload)
+{
+    const char* payload_name = AssetPayloadTraits<TAsset>::Name;
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+    {
+        ImGui::SetDragDropPayload(
+            payload_name,
+            &_payload,
+            sizeof(AssetPayload<TAsset>)
+        );
+        ImGui::Text("%s %s", AssetPayloadTraits<TAsset>::DisplayName, m_astManager.GetAsset<TAsset>(_payload.value).name.c_str());
+        ImGui::EndDragDropSource();
+    }
+};
+
+template<>
+graphics::assets::Mesh* DragNDrop::Content<graphics::assets::Mesh, Mesh_ID>(Mesh_ID& _meshID);
+
+template<>
+graphics::assets::Material* DragNDrop::Content<graphics::assets::Material, uint32_t>(uint32_t& _assetID);

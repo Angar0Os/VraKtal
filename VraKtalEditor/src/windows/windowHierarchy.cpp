@@ -4,6 +4,8 @@
 #include "../../include/windows/others/imGuizmoHelper.h"
 #include "../../include/windows/others/dragNdrop.h"
 
+#include <factory/meshFactory.h>
+
 #include "../../include/windows/popup/rightClick.h"
 
 #include <imgui/imgui.h>
@@ -550,16 +552,14 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
 
     if (scene.GetComponentStorage<timeline::MeshInstance>().Has(_ID))
     {
-        m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(
+        m_imGuiWindows.GetDragNDrop()->DropItem<graphics::assets::Mesh, Mesh_ID>(
             scene.GetComponentStorage<timeline::MeshInstance>().Get(_ID).assetID
         );
     }
     else
     {
         Mesh_ID draggedMeshID = INVALID_ID;
-
-        m_imGuiWindows.GetDragNDrop()->DropItem<FileEntry, Mesh_ID>(draggedMeshID);
-
+        m_imGuiWindows.GetDragNDrop()->DropItem<graphics::assets::Mesh, Mesh_ID>(draggedMeshID);
         if (draggedMeshID != INVALID_ID)
         {
             scene.GetComponentStorage<timeline::MeshInstance>().Add(
@@ -568,7 +568,6 @@ void WindowHierarchy::DrawEntityHierarchyItem(EntityID _ID)
             );
         }
     }
-
     ImGui::PopID();
 }
 

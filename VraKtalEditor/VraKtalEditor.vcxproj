@@ -176,6 +176,7 @@
     <ClInclude Include="include\editorCamera.h" />
     <ClInclude Include="include\imGuiWindows.h" />
     <ClInclude Include="include\contentDrawer.h" />
+    <ClInclude Include="include\utils\EditorHelper.h" />
     <ClInclude Include="include\utils\fileTypeDetector.h" />
     <ClInclude Include="include\utils\yamlParser.h" />
     <ClInclude Include="include\command\command.h" />

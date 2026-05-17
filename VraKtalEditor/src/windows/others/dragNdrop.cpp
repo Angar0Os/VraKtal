@@ -7,11 +7,21 @@
 #include <scene/timeline/components/mesh.h>
 
 #include <graphics/resources/object/mesh.h>
+
 #include <core/manager/ressourceManager.h>
+#include <core/manager/assetManager.h>
+#include <factory/meshFactory.h>
+#include <factory/materialFactory.h>
+
+#include <vraktal.h>
 #include <scene/scene.h>
 #include <imgui/imgui_internal.h>
 
+
+
 constexpr const char* PAYLOAD_FILE_ENTRY = "PAYLOAD_FILE_ENTRY";
+
+DragNDrop::DragNDrop(ImGuiWindows& _windwManager, Vraktal& _vraktal) : m_windowManager(_windwManager), m_reManager(_vraktal.GetRessourceManager()) , m_astManager(_vraktal.GetAssetManager()){}
 
 template<>
 void DragNDrop::Drag(FileEntry& _fileEntry) 
@@ -50,11 +60,89 @@ FileEntry* DragNDrop::Content(Mesh_ID& _meshID)
             return nullptr;
         if (droppedEntry->fileType == FileType::MeshGLB || droppedEntry->fileType == FileType::MeshGLTF || droppedEntry->fileType == FileType::MeshOBJ)
         {
-            //_meshID = m_reManager.GetResource<graphics::resources::Mesh>(droppedEntry->GetRelativeFileLocation().string());
+            /*
+                DRAG FILEENTRTY OF TYPE MESH
+            */
             return droppedEntry;
         }
     }
     return nullptr;
+}
+
+template<>
+void DragNDrop::Drag(graphics::assets::Mesh& _meshAsset) 
+{
+    const char* PAYLOAD_ASSET_MESH = "PAYLOAD_ASSET_MESH";
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+    {
+        ImGui::SetDragDropPayload(
+            PAYLOAD_ASSET_MESH,
+            &_meshAsset,
+            sizeof(graphics::assets::Mesh)
+        );
+        ImGui::Text("Material Index: %u", _meshAsset);
+        ImGui::EndDragDropSource();
+    }
+}
+
+template<>
+void DragNDrop::Drag(graphics::assets::Material& _material) 
+{
+    const char* PAYLOAD_ASSET_MATERIAL = "PAYLOAD_ASSET_MATERIAL";
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+    {
+        ImGui::SetDragDropPayload(
+            PAYLOAD_ASSET_MATERIAL,
+            &_material,
+            sizeof(graphics::assets::Material)
+        );
+        ImGui::Text("Material Index: %u", _material.name);
+        ImGui::EndDragDropSource();
+    }
+}
+
+template<>
+graphics::assets::Mesh* DragNDrop::Content(Mesh_ID& _meshID)
+{
+    Mesh_ID meshAssetID = INVALID_ID;
+
+    graphics::assets::Mesh* meshAsset = AcceptAssetContent<graphics::assets::Mesh>(meshAssetID);
+
+    if (!meshAsset)
+        return nullptr;
+
+    if (!m_reManager.HasResource<graphics::resources::Mesh>(meshAssetID))
+    {
+        _meshID = m_reManager.CreateRessource<graphics::resources::Mesh>(*meshAsset);
+    }
+    else
+    {
+        _meshID = meshAssetID;
+    }
+
+    return meshAsset;
+}
+
+template<>
+graphics::assets::Material* DragNDrop::Content(uint32_t& _assetID)
+{
+    uint32_t AssetID = INVALID_ID;
+
+    graphics::assets::Material* materialAsset = AcceptAssetContent<graphics::assets::Material>(AssetID);
+
+    if (!materialAsset)
+        return nullptr;
+
+    if (!m_reManager.HasResource<graphics::resources::Material>(AssetID))
+    {
+        _assetID = m_reManager.CreateRessource<graphics::resources::Material>(*materialAsset);
+    }
+    else
+    {
+        _assetID = AssetID;
+    }
+
+    return materialAsset;
 }
 
 

@@ -3,7 +3,7 @@
 
 class ImGuiWindows;
 namespace core{
-	struct Time;
+	class Time;
 }
 
 class WindowStat : public ImguiWindowBase

@@ -291,8 +291,6 @@ int main()
 #else
     Vraktal vraktal(1200, 720, "VraKtal Editor");
 
-
-    //app.LoadAssetsDebug(vraktal.GetRenderer(), vraktal.GetDevice(), vraktal);
     ImGuiWindows imGuiWindows = ImGuiWindows(vraktal);
     vraktal.GetDevice().GetImGuiContext()->BindPrepareDrawData([&]()
         {
@@ -301,6 +299,7 @@ int main()
     
     App app(vraktal);
     app.SpawnVikingRoom();
+    app.LoadAssetsDebug(vraktal.GetRenderer(), vraktal.GetDevice(), vraktal);
 
 #endif //VRAKTAL_EDITOR
 

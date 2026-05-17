@@ -176,5 +176,8 @@
     <ClInclude Include="include\windows\windowAsset.h">
       <Filter>Header Files\windows</Filter>
     </ClInclude>
+    <ClInclude Include="include\utils\EditorHelper.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

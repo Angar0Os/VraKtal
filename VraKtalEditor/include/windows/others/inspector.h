@@ -14,6 +14,7 @@
 #include <imgui/imgui.h>
 #include <memory>
 #include <utility>
+#include <graphics/assets/mesh.h>
 
 namespace graphics
 {
@@ -53,3 +54,9 @@ void Inspect::Draw(timeline::MeshInstance& _mesh);
 
 template<>
 void Inspect::Draw(timeline::Light& _light);
+
+template<>
+void Inspect::Draw(graphics::assets::Mesh& _mesh);
+
+template<>
+void Inspect::Draw(graphics::assets::Material& _material);
