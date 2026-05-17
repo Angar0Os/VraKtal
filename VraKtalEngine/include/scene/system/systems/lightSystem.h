@@ -13,11 +13,11 @@ namespace graphics {
 class LightSystem : public SystemBase
 {
 public:
-	LightSystem(graphics::Renderer* _renderer);
+	LightSystem(graphics::Renderer& _renderer);
 	~LightSystem();
 
     void Update(Scene& _scene) override;
 
 private:
-    graphics::Renderer* m_renderer;
+	graphics::Renderer& m_renderer;
 };

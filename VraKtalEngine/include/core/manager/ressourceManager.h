@@ -160,12 +160,6 @@ inline TResource* RessourceManager::CreateRessource_ptr(
 
 	const auto id = ComponentTypeID<TResource>();
 
-	std::cout << "CreateRessource<" << typeid(TResource).name() << ">\n";
-	std::cout << "type id: " << id << "\n";
-	std::cout << "factories size: " << m_factories.size() << "\n";
-	std::cout << "storages size: " << m_resourcesStorages.size() << "\n";
-	std::cout << "asset id: " << _asset.id << "\n";
-
 	if (_asset.id == 0xFFFFFFFFu)
 		throw std::runtime_error("CreateRessource: asset id is INVALID_ID");
 
@@ -181,11 +175,9 @@ inline TResource* RessourceManager::CreateRessource_ptr(
 	if (!m_resourcesStorages[id])
 		throw std::runtime_error("CreateRessource: storage not registered");
 
-	auto* storage =
-		static_cast<ResourceStorageData<TResource>*>(m_resourcesStorages[id].get());
+	auto* storage = static_cast<ResourceStorageData<TResource>*>(m_resourcesStorages[id].get());
 
-	auto* factory =
-		static_cast<FactoryWrapper<TFactory>*>(m_factories[id].get());
+	auto* factory = static_cast<FactoryWrapper<TFactory>*>(m_factories[id].get());
 
 	TResource resource = factory->factory.Create(_asset);
 

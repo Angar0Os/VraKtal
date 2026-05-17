@@ -102,7 +102,7 @@ public:
     void SpawnVikingRoom() {
         std::cout << "Spawn Viking Room Action Triggered" << std::endl;
         timeline::MeshInstance timelineMesh;
-        timelineMesh.assetID = m_vraktal->GetAssetManager().GetAssetID<graphics::assets::Mesh>("assets/models/viking_room.obj");
+        timelineMesh.assetID = m_vraktal->GetAssetManager().GetAssetID<graphics::assets::Mesh>("assets/models/cave.obj");
         timelineMesh.temp_properties.transform = glm::rotate(glm::mat4(1), glm::radians(270.0f), { 1,0,0 });
         timelineMesh.temp_properties.transform = glm::scale(timelineMesh.temp_properties.transform, glm::vec3(10, 10, 10));
         m_vraktal->GetSceneManager().GetScene(m_vraktal->GetSceneManager().GetSceneID("Debug")).CreateEntity<timeline::MeshInstance>(timelineMesh);
@@ -298,8 +298,8 @@ int main()
         });
     
     App app(vraktal);
-    app.SpawnVikingRoom();
     app.LoadAssetsDebug(vraktal.GetRenderer(), vraktal.GetDevice(), vraktal);
+    app.SpawnVikingRoom();
 
 #endif //VRAKTAL_EDITOR
 
@@ -307,10 +307,8 @@ int main()
     {
         vraktal.Update();
 
-        vraktal.GetTime().Begin("Engine", "BeginFrame");
         if (!vraktal.BeginFrame())
             continue;
-        vraktal.GetTime().End("Engine", "BeginFrame");
 
 #ifdef VRAKTAL_EDITOR
         imGuiWindows.Update();
@@ -318,9 +316,7 @@ int main()
         vraktal.Render();
 #endif // VRAKTAL_EDITOR
 
-        vraktal.GetTime().Begin("Engine", "EndFrame");
         vraktal.EndFrame();
-        vraktal.GetTime().End("Engine", "EndFrame");
     }
 
     vraktal.Cleanup();

@@ -12,7 +12,7 @@ factory::MeshFactory::MeshFactory(core::gpu::Device& _device) : m_device(_device
 graphics::resources::Mesh MeshFactory::Create(const graphics::assets::Mesh& asset)
 {
 	graphics::resources::Mesh mesh = CreateBuffersForMesh(asset, &m_device);
-    EnsureDefaultSubmesh(mesh, const_cast<graphics::assets::Mesh&>(asset)); // EnsureDefaultSubmesh modifies the asset's submeshes if needed
+	CopyMeshMetadata(mesh, asset);
 	CreateBLASForMesh(mesh, asset, &m_device);
 	return mesh;
 }
@@ -141,17 +141,23 @@ void factory::MeshFactory::CreateBLASForMesh(graphics::resources::Mesh& mesh, co
 	std::cout << "BLAS built for mesh during loading" << std::endl;
 }
 
-void factory::MeshFactory::EnsureDefaultSubmesh(graphics::resources::Mesh& _mesh, graphics::assets::Mesh& _meshAsset)
+void MeshFactory::CopyMeshMetadata(graphics::resources::Mesh& mesh,const graphics::assets::Mesh& asset)
 {
-	if (!_mesh.subMeshes.empty())
-		return;
+	mesh.subMeshes.clear();
 
-	graphics::SubMesh defaultSubmesh;
-	defaultSubmesh.firstIndex = 0;
-	defaultSubmesh.indexCount = static_cast<uint32_t>(_meshAsset.indices.size());
-	defaultSubmesh.vertexOffset = 0;
-	defaultSubmesh.materialIndex = 0;
-	defaultSubmesh.name = "default";
+	if (!asset.subMeshes.empty())
+	{
+		mesh.subMeshes = asset.subMeshes;
+	}
+	else
+	{
+		graphics::SubMesh defaultSubmesh;
+		defaultSubmesh.firstIndex = 0;
+		defaultSubmesh.indexCount = static_cast<uint32_t>(asset.indices.size());
+		defaultSubmesh.vertexOffset = 0;
+		defaultSubmesh.materialIndex = 0;
+		defaultSubmesh.name = "default";
 
-	_mesh.subMeshes.push_back(defaultSubmesh);
+		mesh.subMeshes.push_back(defaultSubmesh);
+	}
 }

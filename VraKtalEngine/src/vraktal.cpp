@@ -46,6 +46,7 @@ struct ECS
     ECS(Vraktal& _vraktal) : systemManager(), sceneManager()
     {
         systemManager.AddSystem<MeshSystem>(_vraktal.GetRenderer(), _vraktal.GetRessourceManager());
+        systemManager.AddSystem<LightSystem>(_vraktal.GetRenderer());
     };
     SystemManager systemManager;
     SceneManager sceneManager;
@@ -67,14 +68,6 @@ void Vraktal::Update()
 
     time += timeStep;
 
-    if (m_core->device.NeedsResize())
-    {
-        m_core->device.RecreateSwapchain();
-        m_graphics->renderer.OnResize();
-        m_core->device.ClearResizeFlag();
-        return;
-    }
-
     m_core.get()->time.Begin("Engine","Inputs/PollEvents");
     m_core->window.PollEvents();
     m_core->input.Update();
@@ -91,11 +84,25 @@ void Vraktal::Update()
 
 bool Vraktal::BeginFrame()
 {
+    GetTime().Begin("Engine", "BeginFrame");
+    if (m_core->device.NeedsResize())
+    {
+        m_core->device.RecreateSwapchain();
+        m_graphics->renderer.OnResize();
+        m_core->device.ClearResizeFlag();
+        GetTime().End("Engine", "BeginFrame");
+        return false;
+    }
+
     m_imageIndex = m_core->device.AcquireNextImage(currentFrameIndex);
 
     if (m_imageIndex == UINT32_MAX)
+    {
+        GetTime().End("Engine", "BeginFrame");
         return false;
+    }
 
+    GetTime().End("Engine", "BeginFrame");
     return true;
 }
 
@@ -110,6 +117,7 @@ void Vraktal::RenderInImage(core::gpu::Image* _image, ImageLayout _layout) {
 
 void Vraktal::EndFrame()
 {
+    GetTime().Begin("Engine", "EndFrame");
     m_graphics->renderer.Advance();
 
     m_core->device.Present(m_imageIndex, currentFrameIndex);
@@ -118,6 +126,7 @@ void Vraktal::EndFrame()
         (currentFrameIndex + 1) % core::gpu::Device::s_FRAMES_IN_FLIGHT;
 
     frameCounter++;
+    GetTime().End("Engine", "EndFrame");
 }
 
 bool Vraktal::ShouldClose() const

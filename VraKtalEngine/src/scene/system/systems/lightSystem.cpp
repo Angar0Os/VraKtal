@@ -5,7 +5,7 @@
 #include <graphics/resources/object/light.h>
 #include <graphics/renderer.h>
 
-LightSystem::LightSystem(graphics::Renderer* _renderer) : m_renderer(_renderer)
+LightSystem::LightSystem(graphics::Renderer& _renderer) : m_renderer(_renderer)
 {
 }
 
@@ -47,6 +47,6 @@ void LightSystem::Update(Scene& _scene)
 			alight.type = graphics::resources::LightType::Spot;
 			break;
 		}
-		m_renderer->PushLight(alight);
+		m_renderer.PushLight(alight);
     }
 }

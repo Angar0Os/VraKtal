@@ -101,18 +101,17 @@ void Inspect::Draw(timeline::MeshInstance& _mesh)
                 {
                     ImGui::PushID(i);
 
-                    MaterialIndex materialIndex = static_cast<MaterialIndex>(i);
                     std::string label = "[" + std::to_string(i) + "] " + m_assetManager.GetAsset<graphics::assets::Material>(ressourceMesh.materialIds[i]).name.c_str();
 
                     ImGui::Selectable(label.c_str(), false);
                     PayloadWrap<uint32_t, graphics::assets::Material> payload;
-                    payload.value = i;
+                    payload.value = ressourceMesh.materialIds[i];
                     m_windowManager->GetDragNDrop()->Drag<graphics::assets::Material>(payload);
 
                     uint32_t droppedMaterial = INVALID_ID;
                     m_windowManager->GetDragNDrop()->DropItem<graphics::assets::Material, uint32_t>(droppedMaterial);
 
-                    if (droppedMaterial != INVALID_ID && droppedMaterial != static_cast<uint32_t>(i))
+                    if (droppedMaterial != INVALID_ID && droppedMaterial != ressourceMesh.materialIds[i])
                     {
                         ressourceMesh.materialIds[i] = droppedMaterial;
                     }
