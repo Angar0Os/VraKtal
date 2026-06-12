@@ -118,11 +118,14 @@
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)VraKtalEngine\include;$(ProjectDir)include;$(SolutionDir)external\include;</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)external\lib;$(SolutionDir)\$(Configuration)_$(Platform)\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>VraKtalEngine_Debug.lib;vulkan-1.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>imguid.lib;glfw3.lib;msvcrt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -131,12 +134,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;VRAKTAL_EDITOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(SolutionDir)VraKtalEngine\include;$(ProjectDir)include;$(SolutionDir)external\include;</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp23</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <!-- /MD : runtime release DLL -->
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,9 +149,11 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)external\lib;$(SolutionDir)\$(Configuration)_$(Platform)\lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalDependencies>VraKtalEngine_Release.lib;vulkan-1.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>imgui.lib;glfw3.lib;msvcrtd.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
+
   <ItemGroup>
     <ClCompile Include="src\command\commandHistory.cpp" />
     <ClCompile Include="src\command\fileCommands.cpp" />
